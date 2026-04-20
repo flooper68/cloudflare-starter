@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: "Plus Jakarta Sans", "Helvetica Neue", sans-serif;
+  --color-background: #f7f7f2;
+  --color-foreground: #111114;
+  --color-card: #ffffff;
+  --color-muted: #666672;
+  --color-accent: #0f766e;
+}
+
+html {
+  font-family: var(--font-sans);
+  background: linear-gradient(180deg, #f7f7f2 0%, #f2f0ea 100%);
+  color: var(--color-foreground);
+}
+
+body {
+  min-height: 100vh;
+}

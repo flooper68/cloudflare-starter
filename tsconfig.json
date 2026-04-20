@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "apps/**/*.astro",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "vitest.config.ts"
+  ]
+}

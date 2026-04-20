@@ -1,0 +1,44 @@
+---
+import "@cloudflare-starter/ui/globals.css";
+import "@/styles/globals.css";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const auth = Astro.locals.auth();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="border-b border-zinc-200 bg-white/60 backdrop-blur">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <a class="text-sm font-semibold uppercase tracking-[0.3em] text-zinc-950" href="/">
+          Cloudflare Starter
+        </a>
+        <nav class="flex items-center gap-4 text-sm text-zinc-600">
+          <a href="/api/hello">API hello</a>
+          {auth.userId ? (
+            <>
+              <a href="/app/dashboard">Dashboard</a>
+              <a href="/app/profile">Profile</a>
+            </>
+          ) : (
+            <>
+              <a href="/sign-in">Sign in</a>
+              <a href="/sign-up">Sign up</a>
+            </>
+          )}
+        </nav>
+      </div>
+    </header>
+    <slot />
+  </body>
+</html>

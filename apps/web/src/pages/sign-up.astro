@@ -1,0 +1,14 @@
+---
+import { SignUpForm } from "@/components/auth/SignUpForm";
+import Layout from "@/layouts/Layout.astro";
+
+if (Astro.locals.auth().userId) {
+  return Astro.redirect("/app/dashboard");
+}
+---
+
+<Layout title="Sign up">
+  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+    <SignUpForm client:load />
+  </main>
+</Layout>

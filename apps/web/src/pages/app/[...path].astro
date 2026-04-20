@@ -1,0 +1,28 @@
+---
+import "@cloudflare-starter/ui/globals.css";
+import "@/styles/globals.css";
+
+import { AppSpa } from "@/components/app/AppSpa";
+
+const { userId } = Astro.locals.auth();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="noindex, nofollow" name="robots" />
+    <title>Cloudflare Starter App</title>
+  </head>
+  <body>
+    <script
+      id="__APP_AUTH__"
+      is:inline
+      type="application/json"
+      set:html={JSON.stringify({ userId })}
+    />
+
+    <AppSpa client:only="react" />
+  </body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "@cloudflare-starter/storybook",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -b",
+    "dev": "storybook dev -p 6006",
+    "build": "storybook build --output-dir dist",
+    "deploy": "bun run build && wrangler deploy",
+    "preview": "wrangler dev"
+  },
+  "dependencies": {
+    "@cloudflare-starter/ui": "workspace:*",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "10.3.5",
+    "@tailwindcss/vite": "4.2.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "storybook": "10.3.5",
+    "tailwindcss": "4.2.2",
+    "typescript": "5.9.3",
+    "wrangler": "4.83.0"
+  }
+}
