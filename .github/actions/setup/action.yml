@@ -1,6 +1,10 @@
 name: Setup
-description: Install Node (version from .nvmrc; Astro's CLI runs on Node) and Bun (version from package.json), restore Bun's install cache, install dependencies. The job checks out the repository first.
+description: Install Node (version from .nvmrc; Astro's CLI runs on Node) and Bun (version from package.json), restore Bun's install cache on GitHub-hosted runners, install dependencies. The job checks out the repository first.
 
+# On self-hosted runners (runner.environment != 'github-hosted') the GitHub cache is skipped:
+# each runner container keeps Bun's install cache, the tool cache and the browsers between
+# jobs anyway, and cache uploads from a self-hosted machine are slow or hang. Every cache in
+# this action and the workflows keeps that condition (test/architecture/ci.test.ts).
 runs:
   using: composite
   steps:
@@ -9,14 +13,18 @@ runs:
     - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version-file: .nvmrc
+        # No npm cache: Bun installs the dependencies.
+        package-manager-cache: false
 
     - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       with:
         bun-version-file: package.json
+        no-cache: ${{ runner.environment != 'github-hosted' }}
 
     # Bun's global install cache. The lockfile pins every package, so it is the key;
     # restore-keys reuse an older cache when the lockfile changed.
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: runner.environment == 'github-hosted'
       with:
         path: ~/.bun/install/cache
         key: bun-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}

@@ -17,7 +17,9 @@ concurrency:
 #   gh variable set CI_RUNS_ON --body '["self-hosted","cloudflare-starter"]'
 # Unset means "ubuntu-latest". Pull requests from forks ALWAYS run on GitHub-hosted
 # runners: the repository is public and a fork PR runs code its author wrote, which must
-# never reach the owner's machine. See docs/guides/how-to-setup-ci.md.
+# never reach the owner's machine. Never add a pull_request_target trigger here.
+# test/architecture/ci.test.ts checks both. The self-hosted runners are Docker containers
+# (ops/runner/, `bun run runner:up`); see docs/guides/how-to-setup-ci.md#self-hosted-runners.
 
 jobs:
   lint:
@@ -84,11 +86,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      # In apps/web, where the lockfile's Playwright (exact pin) is installed; at the root
-      # bunx would fetch the latest from npm. --with-deps adds the system libraries.
-      - run: bunx playwright install --with-deps chromium
-        working-directory: apps/web
-      - run: bun run test:components
+      # Chromium for the pinned Playwright; its Ubuntu packages too, unless the runner image
+      # already has them (scripts/ci-playwright-install.ts).
+      - run: bun scripts/ci-playwright-install.ts
+      # ci-reap stops dev servers the run leaves behind, which would keep the step open.
+      - run: bun scripts/ci-reap.ts bun run test:components
 
   # Playwright journeys against `astro dev` with local bindings and a migrated local D1.
   # No Cloudflare account: D1, R2, queues and email are Miniflare's local implementations.
@@ -98,16 +100,16 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
-      - run: bunx playwright install --with-deps chromium
-        working-directory: apps/web
+      - run: bun scripts/ci-playwright-install.ts
       # checkout cleans ignored files, so .dev.vars and the local D1 start fresh on a
       # self-hosted runner too.
       - name: Local env and database
         run: cp apps/web/.dev.vars.example apps/web/.dev.vars && bun run db:migrate:local
       - name: Journeys
-        # Playwright starts and stops the dev server (webServer in playwright.config.ts).
+        # Playwright starts and stops the dev server (webServer in playwright.config.ts);
+        # ci-reap stops a workerd or astro it leaves behind, which would keep the step open.
         timeout-minutes: 10
-        run: bun run test:e2e
+        run: bun scripts/ci-reap.ts bun run test:e2e
       - name: Upload the Playwright report
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -117,11 +119,6 @@ jobs:
             apps/web/playwright-report
             apps/web/test-results
           retention-days: 7
-      # A dev server or workerd left behind by a cancelled run must not keep a
-      # self-hosted runner busy. Only this job's processes: they run in this workspace.
-      - name: Stop leftover dev servers
-        if: always()
-        run: pkill -f "$GITHUB_WORKSPACE/.*(astro|workerd)" || true
 
   build:
     runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}

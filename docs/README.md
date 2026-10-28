@@ -14,7 +14,7 @@ How to set up or do something; read while doing it.
 | [how-to-setup-r2.md](guides/how-to-setup-r2.md)               | you set up file storage, presigned URLs or bucket CORS                                                |
 | [how-to-setup-email.md](guides/how-to-setup-email.md)         | you set up sending, onboard a sender domain, or enable email verification                             |
 | [how-to-setup-mcp.md](guides/how-to-setup-mcp.md)             | you add an MCP tool or connect Claude to an environment                                               |
-| [how-to-setup-ci.md](guides/how-to-setup-ci.md)               | you change CI, set up the deploy workflow and its secrets, or use a self-hosted runner                |
+| [how-to-setup-ci.md](guides/how-to-setup-ci.md)               | you change CI, set up the deploy workflow and its secrets, or run self-hosted runners in Docker       |
 | [how-to-setup-container.md](guides/how-to-setup-container.md) | you run or deploy the Container demo                                                                  |
 | [how-to-define-branding.md](guides/how-to-define-branding.md) | you give a project its own name, logo, accent, fonts or radius                                        |
 | [how-to-use-storybook.md](guides/how-to-use-storybook.md)     | you build or review components in Storybook, write their tests, or change who can open `/_storybook/` |

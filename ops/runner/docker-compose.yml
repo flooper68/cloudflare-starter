@@ -1,0 +1,38 @@
+# One self-hosted runner worker. scripts/runner.ts runs this file once per worker, as its own
+# Compose project (`<repo>-runner-<n>`), with the variables below set; use the scripts, not
+# `docker compose` directly:
+#   bun run runner:up -- --workers 2   # build the image, register new workers, start them
+#   bun run runner:down                # stop all workers (registrations are kept)
+#   bun run runner:logs
+#   bun run runner:remove -- --all     # unregister and delete the workers' volumes
+# Guide: docs/guides/how-to-setup-ci.md#self-hosted-runners.
+#
+# Isolation: no Docker socket, no host paths, no host network. Each worker has its own network
+# namespace, so a dev server a job starts on :4321 never meets the host's or another worker's.
+services:
+  runner:
+    image: ${RUNNER_IMAGE:?set by scripts/runner.ts}
+    # Built locally by scripts/runner.ts; never pulled.
+    pull_policy: never
+    container_name: ${RUNNER_PROJECT:?set by scripts/runner.ts}
+    hostname: ${RUNNER_NAME:?set by scripts/runner.ts}
+    restart: unless-stopped
+    # Reaps processes a job leaves behind (workerd, astro dev, vite).
+    init: true
+    # Chromium (Playwright) needs more than Docker's 64 MB default.
+    shm_size: 2g
+    stop_grace_period: 30s
+    environment:
+      RUNNER_NAME: ${RUNNER_NAME}
+      RUNNER_URL: ${RUNNER_URL:?set by scripts/runner.ts}
+      RUNNER_LABELS: ${RUNNER_LABELS:?set by scripts/runner.ts}
+    labels:
+      ci-runner.repo: ${RUNNER_REPO:?set by scripts/runner.ts}
+      ci-runner.worker: ${RUNNER_WORKER:?set by scripts/runner.ts}
+    volumes:
+      - state:/runner-state
+
+volumes:
+  # The runner's registration (.runner, .credentials, ...); written once by `register`.
+  state:
+    name: ${RUNNER_PROJECT}-state

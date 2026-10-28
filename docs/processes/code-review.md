@@ -45,6 +45,7 @@ If CI is green, these hold; reviewers do not check them manually:
 - One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, every UI component has stories, exact pins, bindings in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 - No AI agent credited in a PR's commits (`scripts/check-attribution.ts` in the CI `lint` job)
+- CI safety for self-hosted runners: every CI job's `runs-on` keeps the fork guard, no workflow uses `pull_request_target`, the deploy only starts by hand, every `actions/cache` step runs only on GitHub-hosted runners, the runner image pins match the repository's Bun, Node and Playwright (`test/architecture/ci.test.ts`)
 
 Automation proves a test exists, not that it is good: reviewers still check that each required test would fail without the change (checklist 4).
 

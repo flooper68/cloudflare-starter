@@ -16,7 +16,8 @@ How the starter is built and the rules every change follows: the parts, how a re
 | UI library      | [packages/ui](../../packages/ui/README.md)       | Components on Radix + Tailwind tokens, brand in `src/brand/`; stories next to components                                                    |
 | Storybook       | [apps/storybook](../../apps/storybook/README.md) | Storybook config; the build is served by the web Worker at `/_storybook/`                                                                   |
 | Container demo  | [apps/container](../../apps/container/README.md) | A separate Worker with a Cloudflare Container, deployed on its own                                                                          |
-| Setup scripts   | `scripts/`                                       | `setup:cloudflare`, `setup:secrets`, `setup:email`, `setup:github-runner`, `doctor`                                                         |
+| Setup scripts   | `scripts/`                                       | `setup:cloudflare`, `setup:secrets`, `setup:email`, `doctor`; `runner:*` for the self-hosted CI runners; `ci-*` helpers used by CI          |
+| CI runner image | `ops/runner/`                                    | Dockerfile, entrypoint and Compose file of the self-hosted GitHub Actions runners (`runner:up`)                                             |
 | CI and deploy   | `.github/workflows/`                             | `ci.yml` (lint, typecheck, test, components, e2e, migrations, build, deploy dry-run) and `deploy.yml` (manual, per environment)             |
 | Agent skills    | `.claude/skills/`                                | `setup-auth`, `setup-d1`, `setup-email`                                                                                                     |
 
