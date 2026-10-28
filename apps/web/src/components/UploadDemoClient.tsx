@@ -8,6 +8,7 @@ import {
   Label,
 } from "@cloudflare-starter/ui";
 import { useState } from "react";
+import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import {
   errorReference,
   UNEXPECTED_ERROR_MESSAGE,
@@ -16,6 +17,8 @@ import { trpc } from "@/lib/trpc/client";
 import { usePresignedUpload } from "@/lib/upload-client";
 
 export function UploadDemoClient() {
+  const { active } = useWorkspace();
+  const workspaceId = active?.id;
   const [fileId, setFileId] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("No file uploaded yet.");
@@ -23,6 +26,7 @@ export function UploadDemoClient() {
 
   const upload = usePresignedUpload(async (file) =>
     trpc.storage.createUpload.mutate({
+      workspaceId,
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
       sizeBytes: file.size,
@@ -41,6 +45,7 @@ export function UploadDemoClient() {
       const result = await upload.upload(file);
       setFileId(result.fileId);
       const signed = await trpc.storage.getDownloadUrl.query({
+        workspaceId,
         fileId: result.fileId,
       });
       setDownloadUrl(signed.url);

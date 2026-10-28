@@ -244,14 +244,55 @@ CREATE INDEX `audit_events_target_idx` ON `audit_events` (`target_type`,`target_
 CREATE INDEX `audit_events_workspace_idx` ON `audit_events` (`workspace_id`,`occurred_at`);--> statement-breakpoint
 CREATE TABLE `files` (
 	`id` text PRIMARY KEY NOT NULL,
+	`workspace_id` text NOT NULL,
 	`bucket` text NOT NULL,
 	`r2_key` text NOT NULL,
 	`filename` text NOT NULL,
 	`content_type` text NOT NULL,
 	`size_bytes` integer NOT NULL,
-	`owner_user_id` text NOT NULL,
+	`created_by` text,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	FOREIGN KEY (`owner_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `files_r2_key_unique` ON `files` (`r2_key`);
+CREATE UNIQUE INDEX `files_r2_key_unique` ON `files` (`r2_key`);--> statement-breakpoint
+CREATE INDEX `files_workspace_id_created_at_idx` ON `files` (`workspace_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `workspace_invitations` (
+	`id` text PRIMARY KEY NOT NULL,
+	`workspace_id` text NOT NULL,
+	`email` text NOT NULL,
+	`role` text NOT NULL,
+	`token_hash` text NOT NULL,
+	`invited_by` text,
+	`expires_at` integer NOT NULL,
+	`accepted_at` integer,
+	`revoked_at` integer,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`invited_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `workspace_invitations_token_hash_unique` ON `workspace_invitations` (`token_hash`);--> statement-breakpoint
+CREATE INDEX `workspace_invitations_email_idx` ON `workspace_invitations` (`email`);--> statement-breakpoint
+CREATE INDEX `workspace_invitations_workspace_id_idx` ON `workspace_invitations` (`workspace_id`);--> statement-breakpoint
+CREATE TABLE `workspace_members` (
+	`workspace_id` text NOT NULL,
+	`user_id` text NOT NULL,
+	`role` text NOT NULL,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`last_active_at` integer,
+	PRIMARY KEY(`workspace_id`, `user_id`),
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `workspace_members_user_id_idx` ON `workspace_members` (`user_id`);--> statement-breakpoint
+CREATE TABLE `workspaces` (
+	`id` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`kind` text NOT NULL,
+	`created_by` text,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
+);

@@ -8,18 +8,20 @@ The web app signs users in with [Better Auth](https://www.better-auth.com). User
 - Server config: [server/auth.ts](../../apps/web/src/server/auth.ts) — sign-in methods from env flags, D1 through the Drizzle adapter, rate limits stored in D1, the `jwt()` and `mcp()` plugins.
 - Middleware: [middleware.ts](../../apps/web/src/middleware.ts) resolves the session cookie into `Astro.locals.user` / `Astro.locals.session` and redirects anonymous `/app/*` requests to `/sign-in`.
 - Browser client: [lib/auth-client.ts](../../apps/web/src/lib/auth-client.ts), with the OAuth provider plugin so a sign-in started by an MCP client continues its authorization.
-- tRPC: `protectedProcedure` refuses requests without a user (`UNAUTHORIZED`).
+- tRPC: `protectedProcedure` refuses requests without a user (`UNAUTHORIZED`); `workspaceProcedure` also resolves the user's workspace and role.
+- Database hooks: `user.create.before` applies the sign-up policy (`enforceSignUpPolicy`), `user.create.after` gives the new user their workspace, `user.delete.before` deletes or leaves their workspaces ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md)).
 
 Pages:
 
-| Route                     | What it does                                                                  |
-| ------------------------- | ----------------------------------------------------------------------------- |
-| `/sign-up`                | Name, email, password; signs in right away, or asks to verify the email first |
-| `/sign-in`                | The enabled methods: email + password and/or "Continue with Google"           |
-| `/forgot-password`        | Sends a reset link (only with email + password on)                            |
-| `/reset-password?token=…` | Sets a new password and revokes other sessions                                |
-| `/consent`                | Lets the user allow or deny an MCP client                                     |
-| `/app/profile`            | Shows the user; changes the password when email + password is on              |
+| Route                     | What it does                                                                                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/sign-up`                | Name, email, password; signs in right away, or asks to verify the email first; refused with a message when sign-up is invite-only and the address is not let in |
+| `/sign-in`                | The enabled methods: email + password and/or "Continue with Google"                                                                                             |
+| `/forgot-password`        | Sends a reset link (only with email + password on)                                                                                                              |
+| `/reset-password?token=…` | Sets a new password and revokes other sessions                                                                                                                  |
+| `/consent`                | Lets the user allow or deny an MCP client                                                                                                                       |
+| `/invite/<token>`         | Shows a workspace invitation and accepts it (signing in or up first)                                                                                            |
+| `/app/profile`            | Shows the user; changes the password when email + password is on                                                                                                |
 
 ## Secrets
 
@@ -50,6 +52,10 @@ Plain vars, per environment in `apps/web/wrangler.jsonc` (`vars`) and in `.dev.v
 Google is on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. With Google only, `/sign-up` offers just the Google button; the first sign-in creates the account.
 
 At least one method must be on. If none is, or verification is required without email, the app refuses to start with an error naming the setting.
+
+## Who May Sign Up
+
+`SIGN_UP` (`open` or `invite`), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL` and `WORKSPACE_MODE` are vars per environment (the first two required, none shipped: a deploy refuses to start until they are set), set with `bun run setup:auth` (`--dry-run` first). A bootstrap admin needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` unless email + password is off. With `SIGN_UP=invite` only invitees, the listed domains and the bootstrap admin can create an account, by any method: a refused Google sign-up lands on `/sign-in?error=SIGN_UP_INVITE_ONLY` with a message. Details, modes and invitations: [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
 
 ## Auth Mail
 
@@ -82,5 +88,5 @@ Replace `accounts.schema.ts` with the result (keep its header comment), delete `
 
 ## Not Included
 
-- Roles or invite-only sign-up. ServiceHub shows one way: a `role` additional field and a `databaseHooks.user.create.before` check.
+- Platform-wide admin roles, API keys, account-deletion UI: not built yet. Workspace roles are in [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
 - Magic links, passkeys, two-factor: Better Auth plugins, added the same way as above.

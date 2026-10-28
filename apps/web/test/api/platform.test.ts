@@ -297,7 +297,7 @@ describe("platform edge (trace context and error references)", () => {
     );
     const reports = captureReports();
     const requestContext = testRequestContext();
-    const caller = callerFor(user, requestContext);
+    const caller = callerFor(user, env as AppEnv, requestContext);
     const context = { errors: { capture: vi.fn() }, requestContext };
     const handler = createMcpHandler(() => buildMcpServer(caller, context));
     const response = await handler.fetch(

@@ -10,6 +10,7 @@ How to set up or do something; read while doing it.
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | [how-to-setup-web-app.md](guides/how-to-setup-web-app.md)                 | you run the app locally for the first time, deploy it, or work on queues and cron                                                      |
 | [how-to-setup-auth.md](guides/how-to-setup-auth.md)                       | you set secrets, change sign-in methods, add Google, or regenerate the auth tables                                                     |
+| [how-to-configure-workspaces.md](guides/how-to-configure-workspaces.md)   | you choose the workspace mode, who may sign up, invitations, replace the roles or strip the workspace UI                               |
 | [how-to-setup-d1.md](guides/how-to-setup-d1.md)                           | you create the databases, change the schema, or apply migrations                                                                       |
 | [how-to-setup-r2.md](guides/how-to-setup-r2.md)                           | you set up file storage, presigned URLs or bucket CORS                                                                                 |
 | [how-to-setup-email.md](guides/how-to-setup-email.md)                     | you set up sending, onboard a sender domain, or enable email verification                                                              |

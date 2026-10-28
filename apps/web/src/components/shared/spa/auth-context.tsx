@@ -7,9 +7,12 @@ export interface AuthUser {
   readonly image: string | null;
 }
 
+/** The page's bootstrap JSON (`__APP_AUTH__` in pages/app/[...path].astro). */
 export interface AuthContextValue {
   readonly user: AuthUser | null;
   readonly methods: { readonly emailPassword: boolean };
+  /** WORKSPACE_MODE: which workspace UI the app shows (switcher, members). */
+  readonly workspace: { readonly mode: "personal" | "single" | "multi" };
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);

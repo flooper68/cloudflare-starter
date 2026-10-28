@@ -7,6 +7,7 @@ See [docs/guides/how-to-setup-web-app.md](../../docs/guides/how-to-setup-web-app
 Related guides:
 
 - [docs/guides/how-to-setup-auth.md](../../docs/guides/how-to-setup-auth.md) — Better Auth, optional Google sign-in
+- [docs/guides/how-to-configure-workspaces.md](../../docs/guides/how-to-configure-workspaces.md) — workspace modes, sign-up policy, invitations, roles
 - [docs/guides/how-to-setup-d1.md](../../docs/guides/how-to-setup-d1.md) — D1 database and migrations
 - [docs/guides/how-to-setup-r2.md](../../docs/guides/how-to-setup-r2.md) — R2 binding and presigned URLs
 - [docs/guides/how-to-setup-email.md](../../docs/guides/how-to-setup-email.md) — Cloudflare Email Service
@@ -21,6 +22,7 @@ Every on-demand request gets a request context in [src/middleware.ts](src/middle
 Public, SSR:
 
 - `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/consent`
+- `/invite/:token` (accept a workspace invitation)
 - `/api/hello` (REST example)
 - `/api/trpc/*` (typed API)
 - `/api/auth/*` (Better Auth) and `/.well-known/*` (OAuth discovery)
@@ -29,7 +31,7 @@ Public, SSR:
 
 Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
 
-- `/app/dashboard`, `/app/profile`
+- `/app/dashboard`, `/app/profile`, `/app/members` (single and multi mode)
 - `/app/upload-demo`, `/app/queue-demo`, `/app/email-demo`
 
 Direct loads to `/app/*` hit Astro and middleware first; subsequent navigation stays inside the SPA.

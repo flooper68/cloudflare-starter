@@ -22,6 +22,12 @@ function context(overrides: Partial<Context> = {}): Context {
       AUTH_EMAIL_PASSWORD: true,
       AUTH_REQUIRE_EMAIL_VERIFICATION: false,
       APP_ENV: "local",
+      workspaces: {
+        mode: "multi",
+        signUp: "open",
+        signUpDomains: [],
+        bootstrapAdminEmail: null,
+      },
     },
     email: { enabled: false, value: null, reason: "Email is not configured" },
     r2: { enabled: false, value: null, reason: "R2 is not configured" },
@@ -40,6 +46,7 @@ function context(overrides: Partial<Context> = {}): Context {
     },
     logger: noopLogger,
     errors: createMemoryErrorReporter(),
+    bucket: {} as R2Bucket,
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },
     ...overrides,
   };
@@ -91,9 +98,20 @@ describe("MCP server", () => {
 
   it("calls tools whose input fields are all optional with no arguments", async () => {
     const findMany = vi.fn().mockResolvedValue([]);
+    // resolveActor's select(...).from(...).where(...).orderBy(...).limit(1)
+    const membership = [{ workspaceId: "ws-1", role: "owner" }];
+    const chain = {
+      from: () => chain,
+      where: () => chain,
+      orderBy: () => chain,
+      limit: () => Promise.resolve(membership),
+    };
     const { body } = await rpc(
       context({
-        db: { query: { files: { findMany } } } as unknown as Context["db"],
+        db: {
+          select: () => chain,
+          query: { files: { findMany } },
+        } as unknown as Context["db"],
       }),
       "tools/call",
       { name: "list_files", arguments: {} }

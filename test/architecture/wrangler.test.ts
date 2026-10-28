@@ -8,6 +8,19 @@ import { describe, expect, it } from "vitest";
 
 import { read } from "./repo";
 
+/**
+ * Vars a setup script writes per environment, with the reason they may differ between
+ * environments (or be missing until the script has run for one).
+ */
+const SETUP_WRITTEN_VARS: Readonly<Record<string, string>> = {
+  EMAIL_FROM: "written by setup:email once a sender domain is onboarded",
+  WORKSPACE_MODE:
+    "written by setup:auth; deliberately absent until the owner chooses (no default)",
+  SIGN_UP: "written by setup:auth; deliberately absent until the owner chooses",
+  SIGN_UP_DOMAINS: "written by setup:auth",
+  BOOTSTRAP_ADMIN_EMAIL: "written by setup:auth",
+};
+
 type Block = Record<string, unknown>;
 const config = parse(read("apps/web/wrangler.jsonc")) as Block & {
   env?: Record<string, Block>;
@@ -29,7 +42,7 @@ function bindings(block: Block): Record<string, string[]> {
     queueConsumers: (queues.consumers ?? []).map(() => "consumer"),
     crons: block.triggers ? ["crons"] : [],
     vars: Object.keys((block.vars as Block | undefined) ?? {})
-      .filter((name) => name !== "EMAIL_FROM")
+      .filter((name) => !(name in SETUP_WRITTEN_VARS))
       .sort(),
   };
 }

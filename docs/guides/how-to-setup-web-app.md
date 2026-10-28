@@ -48,7 +48,7 @@ bun run doctor
 bun run dev:web
 ```
 
-Open `http://localhost:4321`, create an account at `/sign-up`, and you land on `/app/dashboard`. Blank values in `.dev.vars` count as unset.
+Open `http://localhost:4321`, create an account at `/sign-up`, and you land on `/app/dashboard` in your personal workspace (multi mode, open sign-up, from `.dev.vars`; [how-to-configure-workspaces.md](./how-to-configure-workspaces.md)). Blank values in `.dev.vars` count as unset.
 
 Queue and cron run in the same dev server:
 
@@ -74,7 +74,14 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run setup:email --domain example.com --env production
    ```
 
-4. Migrate, build and deploy:
+4. Workspaces and sign-up: the starter ships no choice, and the Worker refuses to start without one ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md)):
+
+   ```bash
+   bun run setup:auth --env production --dry-run
+   bun run setup:auth --env production
+   ```
+
+5. Migrate, build and deploy:
 
    ```bash
    cd apps/web
@@ -82,7 +89,7 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run deploy:production
    ```
 
-5. Secrets (asks for each one, sends them on stdin; this deploys a new version):
+6. Secrets (asks for each one, sends them on stdin; this deploys a new version):
 
    ```bash
    bun run setup:secrets --env production

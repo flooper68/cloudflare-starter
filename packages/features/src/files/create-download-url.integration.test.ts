@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addMember,
   fixedClock,
   seedUser,
+  seedWorkspace,
   sequentialIds,
   testDb,
 } from "../../test/fixtures";
@@ -18,29 +20,27 @@ const r2 = {
 };
 
 describe("createDownloadUrl", () => {
-  it("signs a GET URL for the owner's file only", async () => {
+  it("signs a GET URL for members of the file's workspace only", async () => {
     const owner = await seedUser();
+    const colleague = await seedUser("Grace Hopper");
     const stranger = await seedUser("Alan Turing");
+    const actor = await seedWorkspace(owner.id, { id: "ws-acme" });
+    const member = await addMember("ws-acme", colleague.id);
+    const elsewhere = await seedWorkspace(stranger.id, { id: "ws-other" });
     const file = await createFileRecord(
       { db: testDb(), clock: fixedClock(), ids: sequentialIds() },
-      {
-        filename: "report.pdf",
-        mimeType: "application/pdf",
-        sizeBytes: 10,
-        ownerUserId: owner.id,
-      }
+      actor,
+      { filename: "report.pdf", mimeType: "application/pdf", sizeBytes: 10 }
     );
 
-    const { url } = await createDownloadUrl(
-      { db: testDb(), r2 },
-      { fileId: file.fileId, ownerUserId: owner.id }
-    );
+    const { url } = await createDownloadUrl({ db: testDb(), r2 }, member, {
+      fileId: file.fileId,
+    });
     expect(new URL(url).pathname).toBe(`/test-bucket/${file.r2Key}`);
     await expect(
-      createDownloadUrl(
-        { db: testDb(), r2 },
-        { fileId: file.fileId, ownerUserId: stranger.id }
-      )
+      createDownloadUrl({ db: testDb(), r2 }, elsewhere, {
+        fileId: file.fileId,
+      })
     ).rejects.toBeInstanceOf(FileNotFoundError);
   });
 
@@ -48,7 +48,8 @@ describe("createDownloadUrl", () => {
     await expect(
       createDownloadUrl(
         { db: testDb(), r2: null },
-        { fileId: "x", ownerUserId: "y" }
+        { userId: "u", workspaceId: "w", role: "owner" },
+        { fileId: "x" }
       )
     ).rejects.toBeInstanceOf(PresignedUrlsUnavailableError);
   });

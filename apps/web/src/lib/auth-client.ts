@@ -1,6 +1,10 @@
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { createAuthClient } from "better-auth/react";
 
+import { authErrorForCode, nextPath } from "./auth-links";
+
+export { nextPath } from "./auth-links";
+
 /**
  * Better Auth client for the browser; talks to `/api/auth/*` on the same origin.
  * The OAuth provider plugin forwards the signed authorization query when sign-in or
@@ -12,17 +16,21 @@ export const authClient = createAuthClient({
 });
 
 export function authErrorMessage(
-  error: { readonly message?: string } | null | undefined,
+  error:
+    | { readonly message?: string; readonly code?: string }
+    | null
+    | undefined,
   fallback = "Something went wrong"
 ): string {
-  return error?.message || fallback;
+  return authErrorForCode(error?.code) ?? (error?.message || fallback);
 }
 
 /**
  * Where to go after a successful sign-in: the URL Better Auth returns when the
- * sign-in continues an OAuth authorization (MCP clients), else the app.
+ * sign-in continues an OAuth authorization (MCP clients), else `?next=`, else the app.
  */
-export function afterSignIn(data: unknown): string {
+export function afterSignIn(data: unknown, search = ""): string {
   const url = (data as { url?: unknown } | null)?.url;
-  return typeof url === "string" && url ? url : "/app/dashboard";
+  if (typeof url === "string" && url) return url;
+  return nextPath(search) ?? "/app/dashboard";
 }

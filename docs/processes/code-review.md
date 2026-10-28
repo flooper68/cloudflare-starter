@@ -46,6 +46,7 @@ If CI is green, these hold; reviewers do not check them manually:
 - `audit_events` append-only (only `recordAuditEvent` inserts, only `purgeAuditEvents` deletes) and every state-changing use case of an audited feature records an event or is exempt (`test/architecture/audit-coverage.test.ts`)
 - Every var and secret of `.dev.vars.example` and the top-level `vars` pinned for the API tests (`test/architecture/api-test-bindings.test.ts`)
 - One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, a contract test per platform adapter, every UI component has stories, exact pins, bindings in all environments, the same `observability` and `version_metadata` in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
+- Workspace scope: `workspace_id` on every data table, `meta.scope: "workspace"` on every procedure of the workspace routers, an `expectCrossWorkspaceDenied` API test per workspace procedure, `actor: Actor` as the second parameter of workspace use cases (`test/architecture/workspace-scope.test.ts`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 - No AI agent credited in a PR's commits (`scripts/check-attribution.ts` in the CI `lint` job)
 - CI safety for self-hosted runners: every CI job's `runs-on` keeps the fork guard, no workflow uses `pull_request_target`, the deploy only starts by hand, every `actions/cache` step runs only on GitHub-hosted runners, the runner image pins match the repository's Bun, Node and Playwright (`test/architecture/ci.test.ts`)
@@ -69,6 +70,7 @@ Automation proves a test exists, not that it is good: reviewers still check that
 ### 2. Security and auth
 
 - [ ] Every procedure is `protectedProcedure` unless deliberately public, and checks ownership of the records it touches.
+- [ ] Data is workspace-scoped (`workspace_id` on the table, `workspaceProcedure`, queries filtered by `actor.workspaceId`); the action is checked with `can()`/`requirePermission`; new actions are added to the permission map with a domain test ([Tenancy and authorization](../architecture/overview.md#tenancy-and-authorization)).
 - [ ] Every HTTP route checks the session; state-changing routes check `Origin` (Astro `checkOrigin` is off); tRPC POSTs require `x-trpc-source`.
 - [ ] Secrets never appear in code, config, command arguments, logs, errors or tool results.
 - [ ] A state change records an audit event (`recordAuditEvent` with an action from the catalog, after the change succeeded), or the use case is in `AUDIT_EXEMPT` with a reason; audit metadata holds identifiers and the values a reviewer needs, never credentials or whole request bodies ([how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md)).

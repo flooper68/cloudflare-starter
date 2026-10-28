@@ -20,7 +20,7 @@ Each project defines user-facing targets and records them in this section (repla
 | Server latency per procedure | `storage.listFiles`: p95 under 200 ms at 10 000 files per user, measured in production     |
 | Core Web Vitals per key page | `/app` dashboard: LCP under 2.5 s, INP under 200 ms, CLS under 0.1 at p75, from field data |
 | Client JS per page           | `/app/*`: under 200 KB gzip of JS on first load; marketing pages: under 50 KB              |
-| D1 work per use case         | `listOwnedFiles`: 1 query, rows read at most `limit` (index on owner and date)             |
+| D1 work per use case         | `listWorkspaceFiles`: 1 query, rows read at most `limit` (index on workspace and date)     |
 
 Project targets:
 

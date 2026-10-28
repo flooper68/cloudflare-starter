@@ -1,12 +1,17 @@
 import type { Database } from "../database";
+import type { Actor } from "../workspaces";
 import { PresignedUrlsUnavailableError } from "./domain";
-import { findOwnedFile } from "./find-owned-file";
+import { findWorkspaceFile } from "./find-workspace-file";
 import { presignR2Url, type R2Config } from "./r2-presign";
 
-/** Presigned path: a GET URL (valid 1 hour) for one of the user's files. */
+/**
+ * Presigned path: a GET URL (valid 1 hour) for a file of the actor's workspace. The URL
+ * is signed only after `findWorkspaceFile` found the file in that workspace.
+ */
 export async function createDownloadUrl(
   deps: { readonly db: Database; readonly r2: R2Config | null },
-  input: { readonly fileId: string; readonly ownerUserId: string }
+  actor: Actor,
+  input: { readonly fileId: string }
 ): Promise<{ readonly url: string }> {
   const r2 = deps.r2;
   if (!r2)
@@ -14,6 +19,6 @@ export async function createDownloadUrl(
       "R2 presigned URLs are not configured"
     );
 
-  const file = await findOwnedFile(deps, input);
+  const file = await findWorkspaceFile(deps, actor, input);
   return { url: await presignR2Url(r2, file.r2Key, { method: "GET" }) };
 }

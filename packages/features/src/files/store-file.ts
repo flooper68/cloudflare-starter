@@ -2,13 +2,15 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "../database";
 import type { Clock, Ids } from "../kernel";
+import type { Actor } from "../workspaces";
 import { type CreatedFile, createFileRecord } from "./create-file-record";
 import type { UploadInput } from "./domain";
 import { files } from "./files.schema";
 
 /**
- * Binding path: stores the bytes through the Worker in `FILES` and records the file.
- * If the upload fails the record is removed, so the table and the bucket stay in step.
+ * Binding path: stores the bytes through the Worker in `FILES` and records the file in
+ * the actor's workspace. If the upload fails the record is removed, so the table and the
+ * bucket stay in step.
  */
 export async function storeFile(
   deps: {
@@ -17,12 +19,10 @@ export async function storeFile(
     readonly clock: Clock;
     readonly ids: Ids;
   },
-  input: UploadInput & {
-    readonly ownerUserId: string;
-    readonly body: ArrayBuffer;
-  }
+  actor: Actor,
+  input: UploadInput & { readonly body: ArrayBuffer }
 ): Promise<CreatedFile> {
-  const file = await createFileRecord(deps, input);
+  const file = await createFileRecord(deps, actor, input);
 
   try {
     await deps.bucket.put(file.r2Key, input.body, {

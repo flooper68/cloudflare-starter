@@ -2,7 +2,7 @@ import {
   createDownloadUrl,
   createPresignedUpload,
   formatTraceparent,
-  listOwnedFiles,
+  listWorkspaceFiles,
   sendHello,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
@@ -11,13 +11,20 @@ import { z } from "zod";
 
 import { displayName } from "@/lib/user";
 
-import { protectedProcedure, publicProcedure, router } from "./init";
+import {
+  protectedProcedure,
+  publicProcedure,
+  router,
+  workspaceProcedure,
+} from "./init";
 import { requireFeature } from "./require-feature";
+import { workspaceRouter } from "./workspace-router";
 
 /**
  * Procedures are adapters: validate input, check auth, call one use case, return its
  * result. Business rules live in packages/features. Every procedure has an MCP tool
- * (server/mcp/tools.ts).
+ * (server/mcp/tools.ts). Data belongs to a workspace: data procedures are
+ * `workspaceProcedure`s and pass `ctx.actor` to the use case.
  */
 export const appRouter = router({
   health: router({
@@ -28,32 +35,31 @@ export const appRouter = router({
     })),
   }),
 
+  workspace: workspaceRouter,
+
   storage: router({
-    listFiles: protectedProcedure
+    listFiles: workspaceProcedure
       .input(z.object({ limit: z.number().int().min(1).max(100).optional() }))
       .query(async ({ ctx, input }) => ({
-        items: await listOwnedFiles(ctx, {
-          ownerUserId: ctx.user.id,
-          limit: input.limit,
-        }),
+        items: await listWorkspaceFiles(ctx, ctx.actor, { limit: input.limit }),
       })),
 
-    createUpload: protectedProcedure
+    createUpload: workspaceProcedure
       .input(uploadInputSchema)
       .mutation(({ ctx, input }) =>
-        createPresignedUpload(
-          { ...ctx, r2: ctx.r2.value },
-          { ...input, ownerUserId: ctx.user.id }
-        )
+        createPresignedUpload({ ...ctx, r2: ctx.r2.value }, ctx.actor, {
+          filename: input.filename,
+          mimeType: input.mimeType,
+          sizeBytes: input.sizeBytes,
+        })
       ),
 
-    getDownloadUrl: protectedProcedure
+    getDownloadUrl: workspaceProcedure
       .input(z.object({ fileId: z.uuid() }))
       .query(({ ctx, input }) =>
-        createDownloadUrl(
-          { ...ctx, r2: ctx.r2.value },
-          { fileId: input.fileId, ownerUserId: ctx.user.id }
-        )
+        createDownloadUrl({ ...ctx, r2: ctx.r2.value }, ctx.actor, {
+          fileId: input.fileId,
+        })
       ),
   }),
 

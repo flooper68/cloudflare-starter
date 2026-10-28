@@ -1,6 +1,14 @@
 import { env } from "cloudflare:workers";
 
-import { createDatabase, type Database, type RequestContext } from "../src";
+import {
+  type Actor,
+  createDatabase,
+  createInvitation,
+  type Database,
+  type RequestContext,
+  type Role,
+  type WorkspaceSettings,
+} from "../src";
 
 /** The real Drizzle client over the test D1. */
 export function testDb(): Database {
@@ -49,4 +57,114 @@ export function testRequestContext(
     environment: "local",
     ...overrides,
   };
+}
+
+/** Inserts a workspace with `ownerId` as its owner and returns the owner's actor. */
+export async function seedWorkspace(
+  ownerId: string,
+  options: {
+    readonly id?: string;
+    readonly name?: string;
+    readonly kind?: "personal" | "shared";
+  } = {}
+): Promise<Actor> {
+  const id = options.id ?? `ws-${ownerId}-${options.name ?? "acme"}`;
+  await env.DB.prepare(
+    "INSERT INTO workspaces (id, name, kind, created_by) VALUES (?, ?, ?, ?)"
+  )
+    .bind(
+      id,
+      options.name ?? "Acme Robotics",
+      options.kind ?? "shared",
+      ownerId
+    )
+    .run();
+  return addMember(id, ownerId, "owner");
+}
+
+/** Adds `userId` to a workspace with `role` and returns their actor there. */
+export async function addMember(
+  workspaceId: string,
+  userId: string,
+  role: Role = "member"
+): Promise<Actor> {
+  await env.DB.prepare(
+    "INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, ?)"
+  )
+    .bind(workspaceId, userId, role)
+    .run();
+  return { userId, workspaceId, role };
+}
+
+/** Workspace settings for a use case, multi mode with open sign-up unless overridden. */
+export function settings(
+  overrides: Partial<WorkspaceSettings> = {}
+): WorkspaceSettings {
+  return {
+    mode: "multi",
+    signUp: "open",
+    signUpDomains: [],
+    bootstrapAdminEmail: null,
+    ...overrides,
+  };
+}
+
+/** Rows of a query, for assertions on what was written. */
+export async function rows(query: string, ...params: unknown[]) {
+  const { results } = await env.DB.prepare(query)
+    .bind(...params)
+    .all();
+  return results;
+}
+
+/** Invites `email` into the actor's workspace through the real use case; returns the token. */
+export async function invite(
+  actor: Actor,
+  email: string,
+  role: Role = "member",
+  options: { readonly at?: string; readonly ids?: string } = {}
+) {
+  const created = await createInvitation(
+    {
+      db: testDb(),
+      clock: fixedClock(options.at),
+      ids: sequentialIds(
+        options.ids ??
+          `${Math.random().toString(16).slice(2, 10).padEnd(8, "0")}-0000-4000-8000-`
+      ),
+      email: null,
+      requestContext: testRequestContext(),
+    },
+    actor,
+    { mode: "multi", email, role, appUrl: "http://localhost:4321" }
+  );
+  return { ...created, token: created.link.split("/invite/")[1] as string };
+}
+
+let depsRun = 0;
+
+/** Dependencies of a workspace use case: real D1, fixed clock, fresh ids, a request context. */
+export function useCaseDeps(at?: string) {
+  depsRun += 1;
+  return {
+    db: testDb(),
+    clock: fixedClock(at),
+    ids: sequentialIds(`${String(depsRun).padStart(8, "0")}-1111-4000-8000-`),
+    requestContext: testRequestContext(),
+  };
+}
+
+/** Audit events recorded for a workspace, oldest first: action, target and metadata. */
+export async function auditTrail(workspaceId: string) {
+  const { results } = await env.DB.prepare(
+    "SELECT action, actor_user_id AS actor, target_type || ':' || target_id AS target, metadata FROM audit_events WHERE workspace_id = ? ORDER BY occurred_at, rowid"
+  )
+    .bind(workspaceId)
+    .all<{
+      action: string;
+      actor: string | null;
+      target: string;
+      metadata: string;
+    }>();
+  return results.map((row) => ({ ...row, metadata: JSON.parse(row.metadata) }));
 }

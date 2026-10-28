@@ -292,6 +292,11 @@ export interface SidebarWorkspaceSwitcherProps {
   readonly children?: ReactNode;
   /** Buttons on the right of the switcher (search, new issue); stacked when collapsed. */
   readonly actions?: ReactNode;
+  /**
+   * Called when the menu closes, before focus returns to the trigger; `preventDefault()`
+   * keeps focus where a menu item put it (a dialog it opened).
+   */
+  readonly onCloseAutoFocus?: (event: Event) => void;
 }
 
 /** Workspace logo and name; opens a menu of workspaces and account actions. */
@@ -300,6 +305,7 @@ export function SidebarWorkspaceSwitcher({
   logo = <LogoMark className="size-5" />,
   children,
   actions,
+  onCloseAutoFocus,
 }: SidebarWorkspaceSwitcherProps) {
   const { collapsed } = useAppShell();
   const trigger = (
@@ -337,6 +343,7 @@ export function SidebarWorkspaceSwitcher({
           <DropdownMenuPrimitive.Portal>
             <DropdownMenuPrimitive.Content
               align="start"
+              onCloseAutoFocus={onCloseAutoFocus}
               sideOffset={6}
               className={cn(overlayContent, "min-w-56 p-1")}
             >

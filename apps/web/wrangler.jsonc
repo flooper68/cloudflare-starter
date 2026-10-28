@@ -20,6 +20,14 @@
   // Plain vars. Secrets (APP_URL, BETTER_AUTH_SECRET, ...) are set with `bun run setup:secrets`.
   // EMAIL_FROM is added per environment by `bun run setup:email`.
   // LOG_SINK and ERROR_REPORTER are required (no defaults): workers-logs | none.
+  // Workspaces and sign-up are deliberately NOT set here: the Worker refuses to start
+  // until `bun run setup:auth --env <env>` writes the project's choice into each
+  // environment's vars (docs/guides/how-to-configure-workspaces.md):
+  // - WORKSPACE_MODE: personal | single | multi (required)
+  // - SIGN_UP: open | invite (required)
+  // - SIGN_UP_DOMAINS: comma list of email domains that may sign up without an invitation
+  // - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
+  // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
   "vars": {
     "APP_ENV": "develop",
     "LOG_SINK": "workers-logs",

@@ -2,6 +2,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { AuthProvider, useAuth } from "@/components/shared/spa/auth-context";
+import { WorkspaceProvider } from "@/components/shared/spa/workspace-context";
 import { createAppRouter } from "./routes";
 
 function AppSpaRouter() {
@@ -18,7 +19,11 @@ function AppSpaRouter() {
     return null;
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <WorkspaceProvider>
+      <RouterProvider router={router} />
+    </WorkspaceProvider>
+  );
 }
 
 export function AppSpa() {

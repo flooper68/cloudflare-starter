@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   fixedClock,
   seedUser,
+  seedWorkspace,
   sequentialIds,
   testDb,
 } from "../../test/fixtures";
@@ -21,33 +22,39 @@ const input = { filename: "video.mp4", mimeType: "video/mp4", sizeBytes: 4096 };
 describe("createPresignedUpload", () => {
   it("records the file and returns a signed PUT URL for its key", async () => {
     const owner = await seedUser();
+    const actor = await seedWorkspace(owner.id);
     const result = await createPresignedUpload(
       { db: testDb(), clock: fixedClock(), ids: sequentialIds(), r2 },
-      { ...input, ownerUserId: owner.id }
+      actor,
+      input
     );
 
     const url = new URL(result.uploadUrl);
     expect(url.host).toBe("test-account.r2.cloudflarestorage.com");
     expect(url.pathname).toBe(`/test-bucket/${result.r2Key}`);
     expect(url.searchParams.get("X-Amz-Signature")).toBeTruthy();
-    const row = await env.DB.prepare("SELECT id FROM files WHERE id = ?")
+    const row = await env.DB.prepare(
+      "SELECT workspace_id FROM files WHERE id = ?"
+    )
       .bind(result.fileId)
       .first();
-    expect(row).toEqual({ id: result.fileId });
+    expect(row).toEqual({ workspace_id: actor.workspaceId });
   });
 
   it("fails without R2 credentials and records nothing", async () => {
     const owner = await seedUser("Ada Lovelace");
+    const actor = await seedWorkspace(owner.id);
     await expect(
       createPresignedUpload(
         { db: testDb(), clock: fixedClock(), ids: sequentialIds(), r2: null },
-        { ...input, ownerUserId: owner.id }
+        actor,
+        input
       )
     ).rejects.toBeInstanceOf(PresignedUrlsUnavailableError);
     const count = await env.DB.prepare(
-      "SELECT count(*) AS n FROM files WHERE owner_user_id = ?"
+      "SELECT count(*) AS n FROM files WHERE workspace_id = ?"
     )
-      .bind(owner.id)
+      .bind(actor.workspaceId)
       .first<{ n: number }>();
     expect(count?.n).toBe(0);
   });

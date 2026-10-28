@@ -1,15 +1,18 @@
-import type {
-  Clock,
-  Database,
-  EmailService,
-  ErrorReporter,
-  Ids,
-  Logger,
-  QueueMessage,
-  R2Config,
-  RequestContext,
+import {
+  type Actor,
+  type Clock,
+  type Database,
+  type EmailService,
+  type ErrorReporter,
+  type Ids,
+  type Logger,
+  type QueueMessage,
+  type R2Config,
+  type RequestContext,
+  resolveActor,
 } from "@cloudflare-starter/features";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { z } from "zod";
 
 import type { FeatureConfig, RequiredAppConfig } from "@/lib/config";
 
@@ -28,6 +31,8 @@ export interface Context {
   /** Logger bound to the request context. */
   readonly logger: Logger;
   readonly errors: ErrorReporter;
+  /** The FILES binding, for use cases that delete objects. */
+  readonly bucket: R2Bucket;
   readonly user: {
     readonly id: string;
     readonly email: string;
@@ -35,27 +40,39 @@ export interface Context {
   } | null;
 }
 
-const t = initTRPC.context<Context>().create({
-  /**
-   * Internal errors carry `data.reference` (the trace id) so users can quote it, and a
-   * generic message: the cause (a driver error, a stack frame) goes to the error report,
-   * never to the client.
-   */
-  errorFormatter({ shape, error, ctx }) {
-    const internal = error.code === "INTERNAL_SERVER_ERROR";
-    // tRPC adds `stack` whenever NODE_ENV is not "production", which includes built
-    // Workers; stacks belong in error reports, never in responses.
-    const { stack: _stack, ...data } = shape.data;
-    return {
-      ...shape,
-      message: internal ? "Internal error" : shape.message,
-      data: {
-        ...data,
-        reference: internal && ctx ? ctx.requestContext.traceId : undefined,
-      },
-    };
-  },
-});
+/**
+ * Procedure metadata. `scope: "workspace"` marks a procedure that acts inside one
+ * workspace (set by `workspaceProcedure`); test/architecture/workspace-scope.test.ts
+ * requires it on every procedure of the workspace-scoped routers.
+ */
+export interface Meta {
+  readonly scope?: "workspace";
+}
+
+const t = initTRPC
+  .context<Context>()
+  .meta<Meta>()
+  .create({
+    /**
+     * Internal errors carry `data.reference` (the trace id) so users can quote it, and a
+     * generic message: the cause (a driver error, a stack frame) goes to the error report,
+     * never to the client.
+     */
+    errorFormatter({ shape, error, ctx }) {
+      const internal = error.code === "INTERNAL_SERVER_ERROR";
+      // tRPC adds `stack` whenever NODE_ENV is not "production", which includes built
+      // Workers; stacks belong in error reports, never in responses.
+      const { stack: _stack, ...data } = shape.data;
+      return {
+        ...shape,
+        message: internal ? "Internal error" : shape.message,
+        data: {
+          ...data,
+          reference: internal && ctx ? ctx.requestContext.traceId : undefined,
+        },
+      };
+    },
+  });
 
 /** Reports unexpected failures (anything that stays INTERNAL_SERVER_ERROR) once, with context. */
 const reportInternalErrors = t.middleware(async ({ ctx, next, path, type }) => {
@@ -92,3 +109,48 @@ export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
 
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
+
+/**
+ * The input every workspace procedure accepts: the workspace to act in. Without it the
+ * user's default applies (their only workspace in personal and single mode, the one they
+ * switched to last in multi mode), the same for the web app and MCP clients.
+ */
+export const workspaceInput = z.object({
+  workspaceId: z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe(
+      "The workspace to act in (see list_workspaces). Omit to use the user's current workspace."
+    ),
+});
+
+/**
+ * A protected procedure inside one workspace: resolves `ctx.actor` (the user, the
+ * workspace and their role there) before the procedure runs. A workspace the user is not
+ * a member of is NOT_FOUND. Use cases take the actor and check `can()`.
+ */
+export const workspaceProcedure = protectedProcedure
+  .meta({ scope: "workspace" })
+  .input(workspaceInput)
+  .use(async ({ ctx, input, next }) => {
+    const actor: Actor = await resolveActor(ctx, {
+      userId: ctx.user.id,
+      mode: ctx.config.workspaces.mode,
+      workspaceId: input.workspaceId,
+    });
+    // Logs and error reports of this procedure name the workspace it acted in.
+    const requestContext = {
+      ...ctx.requestContext,
+      workspaceId: actor.workspaceId,
+    };
+    return next({
+      ctx: {
+        ...ctx,
+        actor,
+        requestContext,
+        logger: ctx.logger.withContext(requestContext),
+      },
+    });
+  });

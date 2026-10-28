@@ -1,18 +1,27 @@
 import { env } from "cloudflare:workers";
 import {
+  type Actor,
   randomIds,
+  resolveActor,
   storeFile,
   systemClock,
   uploadInputSchema,
+  WorkspaceNotFoundError,
 } from "@cloudflare-starter/features";
 import type { APIRoute } from "astro";
 
+import { buildRequiredConfig } from "@/lib/env";
 import { getDb } from "@/server/db";
-import { httpAttributes, internalErrorResponse } from "@/server/http";
+import {
+  httpAttributes,
+  internalErrorResponse,
+  problemResponse,
+} from "@/server/http";
 
 /**
- * Upload through the Worker into the `FILES` R2 binding (multipart field `file`).
- * Binary transfer stays a plain HTTP route; tRPC carries JSON only.
+ * Upload through the Worker into the `FILES` R2 binding (multipart field `file`), into
+ * the workspace named by `?workspaceId=` or the user's current one. Binary transfer
+ * stays a plain HTTP route; tRPC carries JSON only.
  */
 export const POST: APIRoute = async ({ locals, request, url }) => {
   // Astro's checkOrigin is off for the OAuth token endpoint; check it here.
@@ -41,18 +50,41 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
     );
   }
 
+  const db = getDb(env);
+  let actor: Actor;
   try {
-    const stored = await storeFile(
-      { db: getDb(env), bucket: env.FILES, clock: systemClock, ids: randomIds },
+    actor = await resolveActor(
+      { db },
       {
-        ...input.data,
-        ownerUserId: locals.user.id,
-        body: await file.arrayBuffer(),
+        userId: locals.user.id,
+        mode: buildRequiredConfig(env).workspaces.mode,
+        workspaceId: url.searchParams.get("workspaceId") ?? undefined,
       }
     );
+  } catch (error) {
+    if (error instanceof WorkspaceNotFoundError) {
+      return problemResponse(
+        404,
+        "Not Found",
+        "Workspace not found, or you are not a member of it."
+      );
+    }
+    return internalErrorResponse(env, error, locals.requestContext, {
+      ...httpAttributes(request),
+      "http.route": "/api/files",
+    });
+  }
 
+  try {
+    const stored = await storeFile(
+      { db, bucket: env.FILES, clock: systemClock, ids: randomIds },
+      actor,
+      { ...input.data, body: await file.arrayBuffer() }
+    );
+
+    const query = new URLSearchParams({ workspaceId: actor.workspaceId });
     return Response.json(
-      { fileId: stored.fileId, url: `/api/files/${stored.fileId}` },
+      { fileId: stored.fileId, url: `/api/files/${stored.fileId}?${query}` },
       { status: 201 }
     );
   } catch (error) {

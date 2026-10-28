@@ -173,6 +173,26 @@ export const auditEventSchema = z.discriminatedUnion("action", [
   // Workspaces (recorded by the workspace use cases).
   z.object({
     ...inWorkspace,
+    action: z.literal("workspace.created"),
+    target: target("workspace"),
+    metadata: z.object({ kind: z.enum(["personal", "shared"]) }).strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    /** Joined without an invitation: single mode at sign-up. */
+    action: z.literal("workspace.member_joined"),
+    target: target("user"),
+    metadata: z.object({ role }).strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    /** Left on their own, or as part of deleting their account. */
+    action: z.literal("workspace.member_left"),
+    target: target("user"),
+    metadata: z.object({ role: role.optional() }).strict().default({}),
+  }),
+  z.object({
+    ...inWorkspace,
     action: z.literal("workspace.invitation_created"),
     target: target("invitation"),
     metadata: z.object({ email: z.email().max(ID_MAX), role }).strict(),

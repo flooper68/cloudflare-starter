@@ -12,7 +12,12 @@ import {
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
 
-import { afterSignIn, authClient, authErrorMessage } from "@/lib/auth-client";
+import {
+  afterSignIn,
+  authClient,
+  authErrorMessage,
+  nextPath,
+} from "@/lib/auth-client";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -80,7 +85,7 @@ export function SignUpForm({
       name: name.trim(),
       email,
       password,
-      callbackURL: "/app/dashboard",
+      callbackURL: nextPath(search) ?? "/app/dashboard",
     });
 
     if (signUpError) {
@@ -95,7 +100,7 @@ export function SignUpForm({
       return;
     }
 
-    window.location.href = afterSignIn(data);
+    window.location.href = afterSignIn(data, search);
   }
 
   return (
@@ -164,7 +169,11 @@ export function SignUpForm({
               <FieldError message={fieldErrors.password} />
             </div>
 
-            {error ? <p className="text-sm text-danger">{error}</p> : null}
+            {error ? (
+              <p role="alert" className="text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
 
             <Button
               className="w-full"
@@ -180,7 +189,7 @@ export function SignUpForm({
         ) : null}
 
         {google && !checkEmail ? (
-          <GoogleSignInButton onError={setError} />
+          <GoogleSignInButton onError={setError} search={search} />
         ) : null}
       </CardContent>
 

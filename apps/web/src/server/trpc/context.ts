@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { env as workerEnv } from "cloudflare:workers";
 import {
   type RequestContext,
   randomIds,
@@ -11,6 +11,7 @@ import {
   buildRequiredConfig,
 } from "@/lib/env";
 import { getDb } from "@/server/db";
+import type { AppEnv } from "@/server/env";
 import { buildPlatform, loggerFor } from "@/server/platform";
 
 import type { Context } from "./init";
@@ -18,11 +19,13 @@ import type { Context } from "./init";
 /**
  * The tRPC context for a signed-in (or anonymous) user. The web endpoint passes the
  * session user and the request context from Astro.locals; the MCP endpoint passes the user
- * of the access token. Same context, same procedures, same checks.
+ * of the access token. Same context, same procedures, same checks. `env` defaults to the
+ * Worker's; API tests pass one with other vars (another WORKSPACE_MODE).
  */
 export function createAppContext(
   user: Context["user"],
-  requestContext: RequestContext
+  requestContext: RequestContext,
+  env: AppEnv = workerEnv as AppEnv
 ): Context {
   const platform = buildPlatform(env);
   const scoped = { ...requestContext, userId: user?.id ?? null };
@@ -34,6 +37,7 @@ export function createAppContext(
     email: buildEmailFeature(env),
     r2: buildR2Feature(env),
     queue: env.APP_QUEUE,
+    bucket: env.FILES,
     requestContext: scoped,
     logger: loggerFor(platform, scoped),
     errors: platform.errors,

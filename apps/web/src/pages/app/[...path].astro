@@ -7,6 +7,7 @@ import { env } from "cloudflare:workers";
 import { brand } from "@cloudflare-starter/ui";
 
 import { AppSpa } from "@/components/app/AppSpa";
+import { buildRequiredConfig } from "@/lib/env";
 import { getAuthMethods } from "@/server/auth";
 
 const { user } = Astro.locals;
@@ -19,6 +20,7 @@ const authUser = user
     }
   : null;
 const methods = getAuthMethods(env);
+const { mode } = buildRequiredConfig(env).workspaces;
 ---
 
 <!doctype html>
@@ -35,7 +37,11 @@ const methods = getAuthMethods(env);
       id="__APP_AUTH__"
       is:inline
       type="application/json"
-      set:html={JSON.stringify({ user: authUser, methods: { emailPassword: methods.emailPassword } })}
+      set:html={JSON.stringify({
+        user: authUser,
+        methods: { emailPassword: methods.emailPassword },
+        workspace: { mode },
+      })}
     />
 
     <AppSpa client:only="react" />

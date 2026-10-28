@@ -3,12 +3,13 @@ import { env } from "cloudflare:workers";
 
 import { SignInForm } from "@/components/auth/SignInForm";
 import Layout from "@/layouts/Layout.astro";
+import { authErrorForCode, nextPath } from "@/lib/auth-links";
 import { getAuthMethods } from "@/server/auth";
 
 // Signed-in users skip this page, unless it carries a signed OAuth authorization
 // query (an MCP client asked them to sign in again).
 if (Astro.locals.user && !Astro.url.searchParams.has("sig")) {
-  return Astro.redirect("/app/dashboard");
+  return Astro.redirect(nextPath(Astro.url.search) ?? "/app/dashboard");
 }
 
 const methods = getAuthMethods(env);
@@ -21,6 +22,7 @@ const methods = getAuthMethods(env);
       emailPassword={methods.emailPassword}
       google={methods.google}
       search={Astro.url.search}
+      initialError={authErrorForCode(Astro.url.searchParams.get("error"))}
     />
   </main>
 </Layout>

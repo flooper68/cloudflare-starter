@@ -3,8 +3,8 @@ import { expect, type Page } from "@playwright/test";
 /**
  * A fresh account per call: unique per run, so runs never collide in the persistent
  * local D1. Sign-up allows 5 per minute per IP (apps/web/src/server/auth.ts) and the suite
- * signs up two users per run (the shared one in auth.setup.ts and the journey in
- * auth.spec.ts), so two runs a minute fit. Reuse the shared session
+ * signs up three users per run (the shared one in auth.setup.ts, the journey in
+ * auth.spec.ts and the invitee in workspaces.spec.ts), so one run a minute fits. Reuse the shared session
  * (`test.use({ storageState: sharedSession })`) instead of signing up more users.
  */
 export function newAccount(label: string) {

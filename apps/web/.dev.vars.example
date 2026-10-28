@@ -18,9 +18,23 @@ AUTH_REQUIRE_EMAIL_VERIFICATION=false
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
+# Workspaces and sign-up, for local development and tests only. Deployed environments
+# have no defaults: `bun run setup:auth --env <env>` writes them into wrangler.jsonc, and
+# the Worker refuses to start without them. docs/guides/how-to-configure-workspaces.md
+# WORKSPACE_MODE: personal (one workspace per user) | single (one for the app) | multi
+# SIGN_UP: open | invite (only invitees, SIGN_UP_DOMAINS and BOOTSTRAP_ADMIN_EMAIL)
+# SIGN_UP_DOMAINS: comma list of email domains that may sign up without an invitation
+# BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode. Needs
+#   AUTH_REQUIRE_EMAIL_VERIFICATION=true (or email + password off), or the app refuses to start.
+WORKSPACE_MODE=multi
+SIGN_UP=open
+SIGN_UP_DOMAINS=
+BOOTSTRAP_ADMIN_EMAIL=
+
 # Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
 # is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
-# email off; auth links are then printed to the dev log (only with APP_ENV=local).
+# email off; auth and invitation links are then printed to the dev log (only with
+# APP_ENV=local).
 EMAIL_FROM=noreply@example.test
 EMAIL_FROM_NAME=Cloudflare Starter
 

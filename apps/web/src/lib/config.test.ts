@@ -2,9 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   ConfigError,
+  parseAppConfig,
   parseOptionalFeature,
   parsePlatformConfig,
 } from "./config";
+
+const core = {
+  APP_URL: "http://localhost:4321",
+  BETTER_AUTH_SECRET: "local-dev-secret-change-me-0000000000",
+  APP_ENV: "local",
+};
 
 describe("web config", () => {
   it("returns a disabled feature result when optional parsing fails", () => {
@@ -18,6 +25,26 @@ describe("web config", () => {
       reason:
         "R2 is not configured: Missing one or more R2 environment variables",
     });
+  });
+
+  it("parses the workspace settings with the rest of the config", () => {
+    expect(
+      parseAppConfig({
+        ...core,
+        WORKSPACE_MODE: "single",
+        SIGN_UP: "invite",
+        BOOTSTRAP_ADMIN_EMAIL: "founder@acme.test",
+      }).workspaces
+    ).toEqual({
+      mode: "single",
+      signUp: "invite",
+      signUpDomains: [],
+      bootstrapAdminEmail: "founder@acme.test",
+    });
+  });
+
+  it("refuses to start without WORKSPACE_MODE and SIGN_UP", () => {
+    expect(() => parseAppConfig(core)).toThrow(/WORKSPACE_MODE must be/);
   });
 });
 

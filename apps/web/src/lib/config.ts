@@ -1,3 +1,7 @@
+import {
+  type WorkspaceSettings,
+  workspaceSettingsSchema,
+} from "@cloudflare-starter/features";
 import { z } from "zod";
 
 /** A boolean var: "true"/"false" in wrangler.jsonc or .dev.vars, unset means `fallback`. */
@@ -26,7 +30,13 @@ const envSchema = z.object({
   APP_ENV: z.enum(["local", "develop", "staging", "production"]),
 });
 
-export type AppConfig = z.infer<typeof envSchema>;
+/**
+ * The environment's config. `workspaces` holds WORKSPACE_MODE, SIGN_UP, SIGN_UP_DOMAINS and
+ * BOOTSTRAP_ADMIN_EMAIL, required and without defaults (docs/guides/how-to-configure-workspaces.md).
+ */
+export type AppConfig = z.infer<typeof envSchema> & {
+  readonly workspaces: WorkspaceSettings;
+};
 
 export type RequiredAppConfig = Omit<
   AppConfig,
@@ -47,7 +57,10 @@ export interface FeatureConfig<T> {
 }
 
 export function parseAppConfig(env: PartialEnv): AppConfig {
-  return envSchema.parse(env);
+  return {
+    ...envSchema.parse(env),
+    workspaces: workspaceSettingsSchema.parse(env),
+  };
 }
 
 /** Where logs go: Cloudflare Workers Logs, or nowhere. */

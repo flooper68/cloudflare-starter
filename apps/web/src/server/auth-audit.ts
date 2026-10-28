@@ -57,8 +57,11 @@ function emailOf(ctx: { readonly body?: unknown }): string | null {
     : null;
 }
 
-/** The current request's context; a fresh one when Better Auth is called outside the HTTP edge. */
-function contextFor(
+/**
+ * The current request's context; a fresh one when Better Auth is called outside the HTTP
+ * edge. Also used by server/auth.ts for the use cases its database hooks run.
+ */
+export function contextFor(
   env: AppEnv,
   ctx: { readonly request?: Request } | null
 ): RequestContext {
