@@ -34,7 +34,7 @@ describe("listAuditEvents", () => {
       "user-grace",
       signIn("user-grace")
     );
-    // Two events in the same millisecond: the id breaks the tie.
+    // Two events in the same millisecond: the insertion order breaks the tie.
     await record("2026-10-03T09:00:00.000Z", "user-ada", {
       action: "workspace.member_removed",
       workspaceId: "ws-1",
@@ -48,7 +48,7 @@ describe("listAuditEvents", () => {
     await record("2026-10-04T09:00:00.000Z", "user-ada", signIn("user-ada"));
   });
 
-  it("lists everything newest first, ties broken by id", async () => {
+  it("lists everything newest first, ties in reverse insertion order", async () => {
     const page = await listAuditEvents({ db: testDb() });
     expect(
       page.events.map((event) => [event.occurredAt, event.action])
@@ -120,5 +120,33 @@ describe("listAuditEvents", () => {
     await expect(
       listAuditEvents({ db: testDb() }, { cursor: "not-a-cursor" })
     ).rejects.toThrow(InvalidAuditInputError);
+  });
+  it("orders same-millisecond events by insertion, whatever their ids", async () => {
+    // Random ids in production: here the later event gets the smaller id.
+    const descending = ["evt-z", "evt-a"];
+    const at = "2026-10-05T09:00:00.000Z";
+    for (const userId of ["user-first", "user-second"]) {
+      await recordAuditEvent(
+        {
+          db: testDb(),
+          clock: fixedClock(at),
+          ids: { uuid: () => descending.shift() ?? "evt-x" },
+        },
+        testRequestContext({ userId }),
+        signIn(userId)
+      );
+    }
+    const page = await listAuditEvents(
+      { db: testDb() },
+      { from: at, limit: 1 }
+    );
+    expect(page.events.map((event) => event.target.id)).toEqual([
+      "user-second",
+    ]);
+    const next = await listAuditEvents(
+      { db: testDb() },
+      { from: at, limit: 1, cursor: page.nextCursor ?? undefined }
+    );
+    expect(next.events.map((event) => event.target.id)).toEqual(["user-first"]);
   });
 });

@@ -49,7 +49,7 @@ bun run doctor
 bun run dev:web
 ```
 
-Open `http://localhost:4321`, create an account at `/sign-up`, and you land on `/app/dashboard` in your personal workspace (multi mode, open sign-up, from `.dev.vars`; [how-to-configure-workspaces.md](./how-to-configure-workspaces.md)). Blank values in `.dev.vars` count as unset.
+Open `APP_URL` (`http://localhost:4321` from `.dev.vars.example`; `bun run setup:secrets` proposes a port per checkout, so worktrees can run side by side, and the dev server listens on that port), create an account at `/sign-up`, and you land on `/app/dashboard` in your personal workspace (multi mode, open sign-up, from `.dev.vars`; [how-to-configure-workspaces.md](./how-to-configure-workspaces.md)). Blank values in `.dev.vars` count as unset.
 
 Queue and cron run in the same dev server:
 

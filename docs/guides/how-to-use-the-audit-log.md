@@ -80,7 +80,7 @@ await recordAuditEvent(deps, context, {
 
 ## Reading the log
 
-`listAuditEvents({ db }, filters)` returns events newest first, a page at a time: filters `actorUserId`, `action`, `targetType` and `targetId` (a target id needs its type, so the query uses the target index), `workspaceId`, `from` (inclusive) and `to` (exclusive) as ISO 8601; `limit` (1 to 200, default 50); `cursor` from the previous page's `nextCursor`. Pagination is keyset on `(occurred_at, id)`, so pages do not shift while events are added. `auditQuerySchema` is the input schema for any procedure that exposes it.
+`listAuditEvents({ db }, filters)` returns events newest first, a page at a time: filters `actorUserId`, `action`, `targetType` and `targetId` (a target id needs its type, so the query uses the target index), `workspaceId`, `from` (inclusive) and `to` (exclusive) as ISO 8601; `limit` (1 to 200, default 50); `cursor` from the previous page's `nextCursor`. Events recorded in the same millisecond (a sign-up writes several) come in reverse insertion order: the tie-break is SQLite's `rowid`, which grows with every insert, not the random event id. Pagination is keyset on `(occurred_at, rowid)`, so pages do not shift while events are added; the cursor is opaque. `auditQuerySchema` is the input schema for any procedure that exposes it.
 
 No tRPC procedure or MCP tool reads the log yet; the admin portal adds them (with their MCP tools, per the parity rule). Until then, query D1 directly:
 
