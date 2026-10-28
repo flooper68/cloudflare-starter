@@ -48,4 +48,4 @@ bun run db:generate        # write a migration from schema changes
 bun run db:migrate:local   # apply pending migrations to local D1
 ```
 
-The Drizzle config is at `drizzle.config.ts`. See [docs/how-to-setup-d1.md](../../docs/how-to-setup-d1.md).
+The Drizzle config is at `drizzle.config.ts`. See [docs/guides/how-to-setup-d1.md](../../docs/guides/how-to-setup-d1.md).

@@ -17,7 +17,7 @@
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
     "EMAIL_FROM_NAME": "Cloudflare Starter"
   },
-  // Create with `bunx wrangler d1 create <name>` and paste the id (docs/how-to-setup-d1.md).
+  // Create with `bunx wrangler d1 create <name>` and paste the id (docs/guides/how-to-setup-d1.md).
   // The placeholder id is enough for local dev.
   "d1_databases": [
     {

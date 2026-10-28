@@ -11,7 +11,7 @@
  *
  * CI only uses the runner once the CI_RUNS_ON repository variable points at it, and
  * pull requests from forks always stay on GitHub-hosted runners. See
- * docs/how-to-setup-ci.md.
+ * docs/guides/how-to-setup-ci.md.
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";

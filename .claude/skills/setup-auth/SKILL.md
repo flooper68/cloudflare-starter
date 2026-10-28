@@ -6,7 +6,7 @@ description: Configure sign-in for this starter (Better Auth) — required secre
 
 # Authentication
 
-Better Auth runs inside the web Worker (`apps/web/src/server/auth.ts`), handler at `/api/auth/*`, users and sessions in D1. It is also the OAuth server for MCP clients. Full guide: `docs/how-to-setup-auth.md`.
+Better Auth runs inside the web Worker (`apps/web/src/server/auth.ts`), handler at `/api/auth/*`, users and sessions in D1. It is also the OAuth server for MCP clients. Full guide: `docs/guides/how-to-setup-auth.md`.
 
 ## Secrets
 

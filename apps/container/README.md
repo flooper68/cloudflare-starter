@@ -4,7 +4,7 @@ Cloudflare Container demo. A Worker forwards requests into a Dockerized Python c
 
 Requires the Workers Paid plan and a local Docker-compatible engine (Wrangler builds the image locally before running or deploying).
 
-See [docs/how-to-setup-container.md](../../docs/how-to-setup-container.md) for setup and deployment.
+See [docs/guides/how-to-setup-container.md](../../docs/guides/how-to-setup-container.md) for setup and deployment.
 
 ## Develop
 

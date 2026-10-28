@@ -17,7 +17,7 @@ concurrency:
 #   gh variable set CI_RUNS_ON --body '["self-hosted","cloudflare-starter"]'
 # Unset means "ubuntu-latest". Pull requests from forks ALWAYS run on GitHub-hosted
 # runners: the repository is public and a fork PR runs code its author wrote, which must
-# never reach the owner's machine. See docs/how-to-setup-ci.md.
+# never reach the owner's machine. See docs/guides/how-to-setup-ci.md.
 
 jobs:
   lint:

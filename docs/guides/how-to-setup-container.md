@@ -2,7 +2,7 @@
 
 This guide explains how to run and deploy the Cloudflare Container demo in this repo.
 
-The demo lives in [apps/container](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container) and exposes a Worker that forwards requests into a Dockerized Python container. The container starts a child process on each request, computes digits of pi, and returns JSON.
+The demo lives in [apps/container](../../apps/container) and exposes a Worker that forwards requests into a Dockerized Python container. The container starts a child process on each request, computes digits of pi, and returns JSON.
 
 ## What You Need
 
@@ -30,7 +30,7 @@ Official references:
 From the repo root:
 
 ```bash
-cd /Users/premylsciompa/dev_personal/cloudflare-starter
+cd <repo>
 bun install
 ```
 
@@ -62,9 +62,9 @@ bunx wrangler whoami
 
 The deployable Worker is configured here:
 
-- [apps/container/wrangler.jsonc](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container/wrangler.jsonc)
-- [apps/container/src/index.ts](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container/src/index.ts)
-- [apps/container/Dockerfile](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container/Dockerfile)
+- [apps/container/wrangler.jsonc](../../apps/container/wrangler.jsonc)
+- [apps/container/src/index.ts](../../apps/container/src/index.ts)
+- [apps/container/Dockerfile](../../apps/container/Dockerfile)
 
 Important values in `wrangler.jsonc`:
 
@@ -109,7 +109,7 @@ Notes:
 The package `build` script is a dry run. For a real deployment, run Wrangler directly from the container app directory.
 
 ```bash
-cd /Users/premylsciompa/dev_personal/cloudflare-starter/apps/container
+cd apps/container
 bunx wrangler deploy
 ```
 
@@ -150,13 +150,13 @@ If deployment is ready, you should get the same JSON structure as local developm
 
 Whenever you change either:
 
-- Worker code in [apps/container/src/index.ts](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container/src/index.ts)
-- Container code in [apps/container/server.py](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container/server.py), [apps/container/pi_task.py](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container/pi_task.py), or [apps/container/Dockerfile](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/container/Dockerfile)
+- Worker code in [apps/container/src/index.ts](../../apps/container/src/index.ts)
+- Container code in [apps/container/server.py](../../apps/container/server.py), [apps/container/pi_task.py](../../apps/container/pi_task.py), or [apps/container/Dockerfile](../../apps/container/Dockerfile)
 
 redeploy with:
 
 ```bash
-cd /Users/premylsciompa/dev_personal/cloudflare-starter/apps/container
+cd apps/container
 bunx wrangler deploy
 ```
 
