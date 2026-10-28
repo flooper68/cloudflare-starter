@@ -35,7 +35,10 @@ describe("emptyTrash", () => {
     await trashTestFile(actor, b.fileId);
     await trashTestFile(other, theirs.fileId);
 
-    expect(await emptyTrash(deps(), actor)).toEqual({ purged: 2 });
+    expect(await emptyTrash(deps(), actor)).toEqual({
+      purged: 2,
+      remaining: false,
+    });
     expect(await env.FILES.head(a.r2Key)).toBeNull();
     expect(await env.FILES.head(b.r2Key)).toBeNull();
     expect(await env.FILES.head(live.r2Key)).not.toBeNull();
@@ -51,7 +54,36 @@ describe("emptyTrash", () => {
       { entityType: "file", reason: "empty_trash" },
     ]);
     // Nothing left: a second run is a no-op.
-    expect(await emptyTrash(deps(), actor)).toEqual({ purged: 0 });
+    expect(await emptyTrash(deps(), actor)).toEqual({
+      purged: 0,
+      remaining: false,
+    });
+  });
+
+  it("deletes at most 1000 items per call and says when more is left", async () => {
+    const owner = await seedUser("Barbara Liskov");
+    const actor = await seedWorkspace(owner.id, { id: "ws-empty-big" });
+    const insert = env.DB.prepare(
+      "INSERT INTO files (id, workspace_id, bucket, r2_key, filename, content_type, size_bytes, deleted_at, deleted_by) VALUES (?, 'ws-empty-big', 'files', ?, ?, 'text/plain', 1, ?, NULL)"
+    );
+    await env.DB.batch(
+      Array.from({ length: 1001 }, (_, index) =>
+        insert.bind(
+          `big-${String(index).padStart(4, "0")}`,
+          `workspaces/ws-empty-big/uploads/2026/10/big-${index}`,
+          `scan-${index}.txt`,
+          Date.parse("2026-10-01T00:00:00.000Z") + index
+        )
+      )
+    );
+    expect(await emptyTrash(deps(), actor)).toEqual({
+      purged: 1000,
+      remaining: true,
+    });
+    expect(await emptyTrash(deps(), actor)).toEqual({
+      purged: 1,
+      remaining: false,
+    });
   });
 
   it("is for owners only", async () => {

@@ -130,7 +130,10 @@ describe("trash procedures", () => {
     ).toEqual({ purged: [{ type: "file", id: notes.fileId }] });
 
     await asOwner.storage.deleteFile({ workspaceId, fileId: budget.fileId });
-    expect(await asOwner.trash.empty({ workspaceId })).toEqual({ purged: 1 });
+    expect(await asOwner.trash.empty({ workspaceId })).toEqual({
+      purged: 1,
+      remaining: false,
+    });
     expect((await asOwner.trash.list({ workspaceId })).items).toEqual([]);
     expect(
       (await asOwner.storage.listFiles({ workspaceId })).items.map(

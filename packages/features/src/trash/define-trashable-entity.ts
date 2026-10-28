@@ -71,15 +71,23 @@ export interface TrashableEntity<TRow extends TrashableRow = TrashableRow> {
     rows: readonly TRow[]
   ): Promise<void>;
   /**
-   * Deletes these rows for good, and whatever they own outside D1 (R2 objects first,
-   * rows last, so a failure leaves rows to retry rather than orphaned objects).
-   * Idempotent; checks nothing: callers choose the ids (the trash through `trashedIn`,
-   * account erasure for a workspace being deleted).
+   * Deletes these rows for good, and whatever they own outside D1: rows first with a
+   * conditional DELETE … RETURNING, then what the deleted rows owned (R2 objects), so a
+   * row restored meanwhile is neither deleted nor stripped of its bytes; a failure after
+   * the rows leaves orphaned objects, never rows without their data. With `trashedOnly`
+   * (every trash caller) only rows still in the trash are deleted; erasure passes false
+   * to delete live rows too. Idempotent; checks no permission: callers choose the ids.
+   * Returns the ids it actually deleted, which callers audit.
    */
   purge(
     deps: TrashPurgeDeps,
-    ids: readonly string[]
-  ): Promise<{ readonly purged: number }>;
+    ids: readonly string[],
+    options: {
+      readonly trashedOnly: boolean;
+      /** With trashedOnly: only rows trashed at or before this instant (retention). */
+      readonly trashedAtOrBefore?: Date;
+    }
+  ): Promise<{ readonly purgedIds: readonly string[] }>;
 }
 
 /** Declares a trashable entity; refuses a retention that is not a whole number of days. */

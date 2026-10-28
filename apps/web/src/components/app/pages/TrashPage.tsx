@@ -23,10 +23,20 @@ export function TrashPage() {
   const workspaceId = active?.id ?? "";
 
   const trash = useAsync(async () => {
-    const page = await trpc.trash.list.query({ workspaceId, limit: 100 });
+    // Every page, so the list (and the count the "Empty trash" dialog names) is complete.
+    let page = await trpc.trash.list.query({ workspaceId, limit: 100 });
+    const all = [...page.items];
+    while (page.nextCursor) {
+      page = await trpc.trash.list.query({
+        workspaceId,
+        limit: 100,
+        cursor: page.nextCursor,
+      });
+      all.push(...page.items);
+    }
     return {
       can: page.can,
-      items: page.items.map(
+      items: all.map(
         (item): TrashListItem => ({
           type: item.type,
           id: item.id,
@@ -105,10 +115,15 @@ export function TrashPage() {
                 )
               }
               onEmpty={() =>
-                void run(
-                  () => trpc.trash.empty.mutate({ workspaceId }),
-                  "Trash emptied"
-                )
+                void run(async () => {
+                  // The server empties up to 1000 items per call.
+                  let remaining = true;
+                  while (remaining) {
+                    ({ remaining } = await trpc.trash.empty.mutate({
+                      workspaceId,
+                    }));
+                  }
+                }, "Trash emptied")
               }
             />
           )}

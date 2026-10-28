@@ -14,8 +14,6 @@ import { filesUnder, read } from "./repo";
 
 /** Feature files that read a trashable table without liveIn/trashedIn: path → reason. */
 const UNSCOPED_READS: Readonly<Record<string, string>> = {
-  "packages/features/src/files/trash.ts":
-    "the files entity of the trash catalog: purge deletes the ids its caller chose (trashedIn, retention, account erasure)",
   "packages/features/src/files/delete-workspace-files.ts":
     "account erasure deletes every file of a workspace being deleted, live or trashed, bypassing the trash",
   "packages/features/src/files/measure-workspace-storage.ts":

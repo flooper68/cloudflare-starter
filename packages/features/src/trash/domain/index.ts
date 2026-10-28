@@ -3,6 +3,7 @@ export { purgeExpiredTrashJob } from "./purge-expired-trash-job";
 export { daysUntilPurge, trashPurgeAt, trashPurgeCutoff } from "./retention";
 export {
   chunked,
+  PURGE_CHUNK,
   TRASH_ITEMS_MAX,
   TRASH_PAGE_SIZE_DEFAULT,
   TRASH_PAGE_SIZE_MAX,

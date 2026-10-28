@@ -1,10 +1,10 @@
-import { inArray } from "drizzle-orm";
+import { and, inArray, isNotNull, lte } from "drizzle-orm";
 
 import { chunked, defineTrashableEntity } from "../trash";
 import { FILE_TRASH_RETENTION_DAYS } from "./domain";
 import { files } from "./files.schema";
 
-/** R2 deletes at most this many keys per call; D1 binds at most 100 parameters. */
+/** R2 deletes at most 1000 keys per call; D1 binds at most 100 parameters. */
 const IDS_PER_STATEMENT = 50;
 
 /**
@@ -20,23 +20,31 @@ export const fileTrash = defineTrashableEntity<typeof files.$inferSelect>({
   permission: "files.write",
   summarize: (file) => ({ label: file.filename, sizeBytes: file.sizeBytes }),
   checkRestore: async () => {},
-  async purge(deps, ids) {
-    let purged = 0;
+  async purge(deps, ids, options) {
+    const purgedIds: string[] = [];
     for (const chunk of chunked(ids, IDS_PER_STATEMENT)) {
-      const rows = await deps.db
-        .select({ r2Key: files.r2Key })
-        .from(files)
-        .where(inArray(files.id, chunk));
-      // Objects first, then rows: a failure leaves rows to retry, not orphaned objects.
-      if (rows.length > 0) {
-        await deps.bucket.delete(rows.map((row) => row.r2Key));
-      }
+      // Rows first, guarded and returning their keys, then the objects: a file restored
+      // meanwhile is not deleted (and keeps its object); a failed R2 delete leaves an
+      // orphaned object (a storage cost), never a row without its bytes.
       const deleted = await deps.db
         .delete(files)
-        .where(inArray(files.id, chunk))
-        .run();
-      purged += deleted.meta.changes ?? 0;
+        .where(
+          options.trashedOnly
+            ? and(
+                inArray(files.id, chunk),
+                isNotNull(files.deletedAt),
+                options.trashedAtOrBefore
+                  ? lte(files.deletedAt, options.trashedAtOrBefore)
+                  : undefined
+              )
+            : inArray(files.id, chunk)
+        )
+        .returning({ id: files.id, r2Key: files.r2Key });
+      if (deleted.length > 0) {
+        await deps.bucket.delete(deleted.map((row) => row.r2Key));
+      }
+      purgedIds.push(...deleted.map((row) => row.id));
     }
-    return { purged };
+    return { purgedIds };
   },
 });

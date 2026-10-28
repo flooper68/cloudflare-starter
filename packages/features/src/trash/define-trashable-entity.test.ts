@@ -14,7 +14,7 @@ const entity: TrashableEntity = {
   permission: "files.write",
   summarize: (row) => ({ label: row.id, sizeBytes: null }),
   checkRestore: async () => {},
-  purge: async (_deps, ids) => ({ purged: ids.length }),
+  purge: async (_deps, ids) => ({ purgedIds: ids }),
 };
 
 describe("defineTrashableEntity", () => {

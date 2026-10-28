@@ -12,6 +12,7 @@ import {
 } from "../../test/fixtures";
 import { createMemoryJobQueue } from "../platform";
 import { TRASH_CATALOG } from "../trash-catalog";
+import type { TrashableEntity } from "./define-trashable-entity";
 import { purgeExpiredTrash } from "./purge-expired-trash";
 
 const AS_OF = "2026-10-28T03:17:00.000Z";
@@ -80,6 +81,31 @@ describe("purgeExpiredTrash", () => {
       purged: 0,
       continued: false,
     });
+  });
+
+  it("spares an expired item restored and trashed again while the job runs", async () => {
+    const owner = await seedUser("Barbara Liskov");
+    const actor = await seedWorkspace(owner.id, { id: "ws-expire-race" });
+    const file = await storeTestFile(actor, "race.txt");
+    await trashTestFile(actor, file.fileId, "2026-08-01T00:00:00.000Z");
+    const fileTrash = TRASH_CATALOG[0] as TrashableEntity;
+    const racing: TrashableEntity = {
+      ...fileTrash,
+      async purge(purgeDeps, ids, options) {
+        // Restored and deleted again yesterday: a fresh 30 days.
+        await env.DB.prepare("UPDATE files SET deleted_at = ? WHERE id = ?")
+          .bind(Date.parse("2026-10-27T00:00:00.000Z"), file.fileId)
+          .run();
+        return fileTrash.purge(purgeDeps, ids, options);
+      },
+    };
+    expect(
+      await purgeExpiredTrash(
+        { ...deps(), entities: [racing] },
+        { asOf: AS_OF }
+      )
+    ).toEqual({ purged: 0, continued: false });
+    expect(await env.FILES.head(file.r2Key)).not.toBeNull();
   });
 
   it("purges 500 per run and enqueues itself with the same asOf until the backlog is gone", async () => {

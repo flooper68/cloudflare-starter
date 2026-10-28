@@ -370,7 +370,7 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 **A trashable table** ([how-to-use-trash.md](../guides/how-to-use-trash.md#making-a-table-trashable))
 
 - [ ] `deleted_at` (timestamp ms, nullable) and `deleted_by` (FK `user`, `ON DELETE SET NULL`), and the partial index `(workspace_id, deleted_at) WHERE deleted_at IS NOT NULL`; unique indexes partial over live rows (`WHERE deleted_at IS NULL`).
-- [ ] A `TrashableEntity` in `<feature>/trash.ts` (`defineTrashableEntity`), listed in `TRASH_CATALOG` and in `UNSCOPED_READS` of `test/architecture/trash.test.ts`; its type in `AUDIT_TRASH_TARGET_TYPES`.
+- [ ] A `TrashableEntity` in `<feature>/trash.ts` (`defineTrashableEntity`), listed in `TRASH_CATALOG` (its `purge` reads nothing unscoped, or it goes in `UNSCOPED_READS` of `test/architecture/trash.test.ts` with a reason); its type in `AUDIT_TRASH_TARGET_TYPES`.
 - [ ] Every read uses `liveIn` or `trashedIn`; the move-to-trash use case records `trash.item_trashed`; its MCP tool is not destructive.
 - [ ] Erasure paths call the entity's `purge` directly, bypassing the trash.
 

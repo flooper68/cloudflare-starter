@@ -6,7 +6,12 @@ import { enqueueJob } from "../jobs";
 import type { Clock, Ids, RequestContext } from "../kernel";
 import type { JobQueue } from "../platform";
 import type { TrashableEntity } from "./define-trashable-entity";
-import { purgeExpiredTrashJob, trashPurgeCutoff } from "./domain";
+import {
+  chunked,
+  PURGE_CHUNK,
+  purgeExpiredTrashJob,
+  trashPurgeCutoff,
+} from "./domain";
 
 /** Items purged per entity per run, so one run stays short. */
 const BATCH = 500;
@@ -14,7 +19,8 @@ const BATCH = 500;
 /**
  * The `trash.purge-expired` job: deletes for good every trashed item, of every workspace,
  * whose entity's retention ran out as of `asOf` (the cron run's time). Up to 500 items
- * per entity per run, oldest first; R2 objects first, then rows. Records
+ * per entity per run, oldest first; rows first (only those still trashed before the
+ * cutoff), then their R2 objects. Records
  * `trash.item_purged` (reason `retention`, the system as actor) per item. While a batch
  * comes back full it enqueues itself again with the same `asOf`, so a backlog drains
  * without one long run; a rerun finds only what is left (idempotent).
@@ -37,32 +43,36 @@ export async function purgeExpiredTrash(
   let continued = false;
   for (const entity of deps.entities) {
     const t = entity.table;
+    const cutoff = trashPurgeCutoff(asOf, entity.retentionDays);
     const rows = await deps.db
       .select({ id: t.id, workspaceId: t.workspaceId })
       .from(t)
-      .where(
-        and(
-          isNotNull(t.deletedAt),
-          lte(t.deletedAt, trashPurgeCutoff(asOf, entity.retentionDays))
-        )
-      )
+      .where(and(isNotNull(t.deletedAt), lte(t.deletedAt, cutoff)))
       .orderBy(asc(t.deletedAt))
       .limit(BATCH);
-    if (rows.length === 0) continue;
-    await entity.purge(
-      deps,
-      rows.map((row) => String(row.id))
+    const workspaceOf = new Map(
+      rows.map((row) => [String(row.id), String(row.workspaceId)])
     );
-    for (const row of rows) {
-      await recordAuditEvent(deps, deps.requestContext, {
-        action: "trash.item_purged",
-        actor: { kind: "system" },
-        workspaceId: String(row.workspaceId),
-        target: { type: entity.type, id: String(row.id) },
-        metadata: { entityType: entity.type, reason: "retention" },
+    for (const ids of chunked([...workspaceOf.keys()], PURGE_CHUNK)) {
+      // Guarded by the cutoff too: an item restored (or restored and trashed again)
+      // since the select is not deleted, and not audited.
+      const { purgedIds } = await entity.purge(deps, ids, {
+        trashedOnly: true,
+        trashedAtOrBefore: cutoff,
       });
+      await Promise.all(
+        purgedIds.map((id) =>
+          recordAuditEvent(deps, deps.requestContext, {
+            action: "trash.item_purged",
+            actor: { kind: "system" },
+            workspaceId: String(workspaceOf.get(id)),
+            target: { type: entity.type, id },
+            metadata: { entityType: entity.type, reason: "retention" },
+          })
+        )
+      );
+      purged += purgedIds.length;
     }
-    purged += rows.length;
     if (rows.length === BATCH) continued = true;
   }
   if (continued) {

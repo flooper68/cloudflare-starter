@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -98,6 +99,44 @@ describe("restoreItems", () => {
     expect(listed.map((file) => file.id)).toEqual([live.fileId]);
     // The other workspace's file stays in its trash.
     expect(await listWorkspaceFiles({ db: testDb() }, other, {})).toEqual([]);
+  });
+
+  it("reports and audits only what it restored when a purge wins the race", async () => {
+    const owner = await seedUser("Edsger Dijkstra");
+    const actor = await seedWorkspace(owner.id, { id: "ws-restore-race" });
+    const kept = await storeTestFile(actor, "kept.txt");
+    const gone = await storeTestFile(actor, "gone.txt");
+    await trashTestFile(actor, kept.fileId);
+    await trashTestFile(actor, gone.fileId);
+    const fileTrash = TRASH_CATALOG[0] as TrashableEntity;
+    // An owner deletes one file permanently between the restore's read and its update.
+    const racing: TrashableEntity = {
+      ...fileTrash,
+      async checkRestore() {
+        await fileTrash.purge(
+          { db: testDb(), bucket: env.FILES },
+          [gone.fileId],
+          { trashedOnly: true }
+        );
+      },
+    };
+
+    await expect(
+      restoreItems(deps([racing]), actor, {
+        items: [
+          { type: "file", id: kept.fileId },
+          { type: "file", id: gone.fileId },
+        ],
+      })
+    ).rejects.toThrow(
+      new TrashItemNotFoundError({ type: "file", id: gone.fileId })
+    );
+    const restored = (await auditTrail("ws-restore-race")).filter(
+      (event) => event.action === "trash.item_restored"
+    );
+    expect(restored.map((event) => event.target)).toEqual([
+      `file:${kept.fileId}`,
+    ]);
   });
 
   it("needs trash.restore and the entity's write permission, and runs its restore check", async () => {

@@ -39,7 +39,7 @@ describe("fileTrash", () => {
     ).resolves.toBeUndefined();
   });
 
-  it("purge deletes the objects first, then the rows; a rerun deletes nothing", async () => {
+  it("purge deletes the rows and their objects; trashedOnly spares live and restored files; a rerun deletes nothing", async () => {
     const owner = await seedUser("Grace Hopper");
     const actor = await seedWorkspace(owner.id, { id: "ws-file-purge" });
     const gone = await storeTestFile(actor, "gone.txt");
@@ -47,10 +47,18 @@ describe("fileTrash", () => {
     await trashTestFile(actor, gone.fileId);
     const deps = { db: testDb(), bucket: env.FILES };
 
-    // GDPR erasure purges live files too: purge checks nothing, its caller chooses ids.
-    expect(await fileTrash.purge(deps, [gone.fileId, live.fileId])).toEqual({
-      purged: 2,
-    });
+    // The trash passes trashedOnly: a live (or just restored) file survives with its object.
+    expect(
+      await fileTrash.purge(deps, [gone.fileId, live.fileId], {
+        trashedOnly: true,
+      })
+    ).toEqual({ purgedIds: [gone.fileId] });
+    expect(await env.FILES.head(gone.r2Key)).toBeNull();
+    expect(await env.FILES.head(live.r2Key)).not.toBeNull();
+    // GDPR erasure purges live files too: its caller chooses the ids.
+    expect(
+      await fileTrash.purge(deps, [live.fileId], { trashedOnly: false })
+    ).toEqual({ purgedIds: [live.fileId] });
     expect(await env.FILES.head(gone.r2Key)).toBeNull();
     expect(await env.FILES.head(live.r2Key)).toBeNull();
     expect(
@@ -59,8 +67,12 @@ describe("fileTrash", () => {
         actor.workspaceId
       )
     ).toEqual([]);
-    expect(await fileTrash.purge(deps, [gone.fileId])).toEqual({ purged: 0 });
-    expect(await fileTrash.purge(deps, [])).toEqual({ purged: 0 });
+    expect(
+      await fileTrash.purge(deps, [gone.fileId], { trashedOnly: false })
+    ).toEqual({ purgedIds: [] });
+    expect(await fileTrash.purge(deps, [], { trashedOnly: true })).toEqual({
+      purgedIds: [],
+    });
   });
 
   it("purges more ids than one statement binds", async () => {
@@ -74,9 +86,12 @@ describe("fileTrash", () => {
     expect(
       await fileTrash.purge(
         { db: testDb(), bucket: env.FILES },
-        stored.map((file) => file.fileId)
+        stored.map((file) => file.fileId),
+        { trashedOnly: false }
       )
-    ).toEqual({ purged: 120 });
+    ).toEqual({
+      purgedIds: expect.arrayContaining(stored.map((file) => file.fileId)),
+    });
     expect(
       (await env.FILES.list({ prefix: `workspaces/${actor.workspaceId}/` }))
         .objects
@@ -95,7 +110,9 @@ describe("fileTrash", () => {
     expect(await measure()).toBe(10);
     await trashTestFile(actor, file.fileId);
     expect(await measure()).toBe(10);
-    await fileTrash.purge({ db: testDb(), bucket: env.FILES }, [file.fileId]);
+    await fileTrash.purge({ db: testDb(), bucket: env.FILES }, [file.fileId], {
+      trashedOnly: true,
+    });
     expect(await measure()).toBe(0);
   });
 });

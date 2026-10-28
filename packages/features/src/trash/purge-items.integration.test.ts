@@ -13,8 +13,10 @@ import {
 } from "../../test/fixtures";
 import { TRASH_CATALOG } from "../trash-catalog";
 import { ActionNotAllowedError } from "../workspaces";
+import type { TrashableEntity } from "./define-trashable-entity";
 import { TrashItemNotFoundError } from "./domain";
 import { purgeItems } from "./purge-items";
+import { restoreItems } from "./restore-items";
 
 const deps = () => ({
   ...useCaseDeps(),
@@ -23,6 +25,41 @@ const deps = () => ({
 });
 
 describe("purgeItems", () => {
+  it("spares a file restored while the purge runs: no deletion, no purge event", async () => {
+    const owner = await seedUser("Edsger Dijkstra");
+    const actor = await seedWorkspace(owner.id, { id: "ws-purge-race" });
+    const file = await storeTestFile(actor, "race.txt");
+    await trashTestFile(actor, file.fileId);
+    const fileTrash = TRASH_CATALOG[0] as TrashableEntity;
+    // A member restores the file between the purge's read and its delete.
+    const racing: TrashableEntity = {
+      ...fileTrash,
+      async purge(purgeDeps, ids, options) {
+        await restoreItems(
+          { ...useCaseDeps(), entities: TRASH_CATALOG },
+          actor,
+          {
+            items: [{ type: "file", id: file.fileId }],
+          }
+        );
+        return fileTrash.purge(purgeDeps, ids, options);
+      },
+    };
+
+    expect(
+      await purgeItems({ ...deps(), entities: [racing] }, actor, {
+        items: [{ type: "file", id: file.fileId }],
+      })
+    ).toEqual({ purged: [] });
+    expect(await env.FILES.head(file.r2Key)).not.toBeNull();
+    expect(
+      await rows("SELECT deleted_at FROM files WHERE id = ?", file.fileId)
+    ).toEqual([{ deleted_at: null }]);
+    expect(
+      (await auditTrail("ws-purge-race")).map((event) => event.action)
+    ).toEqual(["trash.item_trashed", "trash.item_restored"]);
+  });
+
   it("deletes the R2 object and the row of each item, and records each purge", async () => {
     const owner = await seedUser("Ada Lovelace");
     const actor = await seedWorkspace(owner.id, { id: "ws-purge" });

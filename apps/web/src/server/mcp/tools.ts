@@ -324,7 +324,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "write",
     "trash.empty",
     "Empty trash",
-    "Deletes everything in the workspace's trash for good. Cannot be undone. Owners only. Confirm with the user before calling.",
+    "Deletes everything in the workspace's trash for good, up to 1000 items per call: call again while remaining is true. Cannot be undone. Owners only. Confirm with the user before calling.",
     { destructive: true }
   ),
   direct(

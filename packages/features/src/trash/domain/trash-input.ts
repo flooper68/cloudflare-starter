@@ -4,6 +4,8 @@ export const TRASH_PAGE_SIZE_DEFAULT = 50;
 export const TRASH_PAGE_SIZE_MAX = 100;
 /** Items one restore or permanent delete may name. */
 export const TRASH_ITEMS_MAX = 100;
+/** Ids per purge call: one D1 statement (100 bound parameters) and one R2 delete. */
+export const PURGE_CHUNK = 50;
 
 const entityType = z.string().min(1).max(50);
 

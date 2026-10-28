@@ -7,6 +7,8 @@ import { type Actor, requirePermission } from "../workspaces";
 import type { TrashableEntity } from "./define-trashable-entity";
 import {
   chunked,
+  PURGE_CHUNK,
+  TrashItemNotFoundError,
   type TrashItemRef,
   type TrashItemsInput,
   trashItemsInputSchema,
@@ -39,33 +41,44 @@ export async function restoreItems(
     await entity.checkRestore(deps, actor, rows);
   }
 
-  const updates = groups.flatMap(({ entity, rows }) =>
+  const statements = groups.flatMap(({ entity, rows }) =>
     chunked(
       rows.map((row) => row.id),
-      50
-    ).map((ids) =>
-      deps.db
+      PURGE_CHUNK
+    ).map((ids) => ({
+      type: entity.type,
+      query: deps.db
         .update(entity.table)
         .set({ deletedAt: null, deletedBy: null } as never)
         .where(
           and(inArray(entity.table.id, ids), trashedIn(entity.table, actor))
         )
+        .returning({ id: entity.table.id }),
+    }))
+  );
+  const [first, ...rest] = statements.map((statement) => statement.query);
+  const results = first ? await deps.db.batch([first, ...rest]) : [];
+
+  // Only what the updates changed: an item a concurrent purge deleted is not restored.
+  const restored = statements.flatMap((statement, index) =>
+    (results[index] as readonly { id: unknown }[]).map((row) => ({
+      type: statement.type,
+      id: String(row.id),
+    }))
+  );
+  await Promise.all(
+    restored.map((item) =>
+      recordAuditEvent(deps, deps.requestContext, {
+        action: "trash.item_restored",
+        actor: { kind: "user", userId: actor.userId },
+        workspaceId: actor.workspaceId,
+        target: item,
+        metadata: { entityType: item.type },
+      })
     )
   );
-  const [first, ...rest] = updates;
-  if (first) await deps.db.batch([first, ...rest]);
-
-  const restored = groups.flatMap(({ entity, rows }) =>
-    rows.map((row) => ({ type: entity.type, id: row.id }))
-  );
-  for (const item of restored) {
-    await recordAuditEvent(deps, deps.requestContext, {
-      action: "trash.item_restored",
-      actor: { kind: "user", userId: actor.userId },
-      workspaceId: actor.workspaceId,
-      target: item,
-      metadata: { entityType: item.type },
-    });
-  }
+  const done = new Set(restored.map((item) => `${item.type}:${item.id}`));
+  const lost = items.find((item) => !done.has(`${item.type}:${item.id}`));
+  if (lost) throw new TrashItemNotFoundError(lost);
   return { restored };
 }

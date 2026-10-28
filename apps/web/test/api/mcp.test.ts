@@ -248,7 +248,10 @@ describe("/mcp", () => {
         items: [{ type: "file", id: fileId }],
       })
     ).toEqual({ purged: [{ type: "file", id: fileId }] });
-    expect(await call("empty_trash")).toEqual({ purged: 0 });
+    expect(await call("empty_trash")).toEqual({
+      purged: 0,
+      remaining: false,
+    });
   });
 
   it("marks tools that remove access as destructive and invitations as outward", async () => {
