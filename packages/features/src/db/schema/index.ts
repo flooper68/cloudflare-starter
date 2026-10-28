@@ -1,10 +1,2 @@
-export {
-  account,
-  accountRelations,
-  session,
-  sessionRelations,
-  user,
-  userRelations,
-  verification,
-} from "./auth";
+export * from "./auth";
 export { FILE_BUCKETS, type FileBucket, files } from "./files";

@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/** A boolean var: "true"/"false" in wrangler.jsonc or .dev.vars, unset means `fallback`. */
+const flag = (fallback: boolean) =>
+  z
+    .union([z.string(), z.boolean()])
+    .optional()
+    .transform((value) =>
+      value === undefined ? fallback : value === true || value === "true"
+    );
+
 const envSchema = z.object({
   APP_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
@@ -9,13 +18,10 @@ const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   R2_FILES_BUCKET_NAME: z.string().min(1).optional(),
-  MAILJET_API_KEY: z.string().min(1).optional(),
-  MAILJET_SECRET_KEY: z.string().min(1).optional(),
-  MAILJET_FROM_EMAIL: z.email().optional(),
-  MAILJET_FROM_NAME: z.string().min(1).optional(),
-  MAILJET_SANDBOX: z
-    .union([z.string(), z.boolean(), z.undefined()])
-    .transform((value) => value === true || value === "true"),
+  AUTH_EMAIL_PASSWORD: flag(true),
+  AUTH_REQUIRE_EMAIL_VERIFICATION: flag(false),
+  EMAIL_FROM: z.email().optional(),
+  EMAIL_FROM_NAME: z.string().min(1).optional(),
   APP_ENV: z.string().min(1).default("local"),
 });
 
@@ -27,10 +33,6 @@ export type RequiredAppConfig = Omit<
   | "R2_ACCESS_KEY_ID"
   | "R2_SECRET_ACCESS_KEY"
   | "R2_FILES_BUCKET_NAME"
-  | "MAILJET_API_KEY"
-  | "MAILJET_SECRET_KEY"
-  | "MAILJET_FROM_EMAIL"
-  | "MAILJET_FROM_NAME"
 >;
 
 export interface PartialEnv {

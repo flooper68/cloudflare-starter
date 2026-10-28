@@ -19,9 +19,9 @@ const demos = [
     href: "/app/queue-demo",
   },
   {
-    title: "Mailjet Demo",
+    title: "Email Demo",
     description:
-      "Send a test email to the currently signed-in account using the Mailjet adapter.",
+      "Send a test email to the currently signed-in account through Cloudflare Email Service.",
     href: "/app/email-demo",
   },
 ] as const;

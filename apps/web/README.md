@@ -9,16 +9,18 @@ Related guides:
 - [docs/how-to-setup-auth.md](../../docs/how-to-setup-auth.md) — Better Auth, optional Google sign-in
 - [docs/how-to-setup-d1.md](../../docs/how-to-setup-d1.md) — D1 database and migrations
 - [docs/how-to-setup-r2.md](../../docs/how-to-setup-r2.md) — R2 binding and presigned URLs
-- [docs/how-to-setup-mailjet.md](../../docs/how-to-setup-mailjet.md) — Mailjet for `/app/email-demo`
+- [docs/how-to-setup-email.md](../../docs/how-to-setup-email.md) — Cloudflare Email Service
+- [docs/how-to-setup-mcp.md](../../docs/how-to-setup-mcp.md) — the MCP server and its parity rule
 
 ## Route layout
 
 Public, SSR:
 
-- `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`
+- `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/consent`
 - `/api/hello` (REST example)
 - `/api/trpc/*` (typed API)
-- `/api/auth/*` (Better Auth)
+- `/api/auth/*` (Better Auth) and `/.well-known/*` (OAuth discovery)
+- `/mcp` (MCP server, OAuth bearer tokens)
 - `/api/files`, `/api/files/:id` (R2 binding upload and download)
 
 Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
@@ -44,4 +46,4 @@ bunx wrangler d1 migrations apply DB --remote --env staging
 bun run deploy:staging
 ```
 
-The environment is chosen at build time (`CLOUDFLARE_ENV`), which the `deploy:*` scripts set. Bindings: `DB` (D1), `FILES` (R2), `APP_QUEUE` (producer and consumer), Cron Triggers, `APP_ENV`. Secrets match [`.dev.vars.example`](.dev.vars.example).
+The environment is chosen at build time (`CLOUDFLARE_ENV`), which the `deploy:*` scripts set. Bindings: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer and consumer), Cron Triggers, plus plain vars. Secrets match [`.dev.vars.example`](.dev.vars.example).

@@ -8,7 +8,11 @@ import { getDb } from "@/server/db";
  * Upload through the Worker into the `FILES` R2 binding (multipart field `file`).
  * Binary transfer stays a plain HTTP route; tRPC carries JSON only.
  */
-export const POST: APIRoute = async ({ locals, request }) => {
+export const POST: APIRoute = async ({ locals, request, url }) => {
+  // Astro's checkOrigin is off for the OAuth token endpoint; check it here.
+  if (request.headers.get("origin") !== url.origin) {
+    return Response.json({ error: "Cross-origin upload" }, { status: 403 });
+  }
   if (!locals.user) {
     return Response.json({ error: "Sign in to upload" }, { status: 401 });
   }

@@ -10,7 +10,7 @@ import { initials } from "@/lib/user";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 
 export function ProfilePageClient() {
-  const { user } = useAuth();
+  const { user, methods } = useAuth();
 
   const email = user?.email ?? "";
   const name = user?.name || "Your profile";
@@ -52,7 +52,7 @@ export function ProfilePageClient() {
         </CardContent>
       </Card>
 
-      <ChangePasswordForm />
+      {methods.emailPassword ? <ChangePasswordForm /> : null}
     </div>
   );
 }

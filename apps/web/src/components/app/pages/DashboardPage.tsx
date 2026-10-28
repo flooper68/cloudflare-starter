@@ -29,7 +29,7 @@ const sections = [
     href: "/app/email-demo",
     title: "Email Demo",
     description:
-      "Send a Mailjet-backed test email to the currently signed-in user.",
+      "Send a test email to the signed-in user through Cloudflare Email Service.",
   },
 ] as const;
 

@@ -1,7 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { env } from "cloudflare:workers";
 
-import { AUTH_BASE_PATH, getAuth } from "@/server/auth";
+import { AUTH_BASE_PATH, getAuth, MCP_PATH } from "@/server/auth";
 
 const PROTECTED_PREFIX = "/app";
 
@@ -15,10 +15,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.user = null;
   context.locals.session = null;
 
-  // Prerendered pages and the auth handler itself never need the session.
+  // Prerendered pages, the auth handler, OAuth discovery and /mcp (bearer tokens,
+  // not cookies) never need the cookie session.
+  const { pathname } = context.url;
   if (
     context.isPrerendered ||
-    context.url.pathname.startsWith(AUTH_BASE_PATH)
+    pathname.startsWith(AUTH_BASE_PATH) ||
+    pathname.startsWith("/.well-known/") ||
+    pathname === MCP_PATH
   ) {
     return next();
   }

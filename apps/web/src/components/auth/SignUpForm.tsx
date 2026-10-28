@@ -11,7 +11,7 @@ import {
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
 
-import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { afterSignIn, authClient, authErrorMessage } from "@/lib/auth-client";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -23,15 +23,21 @@ interface FieldErrors {
 }
 
 export function SignUpForm({
-  googleEnabled,
+  emailPassword,
+  google,
+  search,
 }: {
-  readonly googleEnabled: boolean;
+  readonly emailPassword: boolean;
+  readonly google: boolean;
+  /** The page query, kept on links so an OAuth authorization survives. */
+  readonly search: string;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   function clearField(field: keyof FieldErrors) {
@@ -67,11 +73,13 @@ export function SignUpForm({
 
     setLoading(true);
 
-    // Better Auth signs the new user in right away (autoSignIn).
-    const { error: signUpError } = await authClient.signUp.email({
+    // Signs the new user in right away, unless email verification is required:
+    // then there is no session token and the verification link signs them in.
+    const { data, error: signUpError } = await authClient.signUp.email({
       name: name.trim(),
       email,
       password,
+      callbackURL: "/app/dashboard",
     });
 
     if (signUpError) {
@@ -80,7 +88,13 @@ export function SignUpForm({
       return;
     }
 
-    window.location.href = "/app/dashboard";
+    if (!data?.token) {
+      setCheckEmail(true);
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = afterSignIn(data);
   }
 
   return (
@@ -91,69 +105,79 @@ export function SignUpForm({
         </p>
         <CardTitle>Create an account</CardTitle>
         <p className="text-sm text-zinc-600">
-          Email and password accounts, stored in D1 by Better Auth.
+          {checkEmail
+            ? `We sent a verification link to ${email}. Open it to finish signing up.`
+            : emailPassword
+              ? "Email and password accounts, stored in D1 by Better Auth."
+              : "Use your Google account; the first sign-in creates it."}
         </p>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              aria-invalid={Boolean(fieldErrors.name)}
-              onChange={(event) => {
-                setName(event.target.value);
-                clearField("name");
-              }}
-            />
-            <FieldError message={fieldErrors.name} />
-          </div>
+        {emailPassword && !checkEmail ? (
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                aria-invalid={Boolean(fieldErrors.name)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  clearField("name");
+                }}
+              />
+              <FieldError message={fieldErrors.name} />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              aria-invalid={Boolean(fieldErrors.email)}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                clearField("email");
-              }}
-            />
-            <FieldError message={fieldErrors.email} />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                aria-invalid={Boolean(fieldErrors.email)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  clearField("email");
+                }}
+              />
+              <FieldError message={fieldErrors.email} />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              aria-invalid={Boolean(fieldErrors.password)}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                clearField("password");
-              }}
-            />
-            <FieldError message={fieldErrors.password} />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                aria-invalid={Boolean(fieldErrors.password)}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  clearField("password");
+                }}
+              />
+              <FieldError message={fieldErrors.password} />
+            </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <Button className="w-full" disabled={loading} type="submit">
-            {loading ? "Creating account..." : "Create account"}
-          </Button>
-        </form>
+            <Button className="w-full" disabled={loading} type="submit">
+              {loading ? "Creating account..." : "Create account"}
+            </Button>
+          </form>
+        ) : error ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : null}
 
-        {googleEnabled ? <GoogleSignInButton onError={setError} /> : null}
+        {google && !checkEmail ? (
+          <GoogleSignInButton onError={setError} />
+        ) : null}
       </CardContent>
 
       <CardFooter className="justify-center">
@@ -161,7 +185,7 @@ export function SignUpForm({
           Already have an account?{" "}
           <a
             className="font-medium text-teal-700 underline underline-offset-4"
-            href="/sign-in"
+            href={`/sign-in${search}`}
           >
             Sign in
           </a>

@@ -13,13 +13,13 @@ export {
   verification,
 } from "./db";
 export type {
+  CloudflareEmailConfig,
   EmailRecipient,
   EmailService,
-  MailjetConfig,
   SendEmailInput,
   SendTestEmailInput,
 } from "./email";
-export { createMailjetEmailService } from "./email";
+export { createCloudflareEmailService } from "./email";
 export type { AppQueueMessage } from "./queue";
 export {
   appQueueMessageSchema,
@@ -33,6 +33,7 @@ export {
   createFileRecord,
   findOwnedFile,
   getOwnedFileObject,
+  listOwnedFiles,
   presignDownload,
   presignUpload,
   storeFile,

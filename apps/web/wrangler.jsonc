@@ -9,7 +9,14 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  "vars": { "APP_ENV": "develop" },
+  // Plain vars. Secrets (APP_URL, BETTER_AUTH_SECRET, ...) are set with `bun run setup:secrets`.
+  // EMAIL_FROM is added per environment by `bun run setup:email`.
+  "vars": {
+    "APP_ENV": "develop",
+    "AUTH_EMAIL_PASSWORD": "true",
+    "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
+    "EMAIL_FROM_NAME": "Cloudflare Starter"
+  },
   // Create with `bunx wrangler d1 create <name>` and paste the id (docs/how-to-setup-d1.md).
   // The placeholder id is enough for local dev.
   "d1_databases": [
@@ -23,6 +30,10 @@
   "r2_buckets": [
     { "binding": "FILES", "bucket_name": "cloudflare-starter-files-develop" }
   ],
+  // Cloudflare Email Service. Simulated in local dev (mail is logged); deployed it needs
+  // Workers Paid and a sender domain onboarded with `bun run setup:email`. Add
+  // "allowed_sender_addresses" once the sender is known.
+  "send_email": [{ "name": "EMAIL" }],
   "queues": {
     "producers": [
       { "binding": "APP_QUEUE", "queue": "cloudflare-starter-develop" }
@@ -40,7 +51,13 @@
 
   "env": {
     "staging": {
-      "vars": { "APP_ENV": "staging" },
+      "vars": {
+        "APP_ENV": "staging",
+        "AUTH_EMAIL_PASSWORD": "true",
+        "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
+        "EMAIL_FROM_NAME": "Cloudflare Starter"
+      },
+      "send_email": [{ "name": "EMAIL" }],
       "d1_databases": [
         {
           "binding": "DB",
@@ -71,7 +88,13 @@
       "triggers": { "crons": ["*/5 * * * *"] }
     },
     "production": {
-      "vars": { "APP_ENV": "production" },
+      "vars": {
+        "APP_ENV": "production",
+        "AUTH_EMAIL_PASSWORD": "true",
+        "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
+        "EMAIL_FROM_NAME": "Cloudflare Starter"
+      },
+      "send_email": [{ "name": "EMAIL" }],
       "d1_databases": [
         {
           "binding": "DB",

@@ -1,0 +1,27 @@
+---
+import { ConsentForm } from "@/components/auth/ConsentForm";
+import Layout from "@/layouts/Layout.astro";
+
+// Better Auth sends signed-in users here during an MCP client's OAuth flow, with
+// the signed authorization request as the query.
+const params = Astro.url.searchParams;
+const clientId = params.get("client_id");
+
+if (!clientId) {
+  return Astro.redirect("/app/dashboard");
+}
+if (!Astro.locals.user) {
+  return Astro.redirect(`/sign-in${Astro.url.search}`);
+}
+---
+
+<Layout title="Allow access">
+  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+    <ConsentForm
+      client:load
+      clientId={clientId}
+      redirectUri={params.get("redirect_uri")}
+      scope={params.get("scope") ?? ""}
+    />
+  </main>
+</Layout>

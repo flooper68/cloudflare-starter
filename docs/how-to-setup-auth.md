@@ -1,61 +1,61 @@
 # How To Setup Authentication (Better Auth)
 
-The web app signs users in with [Better Auth](https://www.better-auth.com). Users, sessions and accounts live in the same D1 database as the app data ([how-to-setup-d1.md](./how-to-setup-d1.md)), so there is no external auth provider to configure for email and password sign-in.
+The web app signs users in with [Better Auth](https://www.better-auth.com). Users, sessions and accounts live in the same D1 database as the app data ([how-to-setup-d1.md](./how-to-setup-d1.md)), so there is no external auth provider to run. Better Auth is also the OAuth server that MCP clients such as Claude sign in through ([how-to-setup-mcp.md](./how-to-setup-mcp.md)).
 
 ## What Is Wired Up
 
-- Handler: every `/api/auth/*` request goes to Better Auth ([apps/web/src/pages/api/auth/[...all].ts](../apps/web/src/pages/api/auth/[...all].ts)).
-- Server config: [apps/web/src/server/auth.ts](../apps/web/src/server/auth.ts) — email and password, optional Google, D1 through the Drizzle adapter, per-route rate limits.
-- Middleware: [apps/web/src/middleware.ts](../apps/web/src/middleware.ts) resolves the session cookie into `Astro.locals.user` / `Astro.locals.session` and redirects anonymous `/app/*` requests to `/sign-in`.
-- Browser client: [apps/web/src/lib/auth-client.ts](../apps/web/src/lib/auth-client.ts), used by the forms under `src/components/auth/` and `src/components/profile/`.
-- tRPC: `protectedProcedure` reads the user from `Astro.locals`, so a signed-out request gets `UNAUTHORIZED`.
+- Handler: every `/api/auth/*` request goes to Better Auth ([pages/api/auth/[...all].ts](../apps/web/src/pages/api/auth/[...all].ts)).
+- Server config: [server/auth.ts](../apps/web/src/server/auth.ts) — sign-in methods from env flags, D1 through the Drizzle adapter, rate limits stored in D1, the `jwt()` and `mcp()` plugins.
+- Middleware: [middleware.ts](../apps/web/src/middleware.ts) resolves the session cookie into `Astro.locals.user` / `Astro.locals.session` and redirects anonymous `/app/*` requests to `/sign-in`.
+- Browser client: [lib/auth-client.ts](../apps/web/src/lib/auth-client.ts), with the OAuth provider plugin so a sign-in started by an MCP client continues its authorization.
+- tRPC: `protectedProcedure` refuses requests without a user (`UNAUTHORIZED`).
 
 Pages:
 
-| Route                     | What it does                                                    |
-| ------------------------- | --------------------------------------------------------------- |
-| `/sign-up`                | Name, email, password; signs the user in right away             |
-| `/sign-in`                | Email and password, plus "Continue with Google" when configured |
-| `/forgot-password`        | Sends a reset link                                              |
-| `/reset-password?token=…` | Sets a new password and revokes other sessions                  |
-| `/app/profile`            | Shows the user, changes the password                            |
+| Route                     | What it does                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `/sign-up`                | Name, email, password; signs in right away, or asks to verify the email first |
+| `/sign-in`                | The enabled methods: email + password and/or "Continue with Google"           |
+| `/forgot-password`        | Sends a reset link (only with email + password on)                            |
+| `/reset-password?token=…` | Sets a new password and revokes other sessions                                |
+| `/consent`                | Lets the user allow or deny an MCP client                                     |
+| `/app/profile`            | Shows the user; changes the password when email + password is on              |
 
-## Required Values
+## Secrets
 
-In `apps/web/.dev.vars` locally, as Worker secrets when deployed:
+| Name                                       | Notes                                                                                                                                                    |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                                  | Public origin, no trailing slash. Better Auth's base URL and only trusted origin, so it must match the browser URL exactly (including the port locally). |
+| `BETTER_AUTH_SECRET`                       | 32+ characters, one per environment. Rotating it signs everyone out.                                                                                     |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional, see below.                                                                                                                                     |
 
-```env
-APP_URL=http://localhost:4321
-BETTER_AUTH_SECRET=<at least 32 characters>
-```
-
-Generate a secret per environment:
-
-```bash
-openssl rand -base64 32
-```
-
-`APP_URL` is the public origin of the app with no trailing slash. Better Auth uses it as its base URL and as the only trusted origin, so it must match the URL in the browser exactly (including the port locally).
-
-Deployed:
+Set them with the script, which asks for each value (Enter skips; an empty `BETTER_AUTH_SECRET` is generated):
 
 ```bash
-cd apps/web
-bunx wrangler secret put APP_URL --env production
-bunx wrangler secret put BETTER_AUTH_SECRET --env production
+bun run setup:secrets                      # apps/web/.dev.vars
+bun run setup:secrets --env production     # Worker secrets, via wrangler secret bulk on stdin
 ```
 
-Rotating `BETTER_AUTH_SECRET` signs everyone out.
+Setting Worker secrets deploys a new version of the Worker.
 
-## Password Reset Mail
+## Sign-In Methods
 
-Reset links go out through the Mailjet service when the `MAILJET_*` values are set ([how-to-setup-mailjet.md](./how-to-setup-mailjet.md)). Without them, the link is printed to the dev server log:
+Plain vars, per environment in `apps/web/wrangler.jsonc` (`vars`) and in `.dev.vars` locally:
 
-```
-[auth] Password reset link for you@example.com: http://localhost:4321/api/auth/reset-password/…
-```
+| Var                               | Default | Effect                                                                                                                                                       |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `AUTH_EMAIL_PASSWORD`             | `true`  | Email + password sign-up, sign-in, reset and change password. `false` hides the forms, redirects the password pages to `/sign-in`, and the API refuses them. |
+| `AUTH_REQUIRE_EMAIL_VERIFICATION` | `false` | Users must open the verification link before they can sign in. Needs email ([how-to-setup-email.md](./how-to-setup-email.md)).                               |
 
-That fallback is meant for local development. A deployed environment without Mailjet logs reset links to Workers Logs, so configure Mailjet before you rely on password reset in staging or production.
+Google is on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. With Google only, `/sign-up` offers just the Google button; the first sign-in creates the account.
+
+At least one method must be on. If none is, or verification is required without email, the app refuses to start with an error naming the setting.
+
+## Auth Mail
+
+Password reset links and verification links go out through Cloudflare Email Service when the environment has email ([how-to-setup-email.md](./how-to-setup-email.md)). Locally the binding is simulated and the dev log shows each message. With email off, the links are printed to the log instead; fine locally, not for a deployed environment.
+
+When email is on, a verification mail is sent on sign-up even if verification is not required, so `emailVerified` becomes true once the user clicks it.
 
 ## Optional: Google Sign-In
 
@@ -63,19 +63,21 @@ That fallback is meant for local development. A deployed environment without Mai
 2. Add the authorised redirect URIs, one per environment:
    - `http://localhost:4321/api/auth/callback/google`
    - `https://<your-domain>/api/auth/callback/google`
-3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.dev.vars` and as Worker secrets.
+3. `bun run setup:secrets` (and `--env <env>`) and enter the client id and secret.
 
-The Google button only renders when both values are present.
+## Changing The Auth Tables
 
-## Changing The Auth Schema
+[packages/features/src/db/schema/auth.ts](../packages/features/src/db/schema/auth.ts) is generated by the Better Auth CLI from the real auth config (core tables, JWT keys, OAuth clients/tokens/consents, rate limits). Regenerate it after upgrading Better Auth or changing plugins:
 
-The Better Auth tables are hand-maintained in [packages/features/src/db/schema/auth.ts](../packages/features/src/db/schema/auth.ts). When you add a Better Auth plugin that needs tables or columns:
+```bash
+cd apps/web
+bunx auth@<better-auth version> generate --config scripts/auth-schema.config.ts \
+  --output ../../packages/features/src/db/schema/auth.generated.ts --yes
+```
 
-1. Check the plugin's documented schema (or run `bunx @better-auth/cli generate` against a config that mirrors `createAuthOptions`) and add the tables/columns to `auth.ts`.
-2. `bun run db:generate` to write the SQL migration.
-3. `bun run db:migrate:local`, then apply remotely as in [how-to-setup-d1.md](./how-to-setup-d1.md).
+Replace `auth.ts` with the result (keep its header comment), delete `auth.generated.ts`, then `bun run db:generate` and review the SQL. To add app columns to `user`, use Better Auth's `user.additionalFields` in `server/auth.ts` and regenerate, so the config and the table stay in step.
 
-## Not Included Yet
+## Not Included
 
-- Email verification on sign-up (Better Auth's `emailVerification` option; needs Mailjet).
-- Roles or invite-only sign-up. ServiceHub shows one way: a `role` column on `user` and a `databaseHooks.user.create.before` check.
+- Roles or invite-only sign-up. ServiceHub shows one way: a `role` additional field and a `databaseHooks.user.create.before` check.
+- Magic links, passkeys, two-factor: Better Auth plugins, added the same way as above.

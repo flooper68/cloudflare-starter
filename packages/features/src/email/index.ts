@@ -15,55 +15,40 @@ export interface SendTestEmailInput {
   readonly environment: string;
 }
 
+/** Provider-neutral mailer. Swap the implementation, not the callers. */
 export interface EmailService {
   send(input: SendEmailInput): Promise<void>;
   sendTestEmail(input: SendTestEmailInput): Promise<void>;
 }
 
-export interface MailjetConfig {
-  readonly apiKey: string;
-  readonly secretKey: string;
-  readonly fromEmail: string;
-  readonly fromName: string;
-  readonly sandbox: boolean;
+export interface CloudflareEmailConfig {
+  /** The `send_email` binding (`env.EMAIL`). */
+  readonly binding: SendEmail;
+  /** Sender on a domain onboarded with `wrangler email sending enable`. */
+  readonly from: EmailRecipient;
 }
 
-export function createMailjetEmailService(config: MailjetConfig): EmailService {
+function address(recipient: EmailRecipient): string | EmailAddress {
+  return recipient.name
+    ? { email: recipient.email, name: recipient.name }
+    : recipient.email;
+}
+
+/**
+ * Cloudflare Email Service over the Workers binding: no API key, and in
+ * `wrangler dev` the binding is simulated (mail is logged, not delivered).
+ */
+export function createCloudflareEmailService(
+  config: CloudflareEmailConfig
+): EmailService {
   async function send(input: SendEmailInput) {
-    const auth = btoa(`${config.apiKey}:${config.secretKey}`);
-
-    const response = await fetch("https://api.mailjet.com/v3.1/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        SandboxMode: config.sandbox,
-        Messages: [
-          {
-            From: {
-              Email: config.fromEmail,
-              Name: config.fromName,
-            },
-            To: [
-              {
-                Email: input.to.email,
-                ...(input.to.name ? { Name: input.to.name } : {}),
-              },
-            ],
-            Subject: input.subject,
-            HTMLPart: input.html,
-            TextPart: input.text,
-          },
-        ],
-      }),
+    await config.binding.send({
+      from: address(config.from),
+      to: address(input.to),
+      subject: input.subject,
+      text: input.text,
+      html: input.html,
     });
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Mailjet send failed (${response.status}): ${text}`);
-    }
   }
 
   return {

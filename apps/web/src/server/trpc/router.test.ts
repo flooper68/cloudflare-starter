@@ -10,7 +10,8 @@ function createContext(overrides: Partial<Context> = {}): Context {
     config: {
       APP_URL: "http://localhost:4321",
       BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret",
-      MAILJET_SANDBOX: true,
+      AUTH_EMAIL_PASSWORD: true,
+      AUTH_REQUIRE_EMAIL_VERIFICATION: false,
       APP_ENV: "local",
     },
     email: {

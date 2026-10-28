@@ -9,6 +9,7 @@ export interface AuthUser {
 
 export interface AuthContextValue {
   readonly user: AuthUser | null;
+  readonly methods: { readonly emailPassword: boolean };
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -25,11 +26,7 @@ function readAuthScript(): AuthContextValue {
 export function AuthProvider({ children }: { readonly children: ReactNode }) {
   const [data] = useState(readAuthScript);
 
-  return (
-    <AuthContext.Provider value={{ user: data.user }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={data}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

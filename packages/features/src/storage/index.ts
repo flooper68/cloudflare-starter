@@ -1,7 +1,7 @@
 import { AwsClient } from "aws4fetch";
 import { z } from "zod";
 
-import { type Database, eq, type FileBucket, files } from "../db";
+import { type Database, desc, eq, type FileBucket, files } from "../db";
 
 export const uploadInputSchema = z.object({
   filename: z
@@ -126,6 +126,17 @@ export async function presignDownload(
   );
 
   return signed.url;
+}
+
+export async function listOwnedFiles(
+  db: Database,
+  input: { readonly ownerUserId: string; readonly limit?: number }
+) {
+  return db.query.files.findMany({
+    where: eq(files.ownerUserId, input.ownerUserId),
+    orderBy: desc(files.createdAt),
+    limit: input.limit ?? 50,
+  });
 }
 
 export async function findOwnedFile(

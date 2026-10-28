@@ -14,7 +14,7 @@ That is enough to run locally: D1, R2 (binding), the queue and cron all run insi
 Optional:
 
 - R2 API credentials for the presigned-URL half of `/app/upload-demo` ([how-to-setup-r2.md](./how-to-setup-r2.md))
-- Mailjet for `/app/email-demo` and password-reset mail ([how-to-setup-mailjet.md](./how-to-setup-mailjet.md))
+- A sender domain on Cloudflare for real mail in deployed environments ([how-to-setup-email.md](./how-to-setup-email.md)); locally email is simulated
 - A Google OAuth client for "Continue with Google" ([how-to-setup-auth.md](./how-to-setup-auth.md))
 
 Official references:
@@ -25,7 +25,7 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `APP_QUEUE` (producer, and this Worker is also the consumer), `APP_ENV` (var), Cron Triggers. Code reads them with `import { env } from "cloudflare:workers"`.
+Bindings come from [apps/web/wrangler.jsonc](../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), Cron Triggers. Plain vars there: `APP_ENV`, `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`.
 
 Secrets, validated in [apps/web/src/lib/config.ts](../apps/web/src/lib/config.ts):
 
@@ -34,15 +34,17 @@ Secrets, validated in [apps/web/src/lib/config.ts](../apps/web/src/lib/config.ts
 | `APP_URL`                                  | yes      | Public origin, no trailing slash    |
 | `BETTER_AUTH_SECRET`                       | yes      | 32+ characters, one per environment |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables Google sign-in              |
-| `R2_*`                                     | no       | Upload demo                         |
-| `MAILJET_*`                                | no       | Email demo and reset mail           |
+| `R2_*`                                     | no       | Presigned R2 URLs                   |
+
+`bun run doctor` checks the local setup and points out what is missing for each environment.
 
 ## Run Locally
 
 ```bash
 bun install
-cp apps/web/.dev.vars.example apps/web/.dev.vars
+cp apps/web/.dev.vars.example apps/web/.dev.vars   # or: bun run setup:secrets
 bun run db:migrate:local
+bun run doctor
 bun run dev:web
 ```
 
@@ -55,34 +57,36 @@ Queue and cron run in the same dev server:
 
 ## Deploy
 
-1. Create the D1 databases and paste their ids into `wrangler.jsonc` ([how-to-setup-d1.md](./how-to-setup-d1.md)).
-2. Create the R2 buckets ([how-to-setup-r2.md](./how-to-setup-r2.md)).
-3. Create the queues and their dead-letter queues, per environment:
+Per environment (`develop`, `staging`, `production`); every script takes `--dry-run`.
+
+1. Log in: `bunx wrangler login`.
+2. Create D1, R2 and the queues (with dead-letter queues), and write the D1 id into `wrangler.jsonc`:
 
    ```bash
-   bunx wrangler queues create cloudflare-starter-develop
-   bunx wrangler queues create cloudflare-starter-develop-dlq
+   bun run setup:cloudflare --env production            # add --jurisdiction eu to keep data in the EU
    ```
 
-   Repeat with `staging` and `production`.
-
-4. Set the secrets (repeat with `--env staging` / `--env production`):
+3. Email, if the environment sends mail ([how-to-setup-email.md](./how-to-setup-email.md)):
 
    ```bash
-   cd apps/web
-   bunx wrangler secret put APP_URL
-   bunx wrangler secret put BETTER_AUTH_SECRET
+   bun run setup:email --domain example.com --env production
    ```
 
-   Add the optional `GOOGLE_*`, `R2_*` and `MAILJET_*` secrets the same way.
-
-5. Migrate, then build and deploy:
+4. Migrate, build and deploy:
 
    ```bash
    cd apps/web
    bunx wrangler d1 migrations apply DB --remote --env production
    bun run deploy:production
    ```
+
+5. Secrets (asks for each one, sends them on stdin; this deploys a new version):
+
+   ```bash
+   bun run setup:secrets --env production
+   ```
+
+   On a brand-new Worker the first deploy answers 500 until the secrets are set a minute later; afterwards secrets persist across deploys.
 
 The environment is picked when building: `deploy:production` runs `CLOUDFLARE_ENV=production astro build && wrangler deploy`. Running `wrangler deploy --env production` on a bundle built without `CLOUDFLARE_ENV` would deploy the develop config. Use `bun run deploy` for develop and `deploy:staging` for staging. Storybook deploys separately ([how-to-setup-storybook-worker.md](./how-to-setup-storybook-worker.md)).
 

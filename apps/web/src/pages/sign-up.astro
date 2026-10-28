@@ -3,15 +3,24 @@ import { env } from "cloudflare:workers";
 
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import Layout from "@/layouts/Layout.astro";
-import { isGoogleEnabled } from "@/server/auth";
+import { getAuthMethods } from "@/server/auth";
 
-if (Astro.locals.user) {
+// Signed-in users skip this page, unless it carries a signed OAuth authorization
+// query (an MCP client asked them to sign in again).
+if (Astro.locals.user && !Astro.url.searchParams.has("sig")) {
   return Astro.redirect("/app/dashboard");
 }
+
+const methods = getAuthMethods(env);
 ---
 
 <Layout title="Sign up">
   <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
-    <SignUpForm client:load googleEnabled={isGoogleEnabled(env)} />
+    <SignUpForm
+      client:load
+      emailPassword={methods.emailPassword}
+      google={methods.google}
+      search={Astro.url.search}
+    />
   </main>
 </Layout>

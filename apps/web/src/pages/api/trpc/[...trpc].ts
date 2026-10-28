@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import type { APIRoute } from "astro";
 
-import { createAppContext } from "@/server/trpc/context";
+import { createAppContext, userOf } from "@/server/trpc/context";
 import { appRouter } from "@/server/trpc/router";
 
 async function handler(context: Parameters<APIRoute>[0]) {
@@ -16,7 +16,7 @@ async function handler(context: Parameters<APIRoute>[0]) {
     endpoint: "/api/trpc",
     req: context.request,
     router: appRouter,
-    createContext: () => createAppContext(context.locals),
+    createContext: () => createAppContext(userOf(context.locals.user)),
   });
 }
 

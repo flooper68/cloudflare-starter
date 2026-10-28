@@ -8,7 +8,7 @@ Shared feature code consumed by every app and worker in this monorepo — databa
 src/
 ├── index.ts       Root barrel. Every public symbol is re-exported here.
 ├── db/            Drizzle schema (Better Auth + app tables) + D1 client factory.
-├── email/         Mailjet email service.
+├── email/         Email service over the Cloudflare send_email binding.
 ├── queue/         Zod schemas + producer/consumer helpers for the app queue.
 └── storage/       R2 presign, file record creation, ownership lookup.
 ```

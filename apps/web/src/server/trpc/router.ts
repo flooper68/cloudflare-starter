@@ -2,6 +2,7 @@ import {
   createFileRecord,
   enqueueAppMessage,
   findOwnedFile,
+  listOwnedFiles,
   presignDownload,
   presignUpload,
   uploadInputSchema,
@@ -23,6 +24,24 @@ export const appRouter = router({
   }),
 
   storage: router({
+    listFiles: protectedProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).optional() }))
+      .query(async ({ ctx, input }) => {
+        const rows = await listOwnedFiles(ctx.db, {
+          ownerUserId: ctx.user.id,
+          limit: input.limit,
+        });
+        return {
+          items: rows.map((file) => ({
+            id: file.id,
+            filename: file.filename,
+            contentType: file.contentType,
+            sizeBytes: file.sizeBytes,
+            createdAt: file.createdAt.toISOString(),
+          })),
+        };
+      }),
+
     createUpload: protectedProcedure
       .input(uploadInputSchema)
       .mutation(async ({ ctx, input }) => {
