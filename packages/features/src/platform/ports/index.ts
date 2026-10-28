@@ -37,6 +37,12 @@ export type {
   UpDownCounter,
 } from "./metrics";
 export type {
+  AnalyticsContext,
+  IdentifyTraits,
+  ProductAnalytics,
+  TrackedEvent,
+} from "./product-analytics";
+export type {
   RateLimiter,
   RateLimitResult,
   RateLimitRule,

@@ -38,7 +38,7 @@ gh workflow run deploy.yml -f environment=staging
 
 It runs `bun run verify`, applies the D1 migrations to that environment's remote database (`wrangler d1 migrations apply DB --remote [--env <env>]`), then runs `bun run deploy`, `deploy:staging` or `deploy:production` in `apps/web`. Only one deploy per environment runs at a time; a second one waits.
 
-It does not deploy Storybook or the container app, and it does not set Worker secrets. Set those once with `bun run setup:secrets --env <env>` (see [how-to-setup-auth.md](how-to-setup-auth.md)). The workspace and sign-up vars are not shipped either: commit the output of `bun run setup:auth --env <env>` before the first deploy, or the deployed Worker refuses to start. The CI deploy dry-run does not run the Worker, so it passes without them.
+It does not deploy Storybook or the container app, and it does not set Worker secrets. Set those once with `bun run setup:secrets --env <env>` (see [how-to-setup-auth.md](how-to-setup-auth.md)). The workspace and sign-up vars are not shipped either, nor the analytics settings: commit the output of `bun run setup:auth --env <env>` and `bun run setup:analytics --env <env>` (with `ANALYTICS=analytics-engine` also set the `ANALYTICS_ID_SECRET` secret) before the first deploy, or the deployed Worker refuses to start. The CI deploy dry-run does not run the Worker, so it passes without them.
 
 ### 1. Create the GitHub environments
 

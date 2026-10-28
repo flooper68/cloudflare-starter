@@ -1,6 +1,5 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-
 import {
   fixedClock,
   seedUser,
@@ -8,7 +7,9 @@ import {
   sequentialIds,
   testBilling,
   testDb,
+  testRequestContext,
 } from "../../test/fixtures";
+import { createMemoryProductAnalytics } from "../platform";
 import { deleteWorkspaceFiles } from "./delete-workspace-files";
 import { storeFile } from "./store-file";
 
@@ -22,6 +23,8 @@ describe("deleteWorkspaceFiles", () => {
       bucket: env.FILES,
       clock: fixedClock(),
       ids: sequentialIds("abababab-0000-4000-8000-"),
+      requestContext: testRequestContext(),
+      analytics: createMemoryProductAnalytics(),
       billing: testBilling(),
     };
     const body = new TextEncoder().encode("x").buffer as ArrayBuffer;

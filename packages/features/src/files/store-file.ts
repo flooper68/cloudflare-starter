@@ -1,16 +1,18 @@
 import { eq } from "drizzle-orm";
 
 import type { Database } from "../database";
-import type { BillingGate, Clock, Ids } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
+import type { ProductAnalytics } from "../platform";
+import { trackEvent } from "../product-analytics";
 import type { Actor } from "../workspaces";
 import { type CreatedFile, createFileRecord } from "./create-file-record";
-import type { UploadInput } from "./domain";
+import { contentCategory, fileUploadedEvent, type UploadInput } from "./domain";
 import { files } from "./files.schema";
 
 /**
  * Binding path: stores the bytes through the Worker in `FILES` and records the file in
  * the actor's workspace. If the upload fails the record is removed, so the table and the
- * bucket stay in step.
+ * bucket stay in step. A stored file is tracked as `files.uploaded`.
  */
 export async function storeFile(
   deps: {
@@ -18,6 +20,8 @@ export async function storeFile(
     readonly bucket: R2Bucket;
     readonly clock: Clock;
     readonly ids: Ids;
+    readonly requestContext: RequestContext;
+    readonly analytics: ProductAnalytics;
     readonly billing: BillingGate;
   },
   actor: Actor,
@@ -34,5 +38,18 @@ export async function storeFile(
     throw error;
   }
 
+  trackEvent(
+    deps,
+    {
+      ...deps.requestContext,
+      userId: actor.userId,
+      workspaceId: actor.workspaceId,
+    },
+    fileUploadedEvent,
+    {
+      content_category: contentCategory(input.mimeType),
+      size_bytes: input.sizeBytes,
+    }
+  );
   return file;
 }

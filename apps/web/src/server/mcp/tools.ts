@@ -453,6 +453,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
 
 /** Procedures deliberately not exposed to MCP, with the reason. Keep it empty if you can. */
 export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {
+  "analytics.track": "client telemetry, not an agent capability",
   "admin.impersonation.start":
     "creates a browser cookie session; an MCP client has no browser session to swap",
   "admin.impersonation.stop":

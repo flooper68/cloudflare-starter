@@ -157,6 +157,15 @@ export const RATE_LIMIT_POLICIES = {
     binding: "RL_INVITE",
     description: "Invitations a user sends (mail to other people)",
   },
+  "analytics.client": {
+    limit: 120,
+    periodSeconds: 60,
+    scope: "user",
+    enforcer: "edge",
+    binding: "RL_ANALYTICS",
+    description:
+      "Client analytics batches (analytics.track), per user; kept apart from mutation.user so telemetry never uses up a user's mutations",
+  },
 } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
 
 export type RateLimitPolicyId = keyof typeof RATE_LIMIT_POLICIES;
@@ -166,6 +175,8 @@ export const PROCEDURE_POLICIES: Readonly<Record<string, RateLimitPolicyId>> = {
   "storage.createUpload": "upload.user",
   // Mails a link to a typed-in address.
   "workspace.invitations.create": "invitation.send",
+  // Client telemetry: frequent, cheap, its own budget.
+  "analytics.track": "analytics.client",
 };
 
 /** Every tRPC mutation without an entry in PROCEDURE_POLICIES. */

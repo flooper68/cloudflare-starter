@@ -14,6 +14,7 @@ import { buildRequiredConfig } from "@/lib/env";
 import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import { httpAttributes, internalErrorResponse } from "@/server/http";
+import { buildPlatform } from "@/server/platform";
 
 /**
  * Streams a file from the `FILES` binding to members of its workspace
@@ -32,6 +33,7 @@ export const GET: APIRoute = async ({ locals, params, request, url }) => {
         clock: systemClock,
         ids: randomIds,
         requestContext: locals.requestContext,
+        analytics: buildPlatform(env).productAnalytics(),
         billing: billingGateFor(env, locals.requestContext),
       },
       {

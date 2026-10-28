@@ -4,9 +4,13 @@ export { createPresignedUpload } from "./create-presigned-upload";
 export { deleteWorkspaceFiles } from "./delete-workspace-files";
 export {
   buildFileKey,
+  CONTENT_CATEGORIES,
+  type ContentCategory,
+  contentCategory,
   FILE_BUCKETS,
   type FileBucket,
   FileNotFoundError,
+  fileUploadedEvent,
   MAX_UPLOAD_BYTES,
   PresignedUrlsUnavailableError,
   type UploadInput,

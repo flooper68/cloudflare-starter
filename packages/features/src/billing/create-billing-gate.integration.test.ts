@@ -15,11 +15,13 @@ describe("createBillingGate", () => {
     const gate = createBillingGate(billingDeps());
 
     // No subscription: the free plan, which lacks direct uploads.
+    expect(await gate.planId(actor.workspaceId)).toBe("free");
     await expect(
       gate.requireFeature(actor.workspaceId, "files.presigned_upload")
     ).rejects.toMatchObject({ kind: "limit_reached" });
 
     await gate.workspaceCreated(actor.workspaceId);
+    expect(await gate.planId(actor.workspaceId)).toBe("pro");
     await expect(
       gate.requireFeature(actor.workspaceId, "files.presigned_upload")
     ).resolves.toBeUndefined();

@@ -2,17 +2,21 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
-import { sha256Hex } from "../platform";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
+import { type ProductAnalytics, sha256Hex } from "../platform";
+import { trackEvent } from "../product-analytics";
 import {
   InvitationExpiredError,
   InvitationNotFoundError,
   InvitationWrongAccountError,
   invitationStatus,
+  isRole,
+  memberJoinedEvent,
   normalizeEmail,
   requireMode,
   type WorkspaceMode,
 } from "./domain";
+import { identifyMember } from "./identify-member";
 import { workspaceInvitations, workspaceMembers } from "./workspaces.schema";
 
 /**
@@ -28,6 +32,9 @@ export async function acceptInvitation(
     readonly clock: Clock;
     readonly ids: Ids;
     readonly requestContext: RequestContext;
+    readonly analytics: ProductAnalytics;
+    /** The joined workspace's plan, for the analytics traits. */
+    readonly billing: BillingGate;
   },
   input: {
     readonly mode: WorkspaceMode;
@@ -106,5 +113,17 @@ export async function acceptInvitation(
     target: { type: "invitation", id: invitation.id },
     metadata: { role: invitation.role },
   });
+  if (isRole(invitation.role)) {
+    const actor = {
+      userId: input.user.id,
+      workspaceId: invitation.workspaceId,
+      role: invitation.role,
+    };
+    trackEvent(deps, { ...deps.requestContext, ...actor }, memberJoinedEvent, {
+      role: invitation.role,
+      via: "invitation",
+    });
+    await identifyMember(deps, actor);
+  }
   return { workspaceId: invitation.workspaceId };
 }

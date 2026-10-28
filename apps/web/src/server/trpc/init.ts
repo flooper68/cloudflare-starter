@@ -19,6 +19,7 @@ import {
   type Logger,
   type Metrics,
   mutationPolicy,
+  type ProductAnalytics,
   type R2Config,
   type RateLimiter,
   ReauthRequiredError,
@@ -59,6 +60,8 @@ export interface Context {
   readonly flagStore: FeatureFlagStore | null;
   /** Edge rate limits; every mutation counts against its policy (limitMutations). */
   readonly rateLimiter: RateLimiter;
+  /** Product analytics of this request; use cases track with `trackEvent`. */
+  readonly analytics: ProductAnalytics;
   /** Entitlement checks and usage counting for use cases (BILLING). */
   readonly billing: BillingGate;
   /** Checkout, portal and webhooks; noop unless BILLING=provider. */

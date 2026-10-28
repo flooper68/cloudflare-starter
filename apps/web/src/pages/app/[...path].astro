@@ -7,6 +7,7 @@ import { env } from "cloudflare:workers";
 import { brand } from "@cloudflare-starter/ui";
 
 import { AppSpa } from "@/components/app/AppSpa";
+import WebAnalytics from "@/components/WebAnalytics.astro";
 import { serializeBootstrap, spaBootstrap } from "@/server/spa-bootstrap";
 
 const bootstrap = await spaBootstrap(env, Astro.locals);
@@ -30,5 +31,6 @@ const bootstrap = await spaBootstrap(env, Astro.locals);
     />
 
     <AppSpa client:only="react" />
+    <WebAnalytics spa />
   </body>
 </html>

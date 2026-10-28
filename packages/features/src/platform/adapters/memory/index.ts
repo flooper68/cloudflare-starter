@@ -20,5 +20,10 @@ export {
 } from "./memory-job-queue";
 export { createMemoryLogger, type MemoryLogger } from "./memory-logger";
 export { createMemoryMetrics, type MemoryMetrics } from "./memory-metrics";
+export {
+  createMemoryProductAnalytics,
+  type MemoryProductAnalytics,
+  type RecordedAnalytics,
+} from "./memory-product-analytics";
 export { createMemoryRateLimiter } from "./memory-rate-limiter";
 export { createMemoryTracer, type MemoryTracer } from "./memory-tracer";

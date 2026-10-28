@@ -1,10 +1,13 @@
 import {
+  analyticsEvents,
+  clientBatchSchema,
   createDownloadUrl,
   createPresignedUpload,
   evaluateClientFlags,
   listWorkspaceFiles,
   resolveEntitlements,
   sendHello,
+  trackClientEvents,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
 import { z } from "zod";
@@ -112,6 +115,22 @@ export const appRouter = router({
         environment: ctx.config.APP_ENV,
       }),
     })),
+  }),
+
+  analytics: router({
+    /**
+     * Client telemetry: a batch of up to 20 `client: true` events of the analytics
+     * catalog, attributed to the caller and their workspace. Write-only; limited by
+     * `analytics.client`, not the mutation budget.
+     */
+    track: workspaceProcedure
+      .input(clientBatchSchema)
+      .mutation(({ ctx, input }) =>
+        trackClientEvents(ctx, ctx.requestContext, {
+          catalog: analyticsEvents,
+          batch: { events: input.events },
+        })
+      ),
   }),
 });
 

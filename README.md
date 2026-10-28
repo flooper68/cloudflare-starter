@@ -21,11 +21,12 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Append-only audit log in D1 (sign-in, failed sign-in, sign-up, password reset and change; admin and workspace actions in the catalog): typed actions with strict metadata, the request's trace id on every event, OCSF-aligned fields, daily retention purge, and an architecture test that every state change is audited
 - OpenTelemetry-shaped logs and error reports in Workers Logs (exportable over OTLP) behind swappable ports (Logger, ErrorReporter), W3C Trace Context across HTTP and background jobs, and a reference (the trace id) users can quote instead of a stack trace
 - Metrics and tracing behind ports shaped on the OpenTelemetry API: a typed metric catalog with semantic-convention names (OpenMetrics when exported), request, procedure, queue and cron latency in Workers Analytics Engine (queryable from Grafana), and spans for every request, procedure, MCP tool, message and cron run on the same trace
+- Product analytics shaped like the Segment spec: a typed event catalog per feature (server and client events, no personal-data property names, enforced in CI), written to Workers Analytics Engine under HMAC-pseudonymous user and workspace ids, queried outside the app with SQL or Grafana; optional cookieless Cloudflare Web Analytics beacon
 - Feature flags shaped like OpenFeature: a typed catalog in code (owner and removal condition per flag, enforced in CI), workspace, plan and percentage rules stored in D1 behind a swappable port, `useFlag`/`FlagGate` in the SPA, admin procedures and MCP tools
 - Component library in Linear's visual language (dark-first, dense, keyboard-first): 60+ components from buttons to data tables, command palette, kanban and app shell, themed by tokens, re-branded in two files
 - Storybook built into the web app at `/_storybook/` in every environment
 - Cloudflare Container demo, deployed as its own Worker
-- Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:auth`, `setup:admin`, `setup:email`, `doctor`), agent skills in `.claude/skills/`, and CI that can run on self-hosted runners in Docker (`runner:up`)
+- Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:auth`, `setup:admin`, `setup:analytics`, `setup:email`, `doctor`), agent skills in `.claude/skills/`, and CI that can run on self-hosted runners in Docker (`runner:up`)
 - Every dependency pinned to an exact version
 
 ## Starting a new project from this starter
@@ -42,7 +43,7 @@ This repository is a template, not a framework. When you start a project from it
 
    [bunfig.toml](bunfig.toml) sets `exact = true`, so updates and new `bun add`s are written without `^`/`~`. Read the changelogs of any major bump. Two known holds: `astro check` needs TypeScript 6 until Astro supports TypeScript 7.1+, so keep `typescript` on the latest 6.x; and any peer ranges in `packages/ui` need bumping by hand.
 
-2. **Choose how users are grouped and who may sign up.** `WORKSPACE_MODE` (personal: everyone works alone; single: one team in one workspace; multi: teams create and join workspaces) and `SIGN_UP` (open or invite-only), per environment with `bun run setup:auth`. The starter ships no choice for deployed environments: a deploy refuses to start until you have run it. Replace the placeholder roles (`owner`, `member`) with the product's. [docs/guides/how-to-configure-workspaces.md](docs/guides/how-to-configure-workspaces.md) The same script asks for `BILLING` (off, manual or provider); replace the example plans in `packages/features/src/billing/domain/catalog.ts`. [docs/guides/how-to-configure-plans-and-billing.md](docs/guides/how-to-configure-plans-and-billing.md)
+2. **Choose how users are grouped and who may sign up.** `WORKSPACE_MODE` (personal: everyone works alone; single: one team in one workspace; multi: teams create and join workspaces) and `SIGN_UP` (open or invite-only), per environment with `bun run setup:auth`. The starter ships no choice for deployed environments: a deploy refuses to start until you have run it. Replace the placeholder roles (`owner`, `member`) with the product's. [docs/guides/how-to-configure-workspaces.md](docs/guides/how-to-configure-workspaces.md) The same script asks for `BILLING` (off, manual or provider); replace the example plans in `packages/features/src/billing/domain/catalog.ts`. [docs/guides/how-to-configure-plans-and-billing.md](docs/guides/how-to-configure-plans-and-billing.md) Decide the same way whether each environment collects product events and Web Analytics: `bun run setup:analytics` ([docs/guides/how-to-setup-product-analytics.md](docs/guides/how-to-setup-product-analytics.md)).
 
 3. **Strip what the product does not use.** Every feature here is a demo of a pattern; keeping unused ones costs bindings, secrets, provisioning and review surface. Typical cuts:
 
@@ -135,6 +136,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                        |
 | `bun run setup:auth`                     | Asks for the workspace mode, sign-up policy, billing mode and `ADMIN_PORTAL` and writes them into `wrangler.jsonc`              |
 | `bun run setup:admin --email <address>`  | Makes an account a platform admin (`--demote` reverses, `--remote --env <env>` for a deployed database), audited                |
+| `bun run setup:analytics`                | Asks whether an environment collects product events and Web Analytics and writes the settings into `wrangler.jsonc`             |
 | `bun run runner:up -- --workers <n>`     | Builds and starts n self-hosted CI runners in Docker ([how-to-setup-ci.md](docs/guides/how-to-setup-ci.md#self-hosted-runners)) |
 | `bun run runner:down` / `runner:logs`    | Stops the runners / follows their logs                                                                                          |
 | `bun run runner:remove -- --all`         | Unregisters the runners and deletes their containers and volumes                                                                |
@@ -163,6 +165,7 @@ See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) f
 - [How to setup the D1 database](docs/guides/how-to-setup-d1.md)
 - [How to setup R2 storage](docs/guides/how-to-setup-r2.md)
 - [How to setup email (Cloudflare Email Service)](docs/guides/how-to-setup-email.md)
+- [How to set up product analytics (Analytics Engine, Web Analytics)](docs/guides/how-to-setup-product-analytics.md)
 - [MCP: using the app from Claude](docs/guides/how-to-setup-mcp.md)
 - [How to setup the container demo](docs/guides/how-to-setup-container.md)
 - [How to use Storybook](docs/guides/how-to-use-storybook.md)

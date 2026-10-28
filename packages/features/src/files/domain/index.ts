@@ -1,3 +1,9 @@
+export {
+  CONTENT_CATEGORIES,
+  type ContentCategory,
+  contentCategory,
+  fileUploadedEvent,
+} from "./analytics-events";
 export { FileNotFoundError, PresignedUrlsUnavailableError } from "./errors";
 export { FILE_BUCKETS, type FileBucket } from "./file-bucket";
 export { buildFileKey } from "./file-key";

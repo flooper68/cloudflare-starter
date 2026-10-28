@@ -26,6 +26,27 @@ describe("createWorkspace", () => {
       kind: "shared",
       role: "owner",
     });
+    expect(
+      deps.analytics.recorded.map((call) => [
+        call.event,
+        call.properties,
+        call.context.userId,
+        call.context.workspaceId,
+      ])
+    ).toEqual([
+      [
+        "workspaces.created",
+        { kind: "shared" },
+        ada.id,
+        "00000000-0000-4000-8000-000000000001",
+      ],
+      [
+        "$identify",
+        { role: "owner", workspace_size: "1", plan: "unlimited" },
+        ada.id,
+        "00000000-0000-4000-8000-000000000001",
+      ],
+    ]);
     expect(await auditTrail("00000000-0000-4000-8000-000000000001")).toEqual([
       expect.objectContaining({
         action: "workspace.created",

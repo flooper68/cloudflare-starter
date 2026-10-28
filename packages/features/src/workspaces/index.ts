@@ -19,6 +19,7 @@ export {
   isRole,
   LastOwnerError,
   MemberNotFoundError,
+  memberJoinedEvent,
   modeAllows,
   NotWorkspaceMemberError,
   normalizeEmail,
@@ -36,9 +37,11 @@ export {
   WorkspaceModeError,
   WorkspaceNotFoundError,
   type WorkspaceSettings,
+  workspaceCreatedEvent,
   workspaceNameSchema,
   workspaceSettingsSchema,
 } from "./domain";
+export { identifyMember } from "./identify-member";
 export { leaveWorkspace } from "./leave-workspace";
 export { type InvitationSummary, listInvitations } from "./list-invitations";
 export { listMembers, type WorkspaceMember } from "./list-members";

@@ -1,8 +1,11 @@
 export {
+  ANALYTICS_ENGINE_FIXED_BLOBS,
   ANALYTICS_ENGINE_LAYOUT,
   type AnalyticsEngineMetricsOptions,
+  type AnalyticsEngineProductAnalyticsOptions,
   type CapturedError,
   createAnalyticsEngineMetrics,
+  createAnalyticsEngineProductAnalytics,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
@@ -13,6 +16,7 @@ export {
   createMemoryJobQueue,
   createMemoryLogger,
   createMemoryMetrics,
+  createMemoryProductAnalytics,
   createMemoryRateLimiter,
   createMemoryTracer,
   createTurnstileVerifier,
@@ -21,6 +25,8 @@ export {
   createWorkersTracer,
   D1_FLAGS_TTL_MS,
   type D1FeatureFlagsOptions,
+  type DecodedAnalyticsDataPoint,
+  decodeAnalyticsEngineDataPoint,
   ERROR_REPORT_EVENT,
   fromDataPoint,
   MAX_POINTS_PER_FLUSH,
@@ -30,6 +36,7 @@ export {
   type MemoryJobQueue,
   type MemoryLogger,
   type MemoryMetrics,
+  type MemoryProductAnalytics,
   type MemoryTracer,
   noopBillingProvider,
   noopErrorReporter,
@@ -37,15 +44,23 @@ export {
   noopHumanVerifier,
   noopLogger,
   noopMetrics,
+  noopProductAnalytics,
   noopRateLimiter,
   noopTracer,
+  pseudonymousId,
+  type RecordedAnalytics,
   type SentJob,
   SITEVERIFY_URL,
   type TurnstileVerifierConfig,
+  toAnalyticsEngineDataPoint,
   toDataPoint,
   type WorkersLogsLoggerOptions,
   type WorkersTracerOptions,
 } from "./adapters";
+export {
+  createPointBudget,
+  undeliverableReason,
+} from "./analytics-delivery";
 export { systemClock } from "./clock";
 export { createDb, type Db } from "./db";
 export {
@@ -80,6 +95,7 @@ export {
   validateMetricDefinition,
 } from "./metric-catalog";
 export type {
+  AnalyticsContext,
   BillingProvider,
   CheckoutInput,
   Counter,
@@ -98,6 +114,7 @@ export type {
   HumanVerificationInput,
   HumanVerificationResult,
   HumanVerifier,
+  IdentifyTraits,
   InvalidStoredFlag,
   JobQueue,
   JobQueueSendOptions,
@@ -106,6 +123,7 @@ export type {
   LogLevel,
   Metrics,
   PortalInput,
+  ProductAnalytics,
   RateLimiter,
   RateLimitResult,
   RateLimitRule,
@@ -117,6 +135,7 @@ export type {
   StoredFlagEntry,
   SubscriptionChange,
   Tracer,
+  TrackedEvent,
   UpDownCounter,
 } from "./ports";
 export { mathRandom } from "./random";

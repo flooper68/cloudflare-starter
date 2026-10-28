@@ -28,4 +28,9 @@ export interface BillingGate {
   ): Promise<void>;
   /** A workspace was just created: starts its plan (and trial) when billing is on. */
   workspaceCreated(workspaceId: string): Promise<void>;
+  /**
+   * The id of the plan in effect for the workspace (its fallback once a trial or
+   * subscription lapsed; the unlimited plan with BILLING=off). Used for analytics traits.
+   */
+  planId(workspaceId: string): Promise<string>;
 }

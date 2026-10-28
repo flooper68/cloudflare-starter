@@ -245,6 +245,7 @@ async function provisionNewUser(
         clock: systemClock,
         ids: randomIds,
         requestContext,
+        analytics: buildPlatform(env).productAnalytics(),
         billing: billingGateFor(env, requestContext),
       },
       {

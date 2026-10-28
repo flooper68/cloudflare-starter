@@ -9,6 +9,7 @@ import {
   cronCatalog,
   noopFeatureFlags,
   noopHumanVerifier,
+  noopProductAnalytics,
   noopRateLimiter,
 } from "@cloudflare-starter/features";
 import { describe, expect, it, vi } from "vitest";
@@ -35,6 +36,8 @@ function memoryPlatform() {
     rateLimiter: noopRateLimiter,
     humanVerifier: noopHumanVerifier,
     turnstile: null,
+    productAnalytics: () => noopProductAnalytics,
+    webAnalytics: null,
   };
   return { platform, logger, errors, jobQueue, metrics, tracer };
 }

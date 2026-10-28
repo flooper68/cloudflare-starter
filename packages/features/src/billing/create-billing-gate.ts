@@ -4,6 +4,7 @@ import { assertFeature } from "./assert-feature";
 import { assertLimit } from "./assert-limit";
 import type { BillingSettings } from "./domain";
 import { recordUsage } from "./record-usage";
+import { resolveEntitlements } from "./resolve-entitlements";
 import { startTrial } from "./start-trial";
 
 /**
@@ -28,5 +29,7 @@ export function createBillingGate(deps: {
     workspaceCreated: async (workspaceId) => {
       await startTrial(deps, workspaceId);
     },
+    planId: async (workspaceId) =>
+      (await resolveEntitlements(deps, workspaceId)).planId,
   };
 }

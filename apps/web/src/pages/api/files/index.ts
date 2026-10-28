@@ -41,8 +41,9 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   if (!locals.user) {
     return Response.json({ error: "Sign in to upload" }, { status: 401 });
   }
+  const platform = buildPlatform(env);
   const refused = await refuseOverLimit(
-    buildPlatform(env),
+    platform,
     "upload.user",
     { userId: locals.user.id, ip: locals.requestContext.ip },
     (error) => rateLimitedResponse(error, locals.requestContext, url.pathname)
@@ -68,6 +69,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   }
 
   const db = getDb(env);
+  const analytics = platform.productAnalytics();
   const billing = billingGateFor(env, locals.requestContext);
   let actor: Actor;
   try {
@@ -77,6 +79,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
         clock: systemClock,
         ids: randomIds,
         requestContext: locals.requestContext,
+        analytics,
         billing,
       },
       {
@@ -106,7 +109,15 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
   try {
     const stored = await storeFile(
-      { db, bucket: env.FILES, clock: systemClock, ids: randomIds, billing },
+      {
+        db,
+        bucket: env.FILES,
+        clock: systemClock,
+        ids: randomIds,
+        requestContext: locals.requestContext,
+        analytics,
+        billing,
+      },
       actor,
       { ...input.data, body: await file.arrayBuffer() }
     );

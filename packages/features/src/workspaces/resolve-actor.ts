@@ -2,6 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 
 import type { Database } from "../database";
 import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
+import type { ProductAnalytics } from "../platform";
 import {
   type Actor,
   CREATOR_ROLE,
@@ -31,6 +32,8 @@ export async function resolveActor(
     readonly clock: Clock;
     readonly ids: Ids;
     readonly requestContext: RequestContext;
+    /** For the personal workspace a healed user gets (provisionUser tracks it). */
+    readonly analytics: ProductAnalytics;
     /** For healing: a re-provisioned personal workspace starts its plan. */
     readonly billing: BillingGate;
   },

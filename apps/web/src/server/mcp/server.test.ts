@@ -8,6 +8,7 @@ import {
   noopBillingProvider,
   noopFeatureFlags,
   noopLogger,
+  noopProductAnalytics,
   noopRateLimiter,
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
@@ -63,11 +64,13 @@ function context(overrides: Partial<Context> = {}): Context {
     flags: noopFeatureFlags,
     flagStore: null,
     rateLimiter: noopRateLimiter,
+    analytics: noopProductAnalytics,
     billing: {
       requireFeature: async () => {},
       requireLimit: async () => {},
       recordUsage: async () => {},
       workspaceCreated: async () => {},
+      planId: async () => "unlimited",
     },
     billingProvider: noopBillingProvider,
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },

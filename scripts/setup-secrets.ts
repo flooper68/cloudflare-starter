@@ -6,7 +6,9 @@
  *  - an environment: Worker secrets via `wrangler secret bulk` (JSON on stdin, never in
  *    arguments or files). Note that this deploys a new version with the secrets.
  * Press Enter to skip a value (keep what is there). BETTER_AUTH_SECRET is generated
- * when left empty, and an existing local one is never rotated.
+ * when left empty, and an existing local one is never rotated. ANALYTICS_ID_SECRET is
+ * generated only for a local .dev.vars without one; for a deployed environment it is
+ * typed in once and Enter keeps it (a new key starts every pseudonymous id afresh).
  */
 import { createHash, randomBytes } from "node:crypto";
 import { parseArgs } from "node:util";
@@ -80,6 +82,18 @@ const SECRETS: readonly Secret[] = [
         ? TURNSTILE_TEST_SECRET
         : undefined,
   },
+  {
+    name: "ANALYTICS_ID_SECRET",
+    prompt:
+      "Key of the pseudonymous analytics ids (32+ chars; needed with ANALYTICS=analytics-engine; locally Enter generates one; deployed, Enter keeps the current one, so type a key the first time (openssl rand -base64 32) and never rotate it)",
+    hidden: true,
+    // Generated only for a local .dev.vars without one. A deployed environment's secret
+    // cannot be read back, so Enter keeps it: a new key would re-key every pseudonym.
+    fallback: () =>
+      local && !existing.get("ANALYTICS_ID_SECRET")
+        ? randomBytes(32).toString("base64")
+        : undefined,
+  },
   { name: "GOOGLE_CLIENT_ID", prompt: "Google OAuth client id (optional)" },
   {
     name: "GOOGLE_CLIENT_SECRET",
@@ -118,6 +132,12 @@ for (const secret of SECRETS) {
 
 if (collected.BETTER_AUTH_SECRET && collected.BETTER_AUTH_SECRET.length < 32) {
   fail("BETTER_AUTH_SECRET must be at least 32 characters");
+}
+if (
+  collected.ANALYTICS_ID_SECRET &&
+  collected.ANALYTICS_ID_SECRET.length < 32
+) {
+  fail("ANALYTICS_ID_SECRET must be at least 32 characters");
 }
 
 const names = Object.keys(collected);

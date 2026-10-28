@@ -19,13 +19,36 @@ describe("acceptInvitation", () => {
     const actor = await seedWorkspace(owner.id, { id: "ws-acme" });
     const { token } = await invite(actor, "Grace@Example.test", "owner");
 
+    const accepting = deps();
     expect(
-      await acceptInvitation(deps(), {
+      await acceptInvitation(accepting, {
         mode: "multi",
         token,
         user: grace,
       })
     ).toEqual({ workspaceId: "ws-acme" });
+    // Product analytics: the join, then the member's traits (two members now).
+    expect(
+      accepting.analytics.recorded.map((call) => [
+        call.event,
+        call.properties,
+        call.context.userId,
+        call.context.workspaceId,
+      ])
+    ).toEqual([
+      [
+        "workspaces.member_joined",
+        { role: "owner", via: "invitation" },
+        grace.id,
+        "ws-acme",
+      ],
+      [
+        "$identify",
+        { role: "owner", workspace_size: "2-5", plan: "unlimited" },
+        grace.id,
+        "ws-acme",
+      ],
+    ]);
     expect(
       await rows(
         "SELECT role, last_active_at FROM workspace_members WHERE user_id = ?",

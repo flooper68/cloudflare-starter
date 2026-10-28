@@ -1,0 +1,30 @@
+---
+/**
+ * Cloudflare Web Analytics: the cookieless beacon, only with WEB_ANALYTICS=cloudflare
+ * (docs/guides/how-to-setup-product-analytics.md#web-analytics). `spa` makes it report
+ * client-side route changes of the /app SPA as page views.
+ */
+import { env } from "cloudflare:workers";
+
+import { buildPlatform } from "@/server/platform";
+
+interface Props {
+  spa?: boolean;
+}
+
+const { webAnalytics } = buildPlatform(env);
+const beacon = webAnalytics
+  ? JSON.stringify({ token: webAnalytics.token, spa: Astro.props.spa ?? false })
+  : null;
+---
+
+{
+  beacon && (
+    <script
+      is:inline
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon={beacon}
+    />
+  )
+}

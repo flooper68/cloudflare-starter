@@ -1,6 +1,5 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-
 import {
   fixedClock,
   seedUser,
@@ -8,7 +7,9 @@ import {
   sequentialIds,
   testBilling,
   testDb,
+  testRequestContext,
 } from "../../test/fixtures";
+import { createMemoryProductAnalytics } from "../platform";
 import { storeFile } from "./store-file";
 
 const body = new TextEncoder().encode("Q4 roadmap").buffer as ArrayBuffer;
@@ -22,17 +23,36 @@ describe("storeFile", () => {
   it("writes the object to the bucket and records the file", async () => {
     const owner = await seedUser();
     const actor = await seedWorkspace(owner.id);
+    const analytics = createMemoryProductAnalytics();
     const file = await storeFile(
       {
         db: testDb(),
         bucket: env.FILES,
         clock: fixedClock(),
         ids: sequentialIds("aaaaaaaa-0000-4000-8000-"),
+        requestContext: testRequestContext(),
+        analytics,
         billing: testBilling(),
       },
       actor,
       { ...input, body }
     );
+    // Product analytics: category and size only, attributed to the actor's workspace.
+    expect(
+      analytics.recorded.map((call) => [
+        call.event,
+        call.properties,
+        call.context.userId,
+        call.context.workspaceId,
+      ])
+    ).toEqual([
+      [
+        "files.uploaded",
+        { content_category: "text", size_bytes: 10 },
+        owner.id,
+        actor.workspaceId,
+      ],
+    ]);
 
     const object = await env.FILES.get(file.r2Key);
     expect(await object?.text()).toBe("Q4 roadmap");
@@ -49,6 +69,7 @@ describe("storeFile", () => {
     const failingBucket = {
       put: () => Promise.reject(new Error("bucket unavailable")),
     } as unknown as R2Bucket;
+    const analytics = createMemoryProductAnalytics();
 
     await expect(
       storeFile(
@@ -57,6 +78,8 @@ describe("storeFile", () => {
           bucket: failingBucket,
           clock: fixedClock(),
           ids: sequentialIds("bbbbbbbb-0000-4000-8000-"),
+          requestContext: testRequestContext(),
+          analytics,
           billing: testBilling(),
         },
         actor,
@@ -69,6 +92,8 @@ describe("storeFile", () => {
       .bind(actor.workspaceId)
       .first<{ n: number }>();
     expect(count?.n).toBe(0);
+    // Nothing was stored, so nothing is tracked.
+    expect(analytics.recorded).toEqual([]);
   });
 
   it("refuses a role without files.write", async () => {
@@ -79,6 +104,8 @@ describe("storeFile", () => {
           bucket: env.FILES,
           clock: fixedClock(),
           ids: sequentialIds("ffffffff-0000-4000-8000-"),
+          requestContext: testRequestContext(),
+          analytics: createMemoryProductAnalytics(),
           billing: testBilling(),
         },
         // A role outside the map, as stored by an older version of the roles.

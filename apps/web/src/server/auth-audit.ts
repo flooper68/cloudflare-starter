@@ -1,6 +1,7 @@
 /**
  * Audit events for Better Auth's own endpoints, which are not our use cases: sign-in,
  * failed sign-in, sign-up, password reset requests and password changes (docs/guides/how-to-use-the-audit-log.md).
+ * Sign-ups are also tracked as the product event `auth.signed_up`.
  * Wired into the auth options in server/auth.ts. A failure to record is reported and does
  * not fail the sign-in: losing an audit row is better than locking every user out.
  */
@@ -10,7 +11,9 @@ import {
   type RequestContext,
   randomIds,
   recordAuditEvent,
+  signedUpEvent,
   systemClock,
+  trackEvent,
 } from "@cloudflare-starter/features";
 import type { BetterAuthOptions, GenericEndpointContext } from "better-auth";
 import { isAPIError } from "better-auth/api";
@@ -124,17 +127,25 @@ export function auditDatabaseHooks(
       create: {
         async after(user, ctx) {
           const { method, provider } = signInMethodOf(ctx);
+          const signUpMethod =
+            method === "sign_up"
+              ? "password"
+              : method === "social"
+                ? "social"
+                : "other";
+          // Product analytics: never throws, so it cannot fail the sign-up.
+          trackEvent(
+            { analytics: buildPlatform(env).productAnalytics() },
+            { ...contextFor(env, ctx), userId: user.id, workspaceId: null },
+            signedUpEvent,
+            { method: signUpMethod, provider: provider ?? null }
+          );
           await record(env, ctx, {
             action: "auth.sign_up",
             actor: { kind: "user", userId: user.id },
             target: { type: "user", id: user.id },
             metadata: {
-              method:
-                method === "sign_up"
-                  ? "password"
-                  : method === "social"
-                    ? "social"
-                    : "other",
+              method: signUpMethod,
               ...(provider ? { provider } : {}),
             },
           });
