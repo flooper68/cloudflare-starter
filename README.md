@@ -74,6 +74,7 @@ Queue consumer and Cron Triggers run in the web Worker ([apps/web/src/worker.ts]
 ## Requirements
 
 - Bun `1.3+`
+- Node `24.14.1+` (`.nvmrc`): Astro's CLI runs on Node
 - Cloudflare account; Workers Paid for Containers
 - Docker Desktop (or compatible) for the container demo only
 - Workers Paid and a sender domain on Cloudflare for real email in deployed environments
