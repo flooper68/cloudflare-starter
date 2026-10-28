@@ -145,13 +145,15 @@ To change the retention of an existing queue by hand: `cd apps/web && bunx wrang
 
 ### How long you can look back
 
-| Where                           | Kept                                                                                     |
-| ------------------------------- | ---------------------------------------------------------------------------------------- |
-| Dead-letter queue messages      | 14 days (set by `setup:cloudflare`; 24 hours on Workers Free)                            |
-| Workers Logs (reports, `job.*`) | 3 days on Workers Free, 7 days on Workers Paid                                           |
-| Queues metrics (dashboard)      | Backlog, message operations, consumer concurrency per queue; for trends, not single jobs |
+| Where                           | Kept                                                                                      |
+| ------------------------------- | ----------------------------------------------------------------------------------------- |
+| Dead-letter queue messages      | 14 days (set by `setup:cloudflare`; 24 hours on Workers Free)                             |
+| Workers Logs (reports, `job.*`) | 3 days on Workers Free, 7 days on Workers Paid                                            |
+| Queues metrics (dashboard)      | Backlog, message operations, consumer concurrency per queue; for trends, not single jobs  |
+| `messaging.process.duration`    | 3 months in Analytics Engine: duration and count per job type and outcome (`METRICS`)     |
+| Span records (`trace.span`)     | With Workers Logs: one `process <queue>` span per message, on the job's trace (`TRACING`) |
 
-A project that needs longer history exports logs: Workers Logpush or OpenTelemetry export to a backend with its own retention ([how-to-setup-logging.md](how-to-setup-logging.md)).
+A project that needs longer history exports logs: Workers Logpush or OpenTelemetry export to a backend with its own retention ([how-to-setup-logging.md](how-to-setup-logging.md)). Job and cron metrics and spans: [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md#what-is-measured).
 
 ## Why there is no noop job queue
 

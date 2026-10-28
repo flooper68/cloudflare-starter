@@ -11,6 +11,8 @@ import {
   createMemoryErrorReporter,
   createMemoryJobQueue,
   createMemoryLogger,
+  createMemoryMetrics,
+  createMemoryTracer,
   DomainError,
   defineJob,
   JOB_MAX_RETRIES,
@@ -74,11 +76,15 @@ function setup(jobs = catalog) {
   const logger = createMemoryLogger();
   const errors = createMemoryErrorReporter();
   const jobQueue = createMemoryJobQueue();
+  const metrics = createMemoryMetrics();
+  const tracer = createMemoryTracer();
   const platform: Platform = {
     ...buildPlatform(env as AppEnv),
     logger,
     errors,
     jobQueue,
+    metrics,
+    tracer,
   };
   const deps: QueueDeps = {
     db: getDb(env as AppEnv),
@@ -86,7 +92,7 @@ function setup(jobs = catalog) {
     random: { next: () => 0.5 },
     maxRetries: JOB_MAX_RETRIES,
   };
-  return { platform, deps, logger, errors };
+  return { platform, deps, logger, errors, metrics, tracer };
 }
 
 async function consume(
@@ -113,6 +119,95 @@ async function consume(
 }
 
 describe("queue consumer (handleQueueBatch)", () => {
+  it("makes each message a consumer span and measures it by job type and outcome, flushed per batch", async () => {
+    const test = setup(
+      createJobCatalog<JobDeps>([...catalog.values(), ...jobCatalog.values()])
+    );
+    await consume(
+      [
+        { id: "m-ok", body: envelope(), attempts: 1 },
+        {
+          id: "m-retry",
+          body: envelope({ type: "test.flaky", data: { step: "a" } }),
+          attempts: 1,
+        },
+        { id: "m-bad", body: { type: "nope" }, attempts: 1 },
+      ],
+      test
+    );
+
+    const [ok, retry, bad] = test.tracer.spans;
+    expect(ok).toMatchObject({
+      name: "process cloudflare-starter-develop",
+      kind: "consumer",
+      trace_id: TRACE_ID,
+      parent_span_id: "00f067aa0ba902b7",
+      span_id: test.logger.records[0]?.span_id,
+      status: { code: "unset" },
+      attributes: {
+        "messaging.operation.name": "process",
+        "messaging.destination.name": "cloudflare-starter-develop",
+        "messaging.message.id": "m-ok",
+        "cloudevents.event_type": "greetings.hello",
+        "app.job.outcome": "completed",
+        "user.id": "user-1",
+      },
+    });
+    expect(retry?.attributes).toMatchObject({
+      "app.job.outcome": "retry",
+      "error.type": "Error",
+    });
+    expect(bad).toMatchObject({
+      status: { code: "error" },
+      attributes: {
+        "app.job.outcome": "discarded",
+        "error.type": "InvalidJobEnvelopeError",
+      },
+    });
+
+    const messaging = {
+      "messaging.system": "cloudflare_queues",
+      "messaging.operation.name": "process",
+      "messaging.destination.name": "cloudflare-starter-develop",
+    };
+    expect(test.metrics.exported).toEqual([
+      expect.objectContaining({
+        name: "messaging.client.consumed.messages",
+        attributes: messaging,
+        sum: 3,
+      }),
+      expect.objectContaining({
+        name: "messaging.process.duration",
+        attributes: {
+          ...messaging,
+          "app.job.type": "greetings.hello",
+          "app.job.outcome": "completed",
+        },
+        count: 1,
+      }),
+      expect.objectContaining({
+        name: "messaging.process.duration",
+        attributes: {
+          ...messaging,
+          "app.job.type": "test.flaky",
+          "app.job.outcome": "retry",
+          "error.type": "Error",
+        },
+      }),
+      // A malformed message has no catalog type: no app.job.type on the metric.
+      expect.objectContaining({
+        name: "messaging.process.duration",
+        attributes: {
+          ...messaging,
+          "app.job.outcome": "discarded",
+          "error.type": "InvalidJobEnvelopeError",
+        },
+      }),
+    ]);
+    expect(JSON.stringify(test.metrics.exported)).not.toMatch(
+      /user-1|ws-1|m-ok/
+    );
+  });
   it("runs greetings.hello from the real catalog in the producer's trace, as its user, and acks it", async () => {
     const test = setup(jobCatalog);
     const result = await consume(
