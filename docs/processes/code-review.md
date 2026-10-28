@@ -44,6 +44,7 @@ If CI is green, these hold; reviewers do not check them manually:
 - Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
 - One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, every UI component has stories, exact pins, bindings in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
+- No AI agent credited in a PR's commits (`scripts/check-attribution.ts` in the CI `lint` job)
 
 Automation proves a test exists, not that it is good: reviewers still check that each required test would fail without the change (checklist 4).
 

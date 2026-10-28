@@ -25,8 +25,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history so the attribution check can read the PR's commits.
+          fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: bun run lint
+      # No AI agent as author or co-author in the PR's commits (CLAUDE.md rule 9).
+      - name: No agent attribution
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: bun scripts/check-attribution.ts "origin/$BASE_REF"
 
   typecheck:
     runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
