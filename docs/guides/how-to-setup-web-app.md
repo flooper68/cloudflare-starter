@@ -96,7 +96,7 @@ The environment is picked when building: `deploy:production` runs `CLOUDFLARE_EN
 
 - Producer: tRPC `queue.enqueueHello` sends a typed message (the greetings feature's `sendHello`; message types in `packages/features/src/queue-messages.ts`).
 - Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). Each message runs with its own request context, continuing the trace of the `traceparent` the producer put on it. A malformed message is logged (`queue.invalid`) and dropped; a failing handler is reported (`error.captured`) and retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
-- Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC), a request context per run. With several schedules, branch on `controller.cron`.
+- Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC), a request context per run. With several schedules, branch on `controller.cron`. `17 3 * * *` purges audit events past retention ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md#retention)).
 - Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard; filtering and fields in [how-to-setup-logging.md](how-to-setup-logging.md).
 
 ## Verify

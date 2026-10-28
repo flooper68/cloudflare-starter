@@ -1,0 +1,59 @@
+import { z } from "zod";
+
+import {
+  AUDIT_ACTIONS,
+  AUDIT_TARGET_TYPES,
+  type AuditAction,
+} from "./audit-event";
+import { InvalidAuditInputError } from "./errors";
+
+export const AUDIT_PAGE_SIZE_DEFAULT = 50;
+export const AUDIT_PAGE_SIZE_MAX = 200;
+
+/**
+ * Filters and page of an audit log query; the input schema of listAuditEvents and of any
+ * procedure that exposes it. Time range: `from` inclusive, `to` exclusive (ISO 8601).
+ */
+export const auditQuerySchema = z
+  .object({
+    actorUserId: z.string().min(1).optional(),
+    action: z.enum(AUDIT_ACTIONS as [AuditAction, ...AuditAction[]]).optional(),
+    targetType: z.enum(AUDIT_TARGET_TYPES).optional(),
+    targetId: z.string().min(1).optional(),
+    workspaceId: z.string().min(1).optional(),
+    from: z.iso.datetime().optional(),
+    to: z.iso.datetime().optional(),
+    /** `nextCursor` of the previous page. */
+    cursor: z.string().min(1).optional(),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(AUDIT_PAGE_SIZE_MAX)
+      .default(AUDIT_PAGE_SIZE_DEFAULT),
+  })
+  .strict();
+
+export type AuditQueryInput = z.input<typeof auditQuerySchema>;
+export type AuditQuery = z.output<typeof auditQuerySchema>;
+
+/** Position after the last event of a page: events are ordered by (occurredAt, id) descending. */
+export interface AuditCursor {
+  readonly occurredAtMs: number;
+  readonly id: string;
+}
+
+/** Opaque to clients: `<epoch ms>:<id>`. */
+export function encodeAuditCursor(cursor: AuditCursor): string {
+  return `${cursor.occurredAtMs}:${cursor.id}`;
+}
+
+export function decodeAuditCursor(value: string): AuditCursor {
+  const separator = value.indexOf(":");
+  const ms = value.slice(0, separator);
+  const id = value.slice(separator + 1);
+  if (separator < 1 || !/^\d+$/.test(ms) || id.length === 0) {
+    throw new InvalidAuditInputError("Invalid audit log cursor");
+  }
+  return { occurredAtMs: Number(ms), id };
+}

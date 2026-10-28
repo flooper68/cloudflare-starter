@@ -1,6 +1,7 @@
 import {
   createMemoryErrorReporter,
   createMemoryLogger,
+  type Database,
 } from "@cloudflare-starter/features";
 import { describe, expect, it } from "vitest";
 
@@ -20,8 +21,10 @@ describe("cron handler", () => {
       scheduledTime: Date.parse("2026-10-28T12:00:00.000Z"),
     } as ScheduledController;
 
-    await runScheduled(controller, platform);
-    await runScheduled(controller, platform);
+    // The greeting schedule never touches the database; the audit purge is an API test.
+    const deps = { db: {} as Database };
+    await runScheduled(controller, platform, deps);
+    await runScheduled(controller, platform, deps);
 
     expect(logger.records).toHaveLength(2);
     expect(logger.records[0]).toMatchObject({

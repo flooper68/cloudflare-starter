@@ -1,0 +1,194 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  AUDIT_ACTIONS,
+  type AuditAction,
+  type AuditEventInput,
+  auditEventSchema,
+} from "./audit-event";
+import { SECRET_KEY_PATTERN } from "./redact";
+
+const user = { type: "user", id: "user-ada" } as const;
+const email = { type: "email", id: "ada@example.test" } as const;
+const workspace = "ws-analytical-engines";
+
+/** One valid event per action, the smallest the catalog accepts. */
+const VALID: Record<AuditAction, AuditEventInput> = {
+  "auth.sign_in": {
+    action: "auth.sign_in",
+    target: user,
+    metadata: { method: "password" },
+  },
+  "auth.sign_in_failed": {
+    action: "auth.sign_in_failed",
+    target: email,
+    metadata: { method: "password", reason: "INVALID_EMAIL_OR_PASSWORD" },
+  },
+  "auth.sign_up": {
+    action: "auth.sign_up",
+    target: user,
+    metadata: { method: "social", provider: "google" },
+  },
+  "auth.password_reset_requested": {
+    action: "auth.password_reset_requested",
+    target: email,
+  },
+  "user.role_changed": {
+    action: "user.role_changed",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+    metadata: { previousRole: "user", role: "admin" },
+  },
+  "user.banned": {
+    action: "user.banned",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+    metadata: { reason: "Spam", expiresAt: "2026-12-01T00:00:00.000Z" },
+  },
+  "user.unbanned": { action: "user.unbanned", target: user },
+  "user.sessions_revoked": {
+    action: "user.sessions_revoked",
+    target: user,
+    metadata: { sessionCount: 3 },
+  },
+  "user.deleted": { action: "user.deleted", target: user },
+  "impersonation.started": {
+    action: "impersonation.started",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+  },
+  "impersonation.stopped": {
+    action: "impersonation.stopped",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+  },
+  "workspace.invitation_created": {
+    action: "workspace.invitation_created",
+    workspaceId: workspace,
+    target: { type: "invitation", id: "inv-1" },
+    metadata: { email: "alan@example.test", role: "member" },
+  },
+  "workspace.invitation_accepted": {
+    action: "workspace.invitation_accepted",
+    workspaceId: workspace,
+    target: { type: "invitation", id: "inv-1" },
+    metadata: { role: "member" },
+  },
+  "workspace.invitation_revoked": {
+    action: "workspace.invitation_revoked",
+    workspaceId: workspace,
+    target: { type: "invitation", id: "inv-1" },
+  },
+  "workspace.member_role_changed": {
+    action: "workspace.member_role_changed",
+    workspaceId: workspace,
+    target: user,
+    metadata: { previousRole: "member", role: "admin" },
+  },
+  "workspace.member_removed": {
+    action: "workspace.member_removed",
+    workspaceId: workspace,
+    target: user,
+  },
+  "workspace.ownership_transferred": {
+    action: "workspace.ownership_transferred",
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: { previousOwnerUserId: "user-ada", ownerUserId: "user-grace" },
+  },
+  "workspace.deleted": {
+    action: "workspace.deleted",
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+  },
+};
+
+describe("auditEventSchema", () => {
+  it("lists every action of the catalog", () => {
+    expect([...AUDIT_ACTIONS].sort()).toEqual(Object.keys(VALID).sort());
+  });
+
+  it.each(AUDIT_ACTIONS)("accepts a valid %s", (action) => {
+    const parsed = auditEventSchema.parse(VALID[action]);
+    expect(parsed.action).toBe(action);
+    expect(parsed.metadata).toBeTypeOf("object");
+  });
+
+  it.each(AUDIT_ACTIONS)(
+    "rejects %s with an undeclared metadata key",
+    (action) => {
+      const event = VALID[action];
+      const result = auditEventSchema.safeParse({
+        ...event,
+        metadata: { ...event.metadata, note: "anything else" },
+      });
+      expect(result.success).toBe(false);
+    }
+  );
+
+  it.each(AUDIT_ACTIONS)("rejects %s with the wrong target type", (action) => {
+    const event = VALID[action];
+    const wrong = event.target.type === "user" ? email : user;
+    expect(
+      auditEventSchema.safeParse({ ...event, target: wrong }).success
+    ).toBe(false);
+  });
+
+  it("rejects an action outside the catalog", () => {
+    expect(
+      auditEventSchema.safeParse({
+        action: "user.renamed",
+        target: user,
+        metadata: {},
+      }).success
+    ).toBe(false);
+  });
+
+  it("defaults the outcome to success, and to failure for a failed sign-in", () => {
+    expect(auditEventSchema.parse(VALID["auth.sign_in"]).outcome).toBe(
+      "success"
+    );
+    expect(auditEventSchema.parse(VALID["auth.sign_in_failed"]).outcome).toBe(
+      "failure"
+    );
+    expect(
+      auditEventSchema.safeParse({
+        ...VALID["auth.sign_in_failed"],
+        outcome: "success",
+      }).success
+    ).toBe(false);
+  });
+
+  it("requires a workspace for workspace actions only", () => {
+    const { workspaceId: _, ...withoutWorkspace } =
+      VALID["workspace.member_removed"];
+    expect(auditEventSchema.safeParse(withoutWorkspace).success).toBe(false);
+    expect(auditEventSchema.safeParse(VALID["user.deleted"]).success).toBe(
+      true
+    );
+  });
+
+  it("rejects a password in sign-in metadata", () => {
+    expect(
+      auditEventSchema.safeParse({
+        ...VALID["auth.sign_in_failed"],
+        metadata: {
+          method: "password",
+          reason: "INVALID_EMAIL_OR_PASSWORD",
+          password: "hunter2-hunter2",
+        },
+      }).success
+    ).toBe(false);
+  });
+
+  it("declares no credential-like metadata key in any action", () => {
+    for (const option of auditEventSchema.options) {
+      const metadata = option.shape.metadata;
+      const shape =
+        "shape" in metadata ? metadata.shape : metadata.unwrap().shape;
+      for (const key of Object.keys(shape)) {
+        expect(SECRET_KEY_PATTERN.test(key), key).toBe(false);
+      }
+    }
+  });
+});

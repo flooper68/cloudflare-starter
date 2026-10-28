@@ -1,16 +1,3 @@
-CREATE TABLE `files` (
-	`id` text PRIMARY KEY NOT NULL,
-	`bucket` text NOT NULL,
-	`r2_key` text NOT NULL,
-	`filename` text NOT NULL,
-	`content_type` text NOT NULL,
-	`size_bytes` integer NOT NULL,
-	`owner_user_id` text NOT NULL,
-	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	FOREIGN KEY (`owner_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE UNIQUE INDEX `files_r2_key_unique` ON `files` (`r2_key`);--> statement-breakpoint
 CREATE TABLE `account` (
 	`id` text PRIMARY KEY NOT NULL,
 	`account_id` text NOT NULL,
@@ -233,4 +220,38 @@ CREATE TABLE `verification` (
 	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);
+CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);--> statement-breakpoint
+CREATE TABLE `audit_events` (
+	`id` text PRIMARY KEY NOT NULL,
+	`occurred_at` integer NOT NULL,
+	`action` text NOT NULL,
+	`outcome` text NOT NULL,
+	`actor_user_id` text,
+	`actor_kind` text NOT NULL,
+	`impersonator_user_id` text,
+	`target_type` text NOT NULL,
+	`target_id` text NOT NULL,
+	`workspace_id` text,
+	`trace_id` text NOT NULL,
+	`source` text NOT NULL,
+	`ip` text,
+	`metadata` text NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `audit_events_occurred_at_idx` ON `audit_events` (`occurred_at`);--> statement-breakpoint
+CREATE INDEX `audit_events_actor_idx` ON `audit_events` (`actor_user_id`,`occurred_at`);--> statement-breakpoint
+CREATE INDEX `audit_events_target_idx` ON `audit_events` (`target_type`,`target_id`);--> statement-breakpoint
+CREATE INDEX `audit_events_workspace_idx` ON `audit_events` (`workspace_id`,`occurred_at`);--> statement-breakpoint
+CREATE TABLE `files` (
+	`id` text PRIMARY KEY NOT NULL,
+	`bucket` text NOT NULL,
+	`r2_key` text NOT NULL,
+	`filename` text NOT NULL,
+	`content_type` text NOT NULL,
+	`size_bytes` integer NOT NULL,
+	`owner_user_id` text NOT NULL,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	FOREIGN KEY (`owner_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `files_r2_key_unique` ON `files` (`r2_key`);
