@@ -67,7 +67,7 @@ export function BindingUploadDemo() {
         />
       </div>
 
-      <div className="rounded-xl bg-zinc-100 p-4 text-sm text-zinc-700">
+      <div className="rounded-xl bg-surface p-4 text-sm text-fg-muted">
         <p>Status: {status}</p>
       </div>
 

@@ -55,7 +55,7 @@ export function QueueDemoClient() {
         </Button>
       </form>
 
-      <div className="rounded-xl bg-zinc-100 p-4 text-sm text-zinc-700">
+      <div className="rounded-xl bg-surface p-4 text-sm text-fg-muted">
         {status}
       </div>
     </Card>

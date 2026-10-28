@@ -17,7 +17,8 @@
       "!**/.astro",
       "!**/.wrangler",
       "!**/coverage",
-      "!**/*.svg"
+      "!**/*.svg",
+      "!**/public/_storybook"
     ]
   },
   "javascript": {

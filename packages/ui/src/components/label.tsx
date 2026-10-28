@@ -1,15 +1,18 @@
-import type { LabelHTMLAttributes } from "react";
+import { Label as LabelPrimitive } from "radix-ui";
+import type { ComponentProps } from "react";
 
 import { cn } from "../lib/utils";
 
 export function Label({
   className,
   ...props
-}: LabelHTMLAttributes<HTMLLabelElement>) {
+}: ComponentProps<typeof LabelPrimitive.Root>) {
   return (
-    /* biome-ignore lint/a11y/noLabelWithoutControl: this shared component is validated at usage sites */
-    <label
-      className={cn("text-sm font-medium text-zinc-700", className)}
+    <LabelPrimitive.Root
+      className={cn(
+        "text-xs font-medium text-fg-muted peer-disabled:opacity-50",
+        className
+      )}
       {...props}
     />
   );

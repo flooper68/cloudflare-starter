@@ -8,6 +8,7 @@ import {
   FieldError,
   Input,
   Label,
+  Logo,
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
 
@@ -81,11 +82,9 @@ export function SignInForm({
   return (
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
-          Cloudflare Starter
-        </p>
+        <Logo className="mb-3" />
         <CardTitle>Sign in</CardTitle>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           {emailPassword
             ? "Sign in with your email and password to enter the app."
             : "Sign in with your Google account to enter the app."}
@@ -116,7 +115,7 @@ export function SignInForm({
               <div className="flex items-center justify-between gap-4">
                 <Label htmlFor="password">Password</Label>
                 <a
-                  className="text-xs font-medium text-teal-700 underline underline-offset-4"
+                  className="text-xs font-medium text-accent underline underline-offset-4"
                   href="/forgot-password"
                 >
                   Forgot password?
@@ -136,24 +135,29 @@ export function SignInForm({
               <FieldError message={fieldErrors.password} />
             </div>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-            <Button className="w-full" disabled={loading} type="submit">
+            <Button
+              className="w-full"
+              disabled={loading}
+              type="submit"
+              variant="primary"
+            >
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
         ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-danger">{error}</p>
         ) : null}
 
         {google ? <GoogleSignInButton onError={setError} /> : null}
       </CardContent>
 
       <CardFooter className="justify-center">
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           Don&apos;t have an account?{" "}
           <a
-            className="font-medium text-teal-700 underline underline-offset-4"
+            className="font-medium text-accent underline underline-offset-4"
             href={`/sign-up${search}`}
           >
             Sign up

@@ -1,20 +1,40 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "./styles/tokens.css";
+@import "./brand/brand.css";
+@import "./styles/theme.css";
 
-:root {
-  --font-sans: "Plus Jakarta Sans", "Helvetica Neue", sans-serif;
-  --color-background: #f7f7f2;
-  --color-foreground: #111114;
-  --color-card: #ffffff;
-  --color-muted: #666672;
-  --color-accent: #0f766e;
-}
+/* Scan this package for class names too (apps import it from node_modules). */
+@source "./";
 
-html {
-  font-family: var(--font-sans);
-  background: linear-gradient(180deg, #f7f7f2 0%, #f2f0ea 100%);
-  color: var(--color-foreground);
-}
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--ui-canvas);
+    color: var(--ui-fg);
+  }
 
-body {
-  min-height: 100vh;
+  body {
+    min-height: 100vh;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--ui-line);
+  }
+
+  ::selection {
+    background: var(--ui-accent-subtle);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-line-strong) transparent;
+  }
 }
