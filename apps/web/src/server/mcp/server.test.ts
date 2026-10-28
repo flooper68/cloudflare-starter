@@ -1,7 +1,9 @@
 import {
   createMemoryErrorReporter,
+  createMemoryFeatureFlags,
   createMemoryJobQueue,
   type JobQueue,
+  noopFeatureFlags,
   noopLogger,
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
@@ -49,6 +51,8 @@ function context(overrides: Partial<Context> = {}): Context {
     logger: noopLogger,
     errors: createMemoryErrorReporter(),
     bucket: {} as R2Bucket,
+    flags: noopFeatureFlags,
+    flagStore: null,
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },
     ...overrides,
   };
@@ -154,6 +158,24 @@ describe("MCP server", () => {
       "rpc.method": "queue.enqueueHello",
       "app.trpc.type": "mutation",
     });
+  });
+
+  it("returns client flags only to signed-in users", async () => {
+    const { body } = await rpc(context({ user: null }), "tools/call", {
+      name: "get_client_flags",
+      arguments: {},
+    });
+    expect(body.result.structuredContent.error.code).toBe("UNAUTHORIZED");
+  });
+
+  it("hides the flag admin tools from users without the admin role", async () => {
+    const memory = createMemoryFeatureFlags();
+    const { body } = await rpc(
+      context({ flags: memory, flagStore: memory }),
+      "tools/call",
+      { name: "list_feature_flags", arguments: {} }
+    );
+    expect(body.result.structuredContent.error.code).toBe("NOT_FOUND");
   });
 
   it("refuses protected tools without a user", async () => {

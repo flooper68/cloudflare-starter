@@ -68,6 +68,12 @@ export const LOG_SINKS = ["workers-logs", "none"] as const;
 /** Where error reports go: Cloudflare Workers Logs, or nowhere (users still get a reference). */
 export const ERROR_REPORTERS = ["workers-logs", "none"] as const;
 
+/**
+ * Where feature flags come from: the D1 provider (flags stored in the app's database, managed
+ * with the admin.flags procedures), or none (every flag is its catalog default).
+ */
+export const FEATURE_FLAG_PROVIDERS = ["d1", "none"] as const;
+
 /** Which deployment this is: `local` only in .dev.vars, the others in wrangler.jsonc. */
 export const APP_ENVS = ["local", "develop", "staging", "production"] as const;
 
@@ -75,6 +81,7 @@ export interface PlatformConfig {
   readonly APP_ENV: (typeof APP_ENVS)[number];
   readonly LOG_SINK: (typeof LOG_SINKS)[number];
   readonly ERROR_REPORTER: (typeof ERROR_REPORTERS)[number];
+  readonly FEATURE_FLAGS: (typeof FEATURE_FLAG_PROVIDERS)[number];
 }
 
 /** A required setting is missing or invalid; the message names it and the allowed values. */
@@ -107,8 +114,8 @@ function requiredChoice<T extends string>(
 
 /**
  * The deployment and platform adapters to use. No defaults: a deployment states which
- * environment it is and where its logs and error reports go, and a missing setting fails
- * every request with an error that names it.
+ * environment it is, where its logs and error reports go and where its feature flags come
+ * from, and a missing setting fails every request with an error that names it.
  */
 export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
   return {
@@ -120,6 +127,7 @@ export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
     ),
     LOG_SINK: requiredChoice(env, "LOG_SINK", LOG_SINKS),
     ERROR_REPORTER: requiredChoice(env, "ERROR_REPORTER", ERROR_REPORTERS),
+    FEATURE_FLAGS: requiredChoice(env, "FEATURE_FLAGS", FEATURE_FLAG_PROVIDERS),
   };
 }
 

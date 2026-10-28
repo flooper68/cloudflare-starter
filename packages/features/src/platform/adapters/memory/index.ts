@@ -5,6 +5,10 @@ export {
   type MemoryErrorReporter,
 } from "./memory-error-reporter";
 export {
+  createMemoryFeatureFlags,
+  type MemoryFeatureFlags,
+} from "./memory-feature-flags";
+export {
   createMemoryJobQueue,
   type MemoryJobQueue,
   type SentJob,

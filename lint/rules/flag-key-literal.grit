@@ -1,0 +1,17 @@
+// Feature-flag keys are string literals at every call site, so the architecture test
+// (test/architecture/feature-flags.test.ts) can check each key is in the catalog and each
+// catalog flag is used, and a search finds every use when the flag is removed.
+// Applied to apps/web/src and packages/features/src outside feature-flags/ (biome.json
+// overrides).
+or {
+  `evaluateFlag($_, $key, $_)` as $call where {
+    $key <: not JsStringLiteralExpression()
+  },
+  `useFlag($key)` as $call where { $key <: not JsStringLiteralExpression() },
+  JsxAttribute() as $call where {
+    $call <: r"flag=\{[\s\S]*",
+    $call <: not r"flag=\{\s*\"[^\"]*\"\s*\}"
+  }
+} where {
+  register_diagnostic(span=$call, message="Pass the feature-flag key as a string literal to evaluateFlag, useFlag and the flag prop of FlagGate. See docs/guides/how-to-use-feature-flags.md.")
+}

@@ -247,6 +247,34 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Sends a test email to the signed-in user's own address. Confirm with the user before calling.",
     { outward: true }
   ),
+  direct(
+    "get_client_flags",
+    "read",
+    "flags.client",
+    "Get client feature flags",
+    "Returns the values of the feature flags the web app reads for the signed-in user in a workspace (release and operations switches, keyed by flag name)."
+  ),
+  direct(
+    "list_feature_flags",
+    "read",
+    "admin.flags.list",
+    "List feature flags",
+    "Platform admins only. Lists every feature flag in the catalog (type, default, owner, removal condition) with its stored switch, fallthrough value and targeting rules."
+  ),
+  direct(
+    "update_feature_flag",
+    "write",
+    "admin.flags.update",
+    "Update feature flag",
+    "Platform admins only. Turns a catalog feature flag on or off and sets its fallthrough value (null for the catalog default). Changes what users see within 30 seconds: confirm with the user before calling."
+  ),
+  direct(
+    "set_feature_flag_rules",
+    "write",
+    "admin.flags.setRules",
+    "Set feature flag rules",
+    "Platform admins only. Replaces a feature flag's ordered targeting rules: workspace (workspaceId), plan (planId) or percentage (percentageBp, 0-10000 basis points); the first matching rule's value wins. Changes what users see within 30 seconds: confirm with the user before calling."
+  ),
 ];
 
 /** Procedures deliberately not exposed to MCP, with the reason. Keep it empty if you can. */

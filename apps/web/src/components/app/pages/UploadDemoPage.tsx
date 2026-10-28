@@ -2,6 +2,7 @@ import { BindingUploadDemo } from "@/components/BindingUploadDemo";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { UploadDemoClient } from "@/components/UploadDemoClient";
 import { WorkspaceFiles } from "@/components/WorkspaceFiles";
+import { FlagGate } from "@/lib/feature-flags";
 import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 
@@ -30,7 +31,10 @@ export function UploadDemoPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <BindingUploadDemo onUploaded={() => void files.refetch()} />
-        <UploadDemoClient />
+        {/* Example feature flag: the presigned path can be rolled out or switched off. */}
+        <FlagGate flag="upload-demo-presigned">
+          <UploadDemoClient />
+        </FlagGate>
       </div>
 
       <WorkspaceFiles files={files} />

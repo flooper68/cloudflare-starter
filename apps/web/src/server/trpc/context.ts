@@ -41,6 +41,8 @@ export function createAppContext(
     requestContext: scoped,
     logger: loggerFor(platform, scoped),
     errors: platform.errors,
+    flags: platform.flags,
+    flagStore: platform.flagStore,
     user,
   };
 }

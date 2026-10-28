@@ -21,12 +21,16 @@ import { filesUnder, read } from "./repo";
 const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
   workspaces: "the tenant itself; its id is what workspace_id points at",
   audit_events: "platform table; workspace_id optional",
+  feature_flags:
+    "platform configuration, not tenant data: one switch per flag for the whole deployment",
+  feature_flag_rules:
+    "platform configuration, not tenant data: a rule may target a workspace by id, but belongs to the flag",
   job_idempotency_keys:
     "platform table of the job queue: keys are per job type and payload, the workspace travels in the job envelope",
 };
 
 /** Routers whose procedures act inside one workspace. */
-const WORKSPACE_ROUTERS = ["storage", "workspace"] as const;
+const WORKSPACE_ROUTERS = ["storage", "workspace", "flags"] as const;
 
 /** Procedures of those routers that act for the signed-in user, not in one workspace. */
 const USER_LEVEL_PROCEDURES: Readonly<Record<string, string>> = {

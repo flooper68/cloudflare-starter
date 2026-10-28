@@ -14,6 +14,7 @@ Related guides:
 - [docs/guides/how-to-setup-mcp.md](../../docs/guides/how-to-setup-mcp.md) — the MCP server and its parity rule
 - [docs/guides/how-to-setup-logging.md](../../docs/guides/how-to-setup-logging.md) — OpenTelemetry log records, trace context, `LOG_SINK`
 - [docs/guides/how-to-setup-error-reporting.md](../../docs/guides/how-to-setup-error-reporting.md) — error reports and references, `ERROR_REPORTER`
+- [docs/guides/how-to-use-feature-flags.md](../../docs/guides/how-to-use-feature-flags.md) — the flag catalog, `useFlag`/`FlagGate` (`src/lib/feature-flags.tsx`), `FEATURE_FLAGS`
 
 Every on-demand request gets a request context in [src/middleware.ts](src/middleware.ts) (`traceparent` and `x-request-id` on each response); the logger and error reporter are picked in [src/server/platform.ts](src/server/platform.ts).
 

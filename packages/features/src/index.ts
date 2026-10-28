@@ -4,6 +4,7 @@ export * from "./accounts";
 export * from "./audit";
 export { type CronDeps, cronCatalog } from "./cron-catalog";
 export { createDatabase, type Database, schema } from "./database";
+export * from "./feature-flags";
 export * from "./files";
 export * from "./greetings";
 export { jobCatalog } from "./job-catalog";

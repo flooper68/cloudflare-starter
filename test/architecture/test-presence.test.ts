@@ -20,10 +20,10 @@ const useCaseFiles = filesUnder(
   /^packages\/features\/src\/(?!kernel\/|platform\/)[^/]+\/(?!index\.ts$)[^/]+(?<!\.schema|\.test|\.integration\.test)\.ts$/
 );
 
-/** Adapter implementations: platform/adapters/<vendor>/<file>.ts, barrels and tests aside. */
+/** Adapter implementations: platform/adapters/<vendor>/<file>.ts, barrels, tables and tests aside. */
 const adapterFiles = filesUnder(
   "packages/features/src/platform/adapters",
-  /^packages\/features\/src\/platform\/adapters\/[^/]+\/(?!index\.ts$)[^/]+(?<!\.test)\.ts$/
+  /^packages\/features\/src\/platform\/adapters\/[^/]+\/(?!index\.ts$)[^/]+(?<!\.test|\.schema)\.ts$/
 );
 
 const apiTests = filesUnder("apps/web/test/api", /\.test\.ts$/)

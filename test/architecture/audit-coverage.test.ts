@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 import { filesUnder, read } from "./repo";
 
 /** Features whose state changes are audited. Add a feature here when it is created. */
-const AUDITED_FEATURES = ["accounts", "workspaces"] as const;
+const AUDITED_FEATURES = ["accounts", "workspaces", "feature-flags"] as const;
 
 /** Use cases that change state without an audit event: path → reason. */
 const AUDIT_EXEMPT: Readonly<Record<string, string>> = {

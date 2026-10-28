@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { AuthProvider, useAuth } from "@/components/shared/spa/auth-context";
 import { WorkspaceProvider } from "@/components/shared/spa/workspace-context";
+import { FeatureFlagsProvider } from "@/lib/feature-flags";
 import { createAppRouter } from "./routes";
 
 function AppSpaRouter() {
@@ -21,7 +22,9 @@ function AppSpaRouter() {
 
   return (
     <WorkspaceProvider>
-      <RouterProvider router={router} />
+      <FeatureFlagsProvider>
+        <RouterProvider router={router} />
+      </FeatureFlagsProvider>
     </WorkspaceProvider>
   );
 }

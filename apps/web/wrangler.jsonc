@@ -28,10 +28,13 @@
   // - SIGN_UP_DOMAINS: comma list of email domains that may sign up without an invitation
   // - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
   // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
+  // FEATURE_FLAGS is required (no default): d1 (flags in the DB, managed by admins) | none
+  // (every flag is its catalog default). Guide: docs/guides/how-to-use-feature-flags.md
   "vars": {
     "APP_ENV": "develop",
     "LOG_SINK": "workers-logs",
     "ERROR_REPORTER": "workers-logs",
+    "FEATURE_FLAGS": "d1",
     "AUTH_EMAIL_PASSWORD": "true",
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
     "EMAIL_FROM_NAME": "Cloudflare Starter"
@@ -89,6 +92,7 @@
         "APP_ENV": "staging",
         "LOG_SINK": "workers-logs",
         "ERROR_REPORTER": "workers-logs",
+        "FEATURE_FLAGS": "d1",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter"
@@ -136,6 +140,7 @@
         "APP_ENV": "production",
         "LOG_SINK": "workers-logs",
         "ERROR_REPORTER": "workers-logs",
+        "FEATURE_FLAGS": "d1",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter"

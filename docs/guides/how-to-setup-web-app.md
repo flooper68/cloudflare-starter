@@ -116,9 +116,9 @@ Background jobs, the queue consumer, retries, the dead-letter queue and the cron
 
 A required secret is missing or too short. Check `APP_URL` and `BETTER_AUTH_SECRET` (32+ characters) in `.dev.vars` or the Worker secrets.
 
-### Every request returns 500 "LOG_SINK is not set" (or ERROR_REPORTER, APP_ENV)
+### Every request returns 500 "LOG_SINK is not set" (or ERROR_REPORTER, FEATURE_FLAGS, APP_ENV)
 
-The var is missing from this environment's `vars` in `wrangler.jsonc`, or `.dev.vars` has a blank `LOG_SINK=` line that unsets it. Set it to `workers-logs` or `none`, or `APP_ENV` to the environment's name ([how-to-setup-logging.md](how-to-setup-logging.md)); `bun run doctor` points at the environment.
+The var is missing from this environment's `vars` in `wrangler.jsonc`, or `.dev.vars` has a blank `LOG_SINK=` line that unsets it. Set it to `workers-logs` or `none` (`FEATURE_FLAGS`: `d1` or `none`), or `APP_ENV` to the environment's name ([how-to-setup-logging.md](how-to-setup-logging.md), [how-to-use-feature-flags.md](how-to-use-feature-flags.md#feature_flags)); `bun run doctor` points at the environment.
 
 ### A user reports an error with a reference
 

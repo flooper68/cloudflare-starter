@@ -5,6 +5,7 @@ import {
   createMemoryJobQueue,
   createMemoryLogger,
   cronCatalog,
+  noopFeatureFlags,
 } from "@cloudflare-starter/features";
 import { describe, expect, it, vi } from "vitest";
 
@@ -19,6 +20,8 @@ function memoryPlatform() {
     logger,
     errors,
     jobQueue,
+    flags: noopFeatureFlags,
+    flagStore: null,
     release: "v-test",
     environment: "staging",
   };
