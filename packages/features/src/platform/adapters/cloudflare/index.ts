@@ -8,6 +8,10 @@ export {
   MAX_POINTS_PER_FLUSH,
   toDataPoint,
 } from "./analytics-engine-metrics";
+export {
+  type CloudflareEmailConfig,
+  createCloudflareEmail,
+} from "./cloudflare-email";
 export { createCloudflareJobQueue } from "./cloudflare-job-queue";
 export {
   createD1FeatureFlags,

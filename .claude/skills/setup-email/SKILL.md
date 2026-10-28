@@ -6,7 +6,7 @@ description: Set up or troubleshoot outgoing email for this starter with Cloudfl
 
 # Email (Cloudflare Email Service)
 
-The web Worker sends mail through the `EMAIL` `send_email` binding, wrapped by `createCloudflareEmailService` in `packages/features/src/platform/email.ts`. Callers use the `EmailService` interface only. Full guide: `docs/guides/how-to-setup-email.md`.
+The web Worker sends mail through the `EMAIL` `send_email` binding, wrapped by the Email port's Cloudflare adapter (`createCloudflareEmail` in `packages/features/src/platform/adapters/cloudflare/cloudflare-email.ts`). Callers use the `EmailService` port (`platform/ports/email.ts`) only. Full guide: `docs/guides/how-to-setup-email.md`.
 
 Cloudflare docs change; check https://developers.cloudflare.com/email-service/ before relying on limits or commands.
 

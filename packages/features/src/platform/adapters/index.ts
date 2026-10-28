@@ -6,6 +6,8 @@ export {
   ANALYTICS_ENGINE_LAYOUT,
   type AnalyticsEngineMetricsOptions,
   createAnalyticsEngineMetrics,
+  type CloudflareEmailConfig,
+  createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
@@ -26,6 +28,7 @@ export {
 } from "./cloudflare";
 export {
   type CapturedError,
+  createMemoryEmail,
   createMemoryErrorReporter,
   createMemoryFeatureFlags,
   createMemoryHumanVerifier,
@@ -34,6 +37,7 @@ export {
   createMemoryMetrics,
   createMemoryRateLimiter,
   createMemoryTracer,
+  type MemoryEmail,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
@@ -43,6 +47,7 @@ export {
   type SentJob,
 } from "./memory";
 export {
+  noopEmail,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,

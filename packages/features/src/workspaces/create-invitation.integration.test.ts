@@ -9,8 +9,7 @@ import {
   sequentialIds,
   useCaseDeps,
 } from "../../test/fixtures";
-import type { EmailService, SendEmailInput } from "../platform";
-import { sha256Hex } from "../platform";
+import { createMemoryEmail, sha256Hex } from "../platform";
 import { createInvitation } from "./create-invitation";
 
 const appUrl = "http://localhost:4321";
@@ -22,13 +21,8 @@ describe("createInvitation", () => {
       id: "ws-acme",
       name: "Acme <Robotics>",
     });
-    const sent: SendEmailInput[] = [];
-    const email: EmailService = {
-      send: async (input) => {
-        sent.push(input);
-      },
-      sendTestEmail: async () => {},
-    };
+    const email = createMemoryEmail();
+    const sent = email.sent;
 
     const created = await createInvitation(
       { ...useCaseDeps(), ids: sequentialIds(), email },

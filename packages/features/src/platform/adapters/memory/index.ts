@@ -1,4 +1,6 @@
 // In-memory adapters for tests: they record what the app sent so tests can assert on it.
+
+export { createMemoryEmail, type MemoryEmail } from "./memory-email";
 export {
   type CapturedError,
   createMemoryErrorReporter,

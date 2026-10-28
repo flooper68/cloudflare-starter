@@ -3,9 +3,12 @@ export {
   type AnalyticsEngineMetricsOptions,
   type CapturedError,
   createAnalyticsEngineMetrics,
+  type CloudflareEmailConfig,
+  createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
+  createMemoryEmail,
   createMemoryErrorReporter,
   createMemoryFeatureFlags,
   createMemoryHumanVerifier,
@@ -23,12 +26,14 @@ export {
   ERROR_REPORT_EVENT,
   fromDataPoint,
   MAX_POINTS_PER_FLUSH,
+  type MemoryEmail,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
   type MemoryLogger,
   type MemoryMetrics,
   type MemoryTracer,
+  noopEmail,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,
@@ -45,14 +50,7 @@ export {
 } from "./adapters";
 export { systemClock } from "./clock";
 export { createDb, type Db } from "./db";
-export {
-  type CloudflareEmailConfig,
-  createCloudflareEmailService,
-  type EmailRecipient,
-  type EmailService,
-  type SendEmailInput,
-  type SendTestEmailInput,
-} from "./email";
+export { assertEmailMessage } from "./email-message";
 export { FLAG_BUCKETS, flagBucket } from "./flag-evaluation";
 export { sha256Hex } from "./hash";
 export { randomIds } from "./ids";
@@ -78,6 +76,8 @@ export {
 } from "./metric-catalog";
 export type {
   Counter,
+  EmailRecipient,
+  EmailService,
   ErrorReporter,
   FeatureFlagStore,
   FeatureFlags,
@@ -107,6 +107,7 @@ export type {
   SpanAttributes,
   SpanAttributeValue,
   SpanStatus,
+  SendEmailInput,
   StoredFlag,
   StoredFlagEntry,
   Tracer,
@@ -119,6 +120,7 @@ export {
   requestContextAttributes,
 } from "./request-context";
 export { SPAN_EVENT, type SpanKind, type SpanRecord } from "./span-record";
+export { testEmail } from "./test-email";
 export {
   formatTraceparent,
   newSpanId,

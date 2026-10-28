@@ -8,6 +8,7 @@ import {
   listWorkspaceFiles,
   sendHello,
   setFlagRules,
+  testEmail,
   updateFlag,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
@@ -84,10 +85,12 @@ export const appRouter = router({
   email: router({
     sendTest: protectedProcedure.mutation(async ({ ctx }) => {
       const email = requireFeature(ctx.email);
-      await email.sendTestEmail({
-        to: { email: ctx.user.email, name: displayName(ctx.user) },
-        environment: ctx.config.APP_ENV,
-      });
+      await email.send(
+        testEmail({
+          to: { email: ctx.user.email, name: displayName(ctx.user) },
+          environment: ctx.config.APP_ENV,
+        })
+      );
       return { sent: true };
     }),
   }),
