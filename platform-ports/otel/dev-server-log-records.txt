@@ -1,0 +1,61 @@
+# OpenTelemetry log records from `astro dev` (apps/web, LOG_SINK=workers-logs, ERROR_REPORTER=workers-logs).
+# Locally workerd prints each record object; deployed, Workers Logs indexes the same fields.
+
+{
+  timestamp: '2026-10-28T14:09:00.099Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'queue.hello',
+  trace_id: 'c694cf6cccc8447cba1170c230610931',
+  span_id: 'b9f854bd5c4f52a2',
+  trace_flags: '01',
+  attributes: {
+    'app.request.source': 'queue',
+    'user.id': 'evCB4fKEzXVWx9eTdHIdvWQsizrpy9RO',
+    'messaging.system': 'cloudflare_queues',
+    'messaging.message.id': '652890d1f6006464460cf8e80b564524',
+    'app.queue.attempts': 1,
+    'app.greeting.message': 'Hello, Barbara',
+    'app.greeting.queued_at': '2026-10-28T14:08:59.091Z'
+  },
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': 'ced8d013-c43c-46c3-b17f-5349eb5d9194',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T14:09:20.458Z',
+  severity_text: 'ERROR',
+  severity_number: 17,
+  body: 'error.captured',
+  trace_id: '7cc7bc8f3420493cb015662be3f3ed5f',
+  span_id: 'a702efe12a3a079a',
+  trace_flags: '01',
+  attributes: {
+    'app.request.source': 'http',
+    'user.id': 'EOO5KpXKR3pPeBJFpUnD3JZJK0N1TOQg',
+    'rpc.system': 'trpc',
+    'rpc.method': 'queue.enqueueHello',
+    'app.trpc.type': 'mutation',
+    'exception.type': 'Error',
+    'exception.message': 'EVIDENCE-ONLY: queue broker unreachable',
+    'exception.stacktrace': 'Error: EVIDENCE-ONLY: queue broker unreachable\n' +
+      '    at <repo>/apps/web/src/server/trpc/router.ts:70:42\n' +
+      '    at resolveMiddleware (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:203:23)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:16)\n' +
+      '    at Object.next (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:244:12)\n' +
+      '    at inputValidatorMiddleware (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:48:15)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at <repo>/apps/web/src/server/trpc/init.ts:75:18\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at <repo>/apps/web/src/server/trpc/init.ts:62:18'
+  },
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': 'ced8d013-c43c-46c3-b17f-5349eb5d9194',
+    'deployment.environment.name': 'local'
+  }
+}

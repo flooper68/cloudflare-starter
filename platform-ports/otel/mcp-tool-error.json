@@ -1,0 +1,21 @@
+{
+  "request": "tools/call enqueue_hello",
+  "traceId": "bf3019c6a26043a28bd314614c73d3a9",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"code\":\"INTERNAL_SERVER_ERROR\",\"httpStatus\":500,\"message\":\"Internal error\",\"reference\":\"bf3019c6a26043a28bd314614c73d3a9\"}}"
+      }
+    ],
+    "structuredContent": {
+      "error": {
+        "code": "INTERNAL_SERVER_ERROR",
+        "httpStatus": 500,
+        "message": "Internal error",
+        "reference": "bf3019c6a26043a28bd314614c73d3a9"
+      }
+    },
+    "isError": true
+  }
+}

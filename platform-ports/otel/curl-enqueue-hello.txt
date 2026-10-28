@@ -1,0 +1,12 @@
+$ curl -si -b <session> -X POST http://localhost:4321/api/trpc/queue.enqueueHello -H "x-trpc-source: app" -d {"name":"Barbara"}
+HTTP/1.1 200 OK
+vary: trpc-accept, accept
+content-length: 35
+content-type: application/json
+traceparent: 00-c694cf6cccc8447cba1170c230610931-8c01da747599a8b7-01
+x-request-id: c694cf6cccc8447cba1170c230610931
+Date: Wed, 28 Oct 2026 14:08:59 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"result":{"data":{"queued":true}}}

@@ -1,0 +1,38 @@
+$ curl -si http://localhost:4321/api/hello -H "x-request-id: client-chosen"
+HTTP/1.1 200 OK
+Vary: Origin
+content-length: 25
+content-type: application/json
+traceparent: 00-9e84426b40bb4d4aa94ef4b2fa9309e3-91a4ab8ec0cf79ec-01
+x-request-id: 9e84426b40bb4d4aa94ef4b2fa9309e3
+Date: Wed, 28 Oct 2026 14:08:57 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"message":"hello world"}
+
+$ curl -si http://localhost:4321/api/hello -H "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+HTTP/1.1 200 OK
+Vary: Origin
+content-length: 25
+content-type: application/json
+traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-a831db441c9b2df3-01
+x-request-id: 4bf92f3577b34da6a3ce929d0e0e4736
+Date: Wed, 28 Oct 2026 14:08:57 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"message":"hello world"}
+
+$ curl -si http://localhost:4321/app
+HTTP/1.1 302 Found
+Vary: Origin
+content-length: 0
+location: /sign-in
+traceparent: 00-3a109fe782ac4d5d94a5a51c1a37083e-83e20641cecab45d-01
+x-request-id: 3a109fe782ac4d5d94a5a51c1a37083e
+Date: Wed, 28 Oct 2026 14:08:58 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
