@@ -11,6 +11,7 @@ import {
 import type { APIRoute } from "astro";
 
 import { buildRequiredConfig } from "@/lib/env";
+import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import { httpAttributes, internalErrorResponse } from "@/server/http";
 
@@ -31,6 +32,7 @@ export const GET: APIRoute = async ({ locals, params, request, url }) => {
         clock: systemClock,
         ids: randomIds,
         requestContext: locals.requestContext,
+        billing: billingGateFor(env, locals.requestContext),
       },
       {
         userId: locals.user.id,

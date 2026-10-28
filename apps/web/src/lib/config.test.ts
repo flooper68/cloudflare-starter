@@ -36,6 +36,7 @@ describe("web config", () => {
         SIGN_UP: "invite",
         BOOTSTRAP_ADMIN_EMAIL: "founder@acme.test",
         ADMIN_PORTAL: "on",
+        BILLING: "off",
       }).workspaces
     ).toEqual({
       mode: "single",
@@ -46,7 +47,11 @@ describe("web config", () => {
   });
 
   it("requires ADMIN_PORTAL, on or off, without a default", () => {
-    const workspaces = { WORKSPACE_MODE: "multi", SIGN_UP: "open" };
+    const workspaces = {
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      BILLING: "off",
+    };
     expect(
       parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "off" })
         .ADMIN_PORTAL
@@ -62,6 +67,23 @@ describe("web config", () => {
   it("refuses to start without WORKSPACE_MODE and SIGN_UP", () => {
     expect(() => parseAppConfig(core)).toThrow(/WORKSPACE_MODE must be/);
   });
+
+  it("parses BILLING and refuses to start without it or with an unknown mode", () => {
+    const workspaces = {
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      ADMIN_PORTAL: "on",
+    };
+    expect(
+      parseAppConfig({ ...core, ...workspaces, BILLING: "manual" }).billing
+    ).toEqual({ mode: "manual" });
+    expect(() => parseAppConfig({ ...core, ...workspaces })).toThrow(
+      /BILLING must be off, manual or provider/
+    );
+    expect(() =>
+      parseAppConfig({ ...core, ...workspaces, BILLING: "stripe" })
+    ).toThrow(/BILLING must be off, manual or provider/);
+  });
 });
 
 describe("platform config", () => {
@@ -72,12 +94,16 @@ describe("platform config", () => {
         LOG_SINK: "workers-logs",
         ERROR_REPORTER: "none",
         FEATURE_FLAGS: "d1",
+        METRICS: "analytics-engine",
+        TRACING: "workers",
       })
     ).toEqual({
       APP_ENV: "staging",
       LOG_SINK: "workers-logs",
       ERROR_REPORTER: "none",
       FEATURE_FLAGS: "d1",
+      METRICS: "analytics-engine",
+      TRACING: "workers",
     });
   });
 
@@ -119,7 +145,13 @@ describe("platform config", () => {
   });
 
   it("requires FEATURE_FLAGS and accepts only d1 or none", () => {
-    const rest = { APP_ENV: "local", LOG_SINK: "none", ERROR_REPORTER: "none" };
+    const rest = {
+      APP_ENV: "local",
+      LOG_SINK: "none",
+      ERROR_REPORTER: "none",
+      METRICS: "none",
+      TRACING: "none",
+    };
     expect(() => parsePlatformConfig(rest)).toThrow(
       new ConfigError(
         "FEATURE_FLAGS",
@@ -132,6 +164,30 @@ describe("platform config", () => {
     expect(
       parsePlatformConfig({ ...rest, FEATURE_FLAGS: "none" }).FEATURE_FLAGS
     ).toBe("none");
+  });
+
+  it("requires METRICS and TRACING and accepts only their adapters", () => {
+    const rest = {
+      APP_ENV: "local",
+      LOG_SINK: "none",
+      ERROR_REPORTER: "none",
+      FEATURE_FLAGS: "none",
+    };
+    expect(() => parsePlatformConfig({ ...rest, TRACING: "none" })).toThrow(
+      new ConfigError(
+        "METRICS",
+        "METRICS is not set: set METRICS to one of analytics-engine, none in the vars of apps/web/wrangler.jsonc for every environment"
+      )
+    );
+    expect(() => parsePlatformConfig({ ...rest, METRICS: "none" })).toThrow(
+      "TRACING is not set: set TRACING to one of workers, none in the vars of apps/web/wrangler.jsonc for every environment"
+    );
+    expect(() =>
+      parsePlatformConfig({ ...rest, METRICS: "prometheus", TRACING: "none" })
+    ).toThrow(/^METRICS is "prometheus"/);
+    expect(() =>
+      parsePlatformConfig({ ...rest, METRICS: "none", TRACING: "otlp" })
+    ).toThrow(/^TRACING is "otlp"/);
   });
 
   it("rejects values that name no adapter", () => {

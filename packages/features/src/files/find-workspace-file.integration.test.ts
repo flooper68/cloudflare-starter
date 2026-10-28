@@ -6,6 +6,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
 } from "../../test/fixtures";
 import { createFileRecord } from "./create-file-record";
@@ -21,7 +22,12 @@ describe("findWorkspaceFile", () => {
     const member = await addMember("ws-acme", colleague.id);
     const elsewhere = await seedWorkspace(stranger.id, { id: "ws-other" });
     const { fileId } = await createFileRecord(
-      { db: testDb(), clock: fixedClock(), ids: sequentialIds() },
+      {
+        db: testDb(),
+        clock: fixedClock(),
+        ids: sequentialIds(),
+        billing: testBilling(),
+      },
       actor,
       { filename: "plan.md", mimeType: "text/markdown", sizeBytes: 3 }
     );

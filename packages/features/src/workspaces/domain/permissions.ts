@@ -30,6 +30,8 @@ export const ACTIONS = {
   "invitations.read": ["owner"],
   "invitations.manage": ["owner"],
   "ownership.transfer": ["owner"],
+  "billing.read": ["owner", "member"],
+  "billing.manage": ["owner"],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Action = keyof typeof ACTIONS;

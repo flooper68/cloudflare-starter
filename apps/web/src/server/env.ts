@@ -18,6 +18,7 @@ export interface AppEnv {
   readonly RL_MCP_IP?: RateLimit;
   readonly RL_MCP_USER?: RateLimit;
   readonly RL_UPLOAD?: RateLimit;
+  readonly RL_BILLING_WEBHOOK?: RateLimit;
   readonly RL_INVITE?: RateLimit;
   readonly RL_TOKEN_LOOKUP?: RateLimit;
   readonly APP_ENV?: string;
@@ -27,9 +28,17 @@ export interface AppEnv {
   readonly ERROR_REPORTER?: string;
   /** Required var, validated by `parsePlatformConfig`: d1 | none. */
   readonly FEATURE_FLAGS?: string;
+  /** Required var, validated by `parsePlatformConfig`: analytics-engine | none. */
+  readonly METRICS?: string;
+  /** Required var, validated by `parsePlatformConfig`: workers | none. */
+  readonly TRACING?: string;
+  /** Analytics Engine dataset binding; required when METRICS=analytics-engine. */
+  readonly METRICS_DATASET?: AnalyticsEngineDataset;
   readonly APP_URL?: string;
   readonly BETTER_AUTH_SECRET?: string;
   readonly GOOGLE_CLIENT_ID?: string;
   readonly GOOGLE_CLIENT_SECRET?: string;
+  /** Setup-written var, validated by `parseAppConfig`: off | manual | provider. */
+  readonly BILLING?: string;
   readonly [key: string]: unknown;
 }

@@ -4,7 +4,8 @@
  * Creates the web Worker's Cloudflare resources for an environment, named as in
  * apps/web/wrangler.jsonc: the D1 database (its id is written back into the config),
  * the R2 bucket, the queue and its dead-letter queue (with the maximum message retention,
- * 14 days, set again on every run). Re-runnable: existing resources are kept. Needs
+ * 14 days, set again on every run). The Analytics Engine metrics dataset needs no step (the
+ * first write creates it); it is listed. Re-runnable: existing resources are kept. Needs
  * `bunx wrangler login` (or CLOUDFLARE_API_TOKEN) first.
  */
 import { parseArgs } from "node:util";
@@ -156,6 +157,15 @@ for (const env of parseEnvironments(values.env)) {
         `  4. Store the secret key: bun run setup:secrets --env ${env} (TURNSTILE_SECRET_KEY).`,
         "  Guide: docs/guides/how-to-configure-abuse-protection.md",
       ].join("\n")
+    );
+  }
+  // Analytics Engine datasets have no create command: the first write after deploy
+  // creates them (docs/guides/how-to-setup-metrics-and-tracing.md).
+  for (const dataset of (block.analytics_engine_datasets as
+    | { dataset: string }[]
+    | undefined) ?? []) {
+    console.log(
+      `Analytics Engine ${dataset.dataset}\n  = created on the first write (nothing to do)`
     );
   }
 }

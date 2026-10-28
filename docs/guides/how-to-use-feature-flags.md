@@ -57,7 +57,7 @@ const { value } = await evaluateFlag(deps.flags, "upload-demo-presigned", {
 });
 ```
 
-It returns OpenFeature evaluation details (`value`, `variant`, `reason`, `errorCode`, `flagMetadata`) and never throws. In a `workspaceProcedure`, the subject comes from the workspace actor: `ctx.actor.userId`, `ctx.actor.workspaceId`, `ctx.config.APP_ENV`; `plan` is null until plans exist.
+It returns OpenFeature evaluation details (`value`, `variant`, `reason`, `errorCode`, `flagMetadata`) and never throws. In a `workspaceProcedure`, the subject comes from the workspace actor: `ctx.actor.userId`, `ctx.actor.workspaceId`, `ctx.config.APP_ENV`; `plan` is the workspace's plan in effect from `resolveEntitlements` (`unlimited` with `BILLING=off`; [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)).
 
 **In the browser.** Only flags with `client: true` reach the browser, as values, through `flags.client` (`get_client_flags` over MCP), a workspace procedure: members only, for the workspace they name (or their current one); a workspace they do not belong to is `NOT_FOUND`. `apps/web/src/lib/feature-flags.tsx` loads them under `FeatureFlagsProvider` (mounted in `AppSpa.tsx` inside `WorkspaceProvider`) for the active workspace, and again when it changes:
 
@@ -91,7 +91,7 @@ A provider resolves a flag for an evaluation context (`targetingKey`, `userId`, 
 
 Rules apply in order. A **percentage** rule matches when the bucket of the targeting key is below `percentageBp` (basis points, 0–10000): bucket = FNV-1a 32 of `${flagKey}:${targetingKey}` mod 10000. The bucket is stable across isolates, deploys and providers, so growing a rollout from 10 % to 50 % keeps the first 10 % in; salting with the flag key keeps two rollouts from picking the same ids. The targeting key is the workspace id or the user id, per the flag's `rolloutBy`; without one (an anonymous visitor, a user without a workspace), percentage rules do not match. A **workspace** rule matches one workspace id, a **plan** rule one plan id.
 
-Plans are not built yet: `plan` is null in every request, so plan rules match nobody until plans exist.
+`flags.client` passes the workspace's plan in effect (a lapsed trial counts as its fallback plan; `unlimited` with `BILLING=off`), so a plan rule matches the workspaces on that plan. A plan rule is for rollout by audience; what a plan includes is an entitlement, not a flag ([overview](../architecture/overview.md#plans-features-and-limits)).
 
 ## Changing a flag
 

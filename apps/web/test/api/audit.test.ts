@@ -66,29 +66,40 @@ describe("audit log of Better Auth endpoints", () => {
     const traceId = response.headers.get(REQUEST_ID_HEADER);
     const { user } = (await response.json()) as { user: { id: string } };
 
-    expect(await events({ actorUserId: user.id })).toEqual([
-      expect.objectContaining({
-        action: "auth.sign_in",
-        metadata: { method: "sign_up" },
-        traceId,
-      }),
-      expect.objectContaining({
-        action: "auth.sign_up",
-        outcome: "success",
-        actor: { kind: "user", userId: user.id, impersonatorUserId: null },
-        target: { type: "user", id: user.id },
-        metadata: { method: "password" },
-        traceId,
-        source: "http",
-        ip: CLIENT_IP,
-      }),
-      // The personal workspace the sign-up provisions (multi mode in the API tests).
-      expect.objectContaining({
-        action: "workspace.created",
-        metadata: { kind: "personal" },
-        traceId,
-      }),
-    ]);
+    const recorded = await events({ actorUserId: user.id });
+    // The workspace and its trial are written a millisecond apart: compare without order.
+    expect(recorded).toHaveLength(4);
+    expect(recorded).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "auth.sign_in",
+          metadata: { method: "sign_up" },
+          traceId,
+        }),
+        expect.objectContaining({
+          action: "auth.sign_up",
+          outcome: "success",
+          actor: { kind: "user", userId: user.id, impersonatorUserId: null },
+          target: { type: "user", id: user.id },
+          metadata: { method: "password" },
+          traceId,
+          source: "http",
+          ip: CLIENT_IP,
+        }),
+        // The personal workspace the sign-up provisions (multi mode in the API tests).
+        expect.objectContaining({
+          action: "workspace.created",
+          metadata: { kind: "personal" },
+          traceId,
+        }),
+        // Its plan's trial (BILLING=manual in the API tests).
+        expect.objectContaining({
+          action: "billing.trial_started",
+          metadata: expect.objectContaining({ planId: "pro" }),
+          traceId,
+        }),
+      ])
+    );
   });
 
   it("sign-in records auth.sign_in with the trace id of the response", async () => {

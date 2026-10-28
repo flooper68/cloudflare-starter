@@ -30,14 +30,19 @@
   //   platform admin once verified
   // - ADMIN_PORTAL: on | off (required): the admin portal for role=admin users
   //   (docs/guides/how-to-use-admin-portal.md)
+  // - BILLING: off | manual | provider (required; docs/guides/how-to-configure-plans-and-billing.md)
   // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
   // FEATURE_FLAGS is required (no default): d1 (flags in the DB, managed by admins) | none
   // (every flag is its catalog default). Guide: docs/guides/how-to-use-feature-flags.md
+  // METRICS (analytics-engine | none) and TRACING (workers | none) are required too
+  // (docs/guides/how-to-setup-metrics-and-tracing.md).
   "vars": {
     "APP_ENV": "develop",
     "LOG_SINK": "workers-logs",
     "ERROR_REPORTER": "workers-logs",
     "FEATURE_FLAGS": "d1",
+    "METRICS": "analytics-engine",
+    "TRACING": "workers",
     "AUTH_EMAIL_PASSWORD": "true",
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
     "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -61,6 +66,15 @@
   ],
   "r2_buckets": [
     { "binding": "FILES", "bucket_name": "cloudflare-starter-files-develop" }
+  ],
+  // Workers Analytics Engine: the metrics (METRICS=analytics-engine). The dataset is created
+  // on the first write; simulated locally. Data-point layout and queries:
+  // docs/guides/how-to-setup-metrics-and-tracing.md
+  "analytics_engine_datasets": [
+    {
+      "binding": "METRICS_DATASET",
+      "dataset": "cloudflare_starter_develop_metrics"
+    }
   ],
   // Cloudflare Email Service. Simulated in local dev (mail is logged); deployed it needs
   // Workers Paid and a sender domain onboarded with `bun run setup:email`. Add
@@ -127,6 +141,11 @@
       "name": "RL_TOKEN_LOOKUP",
       "namespace_id": "1007",
       "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "RL_BILLING_WEBHOOK",
+      "namespace_id": "1008",
+      "simple": { "limit": 300, "period": 60 }
     }
   ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
@@ -145,6 +164,8 @@
         "LOG_SINK": "workers-logs",
         "ERROR_REPORTER": "workers-logs",
         "FEATURE_FLAGS": "d1",
+        "METRICS": "analytics-engine",
+        "TRACING": "workers",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -166,6 +187,12 @@
         {
           "binding": "FILES",
           "bucket_name": "cloudflare-starter-files-staging"
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "METRICS_DATASET",
+          "dataset": "cloudflare_starter_staging_metrics"
         }
       ],
       "queues": {
@@ -218,6 +245,11 @@
           "name": "RL_TOKEN_LOOKUP",
           "namespace_id": "2007",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_BILLING_WEBHOOK",
+          "namespace_id": "2008",
+          "simple": { "limit": 300, "period": 60 }
         }
       ],
       "triggers": { "crons": ["17 3 * * *"] }
@@ -234,6 +266,8 @@
         "LOG_SINK": "workers-logs",
         "ERROR_REPORTER": "workers-logs",
         "FEATURE_FLAGS": "d1",
+        "METRICS": "analytics-engine",
+        "TRACING": "workers",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -255,6 +289,12 @@
         {
           "binding": "FILES",
           "bucket_name": "cloudflare-starter-files-production"
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "METRICS_DATASET",
+          "dataset": "cloudflare_starter_production_metrics"
         }
       ],
       "queues": {
@@ -307,6 +347,11 @@
           "name": "RL_TOKEN_LOOKUP",
           "namespace_id": "3007",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_BILLING_WEBHOOK",
+          "namespace_id": "3008",
+          "simple": { "limit": 300, "period": 60 }
         }
       ],
       "triggers": { "crons": ["17 3 * * *"] }

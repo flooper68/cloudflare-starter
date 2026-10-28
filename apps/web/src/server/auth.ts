@@ -5,6 +5,7 @@ import {
   DomainError,
   deleteWorkspaceFiles,
   LastOwnerError,
+  LimitReachedError,
   prepareUserDeletion,
   promoteBootstrapAdmin,
   provisionUser,
@@ -24,6 +25,7 @@ import {
 } from "better-auth/api";
 import { admin, jwt } from "better-auth/plugins";
 
+import { SIGN_UP_SEATS_FULL_MESSAGE } from "@/lib/auth-links";
 import type { AppConfig } from "@/lib/config";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
 import { createAdminAuthGateway } from "@/server/admin-auth-gateway";
@@ -41,6 +43,7 @@ import {
   emailNotConfiguredError,
   mayLogAuthLinks,
 } from "@/server/auth-mail";
+import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
@@ -189,8 +192,9 @@ async function enforceHumanCheck(
  * Refuses a sign-up the environment's policy does not allow (SIGN_UP, SIGN_UP_DOMAINS,
  * BOOTSTRAP_ADMIN_EMAIL, pending invitations). Runs in `user.create.before`, so it covers
  * every method, Google included; a refused Google sign-up redirects to
- * `/sign-in?error=SIGN_UP_INVITE_ONLY`. A named function so other checks on the same hook
- * (abuse protection) compose with it.
+ * `/sign-in?error=SIGN_UP_INVITE_ONLY`. In single mode a sign-up that would join the app's
+ * workspace past its `seats` limit is refused with `LIMIT_REACHED` (billing). A named
+ * function so other checks on the same hook (abuse protection) compose with it.
  */
 export async function enforceSignUpPolicy(
   env: AppEnv,
@@ -198,7 +202,11 @@ export async function enforceSignUpPolicy(
 ): Promise<void> {
   try {
     await checkSignUpAllowed(
-      { db: getDb(env), clock: systemClock },
+      {
+        db: getDb(env),
+        clock: systemClock,
+        billing: billingGateFor(env, contextFor(env, null)),
+      },
       { email: user.email, settings: buildRequiredConfig(env).workspaces }
     );
   } catch (error) {
@@ -206,6 +214,12 @@ export async function enforceSignUpPolicy(
       throw new APIError("FORBIDDEN", {
         code: SignUpNotAllowedError.CODE,
         message: error.message,
+      });
+    }
+    if (error instanceof LimitReachedError) {
+      throw new APIError("FORBIDDEN", {
+        code: LimitReachedError.CODE,
+        message: SIGN_UP_SEATS_FULL_MESSAGE,
       });
     }
     throw error;
@@ -226,7 +240,13 @@ async function provisionNewUser(
   const requestContext = { ...contextFor(env, ctx), userId: user.id };
   try {
     await provisionUser(
-      { db: getDb(env), clock: systemClock, ids: randomIds, requestContext },
+      {
+        db: getDb(env),
+        clock: systemClock,
+        ids: randomIds,
+        requestContext,
+        billing: billingGateFor(env, requestContext),
+      },
       {
         user,
         settings: buildRequiredConfig(env).workspaces,

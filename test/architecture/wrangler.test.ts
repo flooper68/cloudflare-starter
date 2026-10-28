@@ -21,6 +21,8 @@ const SETUP_WRITTEN_VARS: Readonly<Record<string, string>> = {
   BOOTSTRAP_ADMIN_EMAIL: "written by setup:auth",
   ADMIN_PORTAL:
     "written by setup:auth; deliberately absent until the owner chooses (no default)",
+  BILLING:
+    "written by setup:auth; deliberately absent until the owner chooses off, manual or provider",
 };
 
 type Block = Record<string, unknown>;
@@ -39,6 +41,7 @@ function bindings(block: Block): Record<string, string[]> {
     r2: names("r2_buckets", "binding"),
     sendEmail: names("send_email", "name"),
     ratelimits: names("ratelimits", "name"),
+    analyticsEngine: names("analytics_engine_datasets", "binding"),
     queueProducers: (queues.producers ?? [])
       .map((q) => String(q.binding))
       .sort(),
@@ -76,6 +79,17 @@ describe("wrangler.jsonc", () => {
       expect(block.version_metadata).toEqual(config.version_metadata);
     }
   );
+
+  it("binds the METRICS_DATASET Analytics Engine dataset, one dataset per environment", () => {
+    const datasets = [config, ...environments.map(([, block]) => block)].map(
+      (block) =>
+        ((block.analytics_engine_datasets as Block[] | undefined) ?? []).find(
+          (entry) => entry.binding === "METRICS_DATASET"
+        )?.dataset
+    );
+    expect(datasets.every((name) => typeof name === "string")).toBe(true);
+    expect(new Set(datasets).size).toBe(datasets.length);
+  });
 
   it.each(environments)(
     "env.%s declares every binding and var of the top level",

@@ -1,6 +1,6 @@
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
 import {
   CREATOR_ROLE,
   requireMode,
@@ -17,6 +17,8 @@ export async function createWorkspace(
     readonly clock: Clock;
     readonly ids: Ids;
     readonly requestContext: RequestContext;
+    /** Starts the new workspace's plan (billing's trial). */
+    readonly billing: BillingGate;
   },
   input: {
     readonly userId: string;
@@ -46,5 +48,6 @@ export async function createWorkspace(
     target: { type: "workspace", id },
     metadata: { kind: "shared" },
   });
+  await deps.billing.workspaceCreated(id);
   return { id, name, kind: "shared", role: CREATOR_ROLE };
 }

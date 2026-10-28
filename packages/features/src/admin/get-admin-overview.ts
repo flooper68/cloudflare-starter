@@ -1,6 +1,11 @@
 import { and, count, eq, gte, isNull, sql } from "drizzle-orm";
 
 import { session, user } from "../accounts";
+import {
+  type BillingOverview,
+  type BillingSettings,
+  getBillingOverview,
+} from "../billing";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
 import { workspaceMembers, workspaces } from "../workspaces";
@@ -30,10 +35,10 @@ export interface AdminOverview {
     readonly personal: number;
     readonly sizes: readonly SizeBucket[];
   };
-  /** Placeholder for the billing feature: plans and trials. Null until it exists. */
-  readonly plans: null;
-  /** Placeholder for the billing feature: usage against plan limits. Null until it exists. */
-  readonly usage: null;
+  /** Workspaces per plan and status, and trials (billing). Null with BILLING=off. */
+  readonly plans: Pick<BillingOverview, "plans" | "trials"> | null;
+  /** This period's usage counters over all workspaces (billing). Null with BILLING=off. */
+  readonly usage: BillingOverview["usage"] | null;
 }
 
 const day = (column: unknown) =>
@@ -42,16 +47,21 @@ const day = (column: unknown) =>
 /**
  * The admin overview, from D1 only: user counts, daily sign-ups (user.created_at), daily
  * active users (users with a new session that day; sessions expire and are deleted, so
- * older days undercount), workspace counts and sizes.
+ * older days undercount), workspace counts and sizes, and billing's plans, trials and
+ * usage counters (getBillingOverview; null with BILLING=off).
  */
 export async function getAdminOverview(
-  deps: { readonly db: Database; readonly clock: Clock },
+  deps: {
+    readonly db: Database;
+    readonly clock: Clock;
+    readonly billing: BillingSettings;
+  },
   _admin: AdminActor
 ): Promise<AdminOverview> {
   const now = deps.clock.now();
   const start = windowStart(now, OVERVIEW_DAYS);
 
-  const [users, signUps, active, kinds, sizes] = await Promise.all([
+  const [users, signUps, active, kinds, sizes, billing] = await Promise.all([
     deps.db
       .select({
         total: count(),
@@ -82,6 +92,7 @@ export async function getAdminOverview(
       .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
       .where(eq(workspaces.kind, "shared"))
       .groupBy(workspaceMembers.workspaceId),
+    getBillingOverview({ ...deps, settings: deps.billing }),
   ]);
 
   const kindCount = (kind: "personal" | "shared") =>
@@ -104,7 +115,7 @@ export async function getAdminOverview(
       personal: kindCount("personal"),
       sizes: workspaceSizeBuckets(sizes.map((row) => row.members)),
     },
-    plans: null,
-    usage: null,
+    plans: billing ? { plans: billing.plans, trials: billing.trials } : null,
+    usage: billing ? billing.usage : null,
   };
 }

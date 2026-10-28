@@ -4,6 +4,7 @@ export * from "./abuse";
 export * from "./accounts";
 export * from "./admin";
 export * from "./audit";
+export * from "./billing";
 export { type CronDeps, cronCatalog } from "./cron-catalog";
 export { createDatabase, type Database, schema } from "./database";
 export * from "./feature-flags";

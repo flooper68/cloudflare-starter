@@ -29,9 +29,10 @@ async function mcp(
   args: Record<string, unknown> = {}
 ) {
   const handler = createMcpHandler(() =>
-    buildMcpServer(caller, {
+    buildMcpServer(() => caller, {
       errors: buildPlatform(env).errors,
       requestContext: testRequestContext(),
+      tracer: buildPlatform(env).tracer,
     })
   );
   const response = await handler.fetch(

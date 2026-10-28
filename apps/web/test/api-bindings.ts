@@ -10,6 +10,8 @@ export const API_TEST_BINDINGS = {
   LOG_SINK: "workers-logs",
   ERROR_REPORTER: "workers-logs",
   FEATURE_FLAGS: "d1",
+  METRICS: "analytics-engine",
+  TRACING: "workers",
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "api-test-secret-0123456789abcdefghij",
   AUTH_EMAIL_PASSWORD: "true",
@@ -35,4 +37,7 @@ export const API_TEST_BINDINGS = {
   SIGN_UP_DOMAINS: "",
   BOOTSTRAP_ADMIN_EMAIL: "",
   ADMIN_PORTAL: "on",
+  // Setup-written too: manual billing, so new workspaces start the catalog's trial and
+  // limits apply; billing tests of other modes override it (envWith).
+  BILLING: "manual",
 } as const satisfies Readonly<Record<string, string>>;

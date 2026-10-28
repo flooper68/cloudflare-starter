@@ -31,7 +31,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { authMethodsOf } from "@/server/auth";
-
+import { adminBillingRouter } from "./admin-billing-router";
 import {
   adminDestructiveProcedure,
   adminProcedure,
@@ -61,7 +61,9 @@ const RESET_PASSWORD_PAGE = "/reset-password";
  */
 export const adminRouter = router({
   overview: router({
-    get: adminProcedure.query(({ ctx }) => getAdminOverview(ctx, ctx.admin)),
+    get: adminProcedure.query(({ ctx }) =>
+      getAdminOverview({ ...ctx, billing: ctx.config.billing }, ctx.admin)
+    ),
   }),
 
   settings: router({
@@ -228,6 +230,9 @@ export const adminRouter = router({
         )
       ),
   }),
+
+  // Plans, add-ons, overrides and usage of any workspace (docs/guides/how-to-configure-plans-and-billing.md).
+  billing: adminBillingRouter,
 
   // Feature flags (packages/features/src/feature-flags, docs/guides/how-to-use-feature-flags.md).
   flags: router({

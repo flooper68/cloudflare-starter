@@ -4,9 +4,14 @@
  * Messages for the error codes the server sets on purpose. A Google sign-up refused by
  * the sign-up policy comes back as `/sign-in?error=SIGN_UP_INVITE_ONLY`.
  */
+/** A sign-up refused because the app's workspace (single mode) has no free seat. */
+export const SIGN_UP_SEATS_FULL_MESSAGE =
+  "This workspace has no free seats. Ask its owner to invite you or to add seats.";
+
 const AUTH_ERROR_MESSAGES: Readonly<Record<string, string>> = {
   SIGN_UP_INVITE_ONLY:
     "Sign-up is by invitation only. Ask someone in the workspace to invite you, then open the link in their email.",
+  LIMIT_REACHED: SIGN_UP_SEATS_FULL_MESSAGE,
 };
 
 /** The message for one of our error codes (`?error=` or an API error's `code`), else null. */

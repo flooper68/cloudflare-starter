@@ -35,7 +35,11 @@ describe("getAdminOverview", () => {
     await seedWorkspace(alan.id, { id: "ws-solo" });
 
     const overview = await getAdminOverview(
-      { db: testDb(), clock: fixedClock(NOW.toISOString()) },
+      {
+        db: testDb(),
+        clock: fixedClock(NOW.toISOString()),
+        billing: { mode: "off" },
+      },
       { userId: ada.id }
     );
     expect(overview.users).toEqual({ total: 4, admins: 1, banned: 1 });

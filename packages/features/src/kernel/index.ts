@@ -1,6 +1,11 @@
 // Pure building blocks shared by every feature's domain: no I/O, no dependencies.
+export type { BillingGate } from "./billing-gate";
 export type { Clock } from "./clock";
-export { DomainError, type DomainErrorKind } from "./domain-error";
+export {
+  DomainError,
+  type DomainErrorDetails,
+  type DomainErrorKind,
+} from "./domain-error";
 export type { Ids } from "./ids";
 export {
   defineJob,
