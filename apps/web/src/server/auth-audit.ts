@@ -214,6 +214,27 @@ export async function auditHumanCheckFailed(
 }
 
 /**
+ * An impersonation session tried to authorize an OAuth (MCP) client as the user; refused
+ * in server/auth.ts. Recorded with the impersonating admin as actor.
+ */
+export async function auditImpersonationConsentRefused(
+  env: AppEnv,
+  ctx: { readonly request?: Request },
+  input: {
+    readonly userId: string;
+    readonly impersonatedBy: string;
+    readonly clientId: string | null;
+  }
+): Promise<void> {
+  await record(env, ctx, {
+    action: "impersonation.oauth_refused",
+    actor: { kind: "admin", userId: input.impersonatedBy },
+    target: { type: "user", id: input.userId },
+    metadata: input.clientId ? { clientId: input.clientId.slice(0, 200) } : {},
+  });
+}
+
+/**
  * Better Auth's `emailAndPassword.onPasswordReset`: a reset through an emailed link
  * completed. The request carries only the token, so the user comes from Better Auth.
  */

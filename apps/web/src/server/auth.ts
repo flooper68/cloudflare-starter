@@ -17,7 +17,11 @@ import {
 } from "@cloudflare-starter/features";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from "better-auth/api";
 import { admin, jwt } from "better-auth/plugins";
 
 import type { AppConfig } from "@/lib/config";
@@ -27,6 +31,7 @@ import {
   auditAuthEndpoint,
   auditDatabaseHooks,
   auditHumanCheckFailed,
+  auditImpersonationConsentRefused,
   auditPasswordReset,
   contextFor,
 } from "@/server/auth-audit";
@@ -61,6 +66,72 @@ export const HUMAN_CHECKED_PATHS: Readonly<
   "/request-password-reset": "password-reset",
 };
 
+/** OAuth endpoints that grant an (MCP) client access as the signed-in user. */
+const OAUTH_GRANT_PATHS: readonly string[] = [
+  "/oauth2/authorize",
+  "/oauth2/consent",
+];
+
+/** The code a refused OAuth grant from an impersonation session answers with. */
+export const IMPERSONATION_OAUTH_REFUSED = "IMPERSONATION_OAUTH_REFUSED";
+
+/**
+ * An admin impersonating a user must not authorize an OAuth client as them: its tokens
+ * would outlast the one-hour impersonation and act as the user with no admin in sight.
+ * Refuses authorize and consent from an impersonation session (403, recorded); the consent
+ * page shows the same refusal.
+ */
+async function refuseOAuthWhileImpersonating(
+  env: AppEnv,
+  ctx: Parameters<typeof getSessionFromCtx>[0] & {
+    readonly path: string;
+    readonly query?: unknown;
+    readonly body?: unknown;
+  }
+): Promise<void> {
+  if (!OAUTH_GRANT_PATHS.includes(ctx.path)) return;
+  const session = await getSessionFromCtx(ctx);
+  const impersonatedBy = (
+    session?.session as { impersonatedBy?: string | null } | undefined
+  )?.impersonatedBy;
+  if (!session || !impersonatedBy) return;
+  const clientId =
+    (ctx.query as { client_id?: unknown } | undefined)?.client_id ??
+    (ctx.body as { client_id?: unknown } | undefined)?.client_id;
+  await auditImpersonationConsentRefused(env, ctx, {
+    userId: session.user.id,
+    impersonatedBy,
+    clientId: typeof clientId === "string" ? clientId : null,
+  });
+  throw new APIError("FORBIDDEN", {
+    code: IMPERSONATION_OAUTH_REFUSED,
+    message:
+      "You are impersonating this user: connecting an app as them is not allowed. Stop impersonating first.",
+  });
+}
+
+/**
+ * Human-checked endpoints our own server code calls in-process through `auth.api`, where
+ * there is no visitor to check: an admin sending a reset link (server/admin-auth-gateway.ts,
+ * already authorized by adminProcedure). Sign-up and sign-in are never exempt.
+ */
+const IN_PROCESS_EXEMPT_PATHS: readonly string[] = ["/request-password-reset"];
+
+/**
+ * Whether the endpoint runs for an in-process `auth.api` call rather than an HTTP request.
+ * Better Auth puts the incoming Request on the context of every call through its router
+ * (`auth.handler`, which serves /api/auth/*); only `auth.api.*` from server code has none.
+ * Nothing a client sends (headers, query, path spelling) can remove it.
+ */
+function isInProcessCall(ctx: {
+  readonly path: string;
+  readonly request?: Request;
+}): boolean {
+  return (
+    ctx.request === undefined && IN_PROCESS_EXEMPT_PATHS.includes(ctx.path)
+  );
+}
+
 /**
  * The human check for `hooks.before` (TURNSTILE=on): refuses the human-checked endpoints
  * unless the verifier accepts the token, and records the refusal in the audit log. Fails
@@ -77,10 +148,7 @@ async function enforceHumanCheck(
 ): Promise<void> {
   const form = HUMAN_CHECKED_PATHS[ctx.path];
   if (!form) return;
-  // Only browser requests carry a token. A call from our own server code through auth.api
-  // (an admin sending a reset link, server/admin-auth-gateway.ts) has no request: there
-  // is no visitor to check, and the caller was authorized already.
-  if (!ctx.request) return;
+  if (isInProcessCall(ctx)) return;
   const headers = ctx.headers ?? new Headers();
   const platform = buildPlatform(env);
   const requestContext = contextFor(env, ctx);
@@ -521,6 +589,8 @@ export function createAuthOptions(env: AppEnv) {
         // Turnstile on sign-up, sign-in and password reset (TURNSTILE=on), first: a bot
         // learns nothing else about the request.
         await enforceHumanCheck(env, ctx);
+        // No OAuth (MCP) grants from an admin's impersonation session.
+        await refuseOAuthWhileImpersonating(env, ctx);
         // Deployed without email, refuse link-sending endpoints up front, for every address:
         // failing only inside sendResetPassword would answer differently for registered
         // emails (account enumeration).
