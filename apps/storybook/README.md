@@ -13,4 +13,4 @@ bun run build-storybook   # static build into apps/web/public/_storybook
 ```
 
 The web app's `build` (and so every `deploy:*`) builds Storybook first. See
-[docs/how-to-use-storybook.md](../../docs/how-to-use-storybook.md).
+[docs/guides/how-to-use-storybook.md](../../docs/guides/how-to-use-storybook.md).

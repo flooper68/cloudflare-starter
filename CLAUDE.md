@@ -1,22 +1,27 @@
-# Cloudflare Starter: rules for agents and reviewers
+# Cloudflare Starter: agent entry point
 
-A Bun monorepo: one Astro web Worker (`apps/web`) with Better Auth, D1, R2, email, tRPC, MCP, queue consumer and cron; shared code in `packages/features` and `packages/ui`. Start with [README.md](README.md).
+A Bun monorepo for Cloudflare-first products: one Astro web Worker (`apps/web`) with Better Auth, D1, R2, email, tRPC, MCP, a queue consumer and cron; server features in `packages/features`, components in `packages/ui`. This file holds the rules that always apply and routes you to the rest. `AGENTS.md` is a symlink to it.
 
-## Before you finish a change
+## Always
 
-- `bun run verify` passes (typecheck, Biome, Vitest). `bun run build` passes when you touched app code or config.
-- Schema changed: `bun run db:generate` produced a migration, committed with `migrations/meta/`.
-- Docs under `docs/` and the README still describe what the code does.
+1. **Verify before you finish, with evidence.** Run the narrowest real check, then `bun run verify` (and `bun run build` when app code or config changed). Report commands and results; never hide or skip a failure. User-visible changes also need screenshots or a walkthrough attached to the PR ([development.md](docs/processes/development.md#4-evidence)).
+2. **Every API is reachable through MCP.** A new tRPC procedure gets a tool in `apps/web/src/server/mcp/tools.ts`; a new endpoint under `apps/web/src/pages` gets a `NON_TRPC_ROUTES` entry with a reason. Do not weaken `parity.test.ts`.
+3. **Follow the architecture principles** in [docs/architecture/overview.md](docs/architecture/overview.md#principles): features in `packages/features`, pure domain, thin adapters, barrels, no cycles. Do not copy code listed under "Current state vs target".
+4. **Docs and context ship with the change.** Every setup step, env var, secret, binding, resource, script or CI change is documented in the same PR ([code-review.md checklist 5](docs/processes/code-review.md#5-documentation-and-retrievable-context)).
+5. **On an unexpected error, grep the docs and skills for the exact error text first.** If the plan did not settle the problem, stop and ask with a recommendation.
+6. **Ask before touching the owner's Cloudflare account, secrets, GitHub settings or deploys.** Dry-run first (`--dry-run` on `setup:*` scripts). Commit, push and deploy only on an explicit yes.
+7. **Leave the machine clean.** Stop dev servers, watchers and tunnels you started; scratch files, screenshots and logs stay out of the repo.
+8. **Pin dependencies exactly.** Add with `bun add` (`bunfig.toml` sets `exact = true`); no `^` or `~`.
 
-## Rules
+## Read when
 
-1. **Every API is reachable through MCP.** A new tRPC procedure gets an MCP tool in `apps/web/src/server/mcp/tools.ts`; a new non-tRPC endpoint under `apps/web/src/pages` is listed in `NON_TRPC_ROUTES`. Exemptions need a reason a reviewer would accept. `parity.test.ts` enforces this; do not weaken the test to get green. See `docs/how-to-setup-mcp.md`.
-2. **Logic lives in procedures, not in tools or components.** MCP tools are thin adapters that call procedures in-process; React components call tRPC.
-3. **Bindings over keys.** Use Worker bindings (D1, R2, send_email, queues) where they exist; keep secrets in `.dev.vars` and Worker secrets, never in code, config or command arguments.
-4. **Config is `wrangler.jsonc`, per environment.** Bindings are not inherited by `env.*`; add a binding to every environment. The environment is chosen at build time (`CLOUDFLARE_ENV`, the `deploy:*` scripts).
-5. **Migrations are additive first.** No `drizzle-kit push` against remote databases. `packages/features/src/db/schema/auth.ts` is generated; see `docs/how-to-setup-auth.md`.
-6. **Dependencies are pinned exactly** (`bunfig.toml`). Add with `bun add`, which pins.
-
-## Skills
-
-`.claude/skills/setup-auth`, `setup-d1`, `setup-email` cover setting those up with the `bun run setup:*` scripts. Anything that creates resources, sets secrets or deploys changes the owner's Cloudflare account: preview with `--dry-run` and confirm first.
+| Read                                                           | When                                                                                      |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [docs/README.md](docs/README.md)                               | you need any guide; it indexes all docs with "use when" lines                             |
+| [docs/architecture/overview.md](docs/architecture/overview.md) | you plan or review a change, or add a feature, table, procedure, route, binding, env var  |
+| [docs/architecture/testing.md](docs/architecture/testing.md)   | you decide which tests a change needs                                                     |
+| [docs/processes/development.md](docs/processes/development.md) | you start any non-trivial change or write a plan                                          |
+| [docs/processes/code-review.md](docs/processes/code-review.md) | you review a diff (yours or someone else's); reviewer agent: `.claude/agents/reviewer.md` |
+| [docs/processes/adrs.md](docs/processes/adrs.md)               | a change makes or reverses a decision others will build on                                |
+| `.claude/skills/setup-auth`, `setup-d1`, `setup-email`         | you set up or change auth, the database, or email                                         |
+| [packages/ui/CONVENTIONS.md](packages/ui/CONVENTIONS.md)       | you write or review UI components or stories                                              |

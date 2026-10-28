@@ -50,7 +50,8 @@ export function UploadDemoClient() {
         <CardTitle>Direct to R2 (presigned URL)</CardTitle>
         <CardDescription>
           The browser PUTs straight to R2 with a presigned URL; the Worker only
-          signs. Needs R2 API keys and bucket CORS (docs/how-to-setup-r2.md).
+          signs. Needs R2 API keys and bucket CORS
+          (docs/guides/how-to-setup-r2.md).
         </CardDescription>
       </div>
 

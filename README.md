@@ -36,7 +36,7 @@ This repository is a template, not a framework. When you start a project from it
 
    | Not needed      | Remove                                                                                                                                  |
    | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-   | Containers      | `apps/container`, `docs/how-to-setup-container.md`, `dev:container` script                                                              |
+   | Containers      | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script                                                       |
    | Storybook       | `apps/storybook`, the root `storybook`/`build-storybook` scripts, the Storybook step in `apps/web`'s `build`                            |
    | Background jobs | `queue` in `apps/web/src/worker.ts`, `src/server/queue.ts`, `queues` in `wrangler.jsonc`, `packages/features/src/queue`, the queue demo |
    | Scheduled work  | `scheduled` in `src/worker.ts`, `src/server/cron.ts`, `triggers` in `wrangler.jsonc`                                                    |
@@ -67,7 +67,7 @@ Packages:
 
 ## Working on this repo (people and agents)
 
-Rules live in [CLAUDE.md](CLAUDE.md). The one that shapes every change: anything the app can do over HTTP, an MCP client can do too ([docs/how-to-setup-mcp.md](docs/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
+Rules live in [CLAUDE.md](CLAUDE.md). The one that shapes every change: anything the app can do over HTTP, an MCP client can do too ([docs/guides/how-to-setup-mcp.md](docs/guides/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
 
 ## Why one Worker
 
@@ -131,16 +131,16 @@ bunx wrangler d1 migrations apply DB --remote --env production
 bun run deploy:production
 ```
 
-See [docs/how-to-setup-web-app.md](docs/how-to-setup-web-app.md) for first-time provisioning. CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `verify`, checks migrations against the schema and that they apply, and builds.
+See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) for first-time provisioning. CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs `verify`, checks migrations against the schema and that they apply, and builds.
 
 ## Docs
 
-- [How to setup the web app](docs/how-to-setup-web-app.md) (includes queues and cron)
-- [How to setup authentication (Better Auth)](docs/how-to-setup-auth.md)
-- [How to setup the D1 database](docs/how-to-setup-d1.md)
-- [How to setup R2 storage](docs/how-to-setup-r2.md)
-- [How to setup email (Cloudflare Email Service)](docs/how-to-setup-email.md)
-- [MCP: using the app from Claude](docs/how-to-setup-mcp.md)
-- [How to setup the container demo](docs/how-to-setup-container.md)
-- [How to use Storybook](docs/how-to-use-storybook.md)
-- [How to define the brand](docs/how-to-define-branding.md)
+- [How to setup the web app](docs/guides/how-to-setup-web-app.md) (includes queues and cron)
+- [How to setup authentication (Better Auth)](docs/guides/how-to-setup-auth.md)
+- [How to setup the D1 database](docs/guides/how-to-setup-d1.md)
+- [How to setup R2 storage](docs/guides/how-to-setup-r2.md)
+- [How to setup email (Cloudflare Email Service)](docs/guides/how-to-setup-email.md)
+- [MCP: using the app from Claude](docs/guides/how-to-setup-mcp.md)
+- [How to setup the container demo](docs/guides/how-to-setup-container.md)
+- [How to use Storybook](docs/guides/how-to-use-storybook.md)
+- [How to define the brand](docs/guides/how-to-define-branding.md)

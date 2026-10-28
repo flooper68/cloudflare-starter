@@ -133,5 +133,5 @@ console.log(
     ? "\nDry run: nothing was created or changed."
     : remaining.length
       ? `\nStill a placeholder database_id in: ${remaining.join(", ")}`
-      : "\nDone. Next: bun run setup:secrets --env <env>, then migrate and deploy (docs/how-to-setup-web-app.md)."
+      : "\nDone. Next: bun run setup:secrets --env <env>, then migrate and deploy (docs/guides/how-to-setup-web-app.md)."
 );

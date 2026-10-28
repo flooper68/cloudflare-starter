@@ -1,6 +1,6 @@
 # How To Setup Email (Cloudflare Email Service)
 
-The web Worker sends mail through [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) with the `EMAIL` `send_email` binding. There is no API key: the binding is the permission. Callers use the `EmailService` interface from [packages/features/src/email](../packages/features/src/email/index.ts), so another provider can be plugged in without touching them.
+The web Worker sends mail through [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) with the `EMAIL` `send_email` binding. There is no API key: the binding is the permission. Callers use the `EmailService` interface from [packages/features/src/email](../../packages/features/src/email/index.ts), so another provider can be plugged in without touching them.
 
 What sends mail:
 
@@ -49,7 +49,7 @@ Once mail works in an environment, set `"AUTH_REQUIRE_EMAIL_VERIFICATION": "true
 
 ## Swapping The Provider
 
-Implement `EmailService` (`send` and `sendTestEmail`) for the other provider, return it from `buildEmailFeature` in [apps/web/src/lib/env.ts](../apps/web/src/lib/env.ts), and keep its keys as Worker secrets.
+Implement `EmailService` (`send` and `sendTestEmail`) for the other provider, return it from `buildEmailFeature` in [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts), and keep its keys as Worker secrets.
 
 ## Common Problems
 

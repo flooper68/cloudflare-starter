@@ -3,7 +3,7 @@ import type { SVGProps } from "react";
 /**
  * The brand: name, tagline and logo used by the app and Storybook. Edit together with
  * brand.css. This is a mock brand ("Acme"); replace it per project
- * (docs/how-to-define-branding.md).
+ * (docs/guides/how-to-define-branding.md).
  */
 export const brand = {
   name: "Acme",

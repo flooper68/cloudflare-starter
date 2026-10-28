@@ -2,7 +2,7 @@
 
 This guide explains how to run and deploy the Astro web app in this repo.
 
-The web app lives in [apps/web](../apps/web/README.md). It is one Worker: the Cloudflare Astro adapter serves HTTP (Better Auth sign-in, Astro SSR pages, a React SPA at `/app/*`, tRPC and REST), and [src/worker.ts](../apps/web/src/worker.ts) adds the queue consumer and Cron Triggers. Data is in D1, files in R2.
+The web app lives in [apps/web](../../apps/web/README.md). It is one Worker: the Cloudflare Astro adapter serves HTTP (Better Auth sign-in, Astro SSR pages, a React SPA at `/app/*`, tRPC and REST), and [src/worker.ts](../../apps/web/src/worker.ts) adds the queue consumer and Cron Triggers. Data is in D1, files in R2.
 
 ## What You Need
 
@@ -25,9 +25,9 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), Cron Triggers. Plain vars there: `APP_ENV`, `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`.
+Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), Cron Triggers. Plain vars there: `APP_ENV`, `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`.
 
-Secrets, validated in [apps/web/src/lib/config.ts](../apps/web/src/lib/config.ts):
+Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config.ts):
 
 | Name                                       | Required | Notes                               |
 | ------------------------------------------ | -------- | ----------------------------------- |
@@ -88,13 +88,13 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
 
    On a brand-new Worker the first deploy answers 500 until the secrets are set a minute later; afterwards secrets persist across deploys.
 
-The environment is picked when building: `deploy:production` runs `CLOUDFLARE_ENV=production astro build && wrangler deploy`. Running `wrangler deploy --env production` on a bundle built without `CLOUDFLARE_ENV` would deploy the develop config. Use `bun run deploy` for develop and `deploy:staging` for staging. Storybook deploys separately ([how-to-setup-storybook-worker.md](./how-to-setup-storybook-worker.md)).
+The environment is picked when building: `deploy:production` runs `CLOUDFLARE_ENV=production bun run build && wrangler deploy`, and `build` builds Storybook into the app first. Running `wrangler deploy --env production` on a bundle built without `CLOUDFLARE_ENV` would deploy the develop config. Use `bun run deploy` for develop and `deploy:staging` for staging. Storybook ships with the app at `/_storybook/` ([how-to-use-storybook.md](./how-to-use-storybook.md)).
 
 ## Queues and Cron
 
 - Producer: tRPC `queue.enqueueHello` sends a typed message (schema in `packages/features/src/queue`).
-- Consumer: [src/server/queue.ts](../apps/web/src/server/queue.ts). A malformed message is logged and dropped; a failing handler is retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
-- Cron: [src/server/cron.ts](../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC). With several schedules, branch on `controller.cron`.
+- Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). A malformed message is logged and dropped; a failing handler is retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
+- Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC). With several schedules, branch on `controller.cron`.
 - Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard (observability is on).
 
 ## Verify

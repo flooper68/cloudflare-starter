@@ -12,7 +12,7 @@ The web app can reach R2 two ways. Both are wired up and share the same `files` 
 | Good for    | Server-written files, small uploads, anything behind auth                         | Large uploads, links handed to someone outside the app                   |
 | Code        | `storeFile`, `getOwnedFileObject`; routes `POST /api/files`, `GET /api/files/:id` | `createFileRecord`, `presignUpload`, `presignDownload`; tRPC `storage.*` |
 
-Both live in [packages/features/src/storage](../packages/features/src/storage/index.ts). `/app/upload-demo` shows them side by side.
+Both live in [packages/features/src/storage](../../packages/features/src/storage/index.ts). `/app/upload-demo` shows them side by side.
 
 Official references:
 
@@ -26,7 +26,7 @@ Nothing to do. `bun run dev:web` simulates `FILES` under `apps/web/.wrangler/sta
 
 ## Binding: Deployed
 
-Create one bucket per environment, matching `r2_buckets` in [apps/web/wrangler.jsonc](../apps/web/wrangler.jsonc):
+Create one bucket per environment, matching `r2_buckets` in [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc):
 
 ```bash
 bunx wrangler r2 bucket create cloudflare-starter-files-develop
@@ -89,7 +89,7 @@ Open `http://localhost:4321/app/upload-demo` and use the right-hand card. Confir
 
 ### Step 5: Set Secrets For Deployed Environments
 
-From [apps/web](../apps/web/README.md):
+From [apps/web](../../apps/web/README.md):
 
 ```bash
 cd apps/web
