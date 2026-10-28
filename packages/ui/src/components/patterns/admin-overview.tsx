@@ -1,6 +1,7 @@
 import {
   Activity,
   Building2,
+  CreditCard,
   ShieldCheck,
   UserPlus,
   Users,
@@ -31,6 +32,25 @@ export interface AdminOverviewData {
     readonly sizes: readonly {
       readonly label: string;
       readonly count: number;
+    }[];
+  } | null;
+  /** Workspaces per plan and status, and trials; null or absent with billing off. */
+  readonly plans?: {
+    readonly plans: readonly {
+      readonly planId: string;
+      readonly planName: string;
+      readonly status: string | null;
+      readonly workspaces: number;
+    }[];
+    readonly trials: { readonly active: number; readonly endingSoon: number };
+  } | null;
+  /** This period's usage counters over every workspace; null or absent with billing off. */
+  readonly usage?: {
+    readonly period: string;
+    readonly metrics: readonly {
+      readonly metric: string;
+      readonly unit: "bytes" | "count";
+      readonly total: number;
     }[];
   } | null;
 }
@@ -124,6 +144,58 @@ export function AdminOverview({ data }: AdminOverviewProps) {
               })}
             </ul>
           </div>
+        </Card>
+      ) : null}
+      {data.plans ? (
+        <Card className="flex flex-col gap-3 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-sm font-medium text-fg">
+              <CreditCard aria-hidden className="size-4 text-fg-muted" />
+              Plans
+            </p>
+            <p className="text-xs text-fg-muted">
+              {number.format(data.plans.trials.active)} trials,{" "}
+              {number.format(data.plans.trials.endingSoon)} ending within 7 days
+            </p>
+          </div>
+          <ul className="flex flex-col gap-1.5 text-sm">
+            {data.plans.plans.map((plan) => (
+              <li
+                key={`${plan.planId}:${plan.status ?? "none"}`}
+                className="flex items-center justify-between gap-3"
+              >
+                <span className="text-fg">
+                  {plan.planName}
+                  <span className="text-fg-muted">
+                    {" · "}
+                    {plan.status ?? "no subscription"}
+                  </span>
+                </span>
+                <span className="tabular-nums text-fg">
+                  {number.format(plan.workspaces)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {data.usage && data.usage.metrics.length > 0 ? (
+            <div className="flex flex-col gap-1.5 border-t border-line pt-3 text-sm">
+              <p className="text-xs text-fg-muted">
+                Usage in {data.usage.period}, all workspaces
+              </p>
+              {data.usage.metrics.map((line) => (
+                <p
+                  key={line.metric}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <code className="text-xs text-fg">{line.metric}</code>
+                  <span className="tabular-nums text-fg">
+                    {number.format(line.total)}
+                    {line.unit === "bytes" ? " bytes" : ""}
+                  </span>
+                </p>
+              ))}
+            </div>
+          ) : null}
         </Card>
       ) : null}
       <Card className="flex flex-col gap-2 p-4">

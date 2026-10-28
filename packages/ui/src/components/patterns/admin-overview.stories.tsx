@@ -68,6 +68,41 @@ export const Content: Story = {
   },
 };
 
+/** With billing on: workspaces per plan and status, trials and this month's usage. */
+export const WithBilling: Story = {
+  args: {
+    data: {
+      ...data,
+      plans: {
+        plans: [
+          {
+            planId: "pro",
+            planName: "Pro",
+            status: "trialing",
+            workspaces: 214,
+          },
+          { planId: "pro", planName: "Pro", status: "active", workspaces: 131 },
+          { planId: "free", planName: "Free", status: null, workspaces: 1145 },
+        ],
+        trials: { active: 214, endingSoon: 37 },
+      },
+      usage: {
+        period: "2026-10",
+        metrics: [
+          { metric: "files.uploads_per_month", unit: "count", total: 18_422 },
+        ],
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("214 trials, 37 ending within 7 days")
+    ).toBeVisible();
+    await expect(canvas.getByText("18,422")).toBeVisible();
+  },
+};
+
 /** Personal mode: no workspace section. */
 export const PersonalMode: Story = {
   args: { data: { ...data, workspaces: null } },
