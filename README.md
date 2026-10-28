@@ -102,22 +102,23 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 
 ## Scripts
 
-| Command                    | What it does                                                                |
-| -------------------------- | --------------------------------------------------------------------------- |
-| `bun run dev`              | Starts web + container in parallel                                          |
-| `bun run dev:web`          | Starts the web Worker (Astro dev, with D1, R2, queue and cron simulated)    |
-| `bun run dev:container`    | Starts the Container pi demo                                                |
-| `bun run storybook`        | Starts Storybook on port `6006`                                             |
-| `bun run build-storybook`  | Builds Storybook into `apps/web/public/_storybook`                          |
-| `bun run build`            | Builds every deployable app workspace                                       |
-| `bun run verify`           | Typecheck + Biome lint + Vitest                                             |
-| `bun run test`             | Vitest once                                                                 |
-| `bun run db:generate`      | Generates a SQL migration from the Drizzle schema                           |
-| `bun run db:migrate:local` | Applies pending migrations to the local D1 database                         |
-| `bun run doctor`           | Checks the local setup and each environment's config, changes nothing       |
-| `bun run setup:cloudflare` | Creates D1, R2, queues for an environment, writes the D1 id into the config |
-| `bun run setup:secrets`    | Asks for secrets; writes `.dev.vars` or sets Worker secrets                 |
-| `bun run setup:email`      | Enables Email Sending for a domain and writes the sender into the config    |
+| Command                                  | What it does                                                                |
+| ---------------------------------------- | --------------------------------------------------------------------------- |
+| `bun run dev`                            | Starts web + container in parallel                                          |
+| `bun run dev:web`                        | Starts the web Worker (Astro dev, with D1, R2, queue and cron simulated)    |
+| `bun run dev:container`                  | Starts the Container pi demo                                                |
+| `bun run storybook`                      | Starts Storybook on port `6006`                                             |
+| `bun run build-storybook`                | Builds Storybook into `apps/web/public/_storybook`                          |
+| `bun run build`                          | Builds every deployable app workspace                                       |
+| `bun run verify`                         | Typecheck + Biome lint + Vitest                                             |
+| `bun run test`                           | All tests: unit (Node) and integration/API on real local D1 in workerd      |
+| `bun run test:unit` / `test:integration` | One layer only                                                              |
+| `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                           |
+| `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                         |
+| `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing       |
+| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id into the config |
+| `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                 |
+| `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config    |
 
 In `apps/web`: `deploy`, `deploy:staging`, `deploy:production`, `db:migrate:remote`.
 

@@ -154,9 +154,9 @@ Domain errors are typed classes in `domain/errors.ts`. Adapters map them to tran
 
 Do not cite these as precedent until they are closed:
 
-| Area  | Today                                                                                                                                       | Target                                                                                                            |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Tests | Router and MCP tests mock the database; no integration, API, component or E2E layer yet; see [testing.md known gaps](testing.md#known-gaps) | The layers in [testing.md](testing.md), and an architecture test that every domain file and use case has its test |
+| Area  | Today                                                                             | Target                                 |
+| ----- | --------------------------------------------------------------------------------- | -------------------------------------- |
+| Tests | No component or E2E layer yet; see [testing.md known gaps](testing.md#known-gaps) | The layers in [testing.md](testing.md) |
 
 Remove a row when the code matches the target.
 

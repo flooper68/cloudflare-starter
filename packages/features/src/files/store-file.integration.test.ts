@@ -1,0 +1,65 @@
+import { env } from "cloudflare:workers";
+import { describe, expect, it } from "vitest";
+
+import {
+  fixedClock,
+  seedUser,
+  sequentialIds,
+  testDb,
+} from "../../test/fixtures";
+import { storeFile } from "./store-file";
+
+const body = new TextEncoder().encode("Q4 roadmap").buffer as ArrayBuffer;
+const input = {
+  filename: "roadmap.txt",
+  mimeType: "text/plain",
+  sizeBytes: 10,
+};
+
+describe("storeFile", () => {
+  it("writes the object to the bucket and records the file", async () => {
+    const owner = await seedUser();
+    const file = await storeFile(
+      {
+        db: testDb(),
+        bucket: env.FILES,
+        clock: fixedClock(),
+        ids: sequentialIds("aaaaaaaa-0000-4000-8000-"),
+      },
+      { ...input, ownerUserId: owner.id, body }
+    );
+
+    const object = await env.FILES.get(file.r2Key);
+    expect(await object?.text()).toBe("Q4 roadmap");
+    expect(object?.httpMetadata?.contentType).toBe("text/plain");
+    const row = await env.DB.prepare("SELECT r2_key FROM files WHERE id = ?")
+      .bind(file.fileId)
+      .first();
+    expect(row).toEqual({ r2_key: file.r2Key });
+  });
+
+  it("removes the record when the upload fails, keeping table and bucket in step", async () => {
+    const owner = await seedUser("Grace Hopper");
+    const failingBucket = {
+      put: () => Promise.reject(new Error("bucket unavailable")),
+    } as unknown as R2Bucket;
+
+    await expect(
+      storeFile(
+        {
+          db: testDb(),
+          bucket: failingBucket,
+          clock: fixedClock(),
+          ids: sequentialIds("bbbbbbbb-0000-4000-8000-"),
+        },
+        { ...input, ownerUserId: owner.id, body }
+      )
+    ).rejects.toThrow("bucket unavailable");
+    const count = await env.DB.prepare(
+      "SELECT count(*) AS n FROM files WHERE owner_user_id = ?"
+    )
+      .bind(owner.id)
+      .first<{ n: number }>();
+    expect(count?.n).toBe(0);
+  });
+});

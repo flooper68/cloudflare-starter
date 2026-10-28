@@ -42,10 +42,10 @@ If CI is green, these hold; reviewers do not check them manually:
 - `export *` outside the package roots (Biome `noReExportAll`)
 - Domain purity, tokens-only UI classes, no DB calls in adapters (GritQL rules in `lint/rules/*.grit`)
 - Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
-- One exported runtime function per use-case file, every UI component has stories, exact pins, bindings in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
+- One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, every UI component has stories, exact pins, bindings in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 
-Not automated yet, so checked by hand: that each domain rule and use case has its test and each tRPC procedure an API test ([testing.md known gaps](../architecture/testing.md#known-gaps)).
+Automation proves a test exists, not that it is good: reviewers still check that each required test would fail without the change (checklist 4).
 
 ## Checklists
 
