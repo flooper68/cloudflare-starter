@@ -14,6 +14,9 @@ const env = {
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "schema-generation-only-secret-000000",
   APP_ENV: "local",
+  WORKSPACE_MODE: "multi",
+  SIGN_UP: "open",
+  ADMIN_PORTAL: "on",
 } as unknown as AppEnv;
 
 export const auth = betterAuth(createAuthOptions(env));

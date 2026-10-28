@@ -9,6 +9,7 @@ export {
   ActionNotAllowedError,
   type Actor,
   AlreadyMemberError,
+  CREATOR_ROLE,
   can,
   InvitationExpiredError,
   InvitationNotFoundError,

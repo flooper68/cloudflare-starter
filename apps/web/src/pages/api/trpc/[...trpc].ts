@@ -6,7 +6,7 @@ import {
   rateLimitedHeaders,
   rateLimitPolicyHeader,
 } from "@/server/rate-limit-headers";
-import { createAppContext, userOf } from "@/server/trpc/context";
+import { createAppContext, sessionOf, userOf } from "@/server/trpc/context";
 import { appRouter } from "@/server/trpc/router";
 
 async function handler(context: Parameters<APIRoute>[0]) {
@@ -21,10 +21,17 @@ async function handler(context: Parameters<APIRoute>[0]) {
     endpoint: "/api/trpc",
     req: context.request,
     router: appRouter,
-    createContext: () =>
+    // The cookie session and the headers go along for the admin portal: recent sign-in
+    // checks and impersonation, which swaps the session cookie (resHeaders).
+    createContext: ({ resHeaders }) =>
       createAppContext(
         userOf(context.locals.user),
-        context.locals.requestContext
+        context.locals.requestContext,
+        undefined,
+        {
+          session: sessionOf(context.locals.session),
+          exchange: { headers: context.request.headers, resHeaders },
+        }
       ),
     // Mutations name their quota (RateLimit-Policy); a refused one answers 429 with
     // Retry-After and RateLimit (draft-ietf-httpapi-ratelimit-headers).

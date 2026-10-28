@@ -30,12 +30,18 @@ const envSchema = z.object({
   APP_ENV: z.enum(["local", "develop", "staging", "production"]),
 });
 
+/** Whether the admin portal (`/admin`, the `admin.*` procedures and tools) is served. */
+export const ADMIN_PORTAL_VALUES = ["on", "off"] as const;
+export type AdminPortalSetting = (typeof ADMIN_PORTAL_VALUES)[number];
+
 /**
  * The environment's config. `workspaces` holds WORKSPACE_MODE, SIGN_UP, SIGN_UP_DOMAINS and
  * BOOTSTRAP_ADMIN_EMAIL, required and without defaults (docs/guides/how-to-configure-workspaces.md).
+ * `ADMIN_PORTAL` (on | off) is required too (docs/guides/how-to-use-admin-portal.md).
  */
 export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
+  readonly ADMIN_PORTAL: AdminPortalSetting;
 };
 
 export type RequiredAppConfig = Omit<
@@ -60,6 +66,12 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
   return {
     ...envSchema.parse(env),
     workspaces: workspaceSettingsSchema.parse(env),
+    ADMIN_PORTAL: requiredChoice(
+      env,
+      "ADMIN_PORTAL",
+      ADMIN_PORTAL_VALUES,
+      "(bun run setup:auth writes it into each environment's vars; .dev.vars for local)"
+    ),
   };
 }
 

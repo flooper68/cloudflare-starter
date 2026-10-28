@@ -10,25 +10,43 @@ import {
   buildR2Feature,
   buildRequiredConfig,
 } from "@/lib/env";
+import {
+  type BrowserExchange,
+  createAdminAuthGateway,
+} from "@/server/admin-auth-gateway";
+import { getAuth } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform, loggerFor } from "@/server/platform";
 
-import type { Context } from "./init";
+import type { Context, SessionInfo } from "./init";
+
+/** What only a browser request has: its cookie session and its headers (impersonation). */
+export interface BrowserContext {
+  readonly session: SessionInfo | null;
+  readonly exchange: BrowserExchange | null;
+}
 
 /**
  * The tRPC context for a signed-in (or anonymous) user. The web endpoint passes the
  * session user and the request context from Astro.locals; the MCP endpoint passes the user
  * of the access token. Same context, same procedures, same checks. `env` defaults to the
- * Worker's; API tests pass one with other vars (another WORKSPACE_MODE).
+ * Worker's; API tests pass one with other vars (another WORKSPACE_MODE). `browser` is the
+ * cookie session and headers of a web request; MCP calls have none.
  */
 export function createAppContext(
   user: Context["user"],
   requestContext: RequestContext,
-  env: AppEnv = workerEnv as AppEnv
+  env: AppEnv = workerEnv as AppEnv,
+  browser: BrowserContext = { session: null, exchange: null }
 ): Context {
   const platform = buildPlatform(env);
-  const scoped = { ...requestContext, userId: user?.id ?? null };
+  const scoped = {
+    ...requestContext,
+    userId: user?.id ?? null,
+    // During an impersonation, events the user's actions record name the admin too.
+    impersonatorUserId: browser.session?.impersonatedBy ?? null,
+  };
   return {
     db: getDb(env),
     clock: systemClock,
@@ -45,7 +63,25 @@ export function createAppContext(
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
     user,
+    session: browser.session,
+    browser: browser.exchange,
+    adminAuth: createAdminAuthGateway(() => getAuth(env), browser.exchange),
   };
+}
+
+/** The session fields procedures read, from Better Auth's session (Astro.locals.session). */
+export function sessionOf(
+  session: {
+    readonly createdAt: Date | string;
+    readonly impersonatedBy?: string | null;
+  } | null
+): SessionInfo | null {
+  return session
+    ? {
+        createdAt: new Date(session.createdAt),
+        impersonatedBy: session.impersonatedBy ?? null,
+      }
+    : null;
 }
 
 export function userOf(

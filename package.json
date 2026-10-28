@@ -25,6 +25,7 @@
     "setup:secrets": "bun scripts/setup-secrets.ts",
     "setup:email": "bun scripts/setup-email.ts",
     "setup:auth": "bun scripts/setup-auth.ts",
+    "setup:admin": "bun scripts/setup-admin.ts",
     "doctor": "bun scripts/doctor.ts",
     "runner:up": "bun scripts/runner.ts up",
     "runner:down": "bun scripts/runner.ts down",

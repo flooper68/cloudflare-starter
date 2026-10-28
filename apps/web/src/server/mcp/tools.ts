@@ -275,10 +275,131 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Set feature flag rules",
     "Platform admins only. Replaces a feature flag's ordered targeting rules: workspace (workspaceId), plan (planId) or percentage (percentageBp, 0-10000 basis points); the first matching rule's value wins. Changes what users see within 30 seconds: confirm with the user before calling."
   ),
+
+  // Admin portal: only for platform admins with ADMIN_PORTAL=on; everyone else gets
+  // NOT_FOUND. Destructive ones also need a sign-in from the last 15 minutes
+  // (FORBIDDEN, appCode REAUTH_REQUIRED: ask the admin to sign in to the web app again).
+  direct(
+    "admin_get_overview",
+    "read",
+    "admin.overview.get",
+    "Admin: overview",
+    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, and workspace counts and sizes."
+  ),
+  direct(
+    "admin_get_settings",
+    "read",
+    "admin.settings.get",
+    "Admin: deployment settings",
+    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL."
+  ),
+  direct(
+    "admin_list_users",
+    "read",
+    "admin.users.list",
+    "Admin: list users",
+    "Platform admins only. Lists every user of the app, newest first: id, name, email, verified, role (user or admin), suspended, created and last seen. Filters: search (name or email), role, status (active or banned); pages with cursor (nextCursor) and limit."
+  ),
+  direct(
+    "admin_get_user",
+    "read",
+    "admin.users.get",
+    "Admin: user detail",
+    "Platform admins only. One user by id: profile, verification, suspension, sign-in methods, workspaces with roles, and open sessions (no tokens)."
+  ),
+  direct(
+    "admin_ban_user",
+    "write",
+    "admin.users.ban",
+    "Admin: suspend user",
+    "Platform admins only. Suspends a user (by userId) until expiresAt or for good, with an optional reason, and signs them out everywhere. Not yourself, never the last admin. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "admin_unban_user",
+    "write",
+    "admin.users.unban",
+    "Admin: lift suspension",
+    "Platform admins only. Lifts a user's suspension (by userId) so they can sign in again."
+  ),
+  direct(
+    "admin_revoke_user_sessions",
+    "write",
+    "admin.users.revokeSessions",
+    "Admin: sign user out",
+    "Platform admins only. Signs a user (by userId) out of every session. Not yourself. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "admin_set_user_role",
+    "write",
+    "admin.users.setRole",
+    "Admin: set platform role",
+    "Platform admins only. Makes a user (by userId) an admin or a regular user. Not your own role; the last admin cannot be demoted. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "admin_remove_user",
+    "write",
+    "admin.users.remove",
+    "Admin: delete user",
+    "Platform admins only. Deletes a user's account (by userId): their own workspaces and files go with it, they leave shared ones. Refused while they are the last owner of a shared workspace (assign another owner first). Cannot be undone. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "admin_send_password_reset",
+    "write",
+    "admin.users.sendPasswordReset",
+    "Admin: send password reset",
+    "Platform admins only. Emails a user (by userId) a password reset link; the link is never returned. Confirm with the user before calling.",
+    { outward: true }
+  ),
+  direct(
+    "admin_list_workspaces",
+    "read",
+    "admin.workspaces.list",
+    "Admin: list workspaces",
+    "Platform admins only, not in personal mode. Lists every workspace, newest first: id, name, kind, member count, manager (owner) count; 0 managers means it needs an owner. Filters: search, kind; pages with cursor and limit."
+  ),
+  direct(
+    "admin_get_workspace",
+    "read",
+    "admin.workspaces.get",
+    "Admin: workspace detail",
+    "Platform admins only, not in personal mode. One workspace by id: members with roles, manager count, pending invitations."
+  ),
+  direct(
+    "admin_assign_workspace_owner",
+    "write",
+    "admin.workspaces.assignOwner",
+    "Admin: assign workspace owner",
+    "Platform admins only, not in personal mode. Makes a user (by userId) the owner of a workspace that has no owner, adding them if needed. Refused while it has an owner. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "admin_delete_workspace",
+    "write",
+    "admin.workspaces.delete",
+    "Admin: delete workspace",
+    "Platform admins only, not in personal mode. Deletes a shared workspace (by workspaceId) with its files, members and invitations. Cannot be undone. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "admin_list_audit_events",
+    "read",
+    "admin.audit.list",
+    "Admin: audit log",
+    "Platform admins only. Audit events newest first: action, outcome, actor, target, workspace, time, trace id. Filters: actorUserId, action, targetType (+ targetId), workspaceId, from/to (ISO 8601); pages with cursor and limit."
+  ),
 ];
 
 /** Procedures deliberately not exposed to MCP, with the reason. Keep it empty if you can. */
-export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {};
+export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {
+  "admin.impersonation.start":
+    "creates a browser cookie session; an MCP client has no browser session to swap",
+  "admin.impersonation.stop":
+    "creates a browser cookie session (restores the admin's); only an impersonated browser session can call it",
+};
 
 /**
  * HTTP endpoints under src/pages that are not tRPC, relative to src/pages, with the reason

@@ -57,7 +57,7 @@ At least one method must be on. If none is, or verification is required without 
 
 ## Who May Sign Up
 
-`SIGN_UP` (`open` or `invite`), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL` and `WORKSPACE_MODE` are vars per environment (the first two required, none shipped: a deploy refuses to start until they are set), set with `bun run setup:auth` (`--dry-run` first). A bootstrap admin needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` unless email + password is off. With `SIGN_UP=invite` only invitees, the listed domains and the bootstrap admin can create an account, by any method: a refused Google sign-up lands on `/sign-in?error=SIGN_UP_INVITE_ONLY` with a message. Details, modes and invitations: [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
+`SIGN_UP` (`open` or `invite`), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL` and `WORKSPACE_MODE` are vars per environment (the first two required, none shipped: a deploy refuses to start until they are set), set with `bun run setup:auth` (`--dry-run` first). A bootstrap admin needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` unless email + password is off; once verified, that account becomes a platform admin. `ADMIN_PORTAL` (`on` | `off`, required, also written by `setup:auth`) opens the admin portal to platform admins ([how-to-use-admin-portal.md](./how-to-use-admin-portal.md)). With `SIGN_UP=invite` only invitees, the listed domains and the bootstrap admin can create an account, by any method: a refused Google sign-up lands on `/sign-in?error=SIGN_UP_INVITE_ONLY` with a message. Details, modes and invitations: [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
 
 ## Auth Mail
 
@@ -90,5 +90,6 @@ Replace `accounts.schema.ts` with the result (keep its header comment), delete `
 
 ## Not Included
 
-- Platform-wide admin roles, API keys, account-deletion UI: not built yet. Workspace roles are in [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
+- Platform admins: Better Auth's admin plugin supplies the `role`, ban and impersonation columns and refuses suspended users at sign-in; its HTTP endpoints are closed and the admin portal acts through our use cases ([how-to-use-admin-portal.md](./how-to-use-admin-portal.md)). Upgrading Better Auth means re-checking `apps/web/src/server/admin-auth-gateway.ts`.
+- API keys, self-service account-deletion UI: not built yet. Workspace roles are in [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
 - Magic links, passkeys, two-factor: Better Auth plugins, added the same way as above.

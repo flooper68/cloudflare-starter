@@ -108,6 +108,9 @@ export function auditDatabaseHooks(
         async after(session, ctx) {
           // A password change re-issues the session: recorded as auth.password_changed.
           if (ctx?.path === "/change-password") return;
+          // An admin's impersonation session: recorded as impersonation.started.
+          if ((session as { impersonatedBy?: string | null }).impersonatedBy)
+            return;
           await record(env, ctx, {
             action: "auth.sign_in",
             actor: { kind: "user", userId: session.userId },

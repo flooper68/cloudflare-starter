@@ -2,6 +2,7 @@
 // composition roots (database, job catalog, cron catalog). Apps import only from here.
 export * from "./abuse";
 export * from "./accounts";
+export * from "./admin";
 export * from "./audit";
 export { type CronDeps, cronCatalog } from "./cron-catalog";
 export { createDatabase, type Database, schema } from "./database";

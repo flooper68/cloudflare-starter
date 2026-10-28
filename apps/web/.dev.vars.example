@@ -31,6 +31,12 @@ SIGN_UP=open
 SIGN_UP_DOMAINS=
 BOOTSTRAP_ADMIN_EMAIL=
 
+# Admin portal (/admin and the admin_* MCP tools) for users with role=admin: on | off.
+# Required, no default; deployed environments get it from `bun run setup:auth`. Make
+# someone an admin with `bun run setup:admin --email <address>` (local D1 by default).
+# docs/guides/how-to-use-admin-portal.md
+ADMIN_PORTAL=on
+
 # Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
 # is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
 # email off; auth and invitation links are then printed to the dev log (only with

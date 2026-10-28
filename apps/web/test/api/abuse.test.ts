@@ -247,7 +247,9 @@ describe("rate limits", () => {
       "violated-policies": ["auth.sign-in"],
       retryAfterSeconds: wait,
     });
-  });
+    // Eleven sign-ins each verify a password hash; with the other API files running in
+    // parallel (admin.test.ts signs up many users) that can pass the default 5 s.
+  }, 15_000);
 
   it("limits anonymous verification mails to auth.verification-email (3 a minute per IP)", async () => {
     const { limit } = RATE_LIMIT_POLICIES["auth.verification-email"];

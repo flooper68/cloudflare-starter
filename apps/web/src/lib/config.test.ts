@@ -35,6 +35,7 @@ describe("web config", () => {
         WORKSPACE_MODE: "single",
         SIGN_UP: "invite",
         BOOTSTRAP_ADMIN_EMAIL: "founder@acme.test",
+        ADMIN_PORTAL: "on",
       }).workspaces
     ).toEqual({
       mode: "single",
@@ -42,6 +43,20 @@ describe("web config", () => {
       signUpDomains: [],
       bootstrapAdminEmail: "founder@acme.test",
     });
+  });
+
+  it("requires ADMIN_PORTAL, on or off, without a default", () => {
+    const workspaces = { WORKSPACE_MODE: "multi", SIGN_UP: "open" };
+    expect(
+      parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "off" })
+        .ADMIN_PORTAL
+    ).toBe("off");
+    expect(() => parseAppConfig({ ...core, ...workspaces })).toThrow(
+      /ADMIN_PORTAL is not set: set ADMIN_PORTAL to one of on, off/
+    );
+    expect(() =>
+      parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "true" })
+    ).toThrow(ConfigError);
   });
 
   it("refuses to start without WORKSPACE_MODE and SIGN_UP", () => {
