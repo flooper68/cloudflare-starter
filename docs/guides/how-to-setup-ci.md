@@ -159,7 +159,7 @@ This stops and uninstalls the service (on Linux it prints the sudo commands; run
 
 **`migrations` fails with changes in `packages/features/migrations`.** The schema changed without a migration. Run `bun run db:generate` and commit the new files.
 
-**A job passes on the self-hosted runner but fails on GitHub (or the reverse).** The runner uses whatever is installed on your machine apart from Bun (Node, git, system libraries). Compare versions, or run the job on hosted runners to confirm.
+**A job passes on the self-hosted runner but fails on GitHub (or the reverse).** The setup action installs Bun and Node (`.nvmrc`); everything else (git, system libraries) is whatever your machine has. Compare versions, or run the job on hosted runners to confirm.
 
 **Runner offline after a reboot (Linux).** The service was not installed. Run the `sudo ./svc.sh install && sudo ./svc.sh start` lines from the setup output in the runner folder.
 
