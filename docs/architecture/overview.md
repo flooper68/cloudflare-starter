@@ -217,7 +217,7 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 **A binding**
 
 - [ ] Declared in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc`.
-- [ ] Typed in `apps/web/src/server/env.ts` (or `bun run cf-typegen`).
+- [ ] Typed by hand in `AppEnv` (`apps/web/src/server/env.ts`).
 - [ ] Resource creation added to `scripts/setup-cloudflare.ts` and checked by `scripts/doctor.ts`.
 - [ ] Passed to use cases as a dependency; integration test against the local binding.
 - [ ] Setup steps in a guide.

@@ -43,7 +43,7 @@ Targets are stated at a data volume, because most regressions on this stack come
 
 ### D1 query budgets
 
-An integration test calls the use case on [seeded data](#data-for-performance-checks) and asserts how many statements it ran and how many rows they read. D1 reports both per statement in the result `meta` (`rows_read`, `rows_written`, `duration`); the test wraps the D1 binding it passes to the use case so each statement's `meta` is recorded. Budgets are on query count and rows read, not on `duration`, which varies by machine. A use case that lists N items and runs N+1 queries, or reads every row of a table to return one page, fails the budget.
+An integration test calls the use case on [seeded data](#data-for-performance-checks) and asserts how many statements it ran and how many rows they read. D1 reports both per statement in the result `meta` (`rows_read`, `rows_written`, `duration`); the test wraps the D1 binding it passes to the use case so each statement's `meta` is recorded. Only `all()`, `run()` and `batch()` return a result with `meta`; Drizzle runs selects with named fields through `raw()`, which returns none. The wrapper therefore serves `raw()` by calling `all()` on the same statement and mapping its rows to arrays, or budgets only the statement count for those calls. Budgets are on query count and rows read, not on `duration`, which varies by machine. A use case that lists N items and runs N+1 queries, or reads every row of a table to return one page, fails the budget.
 
 ### Indexes and query plans
 

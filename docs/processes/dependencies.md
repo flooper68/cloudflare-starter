@@ -1,19 +1,10 @@
 # Dependencies
 
-How dependencies are updated, audited for security and added: when to do it, the commands, what else besides `package.json` goes stale, how to triage an advisory, and what a PR that touches dependencies must show. Nothing here runs on its own; the project decides the cadence and who does it. Use when you update dependencies, respond to a security advisory, run an audit, or add a new package.
-
-## When
-
-| Trigger                      | What to do                                                                                                                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Regular update pass          | At a cadence the project chooses (for example every two to four weeks): [update](#update), [audit](#security-audit), and check the [non-package versions](#not-in-packagejson) |
-| Security advisory            | Straight away, outside the cadence: [triage](#triage-a-finding) the finding and [fix](#fix-paths) it; for a reachable runtime issue follow [In production](#in-production)     |
-| New project from the starter | Update and pin everything first, per step 1 of [Starting a new project](../../README.md#starting-a-new-project-from-this-starter); then audit                                  |
-| A change needs a new package | [Adding a dependency](#adding-a-dependency)                                                                                                                                    |
+How dependencies are updated, audited for security and added: the commands, what else besides `package.json` goes stale, how to triage an advisory, and what a PR that touches dependencies must show. It describes how to do the work; nothing here runs on its own. Use when you update dependencies, respond to a security advisory, run an audit, or add a new package.
 
 ## Update
 
-Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true`, so `bun add` and `bun update` write no `^`/`~` ([CLAUDE.md](../../CLAUDE.md) rule 8, enforced by an architecture test). An update is therefore always an explicit diff in a `package.json` and `bun.lock`.
+Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true`, so `bun add` and `bun update` write no `^`/`~` ([CLAUDE.md](../../CLAUDE.md) rule 8, enforced by an architecture test). An update is therefore always an explicit diff in a `package.json` and `bun.lock`. A new project from the starter starts with the update in step 1 of [Starting a new project](../../README.md#starting-a-new-project-from-this-starter), then the steps below from 4 on, and an [audit](#security-audit).
 
 1. See what is behind, per workspace:
 
@@ -42,7 +33,7 @@ Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true
    | Updated                                  | Regenerate                                                                                                                                                                |
    | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
    | Better Auth or one of its plugins        | The auth tables, per the `setup-auth` skill ([how-to-setup-auth.md](../guides/how-to-setup-auth.md)); then `bun run db:generate` if the schema moved                      |
-   | Wrangler, `compatibility_date`, bindings | `cd apps/web && bun run cf-typegen` (`wrangler types`)                                                                                                                    |
+   | Wrangler, `compatibility_date`, bindings | `@cloudflare/workers-types` as a package update; the bindings are typed by hand in `AppEnv` (`apps/web/src/server/env.ts`), so update it when a binding changes           |
    | Drizzle ORM or drizzle-kit               | `bun run db:generate`; it must produce no new migration unless the schema changed. Commit `migrations/meta/` changes ([how-to-setup-d1.md](../guides/how-to-setup-d1.md)) |
 
 6. Verify, and record each command and result in the PR ([development.md](development.md#3-verify)):
@@ -53,17 +44,17 @@ Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true
 
 ## Not in package.json
 
-These do not show up in `bun outdated`; check them in each regular pass.
+These do not show up in `bun outdated`; check them in each update pass.
 
-| What                       | Where                                                                                                                               | How to update                                                                                                                                                                                       |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Workers compatibility date | `compatibility_date` in `apps/web/wrangler.jsonc` and `apps/container/wrangler.jsonc`                                               | Move to a recent date, read the [compatibility flags](https://developers.cloudflare.com/workers/configuration/compatibility-flags/) changed in between, run `cf-typegen`, verify and dry-run deploy |
-| GitHub Actions             | `uses:` in `.github/workflows/` and `.github/actions/`, pinned by commit SHA with the version in a comment                          | Look up the new release's commit SHA, replace both the SHA and the comment; never switch to a tag or branch                                                                                         |
-| Node                       | `.nvmrc` and `engines` in the root `package.json`                                                                                   | Change both together; CI reads `.nvmrc`                                                                                                                                                             |
-| Bun                        | `packageManager` in the root `package.json`                                                                                         | Change it, run `bun install`, commit `bun.lock` if it changed; CI reads this field                                                                                                                  |
-| Playwright browsers        | Installed by `playwright install`, matched to the `@playwright/test` version                                                        | Re-run `playwright install` after updating `@playwright/test`, locally and wherever CI installs browsers, once the E2E layer exists                                                                 |
-| Container base image       | `FROM` in `apps/container/Dockerfile`                                                                                               | Move to a current tag of the same image; rebuild and run the container demo ([how-to-setup-container.md](../guides/how-to-setup-container.md))                                                      |
-| Self-hosted runner         | The machine set up by `setup:github-runner` ([how-to-setup-ci.md](../guides/how-to-setup-ci.md#self-hosted-runner)), if one is used | Keep the runner release, the OS and the tools on that machine updated; GitHub refuses runners that fall too far behind                                                                              |
+| What                       | Where                                                                                                                               | How to update                                                                                                                                                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Workers compatibility date | `compatibility_date` in `apps/web/wrangler.jsonc` and `apps/container/wrangler.jsonc`                                               | Move to a recent date, read the [compatibility flags](https://developers.cloudflare.com/workers/configuration/compatibility-flags/) changed in between, update `@cloudflare/workers-types` to match, verify and dry-run deploy |
+| GitHub Actions             | `uses:` in `.github/workflows/` and `.github/actions/`, pinned by commit SHA with the version in a comment                          | Look up the new release's commit SHA, replace both the SHA and the comment; never switch to a tag or branch                                                                                                                    |
+| Node                       | `.nvmrc` and `engines` in the root `package.json`                                                                                   | Change both together; CI reads `.nvmrc`                                                                                                                                                                                        |
+| Bun                        | `packageManager` in the root `package.json`                                                                                         | Change it, run `bun install`, commit `bun.lock` if it changed; CI reads this field                                                                                                                                             |
+| Playwright browsers        | Installed by `playwright install`, matched to the `@playwright/test` version                                                        | Re-run `playwright install` after updating `@playwright/test`, locally and wherever CI installs browsers, once the E2E layer exists                                                                                            |
+| Container base image       | `FROM` in `apps/container/Dockerfile`                                                                                               | Move to a current tag of the same image; rebuild and run the container demo ([how-to-setup-container.md](../guides/how-to-setup-container.md))                                                                                 |
+| Self-hosted runner         | The machine set up by `setup:github-runner` ([how-to-setup-ci.md](../guides/how-to-setup-ci.md#self-hosted-runner)), if one is used | Keep the runner release, the OS and the tools on that machine updated; GitHub refuses runners that fall too far behind                                                                                                         |
 
 ## Security audit
 
@@ -74,7 +65,7 @@ bun audit --json                  # machine-readable, for a PR comment or a scri
 bun audit --ignore=CVE-2026-12345 # leave out an accepted advisory (record why, below)
 ```
 
-Run it in every regular pass, after any change to `bun.lock`, and when an advisory is announced for a package you use. These are the flags of Bun 1.3; check `bun audit --help` after a Bun update.
+Run it as part of an update pass or when checking an advisory. These are the flags of Bun 1.3; check `bun audit --help` after a Bun update.
 
 ### Triage a finding
 
@@ -91,10 +82,18 @@ Severity in this repo follows the [code-review severities](code-review.md#severi
 
 Prefer them in this order:
 
-1. **Update** the direct dependency to a version that pulls in the fixed one (`bun update <package> --latest`), or the transitive one if a compatible fixed version exists (`bun update <transitive>`).
-2. **Override** the transitive version when the direct dependency has not released a fix: add it to `overrides` in the root `package.json` (Bun also reads `resolutions`), pinned exactly. Add a line to the PR saying why, which advisory, and when to remove it (for example "remove once `<direct>` depends on `<transitive>` ≥ x.y.z"). Re-check every override in each regular pass and remove the ones whose reason is gone.
+1. **Update** the direct dependency to a version that pulls in the fixed one (`bun update <package> --latest`). This covers direct dependencies only: `bun update <transitive>` adds the package as a stray direct dependency and leaves the nested vulnerable version in `bun.lock`. A transitive version is fixed with step 2.
+2. **Override** the transitive version when the direct dependency has not released a fix: add it to `overrides` in the root `package.json` (Bun also reads `resolutions`), pinned exactly. Add a row to [Overrides and accepted advisories](#overrides-and-accepted-advisories) saying which advisory and when to remove it (for example "once `<direct>` depends on `<transitive>` ≥ x.y.z"). Re-check every row in each update pass and remove the ones whose reason is gone.
 3. **Replace** the package with a maintained alternative, or with a few lines of our own code, when it is unmaintained or keeps having advisories.
-4. **Accept** only an advisory that is not reachable in this setup, with the triage answers recorded in the PR and a `bun audit --ignore=<id>` noted there; the owner accepts it, as with a Medium or Low review finding. Re-check accepted advisories in each pass.
+4. **Accept** only an advisory that is not reachable in this setup, with the triage answers in the PR and a row in [Overrides and accepted advisories](#overrides-and-accepted-advisories) (pass its id to `bun audit --ignore=<id>`); the owner accepts it, as with a Medium or Low review finding. Re-check accepted advisories in each update pass.
+
+### Overrides and accepted advisories
+
+Each project records here every `overrides`/`resolutions` entry and every accepted advisory, so the next update pass knows why it exists and when it can go (replace the placeholder row).
+
+| Advisory id or package | Kind | Reason | Remove when |
+| ---------------------- | ---- | ------ | ----------- |
+| _none in the starter_  |      |        |             |
 
 ### In production
 
@@ -108,8 +107,8 @@ When a vulnerability is reachable in a deployed Worker:
 ## Supply chain
 
 - **Fewer dependencies.** Each one is code that runs with our permissions and a source of future advisories. Use the platform (Web APIs, Workers APIs) or a few lines of code before a package.
-- **Check before adding.** Maintenance (recent releases, open issues answered), weekly downloads, number of maintainers, transitive dependency count, bundle size if it runs in the Worker or browser, and whether it declares install scripts (`preinstall`, `install`, `postinstall`).
-- **Lifecycle scripts are off by default.** Bun does not run dependencies' lifecycle scripts unless the package is listed in `trustedDependencies` in the root `package.json` (`bun add --trust <package>` adds it). Add a package there only when it does not work without its script, and say why in the PR.
+- **Check before adding.** Maintenance (recent releases, open issues answered), weekly downloads, number of maintainers, transitive dependency count, bundle size if it runs in the Worker or browser, and whether it declares install scripts (`preinstall`, `install`, `postinstall`): after installing, `bun pm untrusted` shows blocked ones, and a package on the default-trusted list runs its scripts without asking.
+- **Lifecycle scripts run only for trusted packages.** Bun runs a dependency's lifecycle scripts only if it is on Bun's built-in default-trusted list (`bun pm default-trusted`; it includes `esbuild`, `workerd` and `sharp`) or listed in `trustedDependencies` in the root `package.json` (`bun add --trust <package>` adds it). `bun pm untrusted` lists installed packages whose scripts were blocked. Add a package to `trustedDependencies` only when it does not work without its script, and say why in the PR.
 - **Be wary of fresh releases.** A version published in the last few days has had little scrutiny, and compromised releases are usually caught within that window. In a routine pass, prefer a version that has been out for some days; take a fresh one when it is the security fix.
 - **The lockfile is reviewed.** `bun.lock` changes belong in the diff; an unexplained new package or changed source in it is a finding.
 
