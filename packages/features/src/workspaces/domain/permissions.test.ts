@@ -25,6 +25,8 @@ describe("permissions", () => {
     expect(can("member", "invitations.manage")).toBe(false);
     expect(can("member", "invitations.read")).toBe(false);
     expect(can("member", "ownership.transfer")).toBe(false);
+    expect(can("member", "billing.read")).toBe(true);
+    expect(can("member", "billing.manage")).toBe(false);
   });
 
   it("keeps someone able to manage members: the creator's role can, and transfer ownership", () => {

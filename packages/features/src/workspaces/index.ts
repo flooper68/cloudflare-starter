@@ -1,6 +1,7 @@
 export { acceptInvitation } from "./accept-invitation";
 export { changeMemberRole } from "./change-member-role";
 export { checkSignUpAllowed } from "./check-sign-up-allowed";
+export { countWorkspaceSeats } from "./count-workspace-seats";
 export { type CreatedInvitation, createInvitation } from "./create-invitation";
 export { createWorkspace } from "./create-workspace";
 export {
@@ -9,6 +10,7 @@ export {
   ActionNotAllowedError,
   type Actor,
   AlreadyMemberError,
+  CREATOR_ROLE,
   can,
   InvitationExpiredError,
   InvitationNotFoundError,
@@ -17,6 +19,7 @@ export {
   isRole,
   LastOwnerError,
   MemberNotFoundError,
+  memberJoinedEvent,
   memberJoinedNotification,
   modeAllows,
   NotWorkspaceMemberError,
@@ -27,6 +30,7 @@ export {
   requirePermission,
   roleChangedNotification,
   SIGN_UP_POLICIES,
+  SINGLE_WORKSPACE_ID,
   SignUpNotAllowedError,
   type SignUpPolicy,
   TransferToSelfError,
@@ -35,9 +39,11 @@ export {
   WorkspaceModeError,
   WorkspaceNotFoundError,
   type WorkspaceSettings,
+  workspaceCreatedEvent,
   workspaceNameSchema,
   workspaceSettingsSchema,
 } from "./domain";
+export { identifyMember } from "./identify-member";
 export { leaveWorkspace } from "./leave-workspace";
 export { type InvitationSummary, listInvitations } from "./list-invitations";
 export { listMembers, type WorkspaceMember } from "./list-members";

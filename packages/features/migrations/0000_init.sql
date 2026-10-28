@@ -195,6 +195,7 @@ CREATE TABLE `session` (
 	`ip_address` text,
 	`user_agent` text,
 	`user_id` text NOT NULL,
+	`impersonated_by` text,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
@@ -207,7 +208,11 @@ CREATE TABLE `user` (
 	`email_verified` integer DEFAULT false NOT NULL,
 	`image` text,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL
+	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`role` text,
+	`banned` integer DEFAULT false,
+	`ban_reason` text,
+	`ban_expires` integer
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
@@ -242,6 +247,52 @@ CREATE INDEX `audit_events_occurred_at_idx` ON `audit_events` (`occurred_at`);--
 CREATE INDEX `audit_events_actor_idx` ON `audit_events` (`actor_user_id`,`occurred_at`);--> statement-breakpoint
 CREATE INDEX `audit_events_target_idx` ON `audit_events` (`target_type`,`target_id`);--> statement-breakpoint
 CREATE INDEX `audit_events_workspace_idx` ON `audit_events` (`workspace_id`,`occurred_at`);--> statement-breakpoint
+CREATE TABLE `entitlement_override` (
+	`workspace_id` text NOT NULL,
+	`key` text NOT NULL,
+	`kind` text NOT NULL,
+	`enabled` integer,
+	`limit_value` integer,
+	`reason` text NOT NULL,
+	`created_by` text,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	PRIMARY KEY(`workspace_id`, `key`),
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
+);
+--> statement-breakpoint
+CREATE TABLE `usage_counter` (
+	`workspace_id` text NOT NULL,
+	`metric` text NOT NULL,
+	`period` text NOT NULL,
+	`value` integer NOT NULL,
+	PRIMARY KEY(`workspace_id`, `metric`, `period`),
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `workspace_addon` (
+	`workspace_id` text NOT NULL,
+	`addon_id` text NOT NULL,
+	`quantity` integer NOT NULL,
+	PRIMARY KEY(`workspace_id`, `addon_id`),
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `workspace_subscription` (
+	`workspace_id` text PRIMARY KEY NOT NULL,
+	`plan_id` text NOT NULL,
+	`status` text NOT NULL,
+	`period_start` integer,
+	`period_end` integer,
+	`trial_ends_at` integer,
+	`provider` text NOT NULL,
+	`provider_customer_id` text,
+	`provider_subscription_id` text,
+	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `workspace_subscription_status_idx` ON `workspace_subscription` (`status`,`trial_ends_at`);--> statement-breakpoint
 CREATE TABLE `files` (
 	`id` text PRIMARY KEY NOT NULL,
 	`workspace_id` text NOT NULL,

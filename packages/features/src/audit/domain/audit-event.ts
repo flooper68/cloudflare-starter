@@ -31,6 +31,13 @@ const TEXT_MAX = 200;
 const id = z.string().min(1).max(ID_MAX);
 const text = z.string().min(1).max(TEXT_MAX);
 const role = z.string().min(1).max(64);
+const catalogId = z.string().min(1).max(100);
+const subscriptionStatus = z.enum([
+  "trialing",
+  "active",
+  "past_due",
+  "canceled",
+]);
 
 export const auditActorSchema = z
   .object({
@@ -169,6 +176,13 @@ export const auditEventSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     ...common,
+    /** An admin sent the user a password reset link. */
+    action: z.literal("user.password_reset_sent"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
     action: z.literal("user.deleted"),
     target: target("user"),
     metadata: noMetadata,
@@ -184,6 +198,14 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     action: z.literal("impersonation.stopped"),
     target: target("user"),
     metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
+    outcome: z.literal("failure").default("failure"),
+    /** An impersonation session tried to authorize an OAuth (MCP) client as the user. */
+    action: z.literal("impersonation.oauth_refused"),
+    target: target("user"),
+    metadata: z.object({ clientId: text.optional() }).strict().default({}),
   }),
 
   // Workspaces (recorded by the workspace use cases).
@@ -245,6 +267,13 @@ export const auditEventSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     ...inWorkspace,
+    /** An admin gave a workspace without an owner a new one (the target). */
+    action: z.literal("workspace.owner_assigned"),
+    target: target("user"),
+    metadata: z.object({ previousRole: role.nullable() }).strict(),
+  }),
+  z.object({
+    ...inWorkspace,
     action: z.literal("workspace.deleted"),
     target: target("workspace"),
     metadata: noMetadata,
@@ -296,6 +325,91 @@ export const auditEventSchema = z.discriminatedUnion("action", [
       .object({
         ruleCount: z.number().int().min(0).max(50),
         ruleKinds: z.array(z.enum(["workspace", "plan", "percentage"])).max(50),
+      })
+      .strict(),
+  }),
+
+  // Billing (recorded by the billing use cases; the target is the subscribing workspace).
+  z.object({
+    ...inWorkspace,
+    /** A new workspace started on the catalog's NEW_WORKSPACE_PLAN_ID. */
+    action: z.literal("billing.trial_started"),
+    target: target("workspace"),
+    metadata: z
+      .object({ planId: catalogId, trialEndsAt: z.iso.datetime().nullable() })
+      .strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("billing.plan_assigned"),
+    target: target("workspace"),
+    metadata: z
+      .object({
+        previousPlanId: catalogId.nullable(),
+        planId: catalogId,
+        status: subscriptionStatus,
+      })
+      .strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("billing.addons_set"),
+    target: target("workspace"),
+    metadata: z
+      .object({
+        addons: z
+          .array(
+            z
+              .object({
+                addonId: catalogId,
+                quantity: z.number().int().positive(),
+              })
+              .strict()
+          )
+          .max(50),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("billing.override_set"),
+    target: target("workspace"),
+    metadata: z
+      .object({
+        key: catalogId,
+        /** `removed`: the override was deleted. */
+        kind: z.enum(["feature", "limit", "removed"]),
+        enabled: z.boolean().optional(),
+        /** null is unlimited. */
+        limit: z.number().int().nonnegative().nullable().optional(),
+        reason: text,
+      })
+      .strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    /** A trial ended, or a past-due or canceled subscription lapsed to its fallback plan. */
+    action: z.literal("billing.plan_lapsed"),
+    target: target("workspace"),
+    metadata: z
+      .object({
+        previousPlanId: catalogId,
+        planId: catalogId,
+        reason: z.enum(["trial_ended", "past_due_grace_ended", "period_ended"]),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    /** Applied from the billing provider's webhook. */
+    action: z.literal("billing.subscription_changed"),
+    target: target("workspace"),
+    metadata: z
+      .object({
+        previousPlanId: catalogId.nullable(),
+        planId: catalogId,
+        status: subscriptionStatus,
+        provider: z.string().min(1).max(50),
       })
       .strict(),
   }),

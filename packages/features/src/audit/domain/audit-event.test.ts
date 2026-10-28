@@ -62,6 +62,11 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     metadata: { sessionCount: 3 },
   },
   "user.deleted": { action: "user.deleted", target: user },
+  "user.password_reset_sent": {
+    action: "user.password_reset_sent",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+  },
   "impersonation.started": {
     action: "impersonation.started",
     actor: { kind: "admin", userId: "user-grace" },
@@ -81,6 +86,12 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     action: "notifications.unsubscribed",
     target: user,
     metadata: { type: "workspaces.member-joined", channel: "email" },
+  },
+  "impersonation.oauth_refused": {
+    action: "impersonation.oauth_refused",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+    metadata: { clientId: "claude-desktop" },
   },
   "workspace.invitation_created": {
     action: "workspace.invitation_created",
@@ -130,10 +141,68 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: { type: "feature_flag", id: "upload-demo-presigned" },
     metadata: { ruleCount: 2, ruleKinds: ["workspace", "percentage"] },
   },
+  "workspace.owner_assigned": {
+    action: "workspace.owner_assigned",
+    actor: { kind: "admin", userId: "user-grace" },
+    workspaceId: workspace,
+    target: user,
+    metadata: { previousRole: null },
+  },
   "workspace.deleted": {
     action: "workspace.deleted",
     workspaceId: workspace,
     target: { type: "workspace", id: workspace },
+  },
+  "billing.trial_started": {
+    action: "billing.trial_started",
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: { planId: "pro", trialEndsAt: "2026-11-11T12:00:00.000Z" },
+  },
+  "billing.plan_assigned": {
+    action: "billing.plan_assigned",
+    actor: { kind: "admin", userId: "user-grace" },
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: { previousPlanId: "free", planId: "pro", status: "active" },
+  },
+  "billing.addons_set": {
+    action: "billing.addons_set",
+    actor: { kind: "admin", userId: "user-grace" },
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: { addons: [{ addonId: "extra_seats", quantity: 2 }] },
+  },
+  "billing.override_set": {
+    action: "billing.override_set",
+    actor: { kind: "admin", userId: "user-grace" },
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: {
+      key: "seats",
+      kind: "limit",
+      limit: 40,
+      reason: "Pilot customer",
+    },
+  },
+  "billing.plan_lapsed": {
+    action: "billing.plan_lapsed",
+    actor: { kind: "system" },
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: { previousPlanId: "pro", planId: "free", reason: "trial_ended" },
+  },
+  "billing.subscription_changed": {
+    action: "billing.subscription_changed",
+    actor: { kind: "system" },
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: {
+      previousPlanId: null,
+      planId: "pro",
+      status: "active",
+      provider: "stripe",
+    },
   },
   "workspace.created": {
     action: "workspace.created",

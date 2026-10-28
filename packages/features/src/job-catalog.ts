@@ -2,6 +2,7 @@
 // the use case that handles it. Features declare their jobs in their domain (defineJob) and
 // enqueue them with enqueueJob; registering one here is what makes the consumer run it.
 import { purgeAuditEvents, purgeAuditEventsJob } from "./audit";
+import { expireTrials, expireTrialsJob } from "./billing";
 import { helloJob, sayHello } from "./greetings";
 import {
   createJobCatalog,
@@ -59,6 +60,15 @@ export const jobCatalog = createJobCatalog<JobDeps>([
     purgeNotifications({
       db: deps.db,
       clock: { now: () => new Date(payload.asOf) },
+    })
+  ),
+  // Judged as of the cron run's time; audited with the delivery's trace.
+  registerJob(expireTrialsJob, (deps: JobDeps, payload, job) =>
+    expireTrials({
+      db: deps.db,
+      clock: { now: () => new Date(payload.asOf) },
+      ids: deps.ids,
+      requestContext: job.context,
     })
   ),
 ]);

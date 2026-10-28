@@ -45,6 +45,28 @@ describe("acceptInvitation", () => {
         },
       },
     ]);
+    // Product analytics: the join, then the member's traits (two members now).
+    expect(
+      accepting.analytics.recorded.map((call) => [
+        call.event,
+        call.properties,
+        call.context.userId,
+        call.context.workspaceId,
+      ])
+    ).toEqual([
+      [
+        "workspaces.member_joined",
+        { role: "owner", via: "invitation" },
+        grace.id,
+        "ws-acme",
+      ],
+      [
+        "$identify",
+        { role: "owner", workspace_size: "2-5", plan: "unlimited" },
+        grace.id,
+        "ws-acme",
+      ],
+    ]);
     expect(
       await rows(
         "SELECT role, last_active_at FROM workspace_members WHERE user_id = ?",

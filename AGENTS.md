@@ -27,5 +27,6 @@ A Bun monorepo for Cloudflare-first products: one Astro web Worker (`apps/web`) 
 | [docs/processes/adrs.md](docs/processes/adrs.md)                                       | a change makes or reverses a decision others will build on                                |
 | [docs/processes/dependencies.md](docs/processes/dependencies.md)                       | you update, add or audit dependencies, or respond to a security advisory                  |
 | [docs/guides/how-to-add-background-jobs.md](docs/guides/how-to-add-background-jobs.md) | you add a background job or cron entry, or change the queue consumer                      |
+| [docs/guides/how-to-use-admin-portal.md](docs/guides/how-to-use-admin-portal.md)       | you touch the admin portal, platform admins or Better Auth's admin plugin                 |
 | `.claude/skills/setup-auth`, `setup-d1`, `setup-email`                                 | you set up or change auth, the database, or email                                         |
 | [packages/ui/CONVENTIONS.md](packages/ui/CONVENTIONS.md)                               | you write or review UI components or stories                                              |

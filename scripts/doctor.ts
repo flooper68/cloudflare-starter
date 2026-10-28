@@ -4,6 +4,7 @@
  */
 import { existsSync } from "node:fs";
 
+import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 
 import {
@@ -25,6 +26,12 @@ const PLATFORM_SETTINGS = {
   TRACING: ["workers", "none"],
 } as const;
 
+/** Analytics settings (apps/web/src/lib/config.ts parseAnalyticsConfig), no defaults. */
+const ANALYTICS_SETTINGS = {
+  ANALYTICS: ["analytics-engine", "none"],
+  WEB_ANALYTICS: ["cloudflare", "none"],
+} as const;
+
 let errors = 0;
 const ok = (message: string) => console.log(`✓ ${message}`);
 const warn = (message: string) => console.log(`! ${message}`);
@@ -32,6 +39,42 @@ const error = (message: string) => {
   errors += 1;
   console.log(`✗ ${message}`);
 };
+
+/**
+ * The analytics vars of one environment, checked like parseAnalyticsConfig does at
+ * startup. `secret` is the ANALYTICS_ID_SECRET when it can be read (locally), undefined
+ * for deployed environments (Worker secrets cannot be read back).
+ */
+function checkAnalyticsVars(
+  label: string,
+  vars: Readonly<Record<string, string | undefined>>,
+  secret?: string
+) {
+  for (const [name, allowed] of Object.entries(ANALYTICS_SETTINGS)) {
+    const value = vars[name];
+    if (!(allowed as readonly string[]).includes(value ?? "")) {
+      error(
+        `${label}: ${name} is ${value ? `"${value}"` : "not set"} (${allowed.join(" | ")}): bun run setup:analytics${label === "local" ? " (or .dev.vars.example)" : ` --env ${label}`}`
+      );
+      return;
+    }
+  }
+  ok(
+    `${label}: ANALYTICS=${vars.ANALYTICS}, WEB_ANALYTICS=${vars.WEB_ANALYTICS}`
+  );
+  if (vars.ANALYTICS === "analytics-engine") {
+    if (secret === undefined)
+      warn(
+        `${label}: ANALYTICS=analytics-engine needs the ANALYTICS_ID_SECRET Worker secret (bun run setup:secrets --env ${label})`
+      );
+    else if (secret.length < 32)
+      error(
+        `${label}: ANALYTICS=analytics-engine needs ANALYTICS_ID_SECRET (32+ characters) in .dev.vars`
+      );
+  }
+  if (vars.WEB_ANALYTICS === "cloudflare" && !vars.WEB_ANALYTICS_TOKEN)
+    error(`${label}: WEB_ANALYTICS=cloudflare needs WEB_ANALYTICS_TOKEN`);
+}
 
 /**
  * The workspace and sign-up vars of one environment, checked like the app does at
@@ -77,6 +120,32 @@ function checkWorkspaceVars(
       `${label}: SIGN_UP=invite without EMAIL_FROM: invitation links do not reach anyone`
     );
   }
+  // Required, no default (apps/web/src/lib/config.ts): the Worker refuses to start without it.
+  if (vars.ADMIN_PORTAL === "on" || vars.ADMIN_PORTAL === "off") {
+    ok(`${label}: ADMIN_PORTAL=${vars.ADMIN_PORTAL}`);
+  } else {
+    error(
+      `${label}: ADMIN_PORTAL must be on or off (it is ${vars.ADMIN_PORTAL ? `"${vars.ADMIN_PORTAL}"` : "missing"}): bun run setup:auth`
+    );
+  }
+}
+
+/** BILLING of one environment: required, off | manual | provider (setup:auth writes it). */
+function checkBillingVar(label: string, value: string | undefined) {
+  const billing = billingSettingsSchema.safeParse({
+    BILLING: value || undefined,
+  });
+  if (!billing.success) {
+    error(
+      `${label}: ${billing.error.issues.map((issue) => issue.message).join("; ")} (bun run setup:auth; the Worker refuses to start)`
+    );
+    return;
+  }
+  ok(`${label}: BILLING=${billing.data.mode}`);
+  if (billing.data.mode === "provider")
+    warn(
+      `${label}: BILLING=provider needs a provider adapter registered in apps/web/src/server/billing-provider.ts (the starter ships none)`
+    );
 }
 
 console.log("Local dev");
@@ -172,6 +241,12 @@ if (!existsSync(DEV_VARS)) {
 
   // Local dev reads them from .dev.vars (wrangler.jsonc ships none).
   checkWorkspaceVars("local", Object.fromEntries(vars));
+  checkAnalyticsVars(
+    "local",
+    Object.fromEntries(vars),
+    value("ANALYTICS_ID_SECRET") ?? ""
+  );
+  checkBillingVar("local", vars.get("BILLING"));
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -239,6 +314,18 @@ for (const env of ENVIRONMENTS) {
   } else {
     checkWorkspaceVars(env, vars);
   }
+  // Analytics vars: no defaults are shipped, setup:analytics writes them.
+  if (!vars.ANALYTICS && !vars.WEB_ANALYTICS) {
+    warn(
+      `${env}: no ANALYTICS/WEB_ANALYTICS yet: bun run setup:analytics --env ${env} before deploying (the Worker refuses to start)`
+    );
+  } else {
+    checkAnalyticsVars(env, vars);
+  }
+  if (!datasets.some((entry) => entry.binding === "ANALYTICS_EVENTS"))
+    error(
+      `${env}: the ANALYTICS_EVENTS analytics_engine_datasets binding is missing`
+    );
   // Abuse protection (docs/guides/how-to-configure-abuse-protection.md).
   if (!["cloudflare", "none"].includes(vars.RATE_LIMITING ?? ""))
     error(`${env}: RATE_LIMITING must be cloudflare or none`);
@@ -259,6 +346,13 @@ for (const env of ENVIRONMENTS) {
     (block.ratelimits as { namespace_id: string }[] | undefined) ?? []
   ).map((binding) => binding.namespace_id);
   namespaceIds.push(...ids);
+  if (!vars.BILLING) {
+    warn(
+      `${env}: no BILLING yet: bun run setup:auth --env ${env} before deploying (the Worker refuses to start)`
+    );
+  } else {
+    checkBillingVar(env, vars.BILLING);
+  }
 }
 const duplicates = namespaceIds.filter(
   (id, index) => namespaceIds.indexOf(id) !== index

@@ -8,6 +8,61 @@ export {
   type AcceptInvitationState,
 } from "../components/patterns/accept-invitation-card";
 export {
+  AdminAuditFilterBar,
+  type AdminAuditFilterBarProps,
+  type AdminAuditFilters,
+  type AdminAuditRow,
+  AdminAuditTable,
+  type AdminAuditTableProps,
+} from "../components/patterns/admin-audit-table";
+export {
+  type AdminFlag,
+  AdminFlagCard,
+  type AdminFlagCardProps,
+} from "../components/patterns/admin-flag-card";
+export {
+  type AdminDailyCount,
+  AdminOverview,
+  type AdminOverviewData,
+  type AdminOverviewProps,
+  AdminOverviewSkeleton,
+} from "../components/patterns/admin-overview";
+export {
+  AdminReauthDialog,
+  type AdminReauthDialogProps,
+} from "../components/patterns/admin-reauth-dialog";
+export {
+  AdminSettings,
+  type AdminSettingsData,
+  type AdminSettingsProps,
+} from "../components/patterns/admin-settings";
+export {
+  type AdminBanInput,
+  type AdminSessionRow,
+  type AdminUserActions,
+  AdminUserDetail,
+  type AdminUserDetailData,
+  type AdminUserDetailProps,
+  AdminUserDetailSkeleton,
+} from "../components/patterns/admin-user-detail";
+export {
+  AdminUserFilterBar,
+  type AdminUserFilterBarProps,
+  type AdminUserFilters,
+  type AdminUserRow,
+  AdminUsersTable,
+  type AdminUsersTableProps,
+} from "../components/patterns/admin-users-table";
+export {
+  AdminWorkspaceDetail,
+  type AdminWorkspaceDetailData,
+  type AdminWorkspaceDetailProps,
+  AdminWorkspaceDetailSkeleton,
+  type AdminWorkspaceRow,
+  AdminWorkspacesTable,
+  type AdminWorkspacesTableProps,
+} from "../components/patterns/admin-workspaces";
+export {
   AppBreadcrumb,
   AppShell,
   type AppShellProps,
@@ -54,6 +109,10 @@ export {
   type FilterProperty,
   matchesFilters,
 } from "../components/patterns/filter-bar";
+export {
+  ImpersonationBanner,
+  type ImpersonationBannerProps,
+} from "../components/patterns/impersonation-banner";
 export {
   InviteDialog,
   type InviteDialogProps,

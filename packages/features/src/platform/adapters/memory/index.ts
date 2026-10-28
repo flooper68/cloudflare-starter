@@ -1,5 +1,9 @@
 // In-memory adapters for tests: they record what the app sent so tests can assert on it.
 
+export {
+  createMemoryBillingProvider,
+  type MemoryBillingProvider,
+} from "./memory-billing-provider";
 export { createMemoryEmail, type MemoryEmail } from "./memory-email";
 export {
   type CapturedError,
@@ -18,5 +22,10 @@ export {
 } from "./memory-job-queue";
 export { createMemoryLogger, type MemoryLogger } from "./memory-logger";
 export { createMemoryMetrics, type MemoryMetrics } from "./memory-metrics";
+export {
+  createMemoryProductAnalytics,
+  type MemoryProductAnalytics,
+  type RecordedAnalytics,
+} from "./memory-product-analytics";
 export { createMemoryRateLimiter } from "./memory-rate-limiter";
 export { createMemoryTracer, type MemoryTracer } from "./memory-tracer";

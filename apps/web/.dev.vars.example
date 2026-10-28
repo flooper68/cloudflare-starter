@@ -31,6 +31,18 @@ SIGN_UP=open
 SIGN_UP_DOMAINS=
 BOOTSTRAP_ADMIN_EMAIL=
 
+# Admin portal (/admin and the admin_* MCP tools) for users with role=admin: on | off.
+# Required, no default; deployed environments get it from `bun run setup:auth`. Make
+# someone an admin with `bun run setup:admin --email <address>` (local D1 by default).
+# docs/guides/how-to-use-admin-portal.md
+ADMIN_PORTAL=on
+# Billing, for local development and tests only. Deployed environments have no default:
+# `bun run setup:auth --env <env>` writes it into wrangler.jsonc, and the Worker refuses
+# to start without it. docs/guides/how-to-configure-plans-and-billing.md
+# BILLING: off (everything unlimited) | manual (an admin sets plans) | provider (needs a
+#   billing provider adapter registered in apps/web/src/server/billing-provider.ts)
+BILLING=manual
+
 # Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
 # is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
 # email off; auth and invitation links are then printed to the dev log (only with
@@ -71,6 +83,20 @@ TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 # docs/guides/how-to-setup-metrics-and-tracing.md
 # METRICS=none
 # TRACING=none
+
+# Product and web analytics (docs/guides/how-to-setup-product-analytics.md), for local
+# development only: deployed environments get them from `bun run setup:analytics --env <env>`
+# (written into wrangler.jsonc) and the Worker refuses to start without them.
+# ANALYTICS: analytics-engine (product events to the ANALYTICS_EVENTS dataset, simulated
+#   locally: nothing is stored) | none
+# ANALYTICS_ID_SECRET: secret key of the pseudonymous user and workspace ids, 32+
+#   characters; needed with analytics-engine. Generate with: openssl rand -base64 32
+# WEB_ANALYTICS: cloudflare (cookieless Web Analytics beacon on every page) | none
+# WEB_ANALYTICS_TOKEN: the site token from the Cloudflare dashboard, with cloudflare
+ANALYTICS=analytics-engine
+ANALYTICS_ID_SECRET=local-analytics-id-secret-change-me-000
+WEB_ANALYTICS=none
+WEB_ANALYTICS_TOKEN=
 
 # R2 presigned URLs (optional). The FILES binding needs nothing here.
 R2_ACCOUNT_ID=

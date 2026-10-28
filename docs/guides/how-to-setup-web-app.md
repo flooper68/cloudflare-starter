@@ -25,7 +25,7 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), `METRICS_DATASET` (Workers Analytics Engine, the metrics), the Workers Rate Limiting bindings `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_UNSUBSCRIBE` (`ratelimits`, nothing to create), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `METRICS` (required, `analytics-engine` or `none`) and `TRACING` (required, `workers` or `none`; [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, and the required abuse-protection settings `RATE_LIMITING` (`cloudflare`|`none`), `TURNSTILE` (`on`|`off`), `TURNSTILE_SITE_KEY` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
+Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), `METRICS_DATASET` (Workers Analytics Engine, the metrics), the Workers Rate Limiting bindings `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_BILLING_WEBHOOK`, `RL_UNSUBSCRIBE` (`ratelimits`, nothing to create), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `METRICS` (required, `analytics-engine` or `none`) and `TRACING` (required, `workers` or `none`; [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, and the required abuse-protection settings `RATE_LIMITING` (`cloudflare`|`none`), `TURNSTILE` (`on`|`off`), `TURNSTILE_SITE_KEY` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
 
 Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config.ts):
 
@@ -82,6 +82,13 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run setup:auth --env production
    ```
 
+   Analytics, the same way: no choice is shipped ([how-to-setup-product-analytics.md](./how-to-setup-product-analytics.md)); with `ANALYTICS=analytics-engine` step 7 also sets `ANALYTICS_ID_SECRET`:
+
+   ```bash
+   bun run setup:analytics --env production --dry-run
+   bun run setup:analytics --env production
+   ```
+
 5. Turnstile, while `TURNSTILE=on` (the default in every environment): create a Managed widget for the environment's hostname in the Cloudflare dashboard and put its site key in that environment's `TURNSTILE_SITE_KEY` in `wrangler.jsonc` (the shipped value is Cloudflare's test key; `setup:cloudflare` prints these steps). Its secret key is set in step 7. Details: [how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#deployed-environments).
 
 6. Migrate, build and deploy:
@@ -92,7 +99,7 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run deploy:production
    ```
 
-7. Secrets, including `TURNSTILE_SECRET_KEY` (asks for each one, sends them on stdin; this deploys a new version):
+7. Secrets, including `TURNSTILE_SECRET_KEY` and `ANALYTICS_ID_SECRET` (asks for each one, sends them on stdin; this deploys a new version):
 
    ```bash
    bun run setup:secrets --env production

@@ -26,12 +26,22 @@
   // - WORKSPACE_MODE: personal | single | multi (required)
   // - SIGN_UP: open | invite (required)
   // - SIGN_UP_DOMAINS: comma list of email domains that may sign up without an invitation
-  // - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
+  // - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode; becomes a
+  //   platform admin once verified
+  // - ADMIN_PORTAL: on | off (required): the admin portal for role=admin users
+  //   (docs/guides/how-to-use-admin-portal.md)
+  // - BILLING: off | manual | provider (required; docs/guides/how-to-configure-plans-and-billing.md)
   // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
   // FEATURE_FLAGS is required (no default): d1 (flags in the DB, managed by admins) | none
   // (every flag is its catalog default). Guide: docs/guides/how-to-use-feature-flags.md
   // METRICS (analytics-engine | none) and TRACING (workers | none) are required too
   // (docs/guides/how-to-setup-metrics-and-tracing.md).
+  // Product and web analytics are deliberately NOT set here either: whether an environment
+  // collects anything is the owner's choice, written by `bun run setup:analytics --env <env>`
+  // (docs/guides/how-to-setup-product-analytics.md):
+  // - ANALYTICS: analytics-engine | none (required; analytics-engine needs the
+  //   ANALYTICS_ID_SECRET secret)
+  // - WEB_ANALYTICS: cloudflare | none (required), WEB_ANALYTICS_TOKEN with cloudflare
   "vars": {
     "APP_ENV": "develop",
     "LOG_SINK": "workers-logs",
@@ -63,13 +73,19 @@
   "r2_buckets": [
     { "binding": "FILES", "bucket_name": "cloudflare-starter-files-develop" }
   ],
-  // Workers Analytics Engine: the metrics (METRICS=analytics-engine). The dataset is created
-  // on the first write; simulated locally. Data-point layout and queries:
-  // docs/guides/how-to-setup-metrics-and-tracing.md
+  // Workers Analytics Engine: the metrics (METRICS_DATASET, METRICS=analytics-engine;
+  // docs/guides/how-to-setup-metrics-and-tracing.md) and the product events
+  // (ANALYTICS_EVENTS, ANALYTICS=analytics-engine; docs/guides/how-to-setup-product-analytics.md),
+  // one dataset each per environment. Datasets are created on the first write; simulated
+  // locally (writes are accepted and not stored).
   "analytics_engine_datasets": [
     {
       "binding": "METRICS_DATASET",
       "dataset": "cloudflare_starter_develop_metrics"
+    },
+    {
+      "binding": "ANALYTICS_EVENTS",
+      "dataset": "cloudflare_starter_develop_product_events"
     }
   ],
   // Cloudflare Email Service. Simulated in local dev (mail is logged); deployed it needs
@@ -139,8 +155,18 @@
       "simple": { "limit": 30, "period": 60 }
     },
     {
-      "name": "RL_UNSUBSCRIBE",
+      "name": "RL_BILLING_WEBHOOK",
       "namespace_id": "1008",
+      "simple": { "limit": 300, "period": 60 }
+    },
+    {
+      "name": "RL_ANALYTICS",
+      "namespace_id": "1009",
+      "simple": { "limit": 120, "period": 60 }
+    },
+    {
+      "name": "RL_UNSUBSCRIBE",
+      "namespace_id": "1010",
       "simple": { "limit": 20, "period": 60 }
     }
   ],
@@ -189,6 +215,10 @@
         {
           "binding": "METRICS_DATASET",
           "dataset": "cloudflare_starter_staging_metrics"
+        },
+        {
+          "binding": "ANALYTICS_EVENTS",
+          "dataset": "cloudflare_starter_staging_product_events"
         }
       ],
       "queues": {
@@ -243,8 +273,18 @@
           "simple": { "limit": 30, "period": 60 }
         },
         {
-          "name": "RL_UNSUBSCRIBE",
+          "name": "RL_BILLING_WEBHOOK",
           "namespace_id": "2008",
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "RL_ANALYTICS",
+          "namespace_id": "2009",
+          "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_UNSUBSCRIBE",
+          "namespace_id": "2010",
           "simple": { "limit": 20, "period": 60 }
         }
       ],
@@ -291,6 +331,10 @@
         {
           "binding": "METRICS_DATASET",
           "dataset": "cloudflare_starter_production_metrics"
+        },
+        {
+          "binding": "ANALYTICS_EVENTS",
+          "dataset": "cloudflare_starter_production_product_events"
         }
       ],
       "queues": {
@@ -345,8 +389,18 @@
           "simple": { "limit": 30, "period": 60 }
         },
         {
-          "name": "RL_UNSUBSCRIBE",
+          "name": "RL_BILLING_WEBHOOK",
           "namespace_id": "3008",
+          "simple": { "limit": 300, "period": 60 }
+        },
+        {
+          "name": "RL_ANALYTICS",
+          "namespace_id": "3009",
+          "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_UNSUBSCRIBE",
+          "namespace_id": "3010",
           "simple": { "limit": 20, "period": 60 }
         }
       ],

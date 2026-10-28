@@ -19,6 +19,16 @@ const SETUP_WRITTEN_VARS: Readonly<Record<string, string>> = {
   SIGN_UP: "written by setup:auth; deliberately absent until the owner chooses",
   SIGN_UP_DOMAINS: "written by setup:auth",
   BOOTSTRAP_ADMIN_EMAIL: "written by setup:auth",
+  ANALYTICS:
+    "written by setup:analytics; deliberately absent until the owner chooses whether an environment collects product events",
+  WEB_ANALYTICS:
+    "written by setup:analytics; deliberately absent until the owner chooses",
+  WEB_ANALYTICS_TOKEN:
+    "written by setup:analytics: the Web Analytics site token differs per environment",
+  ADMIN_PORTAL:
+    "written by setup:auth; deliberately absent until the owner chooses (no default)",
+  BILLING:
+    "written by setup:auth; deliberately absent until the owner chooses off, manual or provider",
 };
 
 type Block = Record<string, unknown>;

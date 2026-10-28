@@ -1,14 +1,16 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-
 import {
   addMember,
   fixedClock,
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
+  testRequestContext,
 } from "../../test/fixtures";
+import { createMemoryProductAnalytics } from "../platform";
 import type { Actor } from "../workspaces";
 import { FileNotFoundError } from "./domain";
 import { readWorkspaceFile } from "./read-workspace-file";
@@ -21,6 +23,9 @@ async function storedFile(actor: Actor, idPrefix: string) {
       bucket: env.FILES,
       clock: fixedClock(),
       ids: sequentialIds(idPrefix),
+      requestContext: testRequestContext(),
+      analytics: createMemoryProductAnalytics(),
+      billing: testBilling(),
     },
     actor,
     {

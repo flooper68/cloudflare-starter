@@ -1,5 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
 import {
+  type BillingMode,
   createRequestContext,
   type RequestContext,
   randomIds,
@@ -10,7 +11,7 @@ import { expect } from "vitest";
 import { getAuth, HUMAN_CHECK_HEADER } from "@/server/auth";
 import type { AppEnv } from "@/server/env";
 import { invoke } from "@/server/mcp/tools";
-import { createAppContext } from "@/server/trpc/context";
+import { type BrowserContext, createAppContext } from "@/server/trpc/context";
 import { appRouter } from "@/server/trpc/router";
 
 import { TURNSTILE_DUMMY_TOKEN } from "../outbound";
@@ -91,6 +92,8 @@ export function envWith(vars: {
   readonly SIGN_UP_DOMAINS?: string;
   readonly BOOTSTRAP_ADMIN_EMAIL?: string;
   readonly AUTH_REQUIRE_EMAIL_VERIFICATION?: "true" | "false";
+  readonly ADMIN_PORTAL?: "on" | "off";
+  readonly BILLING?: BillingMode;
 }): AppEnv {
   const key = JSON.stringify(vars);
   let value = envs.get(key);
@@ -163,15 +166,55 @@ export function testRequestContext(): RequestContext {
 export function callerFor(
   user: TestUser | null,
   runtimeEnv: AppEnv = env,
-  requestContext: RequestContext = testRequestContext()
+  requestContext: RequestContext = testRequestContext(),
+  browser?: BrowserContext
 ) {
   return appRouter.createCaller(
     createAppContext(
       user ? { id: user.id, email: user.email, name: user.name } : null,
       requestContext,
-      runtimeEnv
+      runtimeEnv,
+      { browser }
     )
   );
+}
+
+/**
+ * The tRPC router as the web endpoint calls it for this user's browser: their cookie
+ * session (signed in `signedInMinutesAgo` minutes ago, an impersonation if
+ * `impersonatedBy`), the request's headers, and the response headers the call sets.
+ */
+export function browserCallerFor(
+  user: TestUser,
+  options: {
+    readonly cookie?: string;
+    readonly signedInMinutesAgo?: number;
+    readonly impersonatedBy?: string | null;
+    readonly runtimeEnv?: AppEnv;
+  } = {}
+) {
+  const resHeaders = new Headers();
+  const caller = callerFor(
+    user,
+    options.runtimeEnv ?? env,
+    testRequestContext(),
+    {
+      session: {
+        createdAt: new Date(
+          Date.now() - (options.signedInMinutesAgo ?? 1) * 60 * 1000
+        ),
+        impersonatedBy: options.impersonatedBy ?? null,
+      },
+      exchange: {
+        headers: new Headers({
+          cookie: options.cookie ?? user.cookie,
+          origin: APP_URL,
+        }),
+        resHeaders,
+      },
+    }
+  );
+  return { caller, resHeaders };
 }
 
 let crossWorkspace:

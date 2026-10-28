@@ -1,0 +1,94 @@
+# How to Use the Admin Portal
+
+The admin portal lets platform admins run the app: find and inspect users, suspend and reinstate them, sign them out, reset their passwords, change their platform role, delete accounts, impersonate a user to see what they see, rescue and delete workspaces, read the audit log, and see an overview and the deployment's settings. It is served at `/admin` and as the `admin_*` MCP tools. Use when you turn the portal on or off, make someone an admin, act on a user or workspace, add an admin page, or change what an admin may do.
+
+## Who is an admin
+
+- A **platform admin** is a user whose `user.role` is `admin` (Better Auth's admin plugin column; it may hold a comma list such as `user,admin`). Workspace roles (`owner`, `member`) are separate: a workspace owner administers one workspace, a platform admin the app.
+- The portal is open only when `ADMIN_PORTAL=on` **and** the signed-in user is an admin who is not suspended. Everyone else, anonymous callers included, gets 404 / `NOT_FOUND` for every `/admin` page and `admin.*` procedure: the portal does not reveal that it exists.
+- The role and suspension are read from D1 on every admin call, so a demotion or suspension takes effect at once (the session cookie cache is not trusted for this).
+
+## Turn it on or off
+
+`ADMIN_PORTAL` is a required var with no default (`on` | `off`), written per environment by `bun run setup:auth --env <env>` (`--dry-run` first) and checked by `apps/web/src/lib/config.ts` (the Worker refuses to start without it) and `bun run doctor`. Locally it comes from `apps/web/.dev.vars` (`ADMIN_PORTAL=on` in `.dev.vars.example`); an existing `.dev.vars` needs the line added. With `off`, the role still exists, but nothing under `/admin` or `admin.*` answers.
+
+## Make someone an admin
+
+| Way                                                                                     | When                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BOOTSTRAP_ADMIN_EMAIL`                                                                 | The first admin of a new environment: the account with that address becomes an admin as soon as its address is verified (email verification, or at sign-up with Google). Only that moment promotes: an admin may later demote it like any other account. Recorded as `user.role_changed` with the system as actor. Set by `setup:auth`. |
+| `bun run setup:admin --email <address> [--demote] [--remote] [--env <env>] [--dry-run]` | Any existing account, from a terminal: updates `user.role` through `wrangler d1 execute` (local D1 by default, `--remote` for the deployed one) and writes a `user.role_changed` audit row (actor `system`, source `script`).                                                                                                           |
+| The portal (`admin.users.setRole`, tool `admin_set_user_role`)                          | An admin promotes or demotes another user.                                                                                                                                                                                                                                                                                              |
+
+The person signs in again (or waits up to a minute for the cached session) for the change to show in the app.
+
+## What an admin can do
+
+| Action                    | Procedure (tool)                                                                                                                                 | Rules                                                                                                                                                                                                                                                                      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview                  | `admin.overview.get` (`admin_get_overview`)                                                                                                      | D1 only: users, admins, suspended, daily sign-ups and active users (30 days), workspace counts and sizes; with billing on, workspaces per plan and status, trials (ending within 7 days) and this month's usage counters (`getBillingOverview`); `null` with `BILLING=off` |
+| Settings                  | `admin.settings.get` (`admin_get_settings`)                                                                                                      | Read-only: mode, sign-up policy, sign-in methods, verification, email, `ADMIN_PORTAL`. Changing them is a deploy (`setup:auth`)                                                                                                                                            |
+| List / inspect users      | `admin.users.list`, `admin.users.get`                                                                                                            | Search, role and status filters, cursor pages; detail shows sign-in methods, workspaces and open sessions (never tokens)                                                                                                                                                   |
+| Suspend / lift            | `admin.users.ban` (destructive), `admin.users.unban`                                                                                             | Reason and optional end date; suspending also signs the user out everywhere. Sign-in is refused with `BANNED_USER`                                                                                                                                                         |
+| Sign out everywhere       | `admin.users.revokeSessions` (destructive)                                                                                                       | Ends every session; a cookie-cached session lasts at most a minute more                                                                                                                                                                                                    |
+| Change platform role      | `admin.users.setRole` (destructive)                                                                                                              | `user` or `admin`                                                                                                                                                                                                                                                          |
+| Delete account            | `admin.users.remove` (destructive)                                                                                                               | Same rules as account deletion: their own workspaces go with their files, they leave shared ones; refused while they are the last owner of a shared workspace                                                                                                              |
+| Send password reset       | `admin.users.sendPasswordReset` (outward)                                                                                                        | The normal reset mail; the admin never sees the link. Needs email (`PRECONDITION_FAILED` otherwise)                                                                                                                                                                        |
+| Impersonate / stop        | `admin.impersonation.start`, `admin.impersonation.stop` (no MCP tools)                                                                           | Browser only, one hour at most; never admins or suspended users                                                                                                                                                                                                            |
+| List / inspect workspaces | `admin.workspaces.list`, `admin.workspaces.get`                                                                                                  | Not in personal mode. `managerCount` 0 means nobody can manage the workspace                                                                                                                                                                                               |
+| Assign an owner           | `admin.workspaces.assignOwner` (destructive)                                                                                                     | Only when the workspace has no owner; the user is added if they are not a member                                                                                                                                                                                           |
+| Delete a workspace        | `admin.workspaces.delete` (destructive)                                                                                                          | Shared workspaces only, with their files, members and invitations                                                                                                                                                                                                          |
+| Feature flags             | `admin.flags.list`, `admin.flags.update`, `admin.flags.setRules` (`list_feature_flags`, `update_feature_flag`, `set_feature_flag_rules`)         | Switches, fallthrough values and targeting rules ([how-to-use-feature-flags.md](how-to-use-feature-flags.md))                                                                                                                                                              |
+| Workspace billing         | `admin.billing.get`, `admin.billing.usage`, `admin.billing.assignPlan`, `admin.billing.setAddons`, `admin.billing.setOverride` (billing's tools) | Any workspace's plan, add-ons, overrides and usage ([how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md))                                                                                                                                        |
+| Audit log                 | `admin.audit.list` (`admin_list_audit_events`)                                                                                                   | The filters of [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md#reading-the-log)                                                                                                                                                                                  |
+
+Rules for every action (`packages/features/src/admin/domain/admin-policy.ts`): an admin never acts on their own account; the last active admin cannot be demoted, suspended or deleted (`LAST_ADMIN`; a suspended admin does not count as active, so acting on one is allowed); admins and suspended users cannot be impersonated; a suspension ends in the future or never. Every change records an audit event with actor kind `admin` (catalog: `user.*`, `impersonation.*`, `workspace.owner_assigned`, `workspace.deleted`).
+
+A suspension also ends MCP access: `/mcp` reloads the token's user on every request and refuses a suspended one (401), so access and refreshed tokens stop working at once.
+
+If every admin ends up suspended or demoted (two admins acting on each other at the same moment can get there), `bun run setup:admin --email <address>` restores one: promoting also lifts a suspension (audited as `user.unbanned`).
+
+## Recent sign-in for destructive actions
+
+Destructive procedures are `adminDestructiveProcedure`s: they need a sign-in from the last 15 minutes, else `FORBIDDEN` with `data.appCode` `REAUTH_REQUIRED` (the web portal then asks the admin to sign in again). In the browser that is the current session's sign-in; over MCP, which has no browser session, it is the admin's newest own session (impersonation sessions aside), so an admin signs in to the web app shortly before asking Claude to suspend or delete. `requireAdminSecondFactor` in `apps/web/src/server/trpc/init.ts` is the hook a later two-factor change fills.
+
+## Impersonation
+
+`admin.impersonation.start` swaps the browser's session cookie for an impersonation session as the user (Better Auth's admin plugin: `session.impersonatedBy` is the admin, the admin's own session is kept aside in the `admin_session` cookie, the impersonation lasts at most an hour). Everything done meanwhile is done as the user, and its audit events name the admin as `impersonator_user_id`. `admin.impersonation.stop`, called from the impersonated session, restores the admin's session. Both are recorded (`impersonation.started`, `impersonation.stopped`, actor the admin); the impersonation session itself is not recorded as a sign-in. An impersonation session cannot connect an app (MCP client) as the user: `/oauth2/authorize` and `/oauth2/consent` answer 403 with code `IMPERSONATION_OAUTH_REFUSED`, the consent page says why, and the attempt is recorded as `impersonation.oauth_refused` (its tokens would outlast the impersonation). The two procedures have no MCP tools (exempt in `MCP_EXEMPT_PROCEDURES`: they create a browser cookie session).
+
+## How it is built
+
+- Feature `packages/features/src/admin/`: pure rules in `domain/`, one use case per file, the port `ports/admin-auth-gateway.ts`. Use cases read `user`, `session`, `account` and the workspace tables from D1, and change users and sessions only through the gateway, so Better Auth's hooks and session caches stay right.
+- Gateway `apps/web/src/server/admin-auth-gateway.ts`: the one file pinned to Better Auth (1.7.14): `auth.$context`'s internal adapter for role, suspension, sessions and deletion, `auth.api.requestPasswordReset`, and `auth.api.impersonateUser` / `stopImpersonating` with the browser's headers, copying their `Set-Cookie` onto the tRPC response. Re-check it when upgrading Better Auth. Integration tests use `packages/features/test/memory-admin-auth-gateway.ts`.
+- Better Auth's own `/api/auth/admin/*` endpoints answer 404 (`disabledPaths` from `ADMIN_HTTP_PATHS` in `server/auth.ts`, and a prefix check in the auth route); only `auth.api` calls from our server code reach them.
+- Procedures `apps/web/src/server/trpc/admin-router.ts` on `adminProcedure` / `adminDestructiveProcedure` / `impersonatorProcedure` (`trpc/init.ts`); `test/architecture/admin-procedures.test.ts` fails when an `admin.*` procedure skips the gate. `admin` is in `AUDITED_FEATURES`.
+
+## The portal
+
+`/admin/*` is served by `apps/web/src/pages/admin/[...path].astro`, which answers a plain 404 unless the signed-in user may use the portal (`spaBootstrap` in `apps/web/src/server/spa-bootstrap.ts`), and renders the same SPA as `/app/*`. Admins see an **Admin** entry in the app's sidebar. Pages (`apps/web/src/components/admin/`), built from the `packages/ui` patterns `admin-*.tsx`:
+
+| Page                  | What it shows                                                                                                                                         |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview              | Users, sign-ups and active users (30 days, sparklines), admins and suspended users, workspace counts and sizes                                        |
+| Users, User           | Search and Role/Status filters, server pages; profile, sign-in methods, workspaces, sessions, and suspend, impersonate, sign out, reset, role, delete |
+| Workspaces, Workspace | Hidden in personal mode. Flags workspaces without an owner; members, owner rescue, deletion                                                           |
+| Audit log             | Action and target filters, server pages; the impersonating admin on each event                                                                        |
+| Feature flags         | Every catalog flag: its switch and targeting rules (workspace, plan, percentage)                                                                      |
+| Settings              | The deployment's settings, read-only, and a link to Cloudflare Queues for background jobs                                                             |
+
+When a destructive action answers `REAUTH_REQUIRED`, the page offers to sign in again and comes back. While impersonating, the app shows a banner with **Stop impersonating**.
+
+## Add an admin page
+
+Append a route to `adminRoutes` in `apps/web/src/components/admin/routes.tsx` (parent `adminLayoutRoute`) and an entry to `adminNav` in `admin-nav.tsx`; load its data from an `admin.*` procedure; build it from a `packages/ui` pattern with stories (loading, empty, error, content).
+
+## Add an admin action
+
+1. A rule in `admin/domain/` with a test; a use case `admin/<verb>-<thing>.ts` taking `(deps, admin: AdminActor, input)`, recording an audit event (add the action to the catalog, [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)), with an integration test using the memory gateway.
+2. A procedure in `admin-router.ts`: `adminProcedure`, or `adminDestructiveProcedure` if it removes access or data.
+3. An MCP tool in `tools.ts` (`destructive: true` and "confirm with the user" where it removes something), and the API test in `apps/web/test/api/admin.test.ts`.
+4. Anything that changes users or sessions goes through a new gateway method, implemented in `server/admin-auth-gateway.ts` and the memory gateway.
+
+## Not built
+
+Jobs or queue pages (use Cloudflare Queues metrics and Workers Logs), product analytics and Analytics Engine charts, a billing page in the portal (billing's admin procedures and tools exist; the overview shows plans, trials and usage), two-factor for admins, editing settings from the portal.

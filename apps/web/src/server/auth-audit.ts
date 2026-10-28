@@ -1,6 +1,7 @@
 /**
  * Audit events for Better Auth's own endpoints, which are not our use cases: sign-in,
  * failed sign-in, sign-up, password reset requests and password changes (docs/guides/how-to-use-the-audit-log.md).
+ * Sign-ups are also tracked as the product event `auth.signed_up`.
  * Next to each record(), the security notifications of the same events: `auth.new-sign-in`
  * (password and social sign-ins from a browser with no other live session; not sign-up or
  * email verification) and `auth.password-changed`
@@ -18,7 +19,9 @@ import {
   type RequestContext,
   randomIds,
   recordAuditEvent,
+  signedUpEvent,
   systemClock,
+  trackEvent,
 } from "@cloudflare-starter/features";
 import type { BetterAuthOptions, GenericEndpointContext } from "better-auth";
 import { isAPIError } from "better-auth/api";
@@ -168,6 +171,9 @@ export function auditDatabaseHooks(
         async after(session, ctx) {
           // A password change re-issues the session: recorded as auth.password_changed.
           if (ctx?.path === "/change-password") return;
+          // An admin's impersonation session: recorded as impersonation.started.
+          if ((session as { impersonatedBy?: string | null }).impersonatedBy)
+            return;
           const signIn = signInMethodOf(ctx);
           await record(env, ctx, {
             action: "auth.sign_in",
@@ -198,17 +204,25 @@ export function auditDatabaseHooks(
       create: {
         async after(user, ctx) {
           const { method, provider } = signInMethodOf(ctx);
+          const signUpMethod =
+            method === "sign_up"
+              ? "password"
+              : method === "social"
+                ? "social"
+                : "other";
+          // Product analytics: never throws, so it cannot fail the sign-up.
+          trackEvent(
+            { analytics: buildPlatform(env).productAnalytics() },
+            { ...contextFor(env, ctx), userId: user.id, workspaceId: null },
+            signedUpEvent,
+            { method: signUpMethod, provider: provider ?? null }
+          );
           await record(env, ctx, {
             action: "auth.sign_up",
             actor: { kind: "user", userId: user.id },
             target: { type: "user", id: user.id },
             metadata: {
-              method:
-                method === "sign_up"
-                  ? "password"
-                  : method === "social"
-                    ? "social"
-                    : "other",
+              method: signUpMethod,
               ...(provider ? { provider } : {}),
             },
           });
@@ -287,6 +301,27 @@ export async function auditHumanCheckFailed(
     actor: { kind: "user", userId: null },
     target: { type: "email", id: email },
     metadata: { form, reason },
+  });
+}
+
+/**
+ * An impersonation session tried to authorize an OAuth (MCP) client as the user; refused
+ * in server/auth.ts. Recorded with the impersonating admin as actor.
+ */
+export async function auditImpersonationConsentRefused(
+  env: AppEnv,
+  ctx: { readonly request?: Request },
+  input: {
+    readonly userId: string;
+    readonly impersonatedBy: string;
+    readonly clientId: string | null;
+  }
+): Promise<void> {
+  await record(env, ctx, {
+    action: "impersonation.oauth_refused",
+    actor: { kind: "admin", userId: input.impersonatedBy },
+    target: { type: "user", id: input.userId },
+    metadata: input.clientId ? { clientId: input.clientId.slice(0, 200) } : {},
   });
 }
 

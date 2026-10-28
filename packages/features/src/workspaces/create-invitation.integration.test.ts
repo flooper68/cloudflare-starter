@@ -7,6 +7,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   useCaseDeps,
 } from "../../test/fixtures";
 import { createMemoryEmail, sha256Hex } from "../platform";
@@ -102,5 +103,39 @@ describe("createInvitation", () => {
     await expect(
       createInvitation(deps, actor, { ...input, email: "not-an-email" })
     ).rejects.toThrow();
+  });
+
+  it("counts pending invitations against the seats limit; re-inviting the same email needs no seat", async () => {
+    const owner = await seedUser("Katherine Johnson");
+    const colleague = await seedUser("Dorothy Vaughan");
+    const actor = await seedWorkspace(owner.id, { id: "ws-seat-limit" });
+    await addMember(actor.workspaceId, colleague.id);
+    // Manual billing without a subscription: the free plan, 3 seats.
+    const deps = {
+      ...useCaseDeps(),
+      email: null,
+      billing: testBilling("manual"),
+    };
+    const input = (email: string) => ({
+      mode: "multi" as const,
+      email,
+      role: "member" as const,
+      appUrl,
+    });
+
+    await createInvitation(deps, actor, input("mary@example.test"));
+    await createInvitation(deps, actor, input("mary@example.test"));
+    await expect(
+      createInvitation(deps, actor, input("christine@example.test"))
+    ).rejects.toMatchObject({
+      kind: "limit_reached",
+      details: { metric: "seats", limit: 3, current: 3, increment: 1 },
+    });
+    expect(
+      await rows(
+        "SELECT email FROM workspace_invitations WHERE workspace_id = ? AND revoked_at IS NULL",
+        actor.workspaceId
+      )
+    ).toEqual([{ email: "mary@example.test" }]);
   });
 });

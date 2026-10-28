@@ -2,10 +2,13 @@ import { env } from "cloudflare:workers";
 
 import {
   type Actor,
+  type BillingMode,
+  createBillingGate,
   createDatabase,
   createInvitation,
   createMemoryErrorReporter,
   createMemoryJobQueue,
+  createMemoryProductAnalytics,
   type Database,
   type MemoryJobQueue,
   type Notify,
@@ -146,6 +149,7 @@ export async function invite(
       ),
       email: null,
       requestContext: testRequestContext(),
+      billing: testBilling(),
     },
     actor,
     { mode: "multi", email, role, appUrl: "http://localhost:4321" }
@@ -153,9 +157,28 @@ export async function invite(
   return { ...created, token: created.link.split("/invite/")[1] as string };
 }
 
+/**
+ * The BillingGate for a use case: BILLING=off (unlimited, nothing recorded) unless a test
+ * of billing asks for another mode.
+ */
+export function testBilling(mode: BillingMode = "off", at?: string) {
+  return createBillingGate({
+    db: testDb(),
+    clock: fixedClock(at),
+    ids: sequentialIds(
+      `${Math.random().toString(16).slice(2, 10).padEnd(8, "0")}-2222-4000-8000-`
+    ),
+    requestContext: testRequestContext(),
+    settings: { mode },
+  });
+}
+
 let depsRun = 0;
 
-/** Dependencies of a workspace use case: real D1, fixed clock, fresh ids, a request context. */
+/**
+ * Dependencies of a workspace use case: real D1, fixed clock, fresh ids, a request
+ * context, and a memory ProductAnalytics whose `recorded` calls tests can assert on.
+ */
 export function useCaseDeps(at?: string) {
   depsRun += 1;
   const clock = fixedClock(at);
@@ -176,7 +199,14 @@ export function useCaseDeps(at?: string) {
     /** Notification failures notify reported instead of throwing. */
     errors,
     notify: bound,
+    analytics: createMemoryProductAnalytics(),
+    billing: testBilling("off", at),
   };
+}
+
+/** Dependencies of a billing use case: useCaseDeps plus the BILLING mode (manual unless stated). */
+export function billingDeps(mode: BillingMode = "manual", at?: string) {
+  return { ...useCaseDeps(at), settings: { mode } };
 }
 
 /** The notification events a use case sent through `useCaseDeps().notify`. */

@@ -48,7 +48,12 @@ export async function recordAuditEvent(
     outcome: event.outcome,
     actorUserId: actor.userId ?? null,
     actorKind: actor.kind,
-    impersonatorUserId: actor.impersonatorUserId ?? null,
+    // The context's impersonator applies to events its own (impersonated) user acts in.
+    impersonatorUserId:
+      actor.impersonatorUserId ??
+      (actor.userId && actor.userId === context.userId
+        ? (context.impersonatorUserId ?? null)
+        : null),
     targetType: event.target.type,
     targetId: event.target.id,
     workspaceId: event.workspaceId ?? context.workspaceId,

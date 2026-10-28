@@ -9,6 +9,8 @@
  */
 import {
   createRequestContext,
+  type DomainError,
+  type DomainErrorKind,
   formatTraceparent,
   type LogFields,
   type RequestContext,
@@ -88,6 +90,30 @@ export function problemResponse(
       headers: { "content-type": "application/problem+json" },
     }
   );
+}
+
+const DOMAIN_STATUS: Record<DomainErrorKind, readonly [number, string]> = {
+  not_found: [404, "Not Found"],
+  invalid_input: [400, "Bad Request"],
+  forbidden: [403, "Forbidden"],
+  conflict: [409, "Conflict"],
+  unavailable: [412, "Precondition Failed"],
+  rate_limited: [429, "Too Many Requests"],
+  limit_reached: [403, "Limit Reached"],
+};
+
+/**
+ * A use case's DomainError as Problem Details, with the status tRPC would use. `kind`,
+ * `code` and the error's `details` (for limit_reached: metric, limit, current, upgrade)
+ * are extension members.
+ */
+export function domainErrorResponse(error: DomainError): Response {
+  const [status, title] = DOMAIN_STATUS[error.kind];
+  return problemResponse(status, title, error.message, {
+    kind: error.kind,
+    ...(error.code ? { code: error.code } : {}),
+    ...error.details,
+  });
 }
 
 /** Reports an unexpected error and answers 500 with its reference (never the error itself). */

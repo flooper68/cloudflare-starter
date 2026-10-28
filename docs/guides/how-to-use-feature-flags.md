@@ -57,7 +57,7 @@ const { value } = await evaluateFlag(deps.flags, "upload-demo-presigned", {
 });
 ```
 
-It returns OpenFeature evaluation details (`value`, `variant`, `reason`, `errorCode`, `flagMetadata`) and never throws. In a `workspaceProcedure`, the subject comes from the workspace actor: `ctx.actor.userId`, `ctx.actor.workspaceId`, `ctx.config.APP_ENV`; `plan` is null until plans exist.
+It returns OpenFeature evaluation details (`value`, `variant`, `reason`, `errorCode`, `flagMetadata`) and never throws. In a `workspaceProcedure`, the subject comes from the workspace actor: `ctx.actor.userId`, `ctx.actor.workspaceId`, `ctx.config.APP_ENV`; `plan` is the workspace's plan in effect from `resolveEntitlements` (`unlimited` with `BILLING=off`; [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)).
 
 **In the browser.** Only flags with `client: true` reach the browser, as values, through `flags.client` (`get_client_flags` over MCP), a workspace procedure: members only, for the workspace they name (or their current one); a workspace they do not belong to is `NOT_FOUND`. `apps/web/src/lib/feature-flags.tsx` loads them under `FeatureFlagsProvider` (mounted in `AppSpa.tsx` inside `WorkspaceProvider`) for the active workspace, and again when it changes:
 
@@ -91,7 +91,7 @@ A provider resolves a flag for an evaluation context (`targetingKey`, `userId`, 
 
 Rules apply in order. A **percentage** rule matches when the bucket of the targeting key is below `percentageBp` (basis points, 0–10000): bucket = FNV-1a 32 of `${flagKey}:${targetingKey}` mod 10000. The bucket is stable across isolates, deploys and providers, so growing a rollout from 10 % to 50 % keeps the first 10 % in; salting with the flag key keeps two rollouts from picking the same ids. The targeting key is the workspace id or the user id, per the flag's `rolloutBy`; without one (an anonymous visitor, a user without a workspace), percentage rules do not match. A **workspace** rule matches one workspace id, a **plan** rule one plan id.
 
-Plans are not built yet: `plan` is null in every request, so plan rules match nobody until plans exist.
+`flags.client` passes the workspace's plan in effect (a lapsed trial counts as its fallback plan; `unlimited` with `BILLING=off`), so a plan rule matches the workspaces on that plan. A plan rule is for rollout by audience; what a plan includes is an entitlement, not a flag ([overview](../architecture/overview.md#plans-features-and-limits)).
 
 ## Changing a flag
 
@@ -107,7 +107,7 @@ Only catalog flags can be configured, with values of their catalog type. Changes
 
 A flag whose stored JSON does not parse (after hand-written SQL) resolves to its default with `PARSE_ERROR`, and `admin.flags.list` shows it as `stored: { invalid: true, error, … }`. A write repairs it: `update` sets the switch and fallthrough and drops rules that do not parse; `setRules` replaces the rules and resets a fallthrough that does not parse to null (the default).
 
-Until the admin portal lands, these procedures use a stand-in check, `localAdminProcedure` in `apps/web/src/server/trpc/admin.ts` (marked `TODO(admin-portal)`): it requires a platform `role` of `admin`, which no user column holds yet, so every caller gets `NOT_FOUND` and the procedures are effectively off. Every write records an audit event with the admin as actor and no workspace: `feature_flag.updated` (`enabled`, `fallthrough`) and `feature_flag.rules_changed` (`ruleCount`, `ruleKinds`; rule targets stay out of the log) ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)). The `FlagRuleEditor` and `PercentageInput` components in `packages/ui` are ready for the admin pages.
+They are `adminProcedure`s of the admin portal (`apps/web/src/server/trpc/admin-router.ts`): platform admins only, with `ADMIN_PORTAL=on`; everyone else gets `NOT_FOUND` ([how-to-use-admin-portal.md](how-to-use-admin-portal.md)). Every write records an audit event with the admin as actor and no workspace: `feature_flag.updated` (`enabled`, `fallthrough`) and `feature_flag.rules_changed` (`ruleCount`, `ruleKinds`; rule targets stay out of the log) ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)). Admins manage them on the portal's Feature flags page (`/admin/flags`, `AdminFlagCard` with `FlagRuleEditor`).
 
 To change a flag before then, use SQL on the environment's D1 (`feature_flags`, `feature_flag_rules`; values are JSON):
 

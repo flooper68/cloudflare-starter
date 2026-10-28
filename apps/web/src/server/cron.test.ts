@@ -10,6 +10,7 @@ import {
   noopEmail,
   noopFeatureFlags,
   noopHumanVerifier,
+  noopProductAnalytics,
   noopRateLimiter,
 } from "@cloudflare-starter/features";
 import { describe, expect, it, vi } from "vitest";
@@ -37,6 +38,8 @@ function memoryPlatform() {
     rateLimiter: noopRateLimiter,
     humanVerifier: noopHumanVerifier,
     turnstile: null,
+    productAnalytics: () => noopProductAnalytics,
+    webAnalytics: null,
   };
   return { platform, logger, errors, jobQueue, metrics, tracer };
 }
@@ -47,13 +50,14 @@ const controller = (cron: string) => ({
 });
 
 describe("cron handler", () => {
-  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys and notifications.purge, each in a new trace", async () => {
+  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials and notifications.purge, each in a new trace", async () => {
     const { platform, logger, jobQueue } = memoryPlatform();
     expect(
       cronCatalog.filter((e) => e.schedule === "17 3 * * *").map((e) => e.name)
     ).toEqual([
       "audit.purge-events",
       "jobs.purge-idempotency-keys",
+      "billing.expire-trials",
       "notifications.purge",
     ]);
 
@@ -72,18 +76,24 @@ describe("cron handler", () => {
         data: {},
       }),
       expect.objectContaining({
+        type: "billing.expire-trials",
+        source: "/staging/cron",
+        data: { asOf: "2026-10-28T03:17:00.000Z" },
+      }),
+      expect.objectContaining({
         type: "notifications.purge",
         source: "/staging/cron",
         data: { asOf: "2026-10-28T03:17:00.000Z" },
       }),
       expect.objectContaining({ type: "audit.purge-events" }),
       expect.objectContaining({ type: "jobs.purge-idempotency-keys" }),
+      expect.objectContaining({ type: "billing.expire-trials" }),
       expect.objectContaining({ type: "notifications.purge" }),
     ]);
     const traces = jobQueue.sent.map(
       (sent) => sent.envelope.traceparent?.split("-")[1]
     );
-    expect(new Set(traces).size).toBe(6);
+    expect(new Set(traces).size).toBe(8);
     expect(logger.records[1]).toMatchObject({
       body: "cron.completed",
       trace_id: traces[1],
@@ -171,6 +181,7 @@ describe("cron handler", () => {
     expect(tracer.spans.map((span) => span.name)).toEqual([
       "cron audit.purge-events",
       "cron jobs.purge-idempotency-keys",
+      "cron billing.expire-trials",
       "cron notifications.purge",
     ]);
     expect(tracer.spans[0]).toMatchObject({
@@ -195,6 +206,12 @@ describe("cron handler", () => {
       expect.objectContaining({
         attributes: {
           "app.cron.name": "jobs.purge-idempotency-keys",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "billing.expire-trials",
           "app.cron.schedule": "17 3 * * *",
         },
       }),

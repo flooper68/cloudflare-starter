@@ -5,6 +5,7 @@
 // does the work with its retries.
 
 import { purgeAuditEventsJob } from "./audit";
+import { expireTrialsJob } from "./billing";
 import { createCronCatalog, enqueueJob, purgeIdempotencyKeysJob } from "./jobs";
 import type { Clock, Ids } from "./kernel";
 import {
@@ -42,6 +43,17 @@ export const cronCatalog = createCronCatalog<CronDeps>([
     schedule: DAILY,
     run: (deps, { context }) =>
       enqueueJob(deps, purgeIdempotencyKeysJob, {}, { context }),
+  },
+  {
+    name: "billing.expire-trials",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        expireTrialsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
   },
   {
     name: "notifications.purge",

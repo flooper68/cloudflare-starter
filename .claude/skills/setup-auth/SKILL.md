@@ -33,6 +33,8 @@ Required vars per environment, no defaults and none shipped in `wrangler.jsonc` 
 
 Required vars `RATE_LIMITING` (`cloudflare`|`none`) and `TURNSTILE` (`on`|`off`), plus `TURNSTILE_SITE_KEY` (var) and `TURNSTILE_SECRET_KEY` (secret) with `on`. Locally use Cloudflare's test keys from `.dev.vars.example`. Per deployed environment the user creates a Managed Turnstile widget in the dashboard (`bun run setup:cloudflare --env <env>` prints the steps; you cannot do it for them), you put the site key in that environment's vars and they store the secret with `bun run setup:secrets --env <env>`. Limits live in `RATE_LIMIT_POLICIES` (`packages/features/src/abuse/domain/policies.ts`). Guide: `docs/guides/how-to-configure-abuse-protection.md`.
 
+Admin portal: `ADMIN_PORTAL` (on | off) is required too, no default, asked and written by the same `setup:auth` run (`doctor` checks it). Platform admins are users with `role=admin`: the verified `BOOTSTRAP_ADMIN_EMAIL` account becomes one automatically; for anyone else run `bun run setup:admin --email <address> --dry-run`, then without `--dry-run` (local D1 by default; `--remote --env <env>` changes a deployed database, so ask first). Guide: `docs/guides/how-to-use-admin-portal.md`.
+
 ## MCP (Claude as a client)
 
 On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with that URL; Claude registers itself, the user signs in and approves on `/consent`. Tools live in `apps/web/src/server/mcp/tools.ts`. Rule: every tRPC procedure gets a tool or a reasoned exemption; `parity.test.ts` enforces it.

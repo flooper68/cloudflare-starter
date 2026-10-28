@@ -4,11 +4,18 @@ import "@/styles/globals.css";
 
 import { brand, Logo } from "@cloudflare-starter/ui";
 
+import WebAnalytics from "@/components/WebAnalytics.astro";
+
 interface Props {
   title: string;
+  /**
+   * False on pages whose URL carries a credential (an invitation or reset token), so the
+   * Web Analytics beacon never reports it.
+   */
+  analytics?: boolean;
 }
 
-const { title } = Astro.props;
+const { title, analytics = true } = Astro.props;
 const signedIn = Boolean(Astro.locals.user);
 ---
 
@@ -43,5 +50,6 @@ const signedIn = Boolean(Astro.locals.user);
       </div>
     </header>
     <slot />
+    {analytics && <WebAnalytics />}
   </body>
 </html>

@@ -2,8 +2,11 @@
 export const TRACEPARENT_PATTERN =
   /^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/;
 
-/** Which edge started the work: an HTTP request, a queue message or a cron run. */
-export type RequestSource = "http" | "queue" | "cron";
+/**
+ * Which edge started the work: an HTTP request, a queue message, a cron run, or an
+ * operator's script (`bun run setup:admin`, which writes D1 through Wrangler).
+ */
+export type RequestSource = "http" | "queue" | "cron" | "script";
 
 /**
  * Who and what one unit of work is about, built once at the edge (middleware, queue
@@ -21,6 +24,11 @@ export interface RequestContext {
   readonly traceFlags: string;
   readonly source: RequestSource;
   readonly userId: string | null;
+  /**
+   * The admin impersonating `userId` in this request's session, if any; audit events then
+   * name them as impersonator.
+   */
+  readonly impersonatorUserId?: string | null;
   readonly workspaceId: string | null;
   readonly ip: string | null;
   /** The deployed Worker version (version_metadata id); "local" in dev and tests. */

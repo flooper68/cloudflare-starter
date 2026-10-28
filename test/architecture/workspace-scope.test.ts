@@ -49,10 +49,38 @@ const USER_LEVEL_PROCEDURES: Readonly<Record<string, string>> = {
 };
 
 /** Features whose data is workspace-scoped: their use cases take an actor. */
-const WORKSPACE_SCOPED_FEATURES = ["files", "workspaces"] as const;
+const WORKSPACE_SCOPED_FEATURES = ["billing", "files", "workspaces"] as const;
 
 /** Files in those features that are not actor use cases, with the reason. */
 const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
+  "billing/resolve-entitlements.ts":
+    "reads a workspace's billing for the gate and billing use cases, whose callers authorized it",
+  "billing/assert-feature.ts":
+    "called through the BillingGate by a use case that checked the actor first",
+  "billing/assert-limit.ts":
+    "called through the BillingGate by a use case that checked the actor first",
+  "billing/record-usage.ts":
+    "called through the BillingGate by a use case that checked the actor first",
+  "billing/measure-metric.ts":
+    "measures a workspace for assertLimit and the usage summaries, whose callers authorized it",
+  "billing/get-usage-summary.ts":
+    "for a member through getBillingSummary or for a platform admin",
+  "billing/create-billing-gate.ts": "builds the gate, not a use case",
+  "billing/start-trial.ts": "runs when a workspace is created; no actor yet",
+  "billing/expire-trials.ts": "daily cron over all workspaces; no actor",
+  "billing/apply-subscription-change.ts":
+    "the provider's webhook; authenticated by its signature, no actor",
+  "billing/assign-plan.ts": "platform admin, not a member of the workspace",
+  "billing/set-addons.ts": "platform admin, not a member of the workspace",
+  "billing/set-override.ts": "platform admin, not a member of the workspace",
+  "billing/get-billing-overview.ts":
+    "platform admin overview across all workspaces; no actor",
+  "billing/get-workspace-billing.ts":
+    "platform admin, not a member of the workspace",
+  "files/measure-workspace-storage.ts":
+    "billing's storage_bytes metric, for a workspace its caller authorized",
+  "workspaces/count-workspace-seats.ts":
+    "billing's seats metric, for a workspace its caller authorized",
   "files/r2-presign.ts": "S3 signing helper, not a use case",
   "files/delete-workspace-files.ts":
     "runs during account deletion for workspaces being deleted; no actor exists",
@@ -141,7 +169,7 @@ describe("workspace scope", () => {
     expect(
       body,
       "data belongs to a workspace: add workspace_id NOT NULL, or an exemption with a reason"
-    ).toMatch(/`workspace_id` text NOT NULL/);
+    ).toMatch(/`workspace_id` text (PRIMARY KEY )?NOT NULL/);
   });
 
   it("lists only real procedures as user-level", () => {

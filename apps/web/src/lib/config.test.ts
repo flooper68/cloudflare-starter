@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   ConfigError,
   parseAbuseConfig,
+  parseAnalyticsConfig,
   parseAppConfig,
   parseOptionalFeature,
   parsePlatformConfig,
@@ -35,6 +36,8 @@ describe("web config", () => {
         WORKSPACE_MODE: "single",
         SIGN_UP: "invite",
         BOOTSTRAP_ADMIN_EMAIL: "founder@acme.test",
+        ADMIN_PORTAL: "on",
+        BILLING: "off",
       }).workspaces
     ).toEqual({
       mode: "single",
@@ -44,8 +47,43 @@ describe("web config", () => {
     });
   });
 
+  it("requires ADMIN_PORTAL, on or off, without a default", () => {
+    const workspaces = {
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      BILLING: "off",
+    };
+    expect(
+      parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "off" })
+        .ADMIN_PORTAL
+    ).toBe("off");
+    expect(() => parseAppConfig({ ...core, ...workspaces })).toThrow(
+      /ADMIN_PORTAL is not set: set ADMIN_PORTAL to one of on, off/
+    );
+    expect(() =>
+      parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "true" })
+    ).toThrow(ConfigError);
+  });
+
   it("refuses to start without WORKSPACE_MODE and SIGN_UP", () => {
     expect(() => parseAppConfig(core)).toThrow(/WORKSPACE_MODE must be/);
+  });
+
+  it("parses BILLING and refuses to start without it or with an unknown mode", () => {
+    const workspaces = {
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      ADMIN_PORTAL: "on",
+    };
+    expect(
+      parseAppConfig({ ...core, ...workspaces, BILLING: "manual" }).billing
+    ).toEqual({ mode: "manual" });
+    expect(() => parseAppConfig({ ...core, ...workspaces })).toThrow(
+      /BILLING must be off, manual or provider/
+    );
+    expect(() =>
+      parseAppConfig({ ...core, ...workspaces, BILLING: "stripe" })
+    ).toThrow(/BILLING must be off, manual or provider/);
   });
 });
 
@@ -204,5 +242,71 @@ describe("platform config", () => {
       expect(error).toBeInstanceOf(ConfigError);
       expect((error as ConfigError).setting).toBe(setting);
     });
+  });
+});
+
+describe("analytics config", () => {
+  const secret = "analytics-id-secret-0123456789abcdef";
+
+  it("parses both settings, with the secret and token they need", () => {
+    expect(
+      parseAnalyticsConfig({
+        ANALYTICS: "analytics-engine",
+        ANALYTICS_ID_SECRET: secret,
+        WEB_ANALYTICS: "cloudflare",
+        WEB_ANALYTICS_TOKEN: "0123abcd",
+      })
+    ).toEqual({
+      ANALYTICS: "analytics-engine",
+      ANALYTICS_ID_SECRET: secret,
+      WEB_ANALYTICS: "cloudflare",
+      WEB_ANALYTICS_TOKEN: "0123abcd",
+    });
+    expect(
+      parseAnalyticsConfig({ ANALYTICS: "none", WEB_ANALYTICS: "none" })
+    ).toEqual({
+      ANALYTICS: "none",
+      ANALYTICS_ID_SECRET: null,
+      WEB_ANALYTICS: "none",
+      WEB_ANALYTICS_TOKEN: null,
+    });
+  });
+
+  it.each([
+    [
+      { WEB_ANALYTICS: "none" },
+      "ANALYTICS",
+      /ANALYTICS is not set: .*setup:analytics/,
+    ],
+    [{ ANALYTICS: "posthog", WEB_ANALYTICS: "none" }, "ANALYTICS", /"posthog"/],
+    [{ ANALYTICS: "none" }, "WEB_ANALYTICS", /WEB_ANALYTICS is not set/],
+    [
+      { ANALYTICS: "analytics-engine", WEB_ANALYTICS: "none" },
+      "ANALYTICS_ID_SECRET",
+      /needs the ANALYTICS_ID_SECRET secret/,
+    ],
+    [
+      {
+        ANALYTICS: "analytics-engine",
+        ANALYTICS_ID_SECRET: "too-short",
+        WEB_ANALYTICS: "none",
+      },
+      "ANALYTICS_ID_SECRET",
+      /32\+ characters/,
+    ],
+    [
+      { ANALYTICS: "none", WEB_ANALYTICS: "cloudflare" },
+      "WEB_ANALYTICS_TOKEN",
+      /needs WEB_ANALYTICS_TOKEN/,
+    ],
+  ])("refuses %j naming %s", (env, setting, message) => {
+    try {
+      parseAnalyticsConfig(env);
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigError);
+      expect((error as ConfigError).setting).toBe(setting);
+      expect((error as Error).message).toMatch(message);
+    }
   });
 });

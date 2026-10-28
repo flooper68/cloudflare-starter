@@ -1,4 +1,6 @@
 import {
+  type BillingSettings,
+  billingSettingsSchema,
   type WorkspaceSettings,
   workspaceSettingsSchema,
 } from "@cloudflare-starter/features";
@@ -30,12 +32,21 @@ const envSchema = z.object({
   APP_ENV: z.enum(["local", "develop", "staging", "production"]),
 });
 
+/** Whether the admin portal (`/admin`, the `admin.*` procedures and tools) is served. */
+export const ADMIN_PORTAL_VALUES = ["on", "off"] as const;
+export type AdminPortalSetting = (typeof ADMIN_PORTAL_VALUES)[number];
+
 /**
  * The environment's config. `workspaces` holds WORKSPACE_MODE, SIGN_UP, SIGN_UP_DOMAINS and
  * BOOTSTRAP_ADMIN_EMAIL, required and without defaults (docs/guides/how-to-configure-workspaces.md).
+ * `billing` holds BILLING (off | manual | provider), required and without a default
+ * (docs/guides/how-to-configure-plans-and-billing.md). `ADMIN_PORTAL` (on | off) is
+ * required too (docs/guides/how-to-use-admin-portal.md).
  */
 export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
+  readonly billing: BillingSettings;
+  readonly ADMIN_PORTAL: AdminPortalSetting;
 };
 
 export type RequiredAppConfig = Omit<
@@ -60,6 +71,13 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
   return {
     ...envSchema.parse(env),
     workspaces: workspaceSettingsSchema.parse(env),
+    ADMIN_PORTAL: requiredChoice(
+      env,
+      "ADMIN_PORTAL",
+      ADMIN_PORTAL_VALUES,
+      "(bun run setup:auth writes it into each environment's vars; .dev.vars for local)"
+    ),
+    billing: billingSettingsSchema.parse(env),
   };
 }
 
@@ -193,6 +211,62 @@ export function parseAbuseConfig(env: PartialEnv): AbuseConfig {
     throw new ConfigError(
       "TURNSTILE_SECRET_KEY",
       "TURNSTILE=on needs the TURNSTILE_SECRET_KEY secret: bun run setup:secrets --env <env>"
+    );
+  }
+  return config;
+}
+
+/** Where product events go: Workers Analytics Engine (ANALYTICS_EVENTS), or nowhere. */
+export const ANALYTICS_PROVIDERS = ["analytics-engine", "none"] as const;
+/** Whether pages load Cloudflare Web Analytics' cookieless beacon. */
+export const WEB_ANALYTICS_SETTINGS = ["cloudflare", "none"] as const;
+
+export interface AnalyticsConfig {
+  readonly ANALYTICS: (typeof ANALYTICS_PROVIDERS)[number];
+  readonly ANALYTICS_ID_SECRET: string | null;
+  readonly WEB_ANALYTICS: (typeof WEB_ANALYTICS_SETTINGS)[number];
+  readonly WEB_ANALYTICS_TOKEN: string | null;
+}
+
+const SETUP_ANALYTICS =
+  "(bun run setup:analytics --env <env> writes it into apps/web/wrangler.jsonc; locally apps/web/.dev.vars)";
+
+/**
+ * Product and web analytics settings (docs/guides/how-to-setup-product-analytics.md).
+ * Required, no defaults: each environment states whether it collects anything.
+ * ANALYTICS=analytics-engine needs the ANALYTICS_ID_SECRET secret (32+ characters, the key
+ * of the pseudonymous ids); WEB_ANALYTICS=cloudflare needs WEB_ANALYTICS_TOKEN.
+ */
+export function parseAnalyticsConfig(env: PartialEnv): AnalyticsConfig {
+  const config: AnalyticsConfig = {
+    ANALYTICS: requiredChoice(
+      env,
+      "ANALYTICS",
+      ANALYTICS_PROVIDERS,
+      SETUP_ANALYTICS
+    ),
+    ANALYTICS_ID_SECRET: env.ANALYTICS_ID_SECRET || null,
+    WEB_ANALYTICS: requiredChoice(
+      env,
+      "WEB_ANALYTICS",
+      WEB_ANALYTICS_SETTINGS,
+      SETUP_ANALYTICS
+    ),
+    WEB_ANALYTICS_TOKEN: env.WEB_ANALYTICS_TOKEN || null,
+  };
+  if (
+    config.ANALYTICS === "analytics-engine" &&
+    (config.ANALYTICS_ID_SECRET?.length ?? 0) < 32
+  ) {
+    throw new ConfigError(
+      "ANALYTICS_ID_SECRET",
+      "ANALYTICS=analytics-engine needs the ANALYTICS_ID_SECRET secret (32+ characters): bun run setup:secrets --env <env>"
+    );
+  }
+  if (config.WEB_ANALYTICS === "cloudflare" && !config.WEB_ANALYTICS_TOKEN) {
+    throw new ConfigError(
+      "WEB_ANALYTICS_TOKEN",
+      "WEB_ANALYTICS=cloudflare needs WEB_ANALYTICS_TOKEN, the site token from the Cloudflare dashboard (bun run setup:analytics --env <env>)"
     );
   }
   return config;

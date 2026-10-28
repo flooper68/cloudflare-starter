@@ -4,7 +4,7 @@ import type { FlagRolloutBy } from "./catalog";
 export interface FlagSubject {
   readonly userId: string | null;
   readonly workspaceId: string | null;
-  /** The workspace's plan; null until plans exist. */
+  /** The workspace's plan in effect (billing `resolveEntitlements`); null without a workspace. */
   readonly plan: string | null;
   /** APP_ENV of the deployment. */
   readonly environment: string;

@@ -118,4 +118,36 @@ describe("recordAuditEvent", () => {
     ).rejects.toThrow(InvalidAuditInputError);
     expect(await storedRows()).toHaveLength(before);
   });
+
+  it("names the impersonating admin on events of the impersonated user", async () => {
+    const context = testRequestContext({
+      userId: "user-mia",
+      impersonatorUserId: "user-admin",
+    });
+    const ids = { uuid: () => "imp-00000000-0000-4000-8000-000000000001" };
+    const own = await recordAuditEvent({ ...deps(), ids }, context, {
+      action: "workspace.created",
+      actor: { kind: "user", userId: "user-mia" },
+      workspaceId: "ws-imp",
+      target: { type: "workspace", id: "ws-imp" },
+      metadata: { kind: "shared" },
+    });
+    expect(own.actor).toMatchObject({
+      userId: "user-mia",
+      impersonatorUserId: "user-admin",
+    });
+    const other = await recordAuditEvent(
+      {
+        ...deps(),
+        ids: { uuid: () => "imp-00000000-0000-4000-8000-000000000002" },
+      },
+      context,
+      {
+        action: "user.unbanned",
+        actor: { kind: "admin", userId: "user-other" },
+        target: { type: "user", id: "user-x" },
+      }
+    );
+    expect(other.actor.impersonatorUserId ?? null).toBeNull();
+  });
 });

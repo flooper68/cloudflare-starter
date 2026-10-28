@@ -6,13 +6,17 @@
  *  - WORKSPACE_MODE: personal | single | multi
  *  - SIGN_UP: open | invite
  *  - SIGN_UP_DOMAINS: email domains that may sign up without an invitation
- *  - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
+ *  - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode, and
+ *    becomes a platform admin once verified
+ *  - ADMIN_PORTAL: on | off: the admin portal (/admin, admin_* MCP tools) for role=admin
+ *  - BILLING: off | manual | provider (docs/guides/how-to-configure-plans-and-billing.md)
  * Press Enter to keep the current value. The answers are checked with the same rules the
  * app applies at startup. Deploy afterwards for the change to take effect.
- * docs/guides/how-to-configure-workspaces.md
+ * docs/guides/how-to-configure-workspaces.md, docs/guides/how-to-use-admin-portal.md
  */
 import { parseArgs } from "node:util";
 
+import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 import {
   ask,
@@ -57,9 +61,22 @@ const SETTINGS: readonly Setting[] = [
   {
     name: "BOOTSTRAP_ADMIN_EMAIL",
     prompt:
-      "Email that may always sign up; owns the workspace in single mode (blank for none)",
+      "Email that may always sign up; owns the workspace in single mode and becomes an admin once verified (blank for none)",
+  },
+  {
+    name: "ADMIN_PORTAL",
+    prompt:
+      "Admin portal (/admin and the admin_* MCP tools) for users with role=admin: on or off",
+  },
+  {
+    name: "BILLING",
+    prompt:
+      "Plans and limits: off (everything unlimited), manual (an admin assigns plans) or provider (online checkout; needs a provider adapter in apps/web/src/server/billing-provider.ts)",
   },
 ];
+
+/** ADMIN_PORTAL is required and checked on its own; the rest by workspaceSettingsSchema. */
+const ADMIN_PORTAL_VALUES = ["on", "off"];
 
 const config = readWranglerConfig();
 for (const env of environments) {
@@ -75,22 +92,43 @@ for (const env of environments) {
     next[setting.name] = answer === "-" ? "" : answer || current;
   }
 
-  if (dryRun && !next.WORKSPACE_MODE && !next.SIGN_UP) {
+  if (
+    dryRun &&
+    !next.WORKSPACE_MODE &&
+    !next.SIGN_UP &&
+    !next.BILLING &&
+    !next.ADMIN_PORTAL
+  ) {
     // wrangler.jsonc ships no choice; the real run asks for it.
     console.log(
-      `  (dry run) ${env}: WORKSPACE_MODE and SIGN_UP are not set yet; the real run asks for them`
+      `  (dry run) ${env}: WORKSPACE_MODE, SIGN_UP, BILLING and ADMIN_PORTAL are not set yet; the real run asks for them`
     );
     continue;
   }
 
+  if (!ADMIN_PORTAL_VALUES.includes(next.ADMIN_PORTAL ?? "")) {
+    fail(`${env}: ADMIN_PORTAL must be on or off (no default)`);
+  }
+  const { ADMIN_PORTAL: _portal, ...workspaceVars } = next;
   const parsed = workspaceSettingsSchema.safeParse(
     Object.fromEntries(
-      Object.entries(next).map(([key, value]) => [key, value || undefined])
+      Object.entries(workspaceVars).map(([key, value]) => [
+        key,
+        value || undefined,
+      ])
     )
   );
   if (!parsed.success) {
     fail(
       `${env}: ${parsed.error.issues.map((issue) => issue.message).join("; ")}`
+    );
+  }
+  const billing = billingSettingsSchema.safeParse({
+    BILLING: next.BILLING || undefined,
+  });
+  if (!billing.success) {
+    fail(
+      `${env}: ${billing.error.issues.map((issue) => issue.message).join("; ")}`
     );
   }
   // The same refusals as apps/web/src/server/auth.ts at startup.
@@ -116,7 +154,7 @@ for (const env of environments) {
     setWranglerValue(envPath(env, "vars", name), value, dryRun);
   }
   console.log(
-    `✓ ${env}: WORKSPACE_MODE=${next.WORKSPACE_MODE}, SIGN_UP=${next.SIGN_UP}`
+    `✓ ${env}: WORKSPACE_MODE=${next.WORKSPACE_MODE}, SIGN_UP=${next.SIGN_UP}, BILLING=${next.BILLING}, ADMIN_PORTAL=${next.ADMIN_PORTAL}`
   );
 }
 

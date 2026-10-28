@@ -1,12 +1,8 @@
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-  redirect,
-} from "@tanstack/react-router";
+import { createRoute, createRouter, redirect } from "@tanstack/react-router";
+
+import { adminLayoutRoute, adminRoutes } from "@/components/admin/routes";
 
 import { AppLayout } from "./components/AppLayout";
-import { AppNotFoundPage } from "./pages/AppNotFoundPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EmailDemoPage } from "./pages/EmailDemoPage";
 import { MembersPage } from "./pages/MembersPage";
@@ -15,14 +11,17 @@ import { NotificationsPage } from "./pages/NotificationsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { QueueDemoPage } from "./pages/QueueDemoPage";
 import { UploadDemoPage } from "./pages/UploadDemoPage";
+import { rootRoute } from "./root-route";
 
-const rootRoute = createRootRoute({
+/** The app's pages, inside the app shell (AppLayout). */
+const appLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "app-layout",
   component: AppLayout,
-  notFoundComponent: AppNotFoundPage,
 });
 
 const appIndexRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app",
   beforeLoad: () => {
     throw redirect({ to: "/app/dashboard" });
@@ -30,63 +29,67 @@ const appIndexRoute = createRoute({
 });
 
 const dashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/dashboard",
   component: DashboardPage,
 });
 
 const profileRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/profile",
   component: ProfilePage,
 });
 
 const membersRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/members",
   component: MembersPage,
 });
 
 const uploadDemoRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/upload-demo",
   component: UploadDemoPage,
 });
 
 const queueDemoRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/queue-demo",
   component: QueueDemoPage,
 });
 
 const emailDemoRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/email-demo",
   component: EmailDemoPage,
 });
 
 const notificationsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/notifications",
   component: NotificationsPage,
 });
 
 const notificationPreferencesRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: "/app/notifications/preferences",
   component: NotificationPreferencesPage,
 });
 
 const routeTree = rootRoute.addChildren([
-  appIndexRoute,
-  dashboardRoute,
-  profileRoute,
-  membersRoute,
-  uploadDemoRoute,
-  queueDemoRoute,
-  emailDemoRoute,
-  notificationsRoute,
-  notificationPreferencesRoute,
+  appLayoutRoute.addChildren([
+    appIndexRoute,
+    dashboardRoute,
+    profileRoute,
+    membersRoute,
+    uploadDemoRoute,
+    queueDemoRoute,
+    emailDemoRoute,
+    notificationsRoute,
+    notificationPreferencesRoute,
+  ]),
+  // The admin portal (/admin/*): its pages are the adminRoutes array.
+  adminLayoutRoute.addChildren(adminRoutes),
 ]);
 
 export function createAppRouter() {

@@ -1,16 +1,21 @@
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
+import type { ProductAnalytics } from "../platform";
+import { trackEvent } from "../product-analytics";
 import {
   CREATOR_ROLE,
   DEFAULT_MEMBER_ROLE,
   decideSignUp,
+  memberJoinedEvent,
   PERSONAL_WORKSPACE_NAME,
   personalWorkspaceId,
   type Role,
   SINGLE_WORKSPACE_ID,
   type WorkspaceSettings,
+  workspaceCreatedEvent,
 } from "./domain";
+import { identifyMember } from "./identify-member";
 import { workspaceMembers, workspaces } from "./workspaces.schema";
 
 /**
@@ -29,6 +34,9 @@ export async function provisionUser(
     readonly clock: Clock;
     readonly ids: Ids;
     readonly requestContext: RequestContext;
+    readonly analytics: ProductAnalytics;
+    /** Starts a new workspace's plan (billing's trial). */
+    readonly billing: BillingGate;
   },
   input: {
     readonly user: { readonly id: string; readonly email: string };
@@ -75,6 +83,19 @@ export async function provisionUser(
       target: { type: "workspace", id: workspaceId },
       metadata: { kind: "personal" },
     });
+    trackEvent(
+      deps,
+      { ...deps.requestContext, userId: input.user.id, workspaceId },
+      workspaceCreatedEvent,
+      { kind: "personal" }
+    );
+    await deps.billing.workspaceCreated(workspaceId);
+    // After billing started the plan, so the traits carry it.
+    await identifyMember(deps, {
+      userId: input.user.id,
+      workspaceId,
+      role: CREATOR_ROLE,
+    });
     return { workspaceId, role: CREATOR_ROLE };
   }
 
@@ -100,12 +121,29 @@ export async function provisionUser(
       kind: "shared",
       createdBy: input.user.id,
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: workspaces.id });
+  // The first sign-up creates the app's workspace: its plan starts and it is tracked once,
+  // like a personal one.
+  const workspaceStarted = async (created: readonly { id: string }[]) => {
+    if (created.length === 0) return;
+    await deps.billing.workspaceCreated(SINGLE_WORKSPACE_ID);
+    trackEvent(
+      deps,
+      {
+        ...deps.requestContext,
+        userId: input.user.id,
+        workspaceId: SINGLE_WORKSPACE_ID,
+      },
+      workspaceCreatedEvent,
+      { kind: "shared" }
+    );
+  };
   if (!role) {
-    await createWorkspace;
+    await workspaceStarted(await createWorkspace);
     return { workspaceId: null, role: null };
   }
-  await deps.db.batch([
+  const [created] = await deps.db.batch([
     createWorkspace,
     deps.db
       .insert(workspaceMembers)
@@ -117,6 +155,7 @@ export async function provisionUser(
       })
       .onConflictDoNothing(),
   ]);
+  await workspaceStarted(created);
   await recordAuditEvent(deps, deps.requestContext, {
     action: "workspace.member_joined",
     actor: { kind: "user", userId: input.user.id },
@@ -124,5 +163,15 @@ export async function provisionUser(
     target: { type: "user", id: input.user.id },
     metadata: { role },
   });
+  const actor = {
+    userId: input.user.id,
+    workspaceId: SINGLE_WORKSPACE_ID,
+    role,
+  };
+  trackEvent(deps, { ...deps.requestContext, ...actor }, memberJoinedEvent, {
+    role,
+    via: "sign_up",
+  });
+  await identifyMember(deps, actor);
   return { workspaceId: SINGLE_WORKSPACE_ID, role };
 }

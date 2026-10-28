@@ -1,4 +1,5 @@
 export type { Actor } from "./actor";
+export { memberJoinedEvent, workspaceCreatedEvent } from "./analytics-events";
 export { type WorkspaceSettings, workspaceSettingsSchema } from "./config";
 export {
   ActionNotAllowedError,

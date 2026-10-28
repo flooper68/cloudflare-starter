@@ -1,17 +1,22 @@
 import type { Database } from "../database";
-import type { Clock, Ids } from "../kernel";
-import type { Actor } from "../workspaces";
+import type { BillingGate, Clock, Ids } from "../kernel";
+import { type Actor, requirePermission } from "../workspaces";
 import { createFileRecord } from "./create-file-record";
 import { PresignedUrlsUnavailableError, type UploadInput } from "./domain";
 import { presignR2Url, type R2Config } from "./r2-presign";
 
-/** Presigned path: records the file and returns a PUT URL the browser uploads to directly. */
+/**
+ * Presigned path: records the file and returns a PUT URL the browser uploads to directly.
+ * A gated feature (`files.presigned_upload`): checked after the permission, before the
+ * storage limits createFileRecord checks.
+ */
 export async function createPresignedUpload(
   deps: {
     readonly db: Database;
     readonly clock: Clock;
     readonly ids: Ids;
     readonly r2: R2Config | null;
+    readonly billing: BillingGate;
   },
   actor: Actor,
   input: UploadInput
@@ -20,6 +25,11 @@ export async function createPresignedUpload(
   readonly r2Key: string;
   readonly uploadUrl: string;
 }> {
+  requirePermission(actor, "files.write");
+  await deps.billing.requireFeature(
+    actor.workspaceId,
+    "files.presigned_upload"
+  );
   const r2 = deps.r2;
   if (!r2)
     throw new PresignedUrlsUnavailableError(
