@@ -85,3 +85,7 @@ Infrastructure to build, each by the first change that needs it (that change car
 | Playwright config against `astro dev`, seeded local D1  | an E2E journey                      |
 
 Each enabler adds its command to `package.json`, to CI, and to the "Layers" table above.
+
+## Performance checks
+
+Performance checks (D1 query budgets, bundle budgets, Web Vitals, load tests) are not a layer of their own: each fits next to a layer above or runs against a deployment. The starter ships none; which a project adopts, and how, is in [performance.md](performance.md).

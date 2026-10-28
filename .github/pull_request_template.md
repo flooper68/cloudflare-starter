@@ -39,6 +39,10 @@ Closes #
 | Item | Kind | Environments | Documented in |
 | ---- | ---- | ------------ | ------------- |
 
+## Dependencies and performance
+
+<!-- New or updated dependencies: what for, changelogs read, `bun audit` result (docs/processes/dependencies.md). Changes to queries, bundles or request paths: effect on the project's performance budgets (docs/architecture/performance.md). Write "none" if neither applies. -->
+
 ## ADR
 
 <!-- Link to docs/decisions/NNNN-*.md, or "not needed because …". -->

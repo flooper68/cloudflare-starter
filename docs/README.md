@@ -23,21 +23,23 @@ How to set up or do something; read while doing it.
 
 Contracts and principles that hold regardless of the current code.
 
-| Doc                                                  | Use when …                                                                                                                                                                  |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [architecture/overview.md](architecture/overview.md) | you plan or review a change, need to know where code belongs, or extend the system (feature, table, procedure, route, binding, queue message, cron job, component, env var) |
-| [architecture/testing.md](architecture/testing.md)   | you decide which tests a change needs, write them, or review whether they are enough                                                                                        |
+| Doc                                                        | Use when …                                                                                                                                                                  |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [architecture/overview.md](architecture/overview.md)       | you plan or review a change, need to know where code belongs, or extend the system (feature, table, procedure, route, binding, queue message, cron job, component, env var) |
+| [architecture/testing.md](architecture/testing.md)         | you decide which tests a change needs, write them, or review whether they are enough                                                                                        |
+| [architecture/performance.md](architecture/performance.md) | you set performance targets, add a performance check, review a change to queries, bundles or request paths, or handle a regression                                          |
 
 ## Processes
 
-How work is planned, reviewed, documented and decided.
+How work is planned, reviewed, documented and decided, and how dependencies are kept current.
 
-| Doc                                                      | Use when …                                                                               |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [processes/development.md](processes/development.md)     | you start any change, write a plan for an agent, or check whether a change is done       |
-| [processes/code-review.md](processes/code-review.md)     | you review a diff, respond to findings, or decide whether to use an independent reviewer |
-| [processes/documentation.md](processes/documentation.md) | you write, move or delete a doc, or run the docs audit                                   |
-| [processes/adrs.md](processes/adrs.md)                   | a change makes or reverses a decision others will build on                               |
+| Doc                                                      | Use when …                                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [processes/development.md](processes/development.md)     | you start any change, write a plan for an agent, or check whether a change is done         |
+| [processes/code-review.md](processes/code-review.md)     | you review a diff, respond to findings, or decide whether to use an independent reviewer   |
+| [processes/documentation.md](processes/documentation.md) | you write, move or delete a doc, or run the docs audit                                     |
+| [processes/adrs.md](processes/adrs.md)                   | a change makes or reverses a decision others will build on                                 |
+| [processes/dependencies.md](processes/dependencies.md)   | you update dependencies, respond to a security advisory, run `bun audit`, or add a package |
 
 ## Decisions
 

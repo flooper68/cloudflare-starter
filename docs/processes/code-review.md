@@ -67,6 +67,7 @@ Automation proves a test exists, not that it is good: reviewers still check that
 - [ ] Secrets never appear in code, config, command arguments, logs, errors or tool results.
 - [ ] Untrusted input (request bodies, query strings, queue messages, tool arguments) is validated with zod at the boundary.
 - [ ] User data in MCP results is inside `<untrusted-data>`; tools that send something outside the app are `outward: true` and say "confirm with the user".
+- [ ] A new dependency has the justification [dependencies.md](dependencies.md#adding-a-dependency) asks for; updated ones have their changelogs read, derived files regenerated and `bun audit` findings triaged; every `overrides` entry and `trustedDependencies` addition has a reason.
 
 ### 3. Cloudflare, D1 and bindings
 
@@ -75,6 +76,7 @@ Automation proves a test exists, not that it is good: reviewers still check that
 - [ ] Generated migration and `migrations/meta/` are committed; no `drizzle-kit push` to remote.
 - [ ] The environment is chosen at build time (`CLOUDFLARE_ENV`); no code assumes `wrangler deploy --env` retargets.
 - [ ] No resource ids, account ids or URLs hard-coded outside `wrangler.jsonc` and secrets.
+- [ ] New or changed queries filter and sort on indexed columns, select only needed columns and run no query per item in a loop; heavy or slow work goes to a queue; no project budget in [performance.md](../architecture/performance.md) is broken or changed without a reason.
 
 ### 4. Tests
 
