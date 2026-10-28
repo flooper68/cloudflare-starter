@@ -5,20 +5,37 @@ Local dev
 ✓ APP_URL http://localhost:4321
 ✓ BETTER_AUTH_SECRET set
 ✓ sign-in: email + password
+✓ APP_ENV=local (local development)
 ✓ email from noreply@example.test (simulated locally)
 ! R2 presigned URLs off (the FILES binding works without them)
+✓ local: WORKSPACE_MODE=multi, SIGN_UP=open
 ✓ local D1 migrations applied
 
 Deploy config (apps/web/wrangler.jsonc)
-! develop: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM (bun run setup:email)
+✓ develop: LOG_SINK=workers-logs
+✓ develop: ERROR_REPORTER=workers-logs
+✓ develop: FEATURE_FLAGS=d1
+✓ develop: APP_ENV=develop
+! develop: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM: password reset and verification requests fail (bun run setup:email)
+! develop: no WORKSPACE_MODE/SIGN_UP yet: bun run setup:auth --env develop before deploying (the Worker refuses to start)
 ! develop: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env develop)
-! staging: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM (bun run setup:email)
+✓ staging: LOG_SINK=workers-logs
+✓ staging: ERROR_REPORTER=workers-logs
+✓ staging: FEATURE_FLAGS=d1
+✓ staging: APP_ENV=staging
+! staging: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM: password reset and verification requests fail (bun run setup:email)
+! staging: no WORKSPACE_MODE/SIGN_UP yet: bun run setup:auth --env staging before deploying (the Worker refuses to start)
 ! staging: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc
 ! staging: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env staging)
-! production: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM (bun run setup:email)
+✓ production: LOG_SINK=workers-logs
+✓ production: ERROR_REPORTER=workers-logs
+✓ production: FEATURE_FLAGS=d1
+✓ production: APP_ENV=production
+! production: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM: password reset and verification requests fail (bun run setup:email)
+! production: no WORKSPACE_MODE/SIGN_UP yet: bun run setup:auth --env production before deploying (the Worker refuses to start)
 ! production: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc
 ! production: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env production)
-✓ ratelimits: 18 bindings, unique namespace_ids
+✓ ratelimits: 21 bindings, unique namespace_ids
 ✓ Wrangler is logged in
 
 All good.
