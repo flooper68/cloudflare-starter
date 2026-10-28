@@ -7,6 +7,7 @@ What sends mail:
 - `/app/email-demo` (tRPC `email.sendTest`, MCP tool `send_test_email`)
 - Better Auth: password reset links and, when enabled, email verification
 - Workspace invitations
+- Notifications: one mail per notification or a daily digest, with RFC 8058 one-click unsubscribe headers ([how-to-send-notifications.md](how-to-send-notifications.md)); without email they stay in the in-app inbox
 
 Email is on when the environment has the `EMAIL` binding and an `EMAIL_FROM` var: `buildPlatform` (`apps/web/src/server/platform.ts`) then gives `platform.email` the Cloudflare adapter, otherwise the noop one (`email.enabled` is false). Without them the demo reports "not configured". Auth links (password reset, verification) then go to the dev log only when `APP_ENV=local` (set in `.dev.vars`); a deployed environment never logs them and answers those requests with 412 `EMAIL_NOT_CONFIGURED` ("Email is not configured for this environment …").
 

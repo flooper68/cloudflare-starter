@@ -139,6 +139,15 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "Pages that look up a token from the URL (invitation links), per IP, against guessing",
   },
+  "notifications.unsubscribe": {
+    limit: 20,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_UNSUBSCRIBE",
+    description:
+      "One-click unsubscribe POSTs from mail links (RFC 8058), per IP: anonymous, authorized by a signed token",
+  },
   "invitation.send": {
     limit: 10,
     periodSeconds: 60,
@@ -173,6 +182,8 @@ export const ROUTE_POLICIES: Readonly<
   "api/files/index.ts": ["upload.user"],
   "mcp.ts": ["mcp.ip", "mcp.user"],
   "invite/[token].astro": ["token.lookup"],
+  "api/notifications/unsubscribe.ts": ["notifications.unsubscribe"],
+  "unsubscribe.astro": ["token.lookup"],
 };
 
 /**

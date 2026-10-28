@@ -11,5 +11,7 @@ export * from "./greetings";
 export { jobCatalog } from "./job-catalog";
 export * from "./jobs";
 export * from "./kernel";
+export { notificationCatalog } from "./notification-catalog";
+export * from "./notifications";
 export * from "./platform";
 export * from "./workspaces";

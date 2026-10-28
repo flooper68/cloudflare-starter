@@ -47,11 +47,15 @@ const controller = (cron: string) => ({
 });
 
 describe("cron handler", () => {
-  it("the daily schedule runs audit.purge-events and jobs.purge-idempotency-keys, each in a new trace", async () => {
+  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys and notifications.purge, each in a new trace", async () => {
     const { platform, logger, jobQueue } = memoryPlatform();
     expect(
       cronCatalog.filter((e) => e.schedule === "17 3 * * *").map((e) => e.name)
-    ).toEqual(["audit.purge-events", "jobs.purge-idempotency-keys"]);
+    ).toEqual([
+      "audit.purge-events",
+      "jobs.purge-idempotency-keys",
+      "notifications.purge",
+    ]);
 
     await runScheduled(controller("17 3 * * *"), platform);
     await runScheduled(controller("17 3 * * *"), platform);
@@ -67,13 +71,19 @@ describe("cron handler", () => {
         source: "/staging/cron",
         data: {},
       }),
+      expect.objectContaining({
+        type: "notifications.purge",
+        source: "/staging/cron",
+        data: { asOf: "2026-10-28T03:17:00.000Z" },
+      }),
       expect.objectContaining({ type: "audit.purge-events" }),
       expect.objectContaining({ type: "jobs.purge-idempotency-keys" }),
+      expect.objectContaining({ type: "notifications.purge" }),
     ]);
     const traces = jobQueue.sent.map(
       (sent) => sent.envelope.traceparent?.split("-")[1]
     );
-    expect(new Set(traces).size).toBe(4);
+    expect(new Set(traces).size).toBe(6);
     expect(logger.records[1]).toMatchObject({
       body: "cron.completed",
       trace_id: traces[1],
@@ -84,6 +94,26 @@ describe("cron handler", () => {
         "app.cron.scheduled_time": "2026-10-28T03:17:00.000Z",
       },
     });
+  });
+
+  it("the digest schedule (08:00 UTC) runs notifications.plan-digests with the run's time", async () => {
+    const { platform, jobQueue } = memoryPlatform();
+    expect(
+      cronCatalog.filter((e) => e.schedule === "0 8 * * *").map((e) => e.name)
+    ).toEqual(["notifications.plan-digests"]);
+    await runScheduled(
+      {
+        cron: "0 8 * * *",
+        scheduledTime: Date.parse("2026-10-28T08:00:00.000Z"),
+      },
+      platform
+    );
+    expect(jobQueue.sent.map((sent) => sent.envelope)).toEqual([
+      expect.objectContaining({
+        type: "notifications.plan-digests",
+        data: { asOf: "2026-10-28T08:00:00.000Z" },
+      }),
+    ]);
   });
 
   it("runs every entry of the schedule; reports a failing one and fails the run", async () => {

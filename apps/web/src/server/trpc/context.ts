@@ -1,5 +1,7 @@
 import { env as workerEnv } from "cloudflare:workers";
 import {
+  type Notify,
+  notify,
   type RequestContext,
   randomIds,
   systemClock,
@@ -29,6 +31,12 @@ export function createAppContext(
 ): Context {
   const platform = buildPlatform(env);
   const scoped = { ...requestContext, userId: user?.id ?? null };
+  const notifier: Notify = (definition, input) =>
+    notify(
+      { jobQueue: platform.jobQueue, clock: systemClock, ids: randomIds },
+      definition,
+      input
+    );
   return {
     db: getDb(env),
     clock: systemClock,
@@ -46,6 +54,8 @@ export function createAppContext(
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
+    notify: notifier,
+    emailOut: platform.email,
     user,
   };
 }

@@ -107,6 +107,30 @@ export {
   type RoleOption,
 } from "../components/patterns/members-table";
 export {
+  NotificationBell,
+  type NotificationBellProps,
+} from "../components/patterns/notification-bell";
+export {
+  NotificationInbox,
+  type NotificationInboxProps,
+  type NotificationView,
+} from "../components/patterns/notification-inbox";
+export {
+  type NotificationItem,
+  NotificationList,
+  type NotificationListProps,
+  NotificationListSkeleton,
+  relativeTime,
+} from "../components/patterns/notification-list";
+export {
+  type EmailCadenceOption,
+  type NotificationChannelName,
+  type NotificationPreferenceRow,
+  NotificationPreferences,
+  type NotificationPreferencesData,
+  type NotificationPreferencesProps,
+} from "../components/patterns/notification-preferences";
+export {
   SettingsHeader,
   SettingsLayout,
   type SettingsLayoutProps,
@@ -121,6 +145,11 @@ export {
   SettingsSection,
   type SettingsSectionProps,
 } from "../components/patterns/settings-page";
+export {
+  UnsubscribeCard,
+  type UnsubscribeCardProps,
+  type UnsubscribeState,
+} from "../components/patterns/unsubscribe-card";
 export {
   type WorkspaceOption,
   WorkspaceSwitcher,

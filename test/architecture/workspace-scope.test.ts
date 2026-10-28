@@ -25,6 +25,12 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
     "platform configuration, not tenant data: one switch per flag for the whole deployment",
   feature_flag_rules:
     "platform configuration, not tenant data: a rule may target a workspace by id, but belongs to the flag",
+  notifications:
+    "user-scoped messages; workspace_id optional; rows cascade with the workspace",
+  notification_preferences:
+    "a user's own settings across workspaces; rows cascade with the user",
+  notification_settings:
+    "a user's own settings across workspaces; rows cascade with the user",
   job_idempotency_keys:
     "platform table of the job queue: keys are per job type and payload, the workspace travels in the job envelope",
 };

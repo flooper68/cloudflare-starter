@@ -1,26 +1,34 @@
-import { and, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 
+import { user } from "../accounts";
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { Clock, Ids, Notify, RequestContext } from "../kernel";
 import { sha256Hex } from "../platform";
 import {
   InvitationExpiredError,
   InvitationNotFoundError,
   InvitationWrongAccountError,
   invitationStatus,
+  memberJoinedNotification,
   normalizeEmail,
   requireMode,
+  rolesAllowedTo,
   type WorkspaceMode,
 } from "./domain";
-import { workspaceInvitations, workspaceMembers } from "./workspaces.schema";
+import {
+  workspaceInvitations,
+  workspaceMembers,
+  workspaces,
+} from "./workspaces.schema";
 
 /**
  * The signed-in user accepts the invitation behind `token`: it must be pending and sent
  * to their email. Using it up and adding the membership happen in one batch, and the
  * update only matches while `accepted_at IS NULL`, so a link works once even under
  * concurrent clicks. The workspace becomes the user's active one. Accepting again as the
- * same member succeeds without changes.
+ * same member succeeds without changes. The members who can manage members get a
+ * `workspaces.member-joined` notification.
  */
 export async function acceptInvitation(
   deps: {
@@ -28,6 +36,7 @@ export async function acceptInvitation(
     readonly clock: Clock;
     readonly ids: Ids;
     readonly requestContext: RequestContext;
+    readonly notify: Notify;
   },
   input: {
     readonly mode: WorkspaceMode;
@@ -105,6 +114,40 @@ export async function acceptInvitation(
     workspaceId: invitation.workspaceId,
     target: { type: "invitation", id: invitation.id },
     metadata: { role: invitation.role },
+  });
+
+  const [managers, [workspace], [member]] = await Promise.all([
+    deps.db
+      .select({ userId: workspaceMembers.userId })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, invitation.workspaceId),
+          inArray(workspaceMembers.role, [...rolesAllowedTo("members.manage")])
+        )
+      )
+      .limit(500),
+    deps.db
+      .select({ name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.id, invitation.workspaceId)),
+    deps.db
+      .select({ name: user.name })
+      .from(user)
+      .where(eq(user.id, input.user.id)),
+  ]);
+  await deps.notify(memberJoinedNotification, {
+    recipients: managers.map((manager) => manager.userId),
+    data: {
+      workspaceId: invitation.workspaceId,
+      workspaceName: workspace?.name ?? "your workspace",
+      memberName: member?.name || input.user.email,
+      role: invitation.role,
+    },
+    context: {
+      workspaceId: invitation.workspaceId,
+      requestContext: { ...deps.requestContext, userId: input.user.id },
+    },
   });
   return { workspaceId: invitation.workspaceId };
 }

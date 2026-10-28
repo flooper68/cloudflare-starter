@@ -5,6 +5,7 @@ import * as accountsSchema from "./accounts/accounts.schema";
 import * as auditSchema from "./audit/audit.schema";
 import * as filesSchema from "./files/files.schema";
 import * as jobsSchema from "./jobs/jobs.schema";
+import * as notificationsSchema from "./notifications/notifications.schema";
 import { createDb, type Db } from "./platform";
 import * as workspacesSchema from "./workspaces/workspaces.schema";
 
@@ -13,6 +14,7 @@ export const schema = {
   ...auditSchema,
   ...filesSchema,
   ...jobsSchema,
+  ...notificationsSchema,
   ...workspacesSchema,
 };
 

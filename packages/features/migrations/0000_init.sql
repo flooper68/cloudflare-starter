@@ -268,6 +268,43 @@ CREATE TABLE `job_idempotency_keys` (
 );
 --> statement-breakpoint
 CREATE INDEX `job_idempotency_keys_expires_at_idx` ON `job_idempotency_keys` (`expires_at`);--> statement-breakpoint
+CREATE TABLE `notification_preferences` (
+	`user_id` text NOT NULL,
+	`type` text NOT NULL,
+	`channel` text NOT NULL,
+	`enabled` integer NOT NULL,
+	PRIMARY KEY(`user_id`, `type`, `channel`),
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `notification_settings` (
+	`user_id` text PRIMARY KEY NOT NULL,
+	`email_cadence` text NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `notifications` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`workspace_id` text,
+	`type` text NOT NULL,
+	`data` text NOT NULL,
+	`in_app` integer NOT NULL,
+	`email_state` text NOT NULL,
+	`event_id` text NOT NULL,
+	`read_at` integer,
+	`archived_at` integer,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `notifications_user_id_event_id_idx` ON `notifications` (`user_id`,`event_id`);--> statement-breakpoint
+CREATE INDEX `notifications_user_id_archived_at_created_at_idx` ON `notifications` (`user_id`,`archived_at`,`created_at`);--> statement-breakpoint
+CREATE INDEX `notifications_unread_idx` ON `notifications` (`user_id`) WHERE "notifications"."read_at" IS NULL;--> statement-breakpoint
+CREATE INDEX `notifications_email_state_idx` ON `notifications` (`email_state`,`user_id`) WHERE "notifications"."email_state" = 'pending_digest';--> statement-breakpoint
+CREATE INDEX `notifications_event_id_idx` ON `notifications` (`event_id`);--> statement-breakpoint
+CREATE INDEX `notifications_created_at_idx` ON `notifications` (`created_at`);--> statement-breakpoint
 CREATE TABLE `workspace_invitations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`workspace_id` text NOT NULL,

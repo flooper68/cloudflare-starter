@@ -23,6 +23,7 @@ import {
   router,
   workspaceProcedure,
 } from "./init";
+import { notificationsRouter } from "./notifications-router";
 import { requireFeature } from "./require-feature";
 import { workspaceRouter } from "./workspace-router";
 
@@ -42,6 +43,8 @@ export const appRouter = router({
   }),
 
   workspace: workspaceRouter,
+
+  notifications: notificationsRouter,
 
   storage: router({
     listFiles: workspaceProcedure

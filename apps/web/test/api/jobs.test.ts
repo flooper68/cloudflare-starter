@@ -27,7 +27,7 @@ import { z } from "zod";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform, type Platform } from "@/server/platform";
-import { handleQueueBatch, type QueueDeps } from "@/server/queue";
+import { handleQueueBatch, type QueueDeps, queueDeps } from "@/server/queue";
 
 const TRACE_ID = "4bf92f3577b34da6a3ce929d0e0e4736";
 const TRACEPARENT = `00-${TRACE_ID}-00f067aa0ba902b7-01`;
@@ -87,6 +87,7 @@ function setup(jobs = catalog) {
     tracer,
   };
   const deps: QueueDeps = {
+    ...queueDeps(env as AppEnv),
     db: getDb(env as AppEnv),
     catalog: jobs,
     random: { next: () => 0.5 },

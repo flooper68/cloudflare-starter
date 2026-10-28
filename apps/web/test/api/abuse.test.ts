@@ -18,6 +18,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { ALL as authRoute } from "@/pages/api/auth/[...all]";
 import { POST as uploadRoute } from "@/pages/api/files/index";
+import { POST as unsubscribeRoute } from "@/pages/api/notifications/unsubscribe";
 import { POST as trpcRoute } from "@/pages/api/trpc/[...trpc]";
 import { getAuth, HUMAN_CHECK_HEADER } from "@/server/auth";
 import { getDb } from "@/server/db";
@@ -165,6 +166,36 @@ describe("rate limits", () => {
       "violated-policies": ["upload.user"],
       retryAfterSeconds: 60,
       reference: expect.stringMatching(/^[0-9a-f]{32}$/),
+    });
+  });
+
+  it("answers one-click unsubscribe over notifications.unsubscribe with 429, per IP", async () => {
+    const { limit } = RATE_LIMIT_POLICIES["notifications.unsubscribe"];
+    const { response } = await until429(limit, () =>
+      unsubscribeRoute(
+        context(
+          new Request(
+            `${APP_URL}/api/notifications/unsubscribe?t=not-a-token`,
+            {
+              method: "POST",
+              headers: {
+                "content-type": "application/x-www-form-urlencoded",
+                "cf-connecting-ip": "192.0.2.30",
+              },
+              body: "List-Unsubscribe=One-Click",
+            }
+          )
+        )
+      )
+    );
+    expect(response.headers.get("retry-after")).toBe("60");
+    expect(response.headers.get("ratelimit-policy")).toBe(
+      '"notifications.unsubscribe";q=20;w=60'
+    );
+    expect(await response.json()).toMatchObject({
+      status: 429,
+      instance: "/api/notifications/unsubscribe",
+      "violated-policies": ["notifications.unsubscribe"],
     });
   });
 

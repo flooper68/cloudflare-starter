@@ -10,6 +10,8 @@ import { AppNotFoundPage } from "./pages/AppNotFoundPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EmailDemoPage } from "./pages/EmailDemoPage";
 import { MembersPage } from "./pages/MembersPage";
+import { NotificationPreferencesPage } from "./pages/NotificationPreferencesPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { QueueDemoPage } from "./pages/QueueDemoPage";
 import { UploadDemoPage } from "./pages/UploadDemoPage";
@@ -63,6 +65,18 @@ const emailDemoRoute = createRoute({
   component: EmailDemoPage,
 });
 
+const notificationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/app/notifications",
+  component: NotificationsPage,
+});
+
+const notificationPreferencesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/app/notifications/preferences",
+  component: NotificationPreferencesPage,
+});
+
 const routeTree = rootRoute.addChildren([
   appIndexRoute,
   dashboardRoute,
@@ -71,6 +85,8 @@ const routeTree = rootRoute.addChildren([
   uploadDemoRoute,
   queueDemoRoute,
   emailDemoRoute,
+  notificationsRoute,
+  notificationPreferencesRoute,
 ]);
 
 export function createAppRouter() {

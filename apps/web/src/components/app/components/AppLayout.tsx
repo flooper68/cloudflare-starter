@@ -11,6 +11,7 @@ import { FolderX } from "lucide-react";
 
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
 
+import { NotificationBellMenu } from "../notifications/NotificationBellMenu";
 import { AppSidebar } from "./AppSidebar";
 
 const titles: Record<string, string> = {
@@ -20,6 +21,8 @@ const titles: Record<string, string> = {
   "/app/upload-demo": "Upload demo",
   "/app/queue-demo": "Queue demo",
   "/app/email-demo": "Email demo",
+  "/app/notifications": "Notifications",
+  "/app/notifications/preferences": "Notification settings",
 };
 
 /** Pages act in the active workspace: wait for it, and say so when there is none. */
@@ -62,6 +65,7 @@ export function AppLayout() {
             {titles[pathname] ?? "Not found"}
           </span>
         }
+        actions={<NotificationBellMenu />}
       />
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">
