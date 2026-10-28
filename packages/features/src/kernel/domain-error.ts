@@ -4,7 +4,8 @@ export type DomainErrorKind =
   | "invalid_input"
   | "forbidden"
   | "conflict"
-  | "unavailable";
+  | "unavailable"
+  | "rate_limited";
 
 /**
  * Base class for errors a use case throws on purpose. Features subclass it

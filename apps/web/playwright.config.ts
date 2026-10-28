@@ -9,7 +9,7 @@ const ci = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: "./test/e2e",
-  // Sign-up is rate limited (5 per minute per IP, apps/web/src/server/auth.ts) and the
+  // Sign-up is rate limited (5 per minute per IP, auth.sign-up in packages/features/src/abuse/domain/policies.ts) and the
   // journeys share one dev server: one worker, few sign-ups per run (see helpers.ts).
   workers: 1,
   fullyParallel: false,

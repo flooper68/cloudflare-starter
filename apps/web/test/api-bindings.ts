@@ -22,6 +22,12 @@ export const API_TEST_BINDINGS = {
   R2_ACCESS_KEY_ID: "",
   R2_SECRET_ACCESS_KEY: "",
   R2_FILES_BUCKET_NAME: "",
+  // Abuse protection: the wrangler.jsonc values, and Cloudflare's always-pass test secret
+  // (Siteverify is answered by test/outbound.ts).
+  RATE_LIMITING: "cloudflare",
+  TURNSTILE: "on",
+  TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+  TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
   // Not in wrangler.jsonc (setup:auth writes them per environment); tests of other modes
   // override them (test/api/helpers.ts envWith).
   WORKSPACE_MODE: "multi",

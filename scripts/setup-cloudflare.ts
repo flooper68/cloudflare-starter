@@ -143,6 +143,21 @@ for (const env of parseEnvironments(values.env)) {
   for (const queue of queuePlan(block as Parameters<typeof queuePlan>[0])) {
     setupQueue(queue);
   }
+
+  // Workers Rate Limiting needs no resource: the namespace_id in wrangler.jsonc is enough.
+  const vars = (block.vars as Record<string, string> | undefined) ?? {};
+  if (vars.TURNSTILE === "on") {
+    console.log(
+      [
+        "Turnstile (manual, in the dashboard: no API call from this script)",
+        "  1. Cloudflare dashboard > Turnstile > Add widget, mode Managed.",
+        `  2. Hostnames: this environment's domain (${env}); not localhost.`,
+        `  3. Put the site key in TURNSTILE_SITE_KEY of ${env === "develop" ? "the top-level vars" : `env.${env}.vars`} in apps/web/wrangler.jsonc.`,
+        `  4. Store the secret key: bun run setup:secrets --env ${env} (TURNSTILE_SECRET_KEY).`,
+        "  Guide: docs/guides/how-to-configure-abuse-protection.md",
+      ].join("\n")
+    );
+  }
 }
 
 const remaining = parseEnvironments(values.env).filter(

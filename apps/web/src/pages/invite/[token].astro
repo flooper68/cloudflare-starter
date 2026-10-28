@@ -14,11 +14,25 @@ import { AcceptInvitation } from "@/components/auth/AcceptInvitation";
 import Layout from "@/layouts/Layout.astro";
 import { buildRequiredConfig } from "@/lib/env";
 import { getDb } from "@/server/db";
+import { buildPlatform } from "@/server/platform";
+import {
+  rateLimitedResponse,
+  refuseOverLimit,
+} from "@/server/rate-limited-response";
 
 // The link from an invitation email. Anyone holding it sees what it is for; accepting
 // needs the invited account (workspace.invitations.accept checks it again).
 const token = Astro.params.token ?? "";
-const { user } = Astro.locals;
+const { user, requestContext } = Astro.locals;
+
+// Per IP before the lookup, so invitation tokens cannot be guessed at speed.
+const refused = await refuseOverLimit(
+  buildPlatform(env),
+  "token.lookup",
+  { userId: null, ip: requestContext.ip },
+  (error) => rateLimitedResponse(error, requestContext, Astro.url.pathname)
+);
+if (refused) return refused;
 const { mode } = buildRequiredConfig(env).workspaces;
 
 let preview: InvitationPreview | null = null;

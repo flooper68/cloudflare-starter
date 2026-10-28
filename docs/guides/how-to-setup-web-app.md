@@ -25,16 +25,17 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
+Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), the Workers Rate Limiting bindings `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP` (`ratelimits`, nothing to create), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, and the required abuse-protection settings `RATE_LIMITING` (`cloudflare`|`none`), `TURNSTILE` (`on`|`off`), `TURNSTILE_SITE_KEY` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
 
 Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config.ts):
 
-| Name                                       | Required | Notes                               |
-| ------------------------------------------ | -------- | ----------------------------------- |
-| `APP_URL`                                  | yes      | Public origin, no trailing slash    |
-| `BETTER_AUTH_SECRET`                       | yes      | 32+ characters, one per environment |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables Google sign-in              |
-| `R2_*`                                     | no       | Presigned R2 URLs                   |
+| Name                                       | Required            | Notes                               |
+| ------------------------------------------ | ------------------- | ----------------------------------- |
+| `APP_URL`                                  | yes                 | Public origin, no trailing slash    |
+| `BETTER_AUTH_SECRET`                       | yes                 | 32+ characters, one per environment |
+| `TURNSTILE_SECRET_KEY`                     | with `TURNSTILE=on` | The Turnstile widget's secret key   |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no                  | Enables Google sign-in              |
+| `R2_*`                                     | no                  | Presigned R2 URLs                   |
 
 `bun run doctor` checks the local setup and points out what is missing for each environment.
 
@@ -81,7 +82,9 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run setup:auth --env production
    ```
 
-5. Migrate, build and deploy:
+5. Turnstile, while `TURNSTILE=on` (the default in every environment): create a Managed widget for the environment's hostname in the Cloudflare dashboard and put its site key in that environment's `TURNSTILE_SITE_KEY` in `wrangler.jsonc` (the shipped value is Cloudflare's test key; `setup:cloudflare` prints these steps). Its secret key is set in step 7. Details: [how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#deployed-environments).
+
+6. Migrate, build and deploy:
 
    ```bash
    cd apps/web
@@ -89,7 +92,7 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run deploy:production
    ```
 
-6. Secrets (asks for each one, sends them on stdin; this deploys a new version):
+7. Secrets, including `TURNSTILE_SECRET_KEY` (asks for each one, sends them on stdin; this deploys a new version):
 
    ```bash
    bun run setup:secrets --env production
@@ -106,7 +109,7 @@ Background jobs, the queue consumer, retries, the dead-letter queue and the cron
 ## Verify
 
 1. `curl https://<your-worker-url>/api/hello` returns a JSON hello.
-2. Sign up, sign out, sign in.
+2. Sign up (the Turnstile widget appears and passes), sign out, sign in.
 3. Signed-in visits to `/` land on `/app/dashboard`; signed-out visits to `/app/*` land on `/sign-in`.
 4. Try the demos you configured.
 
@@ -114,7 +117,7 @@ Background jobs, the queue consumer, retries, the dead-letter queue and the cron
 
 ### Every page returns 500 with a zod error
 
-A required secret is missing or too short. Check `APP_URL` and `BETTER_AUTH_SECRET` (32+ characters) in `.dev.vars` or the Worker secrets.
+A required setting is missing or wrong; the error names it. Check `APP_URL` and `BETTER_AUTH_SECRET` (32+ characters) in `.dev.vars` or the Worker secrets, `RATE_LIMITING` and `TURNSTILE` in the vars, and `TURNSTILE_SECRET_KEY` when `TURNSTILE=on` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#troubleshooting)).
 
 ### Every request returns 500 "LOG_SINK is not set" (or ERROR_REPORTER, FEATURE_FLAGS, APP_ENV)
 

@@ -23,7 +23,7 @@ import { REQUEST_ID_HEADER, withRequestContext } from "@/server/http";
 import { buildPlatform } from "@/server/platform";
 import { handleQueueBatch, queueDeps } from "@/server/queue";
 
-import { APP_URL, testRequestContext } from "./helpers";
+import { APP_URL, humanHeaders, testRequestContext } from "./helpers";
 
 const CLIENT_IP = "203.0.113.7";
 
@@ -38,7 +38,7 @@ function authPost(
     headers: {
       "content-type": "application/json",
       origin: APP_URL,
-      "cf-connecting-ip": CLIENT_IP,
+      ...humanHeaders(CLIENT_IP),
       ...(cookie ? { cookie } : {}),
     },
     body: JSON.stringify(body),

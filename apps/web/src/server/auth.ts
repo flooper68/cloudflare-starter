@@ -1,14 +1,18 @@
 import { mcp } from "@better-auth/mcp";
 import {
+  betterAuthRules,
   checkSignUpAllowed,
+  DomainError,
   deleteWorkspaceFiles,
   LastOwnerError,
   prepareUserDeletion,
   provisionUser,
+  RATE_LIMIT_POLICIES,
   randomIds,
   SignUpNotAllowedError,
   schema,
   systemClock,
+  verifyHuman,
 } from "@cloudflare-starter/features";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -20,6 +24,7 @@ import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
 import {
   auditAuthEndpoint,
   auditDatabaseHooks,
+  auditHumanCheckFailed,
   auditPasswordReset,
   contextFor,
 } from "@/server/auth-audit";
@@ -38,6 +43,73 @@ export const MCP_PATH = "/mcp";
 export const SIGN_IN_PAGE = "/sign-in";
 export const CONSENT_PAGE = "/consent";
 export const APP_NAME = "Cloudflare Starter";
+
+/** The header the browser sends the Turnstile token in (Better Auth's captcha convention). */
+export const HUMAN_CHECK_HEADER = "x-captcha-response";
+
+/**
+ * Better Auth endpoints that need a human check, and the action the widget renders with
+ * (the forms pass the same action, and Siteverify echoes it back).
+ */
+export const HUMAN_CHECKED_PATHS: Readonly<
+  Record<string, "sign-up" | "sign-in" | "password-reset">
+> = {
+  "/sign-up/email": "sign-up",
+  "/sign-in/email": "sign-in",
+  "/request-password-reset": "password-reset",
+};
+
+/**
+ * The human check for `hooks.before` (TURNSTILE=on): refuses the human-checked endpoints
+ * unless the verifier accepts the token, and records the refusal in the audit log. Fails
+ * closed: an unavailable provider refuses the request too.
+ */
+async function enforceHumanCheck(
+  env: AppEnv,
+  ctx: {
+    readonly path: string;
+    readonly headers?: Headers;
+    readonly body?: unknown;
+    readonly request?: Request;
+  }
+): Promise<void> {
+  const form = HUMAN_CHECKED_PATHS[ctx.path];
+  if (!form) return;
+  const headers = ctx.headers ?? new Headers();
+  const platform = buildPlatform(env);
+  const requestContext = contextFor(env, ctx);
+  try {
+    await verifyHuman(
+      {
+        humanVerifier: platform.humanVerifier,
+        onFailure: async ({ reason, detail }) => {
+          // The provider failing is ours to fix, not the visitor's: report it.
+          if (reason === "unavailable") {
+            platform.errors.capture(
+              new Error(detail ?? "Human verification unavailable"),
+              requestContext,
+              { "app.auth.human_check.form": form }
+            );
+          }
+          await auditHumanCheckFailed(env, ctx, form, reason);
+        },
+      },
+      {
+        token: headers.get(HUMAN_CHECK_HEADER),
+        remoteIp: requestContext.ip,
+        action: form,
+      }
+    );
+  } catch (error) {
+    if (error instanceof DomainError && error.code) {
+      throw new APIError(
+        error.kind === "unavailable" ? "SERVICE_UNAVAILABLE" : "BAD_REQUEST",
+        { code: error.code, message: error.message }
+      );
+    }
+    throw error;
+  }
+}
 
 /**
  * Refuses a sign-up the environment's policy does not allow (SIGN_UP, SIGN_UP_DOMAINS,
@@ -328,20 +400,14 @@ export function createAuthOptions(env: AppEnv) {
       // Behind Cloudflare the client IP is CF-Connecting-IP.
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
     },
-    // Counters in D1, so the limit holds across isolates.
+    // Counters in D1, so the limit holds across isolates. The per-path rules are the
+    // catalog's better-auth policies (RATE_LIMIT_POLICIES in packages/features/src/abuse).
     rateLimit: {
       enabled: true,
       storage: "database",
       window: 60,
       max: 100,
-      customRules: {
-        "/sign-in/*": { window: 60, max: 10 },
-        "/sign-up/*": { window: 60, max: 5 },
-        "/request-password-reset": { window: 60, max: 3 },
-        "/oauth2/register": { window: 3600, max: 5 },
-        "/oauth2/token": { window: 60, max: 10 },
-        "/oauth2/authorize": { window: 60, max: 10 },
-      },
+      customRules: betterAuthRules(RATE_LIMIT_POLICIES),
     },
     plugins: [
       jwt(),
@@ -362,10 +428,13 @@ export function createAuthOptions(env: AppEnv) {
     hooks: {
       // Audit log: failed sign-in and password reset requests (server/auth-audit.ts).
       after: createAuthMiddleware((ctx) => auditAuthEndpoint(env, ctx)),
-      // Deployed without email, refuse link-sending endpoints up front, for every address:
-      // failing only inside sendResetPassword would answer differently for registered
-      // emails (account enumeration).
       before: createAuthMiddleware(async (ctx) => {
+        // Turnstile on sign-up, sign-in and password reset (TURNSTILE=on), first: a bot
+        // learns nothing else about the request.
+        await enforceHumanCheck(env, ctx);
+        // Deployed without email, refuse link-sending endpoints up front, for every address:
+        // failing only inside sendResetPassword would answer differently for registered
+        // emails (account enumeration).
         if (refuseEmailLinks && EMAIL_LINK_PATHS.includes(ctx.path)) {
           throw emailNotConfiguredError();
         }

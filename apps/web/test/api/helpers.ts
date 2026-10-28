@@ -7,16 +7,29 @@ import {
 } from "@cloudflare-starter/features";
 import { expect } from "vitest";
 
-import { getAuth } from "@/server/auth";
+import { getAuth, HUMAN_CHECK_HEADER } from "@/server/auth";
 import type { AppEnv } from "@/server/env";
 import { invoke } from "@/server/mcp/tools";
 import { createAppContext } from "@/server/trpc/context";
 import { appRouter } from "@/server/trpc/router";
 
+import { TURNSTILE_DUMMY_TOKEN } from "../outbound";
+
 export const APP_URL = "http://localhost:4321";
 
 /** The Worker's env: WORKSPACE_MODE=multi and SIGN_UP=open from vitest.config.ts bindings. */
 export const env = workerEnv as AppEnv;
+
+/**
+ * Headers a browser sends to the human-checked auth endpoints: the Turnstile test token
+ * (accepted by the always-pass test secret the API tests run with) and a client IP.
+ */
+export function humanHeaders(ip = "198.51.100.1"): Record<string, string> {
+  return {
+    [HUMAN_CHECK_HEADER]: TURNSTILE_DUMMY_TOKEN,
+    "cf-connecting-ip": ip,
+  };
+}
 
 export interface TestUser {
   readonly id: string;
@@ -115,7 +128,7 @@ export function signUpRequest(
       headers: {
         "content-type": "application/json",
         origin: APP_URL,
-        "cf-connecting-ip": `203.0.113.${nextIp}`,
+        ...humanHeaders(`203.0.113.${nextIp}`),
       },
       body: JSON.stringify({ name, email, password: "test-password-1234" }),
     })

@@ -8,6 +8,7 @@ Related guides:
 
 - [docs/guides/how-to-setup-auth.md](../../docs/guides/how-to-setup-auth.md) — Better Auth, optional Google sign-in
 - [docs/guides/how-to-configure-workspaces.md](../../docs/guides/how-to-configure-workspaces.md) — workspace modes, sign-up policy, invitations, roles
+- [docs/guides/how-to-configure-abuse-protection.md](../../docs/guides/how-to-configure-abuse-protection.md) — rate limits and Turnstile
 - [docs/guides/how-to-setup-d1.md](../../docs/guides/how-to-setup-d1.md) — D1 database and migrations
 - [docs/guides/how-to-setup-r2.md](../../docs/guides/how-to-setup-r2.md) — R2 binding and presigned URLs
 - [docs/guides/how-to-setup-email.md](../../docs/guides/how-to-setup-email.md) — Cloudflare Email Service

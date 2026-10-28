@@ -121,6 +121,10 @@ export {
   type ProgressRingProps,
 } from "../components/progress";
 export {
+  RateLimitNotice,
+  type RateLimitNoticeProps,
+} from "../components/rate-limit-notice";
+export {
   Sheet,
   SheetBody,
   SheetClose,

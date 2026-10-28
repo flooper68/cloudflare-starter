@@ -1,6 +1,6 @@
 /**
  * Composition root of the platform ports: picks one adapter per port from explicit settings
- * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS) and builds it once per isolate. JobQueue has one
+ * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, RATE_LIMITING, TURNSTILE) and builds it once per isolate. JobQueue has one
  * adapter, the APP_QUEUE binding, and no setting: it has no "off" (dropping jobs silently is
  * unsafe). Adding a vendor means a new
  * adapter in packages/features/src/platform/adapters/<vendor>/, a new allowed value in
@@ -8,23 +8,37 @@
  */
 import {
   createCloudflareJobQueue,
+  createCloudflareRateLimiter,
   createD1FeatureFlags,
+  createTurnstileVerifier,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
   type ErrorReporter,
   type FeatureFlagStore,
   type FeatureFlags,
+  type HumanVerifier,
   type JobQueue,
   type Logger,
   type LogResource,
   noopErrorReporter,
   noopFeatureFlags,
+  noopHumanVerifier,
   noopLogger,
+  noopRateLimiter,
+  RATE_LIMIT_POLICIES,
+  type RateLimiter,
+  type RateLimitPolicy,
   type RequestContext,
+  randomIds,
   systemClock,
 } from "@cloudflare-starter/features";
 
-import { ConfigError, parsePlatformConfig } from "@/lib/config";
+import {
+  type AbuseConfig,
+  ConfigError,
+  parseAbuseConfig,
+  parsePlatformConfig,
+} from "@/lib/config";
 import { buildRawEnv } from "@/lib/env";
 import type { AppEnv } from "@/server/env";
 
@@ -47,6 +61,40 @@ export interface Platform {
   readonly release: string;
   /** APP_ENV: required, no default (local, develop, staging, production). */
   readonly environment: string;
+  /** Edge rate limits (RATE_LIMITING): adapters call `enforceRateLimit` with it. */
+  readonly rateLimiter: RateLimiter;
+  /** The human check on sign-up, sign-in and password reset (TURNSTILE). */
+  readonly humanVerifier: HumanVerifier;
+  /** What the auth pages need to render the widget; null with TURNSTILE=off. */
+  readonly turnstile: { readonly siteKey: string } | null;
+}
+
+/** The Workers Rate Limiting bindings the catalog's edge policies use. */
+export function rateLimitBindingNames(): string[] {
+  const policies: readonly RateLimitPolicy[] =
+    Object.values(RATE_LIMIT_POLICIES);
+  return [
+    ...new Set(policies.flatMap((policy) => policy.binding ?? [])),
+  ].sort();
+}
+
+/** RATE_LIMITING=cloudflare needs every binding the catalog names. */
+function buildRateLimiter(env: AppEnv, config: AbuseConfig): RateLimiter {
+  if (config.RATE_LIMITING === "none") return noopRateLimiter;
+  const bindings: Record<string, RateLimit> = {};
+  for (const name of rateLimitBindingNames()) {
+    const binding = (env as Record<string, unknown>)[name] as
+      | RateLimit
+      | undefined;
+    if (!binding) {
+      throw new ConfigError(
+        name,
+        `RATE_LIMITING=cloudflare needs the ${name} ratelimits binding in every environment of apps/web/wrangler.jsonc`
+      );
+    }
+    bindings[name] = binding;
+  }
+  return createCloudflareRateLimiter(bindings);
 }
 
 /** Per-isolate cache, like the database client. A config error is not cached. */
@@ -60,7 +108,9 @@ let cache: { readonly env: AppEnv; readonly platform: Platform } | undefined;
  */
 export function buildPlatform(env: AppEnv): Platform {
   if (cache?.env === env) return cache.platform;
-  const config = parsePlatformConfig(buildRawEnv(env));
+  const raw = buildRawEnv(env);
+  const config = parsePlatformConfig(raw);
+  const abuse = parseAbuseConfig(raw);
   if (!env.APP_QUEUE) {
     throw new ConfigError(
       "APP_QUEUE",
@@ -100,6 +150,20 @@ export function buildPlatform(env: AppEnv): Platform {
     flagStore: d1Flags,
     release,
     environment,
+    rateLimiter: buildRateLimiter(env, abuse),
+    humanVerifier:
+      abuse.TURNSTILE === "on" && abuse.TURNSTILE_SECRET_KEY
+        ? createTurnstileVerifier({
+            secretKey: abuse.TURNSTILE_SECRET_KEY,
+            // workerd's fetch must not be called as a method of another object.
+            fetch: (input, init) => fetch(input, init),
+            ids: randomIds,
+          })
+        : noopHumanVerifier,
+    turnstile:
+      abuse.TURNSTILE === "on" && abuse.TURNSTILE_SITE_KEY
+        ? { siteKey: abuse.TURNSTILE_SITE_KEY }
+        : null,
   };
   cache = { env, platform };
   return platform;

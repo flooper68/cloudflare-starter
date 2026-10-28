@@ -24,6 +24,11 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: email,
     metadata: { method: "password", reason: "INVALID_EMAIL_OR_PASSWORD" },
   },
+  "auth.human_check_failed": {
+    action: "auth.human_check_failed",
+    target: email,
+    metadata: { form: "sign-up", reason: "rejected" },
+  },
   "auth.sign_up": {
     action: "auth.sign_up",
     target: user,

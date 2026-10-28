@@ -1,6 +1,33 @@
 import { env } from "cloudflare:workers";
 import type { APIRoute } from "astro";
 
-import { getAuth } from "@/server/auth";
+import { AUTH_BASE_PATH, getAuth } from "@/server/auth";
+import { buildPlatform } from "@/server/platform";
+import {
+  betterAuthResponse,
+  rateLimitedResponse,
+  refuseOverLimit,
+} from "@/server/rate-limited-response";
 
-export const ALL: APIRoute = ({ request }) => getAuth(env).handler(request);
+/**
+ * Better Auth. A cheap per-IP edge limit (`auth.ip`) runs first; Better Auth then applies
+ * its own per-path limits in D1 and the human check on sign-up, sign-in and reset.
+ * Refusals are Problem Details with Retry-After and RateLimit header fields.
+ */
+export const ALL: APIRoute = async ({ request, locals }) => {
+  const { requestContext } = locals;
+  const instance = new URL(request.url).pathname;
+  const refused = await refuseOverLimit(
+    buildPlatform(env),
+    "auth.ip",
+    { userId: null, ip: requestContext.ip },
+    (error) => rateLimitedResponse(error, requestContext, instance)
+  );
+  if (refused) return refused;
+  return betterAuthResponse(
+    request,
+    await getAuth(env).handler(request),
+    requestContext,
+    AUTH_BASE_PATH
+  );
+};

@@ -36,6 +36,7 @@ function bindings(block: Block): Record<string, string[]> {
     d1: names("d1_databases", "binding"),
     r2: names("r2_buckets", "binding"),
     sendEmail: names("send_email", "name"),
+    ratelimits: names("ratelimits", "name"),
     queueProducers: (queues.producers ?? [])
       .map((q) => String(q.binding))
       .sort(),

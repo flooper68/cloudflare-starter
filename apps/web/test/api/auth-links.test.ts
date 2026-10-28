@@ -7,7 +7,7 @@ import { getAuth } from "@/server/auth";
 import { EMAIL_NOT_CONFIGURED_MESSAGE } from "@/server/auth-mail";
 import type { AppEnv } from "@/server/env";
 
-import { APP_URL } from "./helpers";
+import { APP_URL, humanHeaders } from "./helpers";
 
 function withoutEmail(appEnv: string): AppEnv {
   return { ...env, EMAIL_FROM: undefined, APP_ENV: appEnv } as AppEnv;
@@ -17,7 +17,11 @@ function post(target: AppEnv, path: string, body: unknown) {
   return getAuth(target).handler(
     new Request(`${APP_URL}/api/auth${path}`, {
       method: "POST",
-      headers: { "content-type": "application/json", origin: APP_URL },
+      headers: {
+        "content-type": "application/json",
+        origin: APP_URL,
+        ...humanHeaders(),
+      },
       body: JSON.stringify(body),
     })
   );

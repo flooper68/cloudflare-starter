@@ -6,6 +6,8 @@ import {
   createMemoryLogger,
   cronCatalog,
   noopFeatureFlags,
+  noopHumanVerifier,
+  noopRateLimiter,
 } from "@cloudflare-starter/features";
 import { describe, expect, it, vi } from "vitest";
 
@@ -24,6 +26,9 @@ function memoryPlatform() {
     flagStore: null,
     release: "v-test",
     environment: "staging",
+    rateLimiter: noopRateLimiter,
+    humanVerifier: noopHumanVerifier,
+    turnstile: null,
   };
   return { platform, logger, errors, jobQueue };
 }

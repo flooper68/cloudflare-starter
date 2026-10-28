@@ -86,6 +86,24 @@ if (!existsSync(DEV_VARS)) {
   const vars = readDevVars();
   const value = (key: string) => vars.get(key) || undefined;
 
+  // Vars come from .dev.vars, else from the top level of wrangler.jsonc.
+  const topVars =
+    (readWranglerConfig().vars as Record<string, string> | undefined) ?? {};
+  const setting = (key: string) => value(key) ?? (topVars[key] || undefined);
+
+  const rateLimiting = setting("RATE_LIMITING");
+  if (rateLimiting === "cloudflare" || rateLimiting === "none")
+    ok(`RATE_LIMITING=${rateLimiting}`);
+  else error("RATE_LIMITING must be cloudflare or none");
+  const turnstile = setting("TURNSTILE");
+  if (turnstile === "off") warn("TURNSTILE=off: no human check on sign-up");
+  else if (turnstile !== "on") error("TURNSTILE must be on or off");
+  else if (!setting("TURNSTILE_SITE_KEY") || !value("TURNSTILE_SECRET_KEY"))
+    error(
+      "TURNSTILE=on needs TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY (copy them from .dev.vars.example)"
+    );
+  else ok("Turnstile on");
+
   if (value("APP_URL")) ok(`APP_URL ${value("APP_URL")}`);
   else error("APP_URL is not set");
 
@@ -163,6 +181,9 @@ else error("local D1 has pending migrations: bun run db:migrate:local");
 
 console.log("\nDeploy config (apps/web/wrangler.jsonc)");
 const config = readWranglerConfig();
+/** Cloudflare's dummy site keys (always pass, always fail, forced challenge). */
+const TURNSTILE_TEST_SITE_KEYS = /^[123]x0{20}(AA|AB|BB|FF)$/;
+const namespaceIds: string[] = [];
 for (const env of ENVIRONMENTS) {
   const block = envBlock(config, env);
   const d1 = (block.d1_databases as { database_id: string }[] | undefined)?.[0];
@@ -200,7 +221,35 @@ for (const env of ENVIRONMENTS) {
   } else {
     checkWorkspaceVars(env, vars);
   }
+  // Abuse protection (docs/guides/how-to-configure-abuse-protection.md).
+  if (!["cloudflare", "none"].includes(vars.RATE_LIMITING ?? ""))
+    error(`${env}: RATE_LIMITING must be cloudflare or none`);
+  if (vars.TURNSTILE === "on") {
+    if (!vars.TURNSTILE_SITE_KEY)
+      error(`${env}: TURNSTILE=on needs TURNSTILE_SITE_KEY`);
+    else if (TURNSTILE_TEST_SITE_KEYS.test(vars.TURNSTILE_SITE_KEY)) {
+      const message = `${env}: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc`;
+      if (env === "staging" || env === "production") warn(message);
+    }
+    warn(
+      `${env}: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env ${env})`
+    );
+  } else if (vars.TURNSTILE !== "off") {
+    error(`${env}: TURNSTILE must be on or off`);
+  }
+  const ids = (
+    (block.ratelimits as { namespace_id: string }[] | undefined) ?? []
+  ).map((binding) => binding.namespace_id);
+  namespaceIds.push(...ids);
 }
+const duplicates = namespaceIds.filter(
+  (id, index) => namespaceIds.indexOf(id) !== index
+);
+if (duplicates.length)
+  error(
+    `ratelimits namespace_id used twice: ${[...new Set(duplicates)].join(", ")} (each binding in each environment needs its own)`
+  );
+else ok(`ratelimits: ${namespaceIds.length} bindings, unique namespace_ids`);
 
 const who = wrangler(["whoami"]);
 if (who.ok && !/not authenticated/i.test(who.stdout))

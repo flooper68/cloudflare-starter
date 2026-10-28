@@ -8,9 +8,11 @@ export {
   createMemoryFeatureFlags,
   type MemoryFeatureFlags,
 } from "./memory-feature-flags";
+export { createMemoryHumanVerifier } from "./memory-human-verifier";
 export {
   createMemoryJobQueue,
   type MemoryJobQueue,
   type SentJob,
 } from "./memory-job-queue";
 export { createMemoryLogger, type MemoryLogger } from "./memory-logger";
+export { createMemoryRateLimiter } from "./memory-rate-limiter";

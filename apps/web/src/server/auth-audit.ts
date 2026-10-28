@@ -191,6 +191,26 @@ export async function auditAuthEndpoint(
 }
 
 /**
+ * A human check (Turnstile) refused sign-up, sign-in or a password reset request. Recorded
+ * only when the request named an email, the target of the attempt.
+ */
+export async function auditHumanCheckFailed(
+  env: AppEnv,
+  ctx: { readonly body?: unknown; readonly request?: Request },
+  form: "sign-up" | "sign-in" | "password-reset",
+  reason: "missing" | "rejected" | "unavailable"
+): Promise<void> {
+  const email = emailOf(ctx);
+  if (!email) return;
+  await record(env, ctx, {
+    action: "auth.human_check_failed",
+    actor: { kind: "user", userId: null },
+    target: { type: "email", id: email },
+    metadata: { form, reason },
+  });
+}
+
+/**
  * Better Auth's `emailAndPassword.onPasswordReset`: a reset through an emailed link
  * completed. The request carries only the token, so the user comes from Better Auth.
  */

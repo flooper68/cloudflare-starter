@@ -31,7 +31,7 @@ export interface RequestScope {
 }
 
 /** Sets headers, copying the response first when its headers are immutable. */
-function withHeaders(
+export function withHeaders(
   response: Response,
   headers: Readonly<Record<string, string>>
 ): Response {

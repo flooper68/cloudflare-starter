@@ -5,7 +5,8 @@ The web app signs users in with [Better Auth](https://www.better-auth.com). User
 ## What Is Wired Up
 
 - Handler: every `/api/auth/*` request goes to Better Auth ([pages/api/auth/[...all].ts](../../apps/web/src/pages/api/auth/[...all].ts)).
-- Server config: [server/auth.ts](../../apps/web/src/server/auth.ts) — sign-in methods from env flags, D1 through the Drizzle adapter, rate limits stored in D1, the `jwt()` and `mcp()` plugins.
+- Server config: [server/auth.ts](../../apps/web/src/server/auth.ts) — sign-in methods from env flags, D1 through the Drizzle adapter, rate limits stored in D1 (generated from the catalog), the Turnstile human check on sign-up, sign-in and password reset (`hooks.before`), the `jwt()` and `mcp()` plugins.
+- Abuse protection: a per-IP edge limit in front of every `/api/auth/*` request, Better Auth's per-path limits, and Turnstile; settings `RATE_LIMITING`, `TURNSTILE`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`. See [how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md).
 - Middleware: [middleware.ts](../../apps/web/src/middleware.ts) resolves the session cookie into `Astro.locals.user` / `Astro.locals.session` and redirects anonymous `/app/*` requests to `/sign-in`.
 - Browser client: [lib/auth-client.ts](../../apps/web/src/lib/auth-client.ts), with the OAuth provider plugin so a sign-in started by an MCP client continues its authorization.
 - tRPC: `protectedProcedure` refuses requests without a user (`UNAUTHORIZED`); `workspaceProcedure` also resolves the user's workspace and role.
@@ -25,11 +26,12 @@ Pages:
 
 ## Secrets
 
-| Name                                       | Notes                                                                                                                                                    |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APP_URL`                                  | Public origin, no trailing slash. Better Auth's base URL and only trusted origin, so it must match the browser URL exactly (including the port locally). |
-| `BETTER_AUTH_SECRET`                       | 32+ characters, one per environment. Rotating it signs everyone out.                                                                                     |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional, see below.                                                                                                                                     |
+| Name                                       | Notes                                                                                                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`                                  | Public origin, no trailing slash. Better Auth's base URL and only trusted origin, so it must match the browser URL exactly (including the port locally).          |
+| `BETTER_AUTH_SECRET`                       | 32+ characters, one per environment. Rotating it signs everyone out.                                                                                              |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional, see below.                                                                                                                                              |
+| `TURNSTILE_SECRET_KEY`                     | Required while `TURNSTILE=on` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Locally the test secret from `.dev.vars.example`. |
 
 Set them with the script, which asks for each value (Enter skips; an empty `BETTER_AUTH_SECRET` is generated):
 

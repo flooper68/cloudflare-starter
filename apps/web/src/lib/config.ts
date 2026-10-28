@@ -151,3 +151,41 @@ export function parseOptionalFeature<T>(
 export function getFeatureError(reason: string | null): string {
   return reason ?? "Feature is not configured";
 }
+
+/** Which rate limiter enforces the edge policies: Workers Rate Limiting, or nothing. */
+export const RATE_LIMITERS = ["cloudflare", "none"] as const;
+/** Whether sign-up, sign-in and password reset need a Cloudflare Turnstile check. */
+export const TURNSTILE_SETTINGS = ["on", "off"] as const;
+
+export interface AbuseConfig {
+  readonly RATE_LIMITING: (typeof RATE_LIMITERS)[number];
+  readonly TURNSTILE: (typeof TURNSTILE_SETTINGS)[number];
+  readonly TURNSTILE_SITE_KEY: string | null;
+  readonly TURNSTILE_SECRET_KEY: string | null;
+}
+
+/**
+ * Abuse protection settings (docs/guides/how-to-configure-abuse-protection.md). Required,
+ * no defaults; with TURNSTILE=on the site key (var) and secret key (secret) are required too.
+ */
+export function parseAbuseConfig(env: PartialEnv): AbuseConfig {
+  const config: AbuseConfig = {
+    RATE_LIMITING: requiredChoice(env, "RATE_LIMITING", RATE_LIMITERS),
+    TURNSTILE: requiredChoice(env, "TURNSTILE", TURNSTILE_SETTINGS),
+    TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY || null,
+    TURNSTILE_SECRET_KEY: env.TURNSTILE_SECRET_KEY || null,
+  };
+  if (config.TURNSTILE === "on" && !config.TURNSTILE_SITE_KEY) {
+    throw new ConfigError(
+      "TURNSTILE_SITE_KEY",
+      "TURNSTILE=on needs TURNSTILE_SITE_KEY: the widget's site key in the vars of apps/web/wrangler.jsonc"
+    );
+  }
+  if (config.TURNSTILE === "on" && !config.TURNSTILE_SECRET_KEY) {
+    throw new ConfigError(
+      "TURNSTILE_SECRET_KEY",
+      "TURNSTILE=on needs the TURNSTILE_SECRET_KEY secret: bun run setup:secrets --env <env>"
+    );
+  }
+  return config;
+}
