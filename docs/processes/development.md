@@ -87,7 +87,7 @@ On an unexpected error, first search the docs and skills for the exact error tex
 
 ## Plan schema
 
-The plan for work handed to an agent (also the [feature issue template](../../.github/ISSUE_TEMPLATE/feature.md)). One PR per item; split work that a reviewer could not check in one sitting (several features, or a refactor mixed with new behaviour) into items that each ship on their own.
+The plan for work handed to an agent, written into the task brief or the PR description. One PR per item; split work that a reviewer could not check in one sitting (several features, or a refactor mixed with new behaviour) into items that each ship on their own.
 
 | Section               | Content                                                                                               |
 | --------------------- | ----------------------------------------------------------------------------------------------------- |
