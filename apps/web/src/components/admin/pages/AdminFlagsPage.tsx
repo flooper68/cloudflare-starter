@@ -16,10 +16,11 @@ export function AdminFlagsPage() {
   const { run, dialog } = useAdminAction();
   const data = useAsync(() => trpc.admin.flags.list.query(), "flags");
 
+  // run() reports a failure (toast, or the sign-in-again prompt); the page then reloads the
+  // flags, so the switch and the rules show what is stored.
   async function act(action: () => Promise<unknown>, done: string) {
-    const ok = await run(action, done);
+    await run(action, done);
     await data.refetch();
-    if (!ok) throw new Error("Not saved");
   }
 
   return (

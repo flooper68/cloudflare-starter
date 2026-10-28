@@ -7,13 +7,28 @@ import {
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Building2 } from "lucide-react";
 
+import { useAuth } from "@/components/shared/spa/auth-context";
 import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 
 import { useAdminAction } from "../use-admin-action";
 
-/** `/admin/workspaces/$workspaceId`: members, owner rescue, deletion. */
+/** `/admin/workspaces/$workspaceId`: members, owner rescue, deletion (not in personal mode). */
 export function AdminWorkspacePage() {
+  const { workspace } = useAuth();
+  if (workspace.mode === "personal") {
+    return (
+      <EmptyState
+        icon={<Building2 />}
+        title="No workspaces to administer"
+        description="In personal mode every workspace belongs to one user and goes with their account."
+      />
+    );
+  }
+  return <WorkspaceDetailPage />;
+}
+
+function WorkspaceDetailPage() {
   const { workspaceId = "" } = useParams({ strict: false });
   const navigate = useNavigate();
   const { run, dialog } = useAdminAction();

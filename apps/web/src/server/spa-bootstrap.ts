@@ -25,6 +25,18 @@ export interface SpaBootstrap {
   readonly impersonatedBy: string | null;
 }
 
+/**
+ * The bootstrap as the body of `<script type="application/json">`. Names and other user
+ * data could contain `</script>`; escaping `<` (and the JS line separators) keeps them
+ * data, so a user's profile cannot run script in an admin's browser while impersonated.
+ */
+export function serializeBootstrap(bootstrap: SpaBootstrap): string {
+  return JSON.stringify(bootstrap)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
 export async function spaBootstrap(
   env: AppEnv,
   locals: Pick<App.Locals, "user" | "session">

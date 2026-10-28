@@ -7,7 +7,7 @@ import { env } from "cloudflare:workers";
 import { brand } from "@cloudflare-starter/ui";
 
 import { AppSpa } from "@/components/app/AppSpa";
-import { spaBootstrap } from "@/server/spa-bootstrap";
+import { serializeBootstrap, spaBootstrap } from "@/server/spa-bootstrap";
 
 const bootstrap = await spaBootstrap(env, Astro.locals);
 ---
@@ -26,7 +26,7 @@ const bootstrap = await spaBootstrap(env, Astro.locals);
       id="__APP_AUTH__"
       is:inline
       type="application/json"
-      set:html={JSON.stringify(bootstrap)}
+      set:html={serializeBootstrap(bootstrap)}
     />
 
     <AppSpa client:only="react" />
