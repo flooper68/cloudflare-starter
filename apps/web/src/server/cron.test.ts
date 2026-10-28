@@ -171,6 +171,7 @@ describe("cron handler", () => {
     expect(tracer.spans.map((span) => span.name)).toEqual([
       "cron audit.purge-events",
       "cron jobs.purge-idempotency-keys",
+      "cron notifications.purge",
     ]);
     expect(tracer.spans[0]).toMatchObject({
       kind: "internal",
@@ -194,6 +195,12 @@ describe("cron handler", () => {
       expect.objectContaining({
         attributes: {
           "app.cron.name": "jobs.purge-idempotency-keys",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "notifications.purge",
           "app.cron.schedule": "17 3 * * *",
         },
       }),

@@ -66,7 +66,7 @@ flowchart LR
    });
    ```
 
-   Add `readonly notify: Notify` to the use case's deps; tRPC procedures pass `ctx`, which has it. At most 500 recipients per call (`MAX_RECIPIENTS`); split larger fan-outs. `workspaceId` makes the rows go with the workspace when it is deleted.
+   Add `readonly notify: Notify` to the use case's deps; tRPC procedures pass `ctx`, which has it. At most 500 recipients per call (`MAX_RECIPIENTS`); split larger fan-outs. Cut free-text values (names) to the data schema's limits before the call: invalid data makes `notify` throw, and a failure to notify (invalid data, the queue unavailable) fails the use case like a failed audit insert does, after its change is written. The Better Auth hooks are the exception: they catch and report. `workspaceId` makes the rows go with the workspace when it is deleted.
 4. Tests ([testing.md](../architecture/testing.md#change--required-test)): a domain test of `render` (including that user data is escaped in `html`) and of the data schema; in the producer's integration test, assert the event with `notificationsSent(deps.jobQueue)` from `packages/features/test/fixtures.ts`. Dispatch, mail and digest are covered once in `packages/features/src/notifications/`.
 
 The review checklist asks for it: a user-facing event (someone joined, a role changed, an invoice failed) uses `notify`, not a hand-written mail ([code-review.md](../processes/code-review.md#1-server-side-architecture)).
@@ -82,18 +82,18 @@ Email states of a row: `none` (channel off), `pending` (a `notifications.send-em
 
 ## Producers today
 
-| Type                       | Sent by                                                                                                              | To                                                                           |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `workspaces.member-joined` | `acceptInvitation`                                                                                                   | the workspace's members who can `members.manage`, not the joiner             |
-| `workspaces.role-changed`  | `changeMemberRole` (when the role changes), `transferOwnership` (the new owner)                                      | the member whose role changed, unless they made the change                   |
-| `auth.password-changed`    | Better Auth hooks in `apps/web/src/server/auth-audit.ts`: `/change-password` success, `onPasswordReset`              | the user                                                                     |
-| `auth.new-sign-in`         | the session hook after a password or social sign-in (not sign-up, not email verification), through `notifyNewSignIn` | the user, when no other live session has the same user agent (`isNewSignIn`) |
+| Type                       | Sent by                                                                                                              | To                                                                                                                                                                                         |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `workspaces.member-joined` | `acceptInvitation`                                                                                                   | the workspace's members who can `members.manage`, not the joiner                                                                                                                           |
+| `workspaces.role-changed`  | `changeMemberRole` (when the role changes), `transferOwnership` (the new owner)                                      | the member whose role changed, unless they made the change                                                                                                                                 |
+| `auth.password-changed`    | Better Auth hooks in `apps/web/src/server/auth-audit.ts`: `/change-password` success, `onPasswordReset`              | the user                                                                                                                                                                                   |
+| `auth.new-sign-in`         | the session hook after a password or social sign-in (not sign-up, not email verification), through `notifyNewSignIn` | the user, when no other live session has the same user agent and the account is older than a minute (`isNewSignIn`: a Google sign-up opens its first session through the sign-in callback) |
 
 A failure to notify from the Better Auth hooks is reported and never fails the sign-in or password change.
 
 ## Email: headers and unsubscribe
 
-Each mail is the definition's `render(...).email` in the mail layout (`notificationMail`, `notifications/domain/email-layout.ts`): the body, then a footer with the notification settings link and, unless security-critical, an unsubscribe link. The same mails carry the [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058) headers:
+Each mail is the definition's `render(...).email` in the mail layout (`notificationMail`, `notifications/domain/email-layout.ts`; it puts the subject on one line, since names may contain line breaks): the body, then a footer with the notification settings link and, unless security-critical, an unsubscribe link. The same mails carry the [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058) headers:
 
 ```
 List-Unsubscribe: <https://app.example.com/api/notifications/unsubscribe?t=<token>>
@@ -101,7 +101,7 @@ List-Unsubscribe-Post: List-Unsubscribe=One-Click
 ```
 
 - **Token.** `<payload>.<signature>` (base64url): payload `{ u: userId, t: type }` (`*` for a digest: every type that can be turned off), signature HMAC-SHA256 with a key derived from `BETTER_AUTH_SECRET` by HKDF-SHA256 (info `notifications.unsubscribe`). No expiry: a link in an old mail keeps working. **Rotating `BETTER_AUTH_SECRET` invalidates every unsubscribe link already sent** (and signs everyone out); users can still change their settings in the app.
-- **POST** (what Gmail, Apple Mail and others send, and what the `/unsubscribe` page's button sends) with the body `List-Unsubscribe=One-Click` turns email off for that type at once, answers 200 JSON, and records `notifications.unsubscribed`. Any other body is 400 (Problem Details); a bad token is 400 `INVALID_UNSUBSCRIBE_TOKEN`. There is no Origin check on purpose (mail providers post from their servers, and the route uses no cookies); the reason is in the route.
+- **POST** (what Gmail, Apple Mail and others send, and what the `/unsubscribe` page's button sends) with the body `List-Unsubscribe=One-Click` turns email off for that type at once (mail of that type still waiting, instant or for the digest, is dropped too), answers 200 JSON, and records `notifications.unsubscribed`. Any other body is 400 (Problem Details); a bad token is 400 `INVALID_UNSUBSCRIBE_TOKEN`. There is no Origin check on purpose (mail providers post from their servers, and the route uses no cookies); the reason is in the route.
 - **GET** never unsubscribes (link scanners and previews open links): it redirects (303) to `/unsubscribe?t=…`, which shows what the link is for and a button.
 - **Limits.** The POST is limited per IP by `notifications.unsubscribe` (20 a minute, binding `RL_UNSUBSCRIBE`); the page by `token.lookup` ([how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md)).
 
@@ -125,6 +125,7 @@ The daily cron entry `notifications.purge` (`17 3 * * *`, with the other purges)
 
 - `<NotificationBell>` (badge, popover inbox) sits in the top bar (`AppLayout`, `apps/web/src/components/app/notifications/`); "View all" opens `/app/notifications`, "Settings" `/app/notifications/preferences`. Components: `NotificationBell`, `NotificationInbox`, `NotificationList`, `NotificationPreferences`, `UnsubscribeCard` in `packages/ui` (Storybook: Patterns).
 - The unread count loads on page load, when the window regains focus or becomes visible, and every 60 s while it is visible (`useUnreadCount`). It is capped at 100 (the badge shows "99+").
+- `markRead` and `archive` take at most 90 ids per call (`MAX_IDS`: one D1 statement binds at most 100 parameters).
 - Agents use the MCP tools `list_notifications` (with the unread count), `mark_notifications_read`, `archive_notifications`, `get_notification_preferences`, `update_notification_preferences`.
 
 ### Realtime

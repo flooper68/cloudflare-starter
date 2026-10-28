@@ -20,15 +20,17 @@ import {
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { APIContext } from "astro";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { buildRequiredConfig } from "@/lib/env";
 import {
   GET as unsubscribeGet,
   POST as unsubscribePost,
 } from "@/pages/api/notifications/unsubscribe";
+import { getAuth } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
+import { withRequestContext } from "@/server/http";
 import { buildMcpServer } from "@/server/mcp/server";
 import { buildPlatform } from "@/server/platform";
 import { handleQueueBatch, queueDeps } from "@/server/queue";
@@ -39,6 +41,7 @@ import {
   APP_URL,
   callerFor,
   env,
+  humanHeaders,
   inviteByMail,
   signUp,
   type TestUser,
@@ -87,10 +90,12 @@ async function rpc(
   name: string,
   args: Record<string, unknown> = {}
 ) {
+  const requestContext = testRequestContext();
   const handler = createMcpHandler(() =>
-    buildMcpServer(callerFor(user), {
+    buildMcpServer(() => callerFor(user), {
       errors: buildPlatform(env).errors,
-      requestContext: testRequestContext(),
+      tracer: buildPlatform(env).tracer.withContext(requestContext),
+      requestContext,
     })
   );
   const response = await handler.fetch(
@@ -401,4 +406,123 @@ describe("POST /api/notifications/unsubscribe (RFC 8058)", () => {
     );
     expect(await emailOverride(owner.id, "workspaces.role-changed")).toBeNull();
   });
+});
+
+/**
+ * The security notices sent from the Better Auth hooks (server/auth-audit.ts), through the
+ * real handler and the real APP_QUEUE consumer of the test Worker: rows appear once the
+ * queued dispatch has run.
+ */
+describe("security notifications from Better Auth", () => {
+  const FIREFOX = "Mozilla/5.0 (Macintosh) Firefox/140.0";
+  const PASSWORD = "test-password-1234";
+
+  function authPost(path: string, body: unknown, cookie?: string) {
+    const request = new Request(`${APP_URL}/api/auth${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: APP_URL,
+        "user-agent": FIREFOX,
+        ...humanHeaders("203.0.113.90"),
+        ...(cookie ? { cookie } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    return withRequestContext(request, env, () =>
+      getAuth(env).handler(request)
+    );
+  }
+
+  async function typesFor(userId: string) {
+    const { results } = await (workerEnv as AppEnv).DB.prepare(
+      "SELECT type FROM notifications WHERE user_id = ? ORDER BY created_at, type"
+    )
+      .bind(userId)
+      .all<{ type: string }>();
+    return results.map((row) => row.type);
+  }
+
+  it("notifies a new sign-in and password changes, but not sign-up or a repeat sign-in", async () => {
+    const signUp = await authPost("/sign-up/email", {
+      name: "Barbara Liskov",
+      email: "barbara@notifications.test",
+      password: PASSWORD,
+    });
+    expect(signUp.status).toBe(200);
+    const { user } = (await signUp.json()) as { user: { id: string } };
+    // Out of the account's first minute: sign-ins from here on are not its sign-up.
+    await (workerEnv as AppEnv).DB.prepare(
+      "UPDATE user SET created_at = ? WHERE id = ?"
+    )
+      .bind(Date.now() - 3_600_000, user.id)
+      .run();
+
+    // The sign-up's own session is from the same browser: expire it, so the next
+    // sign-in is the first live one there.
+    await (workerEnv as AppEnv).DB.prepare(
+      "UPDATE session SET expires_at = ? WHERE user_id = ?"
+    )
+      .bind(Date.now() - 1000, user.id)
+      .run();
+    const first = await authPost("/sign-in/email", {
+      email: "barbara@notifications.test",
+      password: PASSWORD,
+    });
+    expect(first.status).toBe(200);
+    const cookie = (first.headers.get("set-cookie") ?? "").split(";")[0];
+    await vi.waitFor(
+      async () => expect(await typesFor(user.id)).toEqual(["auth.new-sign-in"]),
+      { timeout: 20_000, interval: 250 }
+    );
+
+    // The same browser again, with a live session: not new.
+    const again = await authPost("/sign-in/email", {
+      email: "barbara@notifications.test",
+      password: PASSWORD,
+    });
+    expect(again.status).toBe(200);
+
+    const changed = await authPost(
+      "/change-password",
+      { currentPassword: PASSWORD, newPassword: "changed-password-5678" },
+      cookie
+    );
+    expect(changed.status).toBe(200);
+    await vi.waitFor(
+      async () =>
+        expect(await typesFor(user.id)).toEqual([
+          "auth.new-sign-in",
+          "auth.password-changed",
+        ]),
+      { timeout: 20_000, interval: 250 }
+    );
+
+    // A completed reset through the emailed link: another password-changed notice.
+    await authPost("/request-password-reset", {
+      email: "barbara@notifications.test",
+      redirectTo: "/reset-password",
+    });
+    const row = await (workerEnv as AppEnv).DB.prepare(
+      "SELECT identifier FROM verification WHERE identifier LIKE 'reset-password:%' ORDER BY created_at DESC LIMIT 1"
+    ).first<{ identifier: string }>();
+    const reset = await authPost("/reset-password", {
+      token: row?.identifier.slice("reset-password:".length),
+      newPassword: "reset-password-5678",
+    });
+    expect(reset.status).toBe(200);
+    await vi.waitFor(
+      async () =>
+        expect(
+          (await typesFor(user.id)).filter(
+            (type) => type === "auth.password-changed"
+          )
+        ).toHaveLength(2),
+      { timeout: 20_000, interval: 250 }
+    );
+    // Never a sign-in notice for the sign-up or the repeat.
+    expect(
+      (await typesFor(user.id)).filter((type) => type === "auth.new-sign-in")
+    ).toHaveLength(1);
+  }, 60_000);
 });

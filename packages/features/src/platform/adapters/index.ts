@@ -5,8 +5,8 @@
 export {
   ANALYTICS_ENGINE_LAYOUT,
   type AnalyticsEngineMetricsOptions,
-  createAnalyticsEngineMetrics,
   type CloudflareEmailConfig,
+  createAnalyticsEngineMetrics,
   createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,

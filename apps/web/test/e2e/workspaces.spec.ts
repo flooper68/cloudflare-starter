@@ -135,7 +135,9 @@ test.describe("the owner hears that the invitee joined", () => {
     page,
   }) => {
     // The notification is written by a queued job: reload until the badge shows it.
-    const unread = page.getByRole("button", { name: /^Notifications, \d+ unread$/ });
+    const unread = page.getByRole("button", {
+      name: /^Notifications, \d+ unread$/,
+    });
     await expect(async () => {
       await open(page, "/app/dashboard");
       await expect(unread).toBeVisible({ timeout: 2_000 });

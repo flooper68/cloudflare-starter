@@ -1,3 +1,5 @@
+import { and, eq, inArray } from "drizzle-orm";
+
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
 import type { Clock, Ids, RequestContext } from "../kernel";
@@ -9,12 +11,13 @@ import {
   UNSUBSCRIBE_ALL,
   verifyUnsubscribeToken,
 } from "./domain";
-import { notificationPreferences } from "./notifications.schema";
+import { notificationPreferences, notifications } from "./notifications.schema";
 
 /**
  * One-click unsubscribe (RFC 8058) from the link in a notification mail: verifies the
  * signed token and turns the email channel off for its type, or for every type that can
- * be turned off when the link came from a digest. Security types are never touched.
+ * be turned off when the link came from a digest, and drops mail of those types still
+ * waiting to be sent (instant or digest). Security types are never touched.
  * Repeating it is harmless. Throws InvalidUnsubscribeTokenError for a bad token. Records
  * `notifications.unsubscribed` (the token holder acts as the user it names).
  */
@@ -56,7 +59,21 @@ export async function unsubscribe(
   // A user deleted since the mail was sent: the FK fails; nothing to unsubscribe.
   if (first) {
     try {
-      await deps.db.batch([first, ...rest]);
+      await deps.db.batch([
+        first,
+        ...rest,
+        // Mail already waiting (instant or digest) is not sent either.
+        deps.db
+          .update(notifications)
+          .set({ emailState: "none" })
+          .where(
+            and(
+              eq(notifications.userId, target.userId),
+              inArray(notifications.type, types),
+              inArray(notifications.emailState, ["pending", "pending_digest"])
+            )
+          ),
+      ]);
     } catch (error) {
       if (/FOREIGN KEY/i.test(String(error))) {
         return { userId: target.userId, types: [] };

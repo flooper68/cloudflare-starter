@@ -8,6 +8,7 @@ import {
   seedWorkspace,
   testDb,
 } from "../../test/fixtures";
+import { MAX_IDS, markReadInputSchema } from "./domain";
 import { markNotificationsRead } from "./mark-notifications-read";
 
 const deps = () => ({ db: testDb(), clock: fixedClock() });
@@ -62,5 +63,17 @@ describe("markNotificationsRead", () => {
         ada.id
       )
     ).toEqual([{ n: 0 }]);
+  });
+
+  it("takes the most ids one call allows in one statement (D1's parameter limit)", async () => {
+    const busy = await seedUser("Busy Person", "busy.read@example.test");
+    const ids = Array.from({ length: MAX_IDS }, (_, i) => `m-${i}`);
+    for (const id of ids) await seedNotification(busy.id, { id });
+    expect(
+      await markNotificationsRead(deps(), { userId: busy.id, ids })
+    ).toEqual({ updated: MAX_IDS });
+    expect(
+      markReadInputSchema.safeParse({ ids: [...ids, "one-more"] }).success
+    ).toBe(false);
   });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   rows,
+  seedNotification,
   seedUser,
   testApp,
   useCaseDeps,
@@ -31,6 +32,22 @@ const deps = () => ({
 describe("unsubscribe", () => {
   it("turns email off for the token's type and records it; repeating is harmless", async () => {
     const grace = await seedUser("Grace Hopper", "grace.unsub@example.test");
+    await seedNotification(grace.id, { id: "u-1", emailState: "pending" });
+    await seedNotification(grace.id, {
+      id: "u-2",
+      emailState: "pending_digest",
+    });
+    await seedNotification(grace.id, {
+      id: "u-3",
+      type: "workspaces.role-changed",
+      data: {
+        workspaceId: "ws-acme",
+        workspaceName: "Acme",
+        role: "owner",
+        previousRole: "member",
+      },
+      emailState: "pending",
+    });
     const t = await token(grace.id, "workspaces.member-joined");
 
     expect(await unsubscribe(deps(), { token: t })).toEqual({
@@ -45,6 +62,17 @@ describe("unsubscribe", () => {
       )
     ).toEqual([
       { type: "workspaces.member-joined", channel: "email", enabled: 0 },
+    ]);
+    // Mail of that type still waiting is dropped; other types are left alone.
+    expect(
+      await rows(
+        "SELECT id, email_state FROM notifications WHERE user_id = ? ORDER BY id",
+        grace.id
+      )
+    ).toEqual([
+      { id: "u-1", email_state: "none" },
+      { id: "u-2", email_state: "none" },
+      { id: "u-3", email_state: "pending" },
     ]);
     expect((await userAuditTrail(grace.id))[0]).toEqual({
       action: "notifications.unsubscribed",

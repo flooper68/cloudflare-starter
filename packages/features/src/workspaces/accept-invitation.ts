@@ -141,7 +141,8 @@ export async function acceptInvitation(
     data: {
       workspaceId: invitation.workspaceId,
       workspaceName: workspace?.name ?? "your workspace",
-      memberName: member?.name || input.user.email,
+      // User names have no length limit; the notification's data does.
+      memberName: (member?.name || input.user.email).slice(0, 200),
       role: invitation.role,
     },
     context: {

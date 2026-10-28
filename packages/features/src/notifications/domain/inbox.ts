@@ -9,6 +9,9 @@ export type InboxView = (typeof INBOX_VIEWS)[number];
 
 const notificationId = z.string().min(1).max(100);
 
+/** Ids per markRead or archive call: under D1's 100 bound parameters per statement. */
+export const MAX_IDS = 90;
+
 /** Input of `notifications.list`. */
 export const listNotificationsInputSchema = z.object({
   view: z
@@ -36,7 +39,7 @@ export const markReadInputSchema = z
     ids: z
       .array(notificationId)
       .min(1)
-      .max(100)
+      .max(MAX_IDS)
       .optional()
       .describe("Notification ids to mark read (see list_notifications)."),
     all: z
@@ -71,7 +74,7 @@ export const archiveInputSchema = z.object({
   ids: z
     .array(notificationId)
     .min(1)
-    .max(100)
+    .max(MAX_IDS)
     .describe("Notification ids to archive (see list_notifications)."),
 });
 

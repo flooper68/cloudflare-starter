@@ -52,7 +52,7 @@ export async function sendNotificationEmail(
     .from(notifications)
     .innerJoin(user, eq(user.id, notifications.userId))
     .where(eq(notifications.id, input.notificationId));
-  if (!row || row.emailState !== "pending") return "not_pending";
+  if (row?.emailState !== "pending") return "not_pending";
 
   const markAs = (emailState: "sent" | "skipped") =>
     deps.db

@@ -46,6 +46,16 @@ describe("notificationMail", () => {
     expect(mail.text).toContain("security notice");
   });
 
+  it("puts a subject built from names with line breaks on one line", () => {
+    const mail = notificationMail({
+      appName: "Cloudflare Starter",
+      appUrl,
+      content: { ...content, subject: "You are now Owner in Acme\r\nCorp" },
+      unsubscribeUrl: null,
+    });
+    expect(mail.subject).toBe("You are now Owner in Acme Corp");
+  });
+
   it("escapes the app name and URL in the layout", () => {
     const mail = notificationMail({
       appName: "<Acme>",

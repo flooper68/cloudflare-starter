@@ -38,6 +38,7 @@ export {
   type InboxView,
   type ListNotificationsInput,
   listNotificationsInputSchema,
+  MAX_IDS,
   type MarkReadInput,
   markReadInputSchema,
   type PreferencesUpdate,

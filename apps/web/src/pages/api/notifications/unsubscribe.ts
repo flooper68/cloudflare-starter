@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request, url, locals }) => {
   );
   if (refused) return refused;
 
-  const body = await request.text();
+  const body = new TextDecoder().decode(await request.arrayBuffer());
   if (new URLSearchParams(body).get("List-Unsubscribe") !== "One-Click") {
     return problemResponse(
       400,
