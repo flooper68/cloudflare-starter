@@ -1,0 +1,17 @@
+# apps/web/.dev.vars: APP_ENV=production, EMAIL_FROM= (blank); astro dev
+$ curl -si -X POST http://localhost:4321/api/auth/request-password-reset -H "origin: http://localhost:4321" -d {"email":"nobody@example.test","redirectTo":"/reset-password"}
+HTTP/1.1 412 Precondition Failed
+Access-Control-Allow-Origin: http://localhost:4321
+Vary: Origin
+content-length: 192
+content-type: application/json
+traceparent: 00-7cec789ff59346f2b29f1f082070a4e3-b50be4c281b1e009-01
+x-request-id: 7cec789ff59346f2b29f1f082070a4e3
+Date: Wed, 28 Oct 2026 14:26:06 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"message":"Email is not configured for this environment, so this link cannot be sent. Set EMAIL_FROM and the EMAIL binding (docs/guides/how-to-setup-email.md).","code":"EMAIL_NOT_CONFIGURED"}
+
+# Lines in the whole dev server output that contain a reset link ("reset-password/"):
+0
