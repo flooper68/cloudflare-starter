@@ -1,0 +1,8 @@
+@cloudflare-starter/storybook test: 
+@cloudflare-starter/storybook test: 
+@cloudflare-starter/storybook test:  Test Files  128 passed | 2 skipped (130)
+@cloudflare-starter/storybook test:       Tests  638 passed (638)
+@cloudflare-starter/storybook test:    Start at  14:00:28
+@cloudflare-starter/storybook test:    Duration  43.82s (worker 94%, setup 3%, tests 2%)
+@cloudflare-starter/storybook test: 
+@cloudflare-starter/storybook test: Exited with code 0
