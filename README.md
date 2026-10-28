@@ -120,7 +120,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                 |
 | `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config    |
 
-In `apps/web`: `deploy`, `deploy:staging`, `deploy:production`, `db:migrate:remote`.
+In `apps/web`: `deploy`, `deploy:staging`, `deploy:production`, `deploy:dry-run` (build + `wrangler deploy --dry-run`, also run per environment by CI), `db:migrate:remote`.
 
 ## Deployment
 
