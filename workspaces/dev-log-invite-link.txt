@@ -1,0 +1,8 @@
+{"message":"{\"message\":\"[200] POST /api/auth/sign-up/email 83ms\",\"label\":null,\"level\":\"info\"}","label":"vite","level":"info"}
+{"message":"[workspaces] Invitation for guest-mvs5xot3@example.test: http://localhost:4321/invite/35ab6797daab4bfa80c433c06cb868a0795ac666ee284bf98db032de4b160d6c","label":"vite","level":"info"}
+{"message":"{\"message\":\"[200] POST /api/trpc/workspace.invitations.create 8ms\",\"label\":null,\"level\":\"info\"}","label":"vite","level":"info"}
+{"message":"{\"message\":\"[403] POST /api/auth/sign-up/email 72ms\",\"label\":null,\"level\":\"info\"}","label":"vite","level":"info"}
+{"message":"{\"message\":\"[200] /sign-up 19ms\",\"label\":null,\"level\":\"info\"}","label":"vite","level":"info"}
+{"message":"{\"message\":\"[403] POST /api/auth/sign-up/email 66ms\",\"label\":null,\"level\":\"info\"}","label":"vite","level":"info"}
+{"message":"{\"message\":\"[200] /sign-up 8ms\",\"label\":null,\"level\":\"info\"}","label":"vite","level":"info"}
+{"message":"{\"message\":\"[403] POST /api/auth/sign-up/email 65ms\",\"label\":null,\"level\":\"info\"}","label":"vite","level":"info"}

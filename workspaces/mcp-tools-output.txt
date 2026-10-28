@@ -1,0 +1,142 @@
+>>> tools/call list_workspaces {}
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "<untrusted-data>\n{\"mode\":\"multi\",\"activeWorkspaceId\":\"657c98a4-5030-41d3-9f32-9a95ea7e21bd\",\"items\":[{\"id\":\"657c98a4-5030-41d3-9f32-9a95ea7e21bd\",\"name\":\"Acme Robotics\",\"kind\":\"shared\",\"role\":\"owner\"},{\"id\":\"b5655919-6537-41ec-a107-8b87cff5abbe\",\"name\":\"Personal\",\"kind\":\"personal\",\"role\":\"owner\"}]}\n</untrusted-data>"
+      }
+    ],
+    "structuredContent": {
+      "mode": "multi",
+      "activeWorkspaceId": "657c98a4-5030-41d3-9f32-9a95ea7e21bd",
+      "items": [
+        {
+          "id": "657c98a4-5030-41d3-9f32-9a95ea7e21bd",
+          "name": "Acme Robotics",
+          "kind": "shared",
+          "role": "owner"
+        },
+        {
+          "id": "b5655919-6537-41ec-a107-8b87cff5abbe",
+          "name": "Personal",
+          "kind": "personal",
+          "role": "owner"
+        }
+      ]
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+
+
+>>> tools/call list_members {}
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "<untrusted-data>\n{\"items\":[{\"userId\":\"QS26eyE0B8ZBGdh6jx4uroC2bac4Vi2X\",\"name\":\"Ada Lovelace\",\"email\":\"ada@acme.test\",\"role\":\"owner\",\"joinedAt\":\"2026-10-28T13:42:09.327Z\"},{\"userId\":\"lrlYsQnXLW7vIiUTAHguvX2dyuUX6u0o\",\"name\":\"Grace Hopper\",\"email\":\"grace@acme.test\",\"role\":\"member\",\"joinedAt\":\"2026-10-28T13:42:09.345Z\"}]}\n</untrusted-data>"
+      }
+    ],
+    "structuredContent": {
+      "items": [
+        {
+          "userId": "QS26eyE0B8ZBGdh6jx4uroC2bac4Vi2X",
+          "name": "Ada Lovelace",
+          "email": "ada@acme.test",
+          "role": "owner",
+          "joinedAt": "2026-10-28T13:42:09.327Z"
+        },
+        {
+          "userId": "lrlYsQnXLW7vIiUTAHguvX2dyuUX6u0o",
+          "name": "Grace Hopper",
+          "email": "grace@acme.test",
+          "role": "member",
+          "joinedAt": "2026-10-28T13:42:09.345Z"
+        }
+      ]
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+
+
+>>> tools/call invite_member {"email":"alan@acme.test","role":"member"}
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "<untrusted-data>\n{\"id\":\"554d128f-c566-480f-91f1-d4f488d746e1\",\"email\":\"alan@acme.test\",\"role\":\"member\",\"expiresAt\":\"2026-11-04T13:42:09.389Z\",\"delivered\":true}\n</untrusted-data>"
+      }
+    ],
+    "structuredContent": {
+      "id": "554d128f-c566-480f-91f1-d4f488d746e1",
+      "email": "alan@acme.test",
+      "role": "member",
+      "expiresAt": "2026-11-04T13:42:09.389Z",
+      "delivered": true
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+
+
+>>> tools/call list_invitations {}
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "<untrusted-data>\n{\"items\":[{\"id\":\"554d128f-c566-480f-91f1-d4f488d746e1\",\"email\":\"alan@acme.test\",\"role\":\"member\",\"status\":\"pending\",\"expiresAt\":\"2026-11-04T13:42:09.389Z\"}]}\n</untrusted-data>"
+      }
+    ],
+    "structuredContent": {
+      "items": [
+        {
+          "id": "554d128f-c566-480f-91f1-d4f488d746e1",
+          "email": "alan@acme.test",
+          "role": "member",
+          "status": "pending",
+          "expiresAt": "2026-11-04T13:42:09.389Z"
+        }
+      ]
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+
+
+>>> tools/call remove_member {"userId":"not-a-member"}
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"code\":\"NOT_FOUND\",\"httpStatus\":404,\"message\":\"Member not found\"}}"
+      }
+    ],
+    "structuredContent": {
+      "error": {
+        "code": "NOT_FOUND",
+        "httpStatus": 404,
+        "message": "Member not found"
+      }
+    },
+    "isError": true
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  14:41:56
+   Duration  13.11s (transform 78%, import 12%, tests 6%, setup 4%)
+
