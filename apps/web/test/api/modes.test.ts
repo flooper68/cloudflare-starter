@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { callerFor, envWith, signUp } from "./helpers";
+import { callerFor, env, envWith, signUp } from "./helpers";
+
+/** What a failed provisioning at sign-up leaves behind: an account without a workspace. */
+async function dropWorkspaces(userId: string) {
+  await env.DB.prepare(
+    "DELETE FROM workspaces WHERE id IN (SELECT workspace_id FROM workspace_members WHERE user_id = ?)"
+  )
+    .bind(userId)
+    .run();
+}
 
 describe("workspace modes", () => {
   it("personal: one workspace per user, no members, invitations, creation or switching", async () => {
@@ -50,5 +59,49 @@ describe("workspace modes", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     const { items } = await callerFor(early, env).workspace.members.list({});
     expect(items).toHaveLength(2);
+  });
+
+  it.each(["personal", "multi"] as const)(
+    "%s: a user whose provisioning failed gets their personal workspace on first use",
+    async (mode) => {
+      const modeEnv = envWith({ WORKSPACE_MODE: mode });
+      const user = await signUp(
+        `Unlucky ${mode}`,
+        `unlucky-${mode}@example.test`,
+        modeEnv
+      );
+      await dropWorkspaces(user.id);
+      expect((await callerFor(user, modeEnv).workspace.list()).items).toEqual(
+        []
+      );
+
+      expect(await callerFor(user, modeEnv).storage.listFiles({})).toEqual({
+        items: [],
+      });
+      expect((await callerFor(user, modeEnv).workspace.list()).items).toEqual([
+        {
+          id: `personal-${user.id}`,
+          name: "Personal",
+          kind: "personal",
+          role: "owner",
+        },
+      ]);
+    }
+  );
+
+  it("single: a user without membership is told to ask for an invitation", async () => {
+    const singleEnv = envWith({
+      WORKSPACE_MODE: "single",
+      BOOTSTRAP_ADMIN_EMAIL: "founder@lonely.test",
+    });
+    const user = await signUp("Lonely", "lonely@lonely.test", singleEnv);
+    await dropWorkspaces(user.id);
+
+    await expect(
+      callerFor(user, singleEnv).storage.listFiles({})
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      cause: { code: "NOT_A_WORKSPACE_MEMBER" },
+    });
   });
 });

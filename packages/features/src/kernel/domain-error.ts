@@ -12,10 +12,13 @@ export type DomainErrorKind =
  */
 export class DomainError extends Error {
   readonly kind: DomainErrorKind;
+  /** Optional stable code clients can branch on (`NOT_A_WORKSPACE_MEMBER`). */
+  readonly code: string | undefined;
 
-  constructor(kind: DomainErrorKind, message: string) {
+  constructor(kind: DomainErrorKind, message: string, code?: string) {
     super(message);
     this.name = new.target.name;
     this.kind = kind;
+    this.code = code;
   }
 }

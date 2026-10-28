@@ -1,8 +1,11 @@
 import { env } from "cloudflare:workers";
 import {
   FileNotFoundError,
+  NotWorkspaceMemberError,
+  randomIds,
   readWorkspaceFile,
   resolveActor,
+  systemClock,
   WorkspaceNotFoundError,
 } from "@cloudflare-starter/features";
 import type { APIRoute } from "astro";
@@ -23,7 +26,12 @@ export const GET: APIRoute = async ({ locals, params, request, url }) => {
   try {
     const db = getDb(env);
     const actor = await resolveActor(
-      { db },
+      {
+        db,
+        clock: systemClock,
+        ids: randomIds,
+        requestContext: locals.requestContext,
+      },
       {
         userId: locals.user.id,
         mode: buildRequiredConfig(env).workspaces.mode,
@@ -46,7 +54,8 @@ export const GET: APIRoute = async ({ locals, params, request, url }) => {
   } catch (error) {
     if (
       error instanceof FileNotFoundError ||
-      error instanceof WorkspaceNotFoundError
+      error instanceof WorkspaceNotFoundError ||
+      error instanceof NotWorkspaceMemberError
     ) {
       return new Response("Not found", { status: 404 });
     }

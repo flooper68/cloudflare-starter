@@ -2,6 +2,7 @@ import {
   type Actor,
   type Clock,
   type Database,
+  DomainError,
   type EmailService,
   type ErrorReporter,
   type Ids,
@@ -69,6 +70,9 @@ const t = initTRPC
         data: {
           ...data,
           reference: internal && ctx ? ctx.requestContext.traceId : undefined,
+          // A use case's stable error code (NOT_A_WORKSPACE_MEMBER), for clients to branch on.
+          appCode:
+            error.cause instanceof DomainError ? error.cause.code : undefined,
         },
       };
     },

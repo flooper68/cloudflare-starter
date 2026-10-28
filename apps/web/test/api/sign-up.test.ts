@@ -189,7 +189,10 @@ describe("sign-up policy", () => {
     expect((await callerFor(lead, env).workspace.list()).items).toEqual([]);
     await expect(
       callerFor(lead, env).workspace.members.list({})
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      cause: { code: "NOT_A_WORKSPACE_MEMBER" },
+    });
 
     await callerFor(lead, env).workspace.invitations.accept({ token });
     const { items } = await callerFor(lead, env).workspace.members.list({});
