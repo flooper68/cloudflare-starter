@@ -12,6 +12,7 @@ import { handleMcp } from "@/server/mcp/handler";
 import { buildMcpServer } from "@/server/mcp/server";
 import { invoke, PROCEDURE_PATHS } from "@/server/mcp/tools";
 import { buildPlatform } from "@/server/platform";
+import { serializeBootstrap, spaBootstrap } from "@/server/spa-bootstrap";
 
 import {
   APP_URL,
@@ -494,6 +495,56 @@ describe("the human check stays on for HTTP (in-process reset links are exempt)"
         body: { email: "grace@acme.test", redirectTo: "/reset-password" },
       })
     ).resolves.toBeTruthy();
+  });
+});
+
+describe("/admin and /app pages (spaBootstrap)", () => {
+  type Locals = Parameters<typeof spaBootstrap>[1];
+  const locals = (
+    user: TestUser | null,
+    impersonatedBy: string | null = null
+  ): Locals =>
+    ({
+      user: user
+        ? { id: user.id, name: user.name, email: user.email, image: null }
+        : null,
+      session: user ? { impersonatedBy } : null,
+    }) as unknown as Locals;
+
+  it("opens the portal to active admins with ADMIN_PORTAL=on only", async () => {
+    const off = envWith({ WORKSPACE_MODE: "multi", ADMIN_PORTAL: "off" });
+    expect((await spaBootstrap(env, locals(null))).admin).toBe(false);
+    expect((await spaBootstrap(env, locals(member))).admin).toBe(false);
+    expect((await spaBootstrap(env, locals(admin))).admin).toBe(true);
+    expect((await spaBootstrap(off, locals(admin))).admin).toBe(false);
+
+    const sam = await signUp("Sam Suspended", "sam@admin.test");
+    await sql(
+      "UPDATE user SET role = 'admin', banned = 1 WHERE id = ?",
+      sam.id
+    );
+    expect((await spaBootstrap(env, locals(sam))).admin).toBe(false);
+  });
+
+  it("tells the app about an impersonation (the banner)", async () => {
+    const bootstrap = await spaBootstrap(env, locals(member, admin.id));
+    expect(bootstrap).toMatchObject({ admin: false, impersonatedBy: admin.id });
+  });
+
+  it("serializes user data so it cannot close the script tag", async () => {
+    const hostile = await spaBootstrap(env, {
+      ...locals(member),
+      user: {
+        id: member.id,
+        name: "</script><script>alert(1)</script>\u2028",
+        email: member.email,
+        image: null,
+      },
+    } as unknown as Locals);
+    const html = serializeBootstrap(hostile);
+    expect(html).not.toContain("</script");
+    expect(html).not.toContain("<");
+    expect(JSON.parse(html)).toEqual(JSON.parse(JSON.stringify(hostile)));
   });
 });
 

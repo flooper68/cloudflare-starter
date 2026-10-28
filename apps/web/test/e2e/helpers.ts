@@ -1,10 +1,12 @@
+import { readFileSync } from "node:fs";
 import { expect, type Page } from "@playwright/test";
 
 /**
  * A fresh account per call: unique per run, so runs never collide in the persistent
- * local D1. Sign-up allows 5 per minute per IP (auth.sign-up in the abuse catalog) and the suite
- * signs up three users per run (the shared one in auth.setup.ts, the journey in
- * auth.spec.ts and the invitee in workspaces.spec.ts), so one run a minute fits. Reuse the shared session
+ * local D1. Sign-up allows 5 per minute per IP (auth.sign-up in the abuse catalog) and the
+ * suite signs up five users per run (the shared one in auth.setup.ts, the admin and member
+ * in admin.setup.ts, the journey in auth.spec.ts and the invitee in workspaces.spec.ts),
+ * so one run a minute fits and there is no room for more. Reuse the shared session
  * (`test.use({ storageState: sharedSession })`) instead of signing up more users.
  */
 export function newAccount(label: string) {
@@ -32,6 +34,17 @@ export async function open(page: Page, path: string) {
  * which is gitignored and emptied at the start of every run.
  */
 export const sharedSession = "test-results/.auth/user.json";
+
+/** Where admin.setup.ts saves the admin journeys' accounts (an admin and a member). */
+export const adminAccounts = "test-results/.auth/admin-accounts.json";
+
+/** The accounts admin.setup.ts created. */
+export function readAdminAccounts(): {
+  readonly admin: Account;
+  readonly member: Account;
+} {
+  return JSON.parse(readFileSync(adminAccounts, "utf8"));
+}
 
 export async function signUp(page: Page, account: Account) {
   await open(page, "/sign-up");

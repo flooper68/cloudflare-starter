@@ -3,13 +3,17 @@ import {
   AppTopBar,
   EmptyState,
   ErrorState,
+  ImpersonationBanner,
   SkeletonCard,
   Toaster,
+  toast,
 } from "@cloudflare-starter/ui";
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { FolderX } from "lucide-react";
 
+import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
+import { trpc } from "@/lib/trpc/client";
 
 import { AppSidebar } from "./AppSidebar";
 
@@ -51,11 +55,33 @@ function WorkspaceGate() {
   return <Outlet />;
 }
 
+/** While an admin impersonates this user: whose session it is, and the way back. */
+function Impersonation() {
+  const { user, impersonatedBy } = useAuth();
+  if (!impersonatedBy || !user) return null;
+  return (
+    <ImpersonationBanner
+      userName={user.name}
+      userEmail={user.email}
+      onStop={async () => {
+        try {
+          await trpc.admin.impersonation.stop.mutate();
+          // A full load: the browser holds the admin's session again.
+          window.location.href = `/admin/users/${encodeURIComponent(user.id)}`;
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Couldn't stop");
+        }
+      }}
+    />
+  );
+}
+
 export function AppLayout() {
   const { pathname } = useLocation();
 
   return (
     <AppShell sidebar={<AppSidebar />}>
+      <Impersonation />
       <AppTopBar
         title={
           <span className="truncate text-sm font-medium text-fg">

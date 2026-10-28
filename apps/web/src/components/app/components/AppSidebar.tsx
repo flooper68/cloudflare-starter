@@ -19,6 +19,7 @@ import {
   ListTodo,
   LogOut,
   Mail,
+  ShieldCheck,
   Upload,
   UserRound,
   Users,
@@ -46,7 +47,7 @@ async function signOut() {
 export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, admin } = useAuth();
   const { mode, list, active, switchTo, create } = useWorkspace();
   const multi = mode === "multi";
 
@@ -112,6 +113,14 @@ export function AppSidebar() {
             <Link to="/app/profile">Profile</Link>
           </SidebarItem>
         </SidebarSection>
+        {admin ? (
+          <SidebarSection>
+            {/* A full load: the server checks the portal before serving /admin. */}
+            <SidebarItem asChild icon={<ShieldCheck />}>
+              <a href="/admin/overview">Admin</a>
+            </SidebarItem>
+          </SidebarSection>
+        ) : null}
         <SidebarSection label="Demos" collapsible>
           {demos.map((demo) => (
             <SidebarItem

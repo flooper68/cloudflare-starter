@@ -13,6 +13,10 @@ export interface AuthContextValue {
   readonly methods: { readonly emailPassword: boolean };
   /** WORKSPACE_MODE: which workspace UI the app shows (switcher, members). */
   readonly workspace: { readonly mode: "personal" | "single" | "multi" };
+  /** May open the admin portal (role admin, ADMIN_PORTAL=on): shows the Admin entry. */
+  readonly admin: boolean;
+  /** The impersonating admin's id while an admin acts as this user (the banner). */
+  readonly impersonatedBy: string | null;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);

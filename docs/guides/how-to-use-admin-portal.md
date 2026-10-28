@@ -63,6 +63,25 @@ Destructive procedures are `adminDestructiveProcedure`s: they need a sign-in fro
 - Better Auth's own `/api/auth/admin/*` endpoints answer 404 (`disabledPaths` from `ADMIN_HTTP_PATHS` in `server/auth.ts`, and a prefix check in the auth route); only `auth.api` calls from our server code reach them.
 - Procedures `apps/web/src/server/trpc/admin-router.ts` on `adminProcedure` / `adminDestructiveProcedure` / `impersonatorProcedure` (`trpc/init.ts`); `test/architecture/admin-procedures.test.ts` fails when an `admin.*` procedure skips the gate. `admin` is in `AUDITED_FEATURES`.
 
+## The portal
+
+`/admin/*` is served by `apps/web/src/pages/admin/[...path].astro`, which answers a plain 404 unless the signed-in user may use the portal (`spaBootstrap` in `apps/web/src/server/spa-bootstrap.ts`), and renders the same SPA as `/app/*`. Admins see an **Admin** entry in the app's sidebar. Pages (`apps/web/src/components/admin/`), built from the `packages/ui` patterns `admin-*.tsx`:
+
+| Page                  | What it shows                                                                                                                                         |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview              | Users, sign-ups and active users (30 days, sparklines), admins and suspended users, workspace counts and sizes                                        |
+| Users, User           | Search and Role/Status filters, server pages; profile, sign-in methods, workspaces, sessions, and suspend, impersonate, sign out, reset, role, delete |
+| Workspaces, Workspace | Hidden in personal mode. Flags workspaces without an owner; members, owner rescue, deletion                                                           |
+| Audit log             | Action and target filters, server pages; the impersonating admin on each event                                                                        |
+| Feature flags         | Every catalog flag: its switch and targeting rules (workspace, plan, percentage)                                                                      |
+| Settings              | The deployment's settings, read-only, and a link to Cloudflare Queues for background jobs                                                             |
+
+When a destructive action answers `REAUTH_REQUIRED`, the page offers to sign in again and comes back. While impersonating, the app shows a banner with **Stop impersonating**.
+
+## Add an admin page
+
+Append a route to `adminRoutes` in `apps/web/src/components/admin/routes.tsx` (parent `adminLayoutRoute`) and an entry to `adminNav` in `admin-nav.tsx`; load its data from an `admin.*` procedure; build it from a `packages/ui` pattern with stories (loading, empty, error, content).
+
 ## Add an admin action
 
 1. A rule in `admin/domain/` with a test; a use case `admin/<verb>-<thing>.ts` taking `(deps, admin: AdminActor, input)`, recording an audit event (add the action to the catalog, [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)), with an integration test using the memory gateway.
