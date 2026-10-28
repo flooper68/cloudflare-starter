@@ -49,4 +49,6 @@ Closes #
 
 ## Process changes
 
+- [ ] No AI agent is credited in the commits or this description (CLAUDE.md rule 9)
+
 - [ ] This PR changes `docs/processes/` or `CLAUDE.md` (describe the change above)

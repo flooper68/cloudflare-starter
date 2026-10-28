@@ -12,6 +12,7 @@ A Bun monorepo for Cloudflare-first products: one Astro web Worker (`apps/web`) 
 6. **Ask before touching the owner's Cloudflare account, secrets, GitHub settings or deploys.** Dry-run first (`--dry-run` on `setup:*` scripts). Commit, push and deploy only on an explicit yes.
 7. **Leave the machine clean.** Stop dev servers, watchers and tunnels you started; scratch files, screenshots and logs stay out of the repo.
 8. **Pin dependencies exactly.** Add with `bun add` (`bunfig.toml` sets `exact = true`); no `^` or `~`.
+9. **Never credit an AI agent.** No Claude, Codex or other agent as author or co-author: no `Co-Authored-By` trailers, no "Generated with …" lines, in commits, PR descriptions or code. The person who asked for the work is the author. CI checks commits (`scripts/check-attribution.ts`).
 
 ## Read when
 
