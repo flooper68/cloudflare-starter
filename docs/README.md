@@ -8,7 +8,8 @@ How to set up or do something; read while doing it.
 
 | Guide                                                                     | Use when …                                                                                                                             |
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [how-to-setup-web-app.md](guides/how-to-setup-web-app.md)                 | you run the app locally for the first time, deploy it, or work on queues and cron                                                      |
+| [how-to-setup-web-app.md](guides/how-to-setup-web-app.md)                 | you run the app locally for the first time or deploy it                                                                                |
+| [how-to-add-background-jobs.md](guides/how-to-add-background-jobs.md)     | you add a background job or cron entry, debug a failed job, inspect or replay the dead-letter queue, or weigh jobs vs Workflows        |
 | [how-to-setup-auth.md](guides/how-to-setup-auth.md)                       | you set secrets, change sign-in methods, add Google, or regenerate the auth tables                                                     |
 | [how-to-configure-workspaces.md](guides/how-to-configure-workspaces.md)   | you choose the workspace mode, who may sign up, invitations, replace the roles or strip the workspace UI                               |
 | [how-to-setup-d1.md](guides/how-to-setup-d1.md)                           | you create the databases, change the schema, or apply migrations                                                                       |
@@ -27,11 +28,11 @@ How to set up or do something; read while doing it.
 
 Contracts and principles that hold regardless of the current code.
 
-| Doc                                                        | Use when …                                                                                                                                                                  |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [architecture/overview.md](architecture/overview.md)       | you plan or review a change, need to know where code belongs, or extend the system (feature, table, procedure, route, binding, queue message, cron job, component, env var) |
-| [architecture/testing.md](architecture/testing.md)         | you decide which tests a change needs, write them, or review whether they are enough                                                                                        |
-| [architecture/performance.md](architecture/performance.md) | you set performance targets, add a performance check, review a change to queries, bundles or request paths, or handle a regression                                          |
+| Doc                                                        | Use when …                                                                                                                                                                     |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [architecture/overview.md](architecture/overview.md)       | you plan or review a change, need to know where code belongs, or extend the system (feature, table, procedure, route, binding, background job, cron entry, component, env var) |
+| [architecture/testing.md](architecture/testing.md)         | you decide which tests a change needs, write them, or review whether they are enough                                                                                           |
+| [architecture/performance.md](architecture/performance.md) | you set performance targets, add a performance check, review a change to queries, bundles or request paths, or handle a regression                                             |
 
 ## Processes
 

@@ -6,14 +6,14 @@ How unexpected errors are reported (OpenTelemetry exception attributes on the re
 
 Expected failures are typed `DomainError`s, mapped to tRPC codes and HTTP statuses, and are not reported. Anything else is reported once, where it is caught, through the **ErrorReporter** port (`packages/features/src/platform/ports/error-reporter.ts`):
 
-| Where it fails                           | Reported by                                                             | The caller gets                                                                 |
-| ---------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| A tRPC procedure (web app and MCP tools) | `reportInternalErrors` middleware in `apps/web/src/server/trpc/init.ts` | `500`, message `Internal error`, `error.data.reference`, no stack               |
-| An MCP tool outside a procedure          | `toolError` in `apps/web/src/server/mcp/server.ts`                      | Tool error `{ code: "INTERNAL_SERVER_ERROR", message, reference }`              |
-| A file route                             | `internalErrorResponse` in `apps/web/src/server/http.ts`                | `500`, `application/problem+json`: `{ type, title, status, detail, reference }` |
-| Any other on-demand page or endpoint     | `withRequestContext` in `apps/web/src/server/http.ts`                   | The same Problem Details 500                                                    |
-| A queue message                          | `apps/web/src/server/queue.ts`                                          | The message is retried, then lands in the dead-letter queue                     |
-| A cron run                               | `apps/web/src/server/cron.ts`                                           | The run fails (rethrown)                                                        |
+| Where it fails                           | Reported by                                                                      | The caller gets                                                                                                                                                      |
+| ---------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A tRPC procedure (web app and MCP tools) | `reportInternalErrors` middleware in `apps/web/src/server/trpc/init.ts`          | `500`, message `Internal error`, `error.data.reference`, no stack                                                                                                    |
+| An MCP tool outside a procedure          | `toolError` in `apps/web/src/server/mcp/server.ts`                               | Tool error `{ code: "INTERNAL_SERVER_ERROR", message, reference }`                                                                                                   |
+| A file route                             | `internalErrorResponse` in `apps/web/src/server/http.ts`                         | `500`, `application/problem+json`: `{ type, title, status, detail, reference }`                                                                                      |
+| Any other on-demand page or endpoint     | `withRequestContext` in `apps/web/src/server/http.ts`                            | The same Problem Details 500                                                                                                                                         |
+| A background job                         | `apps/web/src/server/queue.ts`, on the final attempt or a permanent failure only | Retried with backoff; then acked (permanent) or moved to the dead-letter queue ([how-to-add-background-jobs.md](how-to-add-background-jobs.md#retries-and-failures)) |
+| A cron entry                             | `apps/web/src/server/cron.ts`                                                    | The other entries still run; the run fails                                                                                                                           |
 
 The reference is the trace id, also in the `x-request-id` response header and in `traceparent` ([how-to-setup-logging.md](how-to-setup-logging.md#trace-context)). The cause (message, stack) goes only to the report. In the UI, `ErrorState` takes `reference` and shows it as selectable text; `errorReference(error)` in `apps/web/src/lib/error-reference.ts` reads it from a tRPC client error or a Problem Details body.
 
@@ -25,7 +25,7 @@ return internalErrorResponse(env, error, locals.requestContext, {
   "http.route": "/api/things",
 });
 // or, outside HTTP:
-const reference = platform.errors.capture(error, context, { "app.cron.schedule": cron });
+const reference = platform.errors.capture(error, context, { "app.cron.name": name });
 ```
 
 ## ERROR_REPORTER

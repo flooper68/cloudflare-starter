@@ -4,4 +4,9 @@ export {
   createMemoryErrorReporter,
   type MemoryErrorReporter,
 } from "./memory-error-reporter";
+export {
+  createMemoryJobQueue,
+  type MemoryJobQueue,
+  type SentJob,
+} from "./memory-job-queue";
 export { createMemoryLogger, type MemoryLogger } from "./memory-logger";

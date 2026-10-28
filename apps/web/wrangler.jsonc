@@ -53,6 +53,12 @@
   // Workers Paid and a sender domain onboarded with `bun run setup:email`. Add
   // "allowed_sender_addresses" once the sender is known.
   "send_email": [{ "name": "EMAIL" }],
+  // Background jobs (docs/guides/how-to-add-background-jobs.md). max_retries equals
+  // JOB_MAX_RETRIES in packages/features (the consumer reports the final attempt); the
+  // consumer acks or retries each message itself with the job's backoff, so retry_delay
+  // only applies if a whole batch fails. The dead-letter queue has no consumer;
+  // `bun run setup:cloudflare` creates it with the maximum message retention (14 days), a
+  // queue setting that this file cannot hold. Checked by test/architecture/jobs.test.ts.
   "queues": {
     "producers": [
       { "binding": "APP_QUEUE", "queue": "cloudflare-starter-develop" }
@@ -61,12 +67,15 @@
       {
         "queue": "cloudflare-starter-develop",
         "max_batch_size": 10,
-        "max_retries": 3,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "retry_delay": 30,
         "dead_letter_queue": "cloudflare-starter-develop-dlq"
       }
     ]
   },
-  "triggers": { "crons": ["*/5 * * * *", "17 3 * * *"] },
+  // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
+  "triggers": { "crons": ["17 3 * * *"] },
 
   "env": {
     "staging": {
@@ -107,12 +116,14 @@
           {
             "queue": "cloudflare-starter-staging",
             "max_batch_size": 10,
-            "max_retries": 3,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "retry_delay": 30,
             "dead_letter_queue": "cloudflare-starter-staging-dlq"
           }
         ]
       },
-      "triggers": { "crons": ["*/5 * * * *", "17 3 * * *"] }
+      "triggers": { "crons": ["17 3 * * *"] }
     },
     "production": {
       "observability": {
@@ -152,12 +163,14 @@
           {
             "queue": "cloudflare-starter-production",
             "max_batch_size": 10,
-            "max_retries": 3,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "retry_delay": 30,
             "dead_letter_queue": "cloudflare-starter-production-dlq"
           }
         ]
       },
-      "triggers": { "crons": ["*/5 * * * *", "17 3 * * *"] }
+      "triggers": { "crons": ["17 3 * * *"] }
     }
   }
 }

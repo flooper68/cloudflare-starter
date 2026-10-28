@@ -29,5 +29,6 @@ export {
   toAuditEvent,
 } from "./audit-record";
 export { InvalidAuditInputError } from "./errors";
+export { purgeAuditEventsJob } from "./purge-events-job";
 export { findSecretKeys, SECRET_KEY_PATTERN } from "./redact";
 export { AUDIT_RETENTION_DAYS, auditRetentionCutoff } from "./retention";

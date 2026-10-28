@@ -1,12 +1,10 @@
 import {
   createDownloadUrl,
   createPresignedUpload,
-  formatTraceparent,
   listWorkspaceFiles,
   sendHello,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { displayName } from "@/lib/user";
@@ -67,21 +65,12 @@ export const appRouter = router({
     enqueueHello: protectedProcedure
       .input(z.object({ name: z.string().min(1).max(100) }))
       .mutation(async ({ ctx, input }) => {
-        if (!ctx.queue) {
-          throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message: "Queue is not configured",
-          });
-        }
-        await sendHello(
-          { queue: ctx.queue, clock: ctx.clock },
-          {
-            name: input.name,
-            userId: ctx.user.id,
-            traceparent: formatTraceparent(ctx.requestContext),
-          }
+        const { id } = await sendHello(
+          ctx,
+          { name: input.name },
+          { context: ctx.requestContext }
         );
-        return { queued: true };
+        return { queued: true, jobId: id };
       }),
   }),
 

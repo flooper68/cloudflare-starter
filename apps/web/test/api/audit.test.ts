@@ -1,20 +1,27 @@
 // The audit log from the outside: Better Auth's sign-up, sign-in, failed sign-in and
 // password reset write audit events carrying the request's trace id (the x-request-id the
-// user sees), and the daily cron purges events past retention.
+// user sees), and the daily cron enqueues the purge job, which deletes events past retention.
+import {
+  createExecutionContext,
+  createMessageBatch,
+  getQueueResult,
+} from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import {
   type AuditEvent,
   type AuditQueryInput,
+  createMemoryJobQueue,
   listAuditEvents,
   recordAuditEvent,
 } from "@cloudflare-starter/features";
 import { describe, expect, it } from "vitest";
 
 import { getAuth } from "@/server/auth";
-import { AUDIT_PURGE_CRON, runScheduled } from "@/server/cron";
+import { runScheduled } from "@/server/cron";
 import { getDb } from "@/server/db";
 import { REQUEST_ID_HEADER, withRequestContext } from "@/server/http";
 import { buildPlatform } from "@/server/platform";
+import { handleQueueBatch, queueDeps } from "@/server/queue";
 
 import { APP_URL, testRequestContext } from "./helpers";
 
@@ -225,7 +232,7 @@ describe("audit log of Better Auth endpoints", () => {
 });
 
 describe("audit purge cron", () => {
-  it("deletes events past retention on the daily schedule", async () => {
+  it("audit.purge-events enqueues the purge job daily, which deletes events past retention", async () => {
     const db = getDb(env);
     const ids = { uuid: () => crypto.randomUUID() };
     const recordAt = (at: string) =>
@@ -237,14 +244,34 @@ describe("audit purge cron", () => {
     const old = await recordAt("2020-01-01T00:00:00.000Z");
     const recent = await recordAt("2026-10-01T00:00:00.000Z");
 
+    const jobQueue = createMemoryJobQueue();
+    const platform = { ...buildPlatform(env), jobQueue };
     await runScheduled(
       {
-        cron: AUDIT_PURGE_CRON,
+        cron: "17 3 * * *",
         scheduledTime: Date.parse("2026-10-28T03:17:00.000Z"),
-      } as ScheduledController,
-      buildPlatform(env),
-      { db }
+      },
+      platform
     );
+    const purge = jobQueue.sent.find(
+      (sent) => sent.envelope.type === "audit.purge-events"
+    );
+    expect(purge?.envelope.data).toEqual({ asOf: "2026-10-28T03:17:00.000Z" });
+
+    // The consumer runs it from the real job catalog.
+    const batch = createMessageBatch("cloudflare-starter-develop", [
+      {
+        id: "m-purge",
+        timestamp: Date.now(),
+        attempts: 1,
+        body: purge?.envelope,
+      },
+    ]);
+    const ctx = createExecutionContext();
+    await handleQueueBatch(batch, platform, queueDeps(env));
+    expect((await getQueueResult(batch, ctx)).explicitAcks).toEqual([
+      "m-purge",
+    ]);
 
     const left = (await events({ action: "user.deleted" })).map(
       (event) => event.id

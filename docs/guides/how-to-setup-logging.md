@@ -8,13 +8,13 @@ Server code never calls `console` (GritQL rule `lint/rules/no-console.grit`). It
 
 ```ts
 ctx.logger.info("files.uploaded", { "app.file.size_bytes": size }); // in a tRPC procedure
-loggerFor(platform, context).warn("queue.invalid", {
-  "app.queue.issues": issues,
+loggerFor(platform, context).info("cron.completed", {
+  "app.cron.name": name,
 }); // queue, cron
 ```
 
-- The first argument is the event name: the record's `body`, a stable dotted name to filter on (`queue.hello`, `queue.invalid`, `cron.hello`, `error.captured`, `mcp.error`, `auth.mail_not_sent`).
-- The fields are the record's `attributes`. Use [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) where one exists (`http.request.method`, `url.path`, `http.route`, `http.response.status_code`, `user.id`, `messaging.message.id`, `rpc.method`) and a namespaced `app.*` key otherwise (`app.queue.attempts`, `app.workspace.id`). An Error under the key `error` becomes `exception.type`, `exception.message` and `exception.stacktrace`.
+- The first argument is the event name: the record's `body`, a stable dotted name to filter on (`greetings.hello`, `job.completed`, `job.skipped`, `job.retry`, `cron.completed`, `error.captured`, `mcp.error`, `auth.mail_not_sent`).
+- The fields are the record's `attributes`. Use [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) where one exists (`http.request.method`, `url.path`, `http.route`, `http.response.status_code`, `user.id`, `messaging.message.id`, `rpc.method`) and a namespaced `app.*` key otherwise (`app.job.attempts`, `app.workspace.id`). An Error under the key `error` becomes `exception.type`, `exception.message` and `exception.stacktrace`.
 - `withContext(context)` binds the unit of work (`loggerFor` and `ctx.logger` do it for you); `child(fields)` adds attributes to every record. Neither changes its parent.
 - Every adapter builds records with `toLogRecord` (`platform/log-record.ts`): values under secret-looking keys (`password`, `secret`, `token`, `authorization`, `cookie`, `apiKey`, …) become `[redacted]`, circular references `[circular]`, long strings are cut, and logging never throws. The IP address is never logged, and the `url.path` of HTTP records has token segments (reset-password, verify-email, invite and invitation links) and secret query values replaced by `[redacted]` (`apps/web/src/lib/redact-url.ts`).
 
@@ -27,7 +27,7 @@ One JSON object per record, the [OpenTelemetry Logs Data Model](https://opentele
   "timestamp": "2026-10-28T13:21:03.443Z",
   "severity_text": "INFO",
   "severity_number": 9,
-  "body": "queue.hello",
+  "body": "greetings.hello",
   "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
   "span_id": "b7ad6b7169203331",
   "trace_flags": "01",
@@ -36,7 +36,10 @@ One JSON object per record, the [OpenTelemetry Logs Data Model](https://opentele
     "user.id": "EOO5KpXKR3pPeBJFpUnD3JZJK0N1TOQg",
     "messaging.system": "cloudflare_queues",
     "messaging.message.id": "434fed3276b80cce8f59d51de4d8b545",
-    "app.queue.attempts": 1,
+    "app.job.attempts": 1,
+    "cloudevents.event_id": "6860a9e4-3734-44f1-b004-bceb5d5565da",
+    "cloudevents.event_type": "greetings.hello",
+    "cloudevents.event_source": "/production/http",
     "app.greeting.message": "Hello, Barbara"
   },
   "resource": {
@@ -55,8 +58,8 @@ Every unit of work is a span of a [W3C Trace Context](https://www.w3.org/TR/trac
 
 - **HTTP.** `apps/web/src/middleware.ts` builds the context for every on-demand request. A valid incoming `traceparent` header is continued (same `trace_id`, its span as parent, and only the sampled bit of its flags); otherwise a new trace starts. This holds even when a setting is missing and the request fails with the configuration error. The request always gets its own span id. The incoming trace id is for correlation only and is never trusted for anything else: any client can send one. `x-request-id` from the client is ignored.
 - **Responses** carry `traceparent` (our span) and `x-request-id` (the trace id, for people). The trace id is the **reference** users quote; there is no separate request id.
-- **Queue messages** carry the producer's `traceparent`; the consumer continues that trace with a new span per message.
-- **Cron** runs start a new trace each.
+- **Jobs** carry the producer's `traceparent` in their envelope; the consumer continues that trace with a new span per delivery ([how-to-add-background-jobs.md](how-to-add-background-jobs.md)).
+- **Cron** entries start a new trace each; the jobs they enqueue continue it.
 - `cf-ray` is recorded as `app.cloudflare.ray_id` on error reports from the HTTP edge and the file routes.
 
 ```bash

@@ -16,6 +16,7 @@ export {
   type AuditTargetType,
   auditQuerySchema,
   InvalidAuditInputError,
+  purgeAuditEventsJob,
 } from "./domain";
 export { type AuditEventPage, listAuditEvents } from "./list-audit-events";
 export { purgeAuditEvents } from "./purge-audit-events";

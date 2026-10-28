@@ -16,15 +16,16 @@ A Bun monorepo for Cloudflare-first products: one Astro web Worker (`apps/web`) 
 
 ## Read when
 
-| Read                                                                 | When                                                                                      |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [docs/README.md](docs/README.md)                                     | you need any guide; it indexes all docs with "use when" lines                             |
-| [docs/architecture/overview.md](docs/architecture/overview.md)       | you plan or review a change, or add a feature, table, procedure, route, binding, env var  |
-| [docs/architecture/testing.md](docs/architecture/testing.md)         | you decide which tests a change needs                                                     |
-| [docs/architecture/performance.md](docs/architecture/performance.md) | you set performance targets or change queries, bundles or request paths                   |
-| [docs/processes/development.md](docs/processes/development.md)       | you start any non-trivial change or write a plan                                          |
-| [docs/processes/code-review.md](docs/processes/code-review.md)       | you review a diff (yours or someone else's); reviewer agent: `.claude/agents/reviewer.md` |
-| [docs/processes/adrs.md](docs/processes/adrs.md)                     | a change makes or reverses a decision others will build on                                |
-| [docs/processes/dependencies.md](docs/processes/dependencies.md)     | you update, add or audit dependencies, or respond to a security advisory                  |
-| `.claude/skills/setup-auth`, `setup-d1`, `setup-email`               | you set up or change auth, the database, or email                                         |
-| [packages/ui/CONVENTIONS.md](packages/ui/CONVENTIONS.md)             | you write or review UI components or stories                                              |
+| Read                                                                                   | When                                                                                      |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [docs/README.md](docs/README.md)                                                       | you need any guide; it indexes all docs with "use when" lines                             |
+| [docs/architecture/overview.md](docs/architecture/overview.md)                         | you plan or review a change, or add a feature, table, procedure, route, binding, env var  |
+| [docs/architecture/testing.md](docs/architecture/testing.md)                           | you decide which tests a change needs                                                     |
+| [docs/architecture/performance.md](docs/architecture/performance.md)                   | you set performance targets or change queries, bundles or request paths                   |
+| [docs/processes/development.md](docs/processes/development.md)                         | you start any non-trivial change or write a plan                                          |
+| [docs/processes/code-review.md](docs/processes/code-review.md)                         | you review a diff (yours or someone else's); reviewer agent: `.claude/agents/reviewer.md` |
+| [docs/processes/adrs.md](docs/processes/adrs.md)                                       | a change makes or reverses a decision others will build on                                |
+| [docs/processes/dependencies.md](docs/processes/dependencies.md)                       | you update, add or audit dependencies, or respond to a security advisory                  |
+| [docs/guides/how-to-add-background-jobs.md](docs/guides/how-to-add-background-jobs.md) | you add a background job or cron entry, or change the queue consumer                      |
+| `.claude/skills/setup-auth`, `setup-d1`, `setup-email`                                 | you set up or change auth, the database, or email                                         |
+| [packages/ui/CONVENTIONS.md](packages/ui/CONVENTIONS.md)                               | you write or review UI components or stories                                              |

@@ -96,7 +96,10 @@ describe("/mcp", () => {
       name: "enqueue_hello",
       arguments: { name: "from MCP" },
     });
-    expect(queued.result.structuredContent).toEqual({ queued: true });
+    expect(queued.result.structuredContent).toEqual({
+      queued: true,
+      jobId: expect.any(String),
+    });
   });
 
   it("workspace tools: create, invite, accept, members, roles, transfer, leave", async () => {

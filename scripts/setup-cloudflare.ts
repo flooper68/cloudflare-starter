@@ -3,8 +3,9 @@
  *
  * Creates the web Worker's Cloudflare resources for an environment, named as in
  * apps/web/wrangler.jsonc: the D1 database (its id is written back into the config),
- * the R2 bucket, the queue and its dead-letter queue. Re-runnable: existing resources
- * are kept. Needs `bunx wrangler login` (or CLOUDFLARE_API_TOKEN) first.
+ * the R2 bucket, the queue and its dead-letter queue (with the maximum message retention,
+ * 14 days, set again on every run). Re-runnable: existing resources are kept. Needs
+ * `bunx wrangler login` (or CLOUDFLARE_API_TOKEN) first.
  */
 import { parseArgs } from "node:util";
 
@@ -19,6 +20,7 @@ import {
   setWranglerValue,
   wrangler,
 } from "./lib";
+import { type PlannedQueue, queuePlan } from "./queue-plan";
 
 const { values } = parseArgs({
   options: {
@@ -35,10 +37,6 @@ const jurisdiction = values.jurisdiction
 interface D1Entry {
   readonly database_name: string;
   readonly database_id: string;
-}
-interface QueueConsumer {
-  readonly queue: string;
-  readonly dead_letter_queue?: string;
 }
 
 function setupD1(env: Environment, entry: D1Entry) {
@@ -91,15 +89,42 @@ function setupBucket(name: string) {
   if (!dryRun) console.log("  + created");
 }
 
-function setupQueue(name: string) {
-  console.log(`Queue ${name}`);
-  if (!dryRun && wrangler(["queues", "info", name]).ok) {
+function setupQueue(queue: PlannedQueue) {
+  console.log(`Queue ${queue.name} (${queue.role})`);
+  const retention =
+    queue.messageRetentionSeconds === undefined
+      ? []
+      : [
+          "--message-retention-period-secs",
+          String(queue.messageRetentionSeconds),
+        ];
+  const exists = !dryRun && wrangler(["queues", "info", queue.name]).ok;
+  if (exists && retention.length === 0) {
     console.log("  = exists");
     return;
   }
-  const created = wrangler(["queues", "create", name], { dryRun });
-  if (!created.ok) fail(created.stderr || created.stdout);
-  if (!dryRun) console.log("  + created");
+  let result = exists
+    ? wrangler(["queues", "update", queue.name, ...retention])
+    : wrangler(["queues", "create", queue.name, ...retention], { dryRun });
+  let retentionSet = result.ok;
+  if (!result.ok && retention.length > 0) {
+    // Workers Free fixes retention at 24 hours and rejects the setting: keep the queue
+    // (created without it) and go on with the other resources.
+    console.warn(
+      `  ! message retention ${queue.messageRetentionSeconds} s was rejected (Workers Free fixes it at 24 hours; docs/guides/how-to-add-background-jobs.md#dead-letter-queue):\n    ${(result.stderr || result.stdout).trim()}`
+    );
+    result = exists
+      ? { ok: true, stdout: "", stderr: "" }
+      : wrangler(["queues", "create", queue.name]);
+    retentionSet = false;
+  }
+  if (!result.ok) fail(result.stderr || result.stdout);
+  if (!dryRun) {
+    if (!exists) console.log("  + created");
+    if (retentionSet && retention.length > 0) {
+      console.log(`  ✓ message retention ${queue.messageRetentionSeconds} s`);
+    }
+  }
 }
 
 const config = readWranglerConfig();
@@ -115,10 +140,8 @@ for (const env of parseEnvironments(values.env)) {
     | undefined) ?? []) {
     setupBucket(bucket.bucket_name);
   }
-  const queues = block.queues as { consumers?: QueueConsumer[] } | undefined;
-  for (const consumer of queues?.consumers ?? []) {
-    setupQueue(consumer.queue);
-    if (consumer.dead_letter_queue) setupQueue(consumer.dead_letter_queue);
+  for (const queue of queuePlan(block as Parameters<typeof queuePlan>[0])) {
+    setupQueue(queue);
   }
 }
 

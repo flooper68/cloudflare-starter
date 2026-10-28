@@ -52,8 +52,8 @@ Open `http://localhost:4321`, create an account at `/sign-up`, and you land on `
 
 Queue and cron run in the same dev server:
 
-- `/app/queue-demo` sends a message; the consumer logs a `body: 'queue.hello'` record in the dev output, with the `trace_id` of the request that queued it.
-- `curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"` runs the cron handler, which logs a `body: 'cron.hello'` record.
+- `/app/queue-demo` enqueues a `greetings.hello` job; the consumer logs a `body: 'greetings.hello'` record in the dev output, with the `trace_id` of the request that queued it.
+- `curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"` runs the cron entries of that schedule (the daily audit and idempotency-key purges), which log `cron.completed` and enqueue their jobs ([how-to-add-background-jobs.md](how-to-add-background-jobs.md#run-it-locally)).
 
 Every response has `traceparent` and `x-request-id` headers; the trace id in them is the `trace_id` of that request's log records.
 
@@ -62,7 +62,7 @@ Every response has `traceparent` and `x-request-id` headers; the trace id in the
 Per environment (`develop`, `staging`, `production`); every script takes `--dry-run`.
 
 1. Log in: `bunx wrangler login`.
-2. Create D1, R2 and the queues (with dead-letter queues), and write the D1 id into `wrangler.jsonc`:
+2. Create D1, R2 and the queues (with dead-letter queues, kept 14 days), and write the D1 id into `wrangler.jsonc`:
 
    ```bash
    bun run setup:cloudflare --env production            # add --jurisdiction eu to keep data in the EU
@@ -101,10 +101,7 @@ The environment is picked when building: `deploy:production` runs `CLOUDFLARE_EN
 
 ## Queues and Cron
 
-- Producer: tRPC `queue.enqueueHello` sends a typed message (the greetings feature's `sendHello`; message types in `packages/features/src/queue-messages.ts`).
-- Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). Each message runs with its own request context, continuing the trace of the `traceparent` the producer put on it. A malformed message is logged (`queue.invalid`) and dropped; a failing handler is reported (`error.captured`) and retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
-- Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC), a request context per run. With several schedules, branch on `controller.cron`. `17 3 * * *` purges audit events past retention ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md#retention)).
-- Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard; filtering and fields in [how-to-setup-logging.md](how-to-setup-logging.md).
+Background jobs, the queue consumer, retries, the dead-letter queue and the cron catalog (including the daily audit purge, [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)) are in [how-to-add-background-jobs.md](how-to-add-background-jobs.md). Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard; filtering and fields in [how-to-setup-logging.md](how-to-setup-logging.md).
 
 ## Verify
 
@@ -137,7 +134,7 @@ Migrations were not applied to this database. Run `bun run db:migrate:local`, or
 
 ### Queue demo fails
 
-The queue and its `-dlq` must exist for the environment before deploying; Wrangler refuses to deploy a consumer for a missing queue.
+The queue and its `-dlq` must exist for the environment before deploying (`bun run setup:cloudflare`); Wrangler refuses to deploy a consumer for a missing queue. Every request returns 500 "APP_QUEUE is not bound" when the environment lacks the producer binding.
 
 ### Upload or email demos fail
 

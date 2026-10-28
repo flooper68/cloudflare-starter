@@ -85,7 +85,7 @@ The Workers platform sets hard limits; the current values per plan are in Cloudf
 | Subrequests per request  | Each `fetch`, and each binding call on some plans, counts. Avoid a subrequest per item in a loop; batch instead                                                |
 | D1 rows read and written | Billed per row and they drive latency. Select only needed columns, paginate, index filters, use `db.batch` for several statements in one round trip            |
 | Large transfers          | Upload and download big files directly to R2 with presigned URLs ([how-to-setup-r2.md](../guides/how-to-setup-r2.md)), not through the Worker                  |
-| Slow or retryable work   | Send it to `APP_QUEUE` and return; the consumer does the work with its own limits and retries                                                                  |
+| Slow or retryable work   | Enqueue a job (`enqueueJob`) and return; the consumer does the work with its own limits and retries                                                            |
 | Caching                  | Cache public, rarely changing responses (static assets, public pages) with `Cache-Control` and the Cache API; never cache per-user data in a shared cache      |
 
 ## Regressions and budget changes

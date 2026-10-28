@@ -10,14 +10,17 @@ they are enforced by Biome, dependency-cruiser and `test/architecture/`.
 src/
 ├── index.ts            package root: re-exports each folder's barrel; apps import only from here
 ├── database.ts         composition root: every feature's tables in one schema, createDatabase()
-├── queue-messages.ts   composition root: every message type on APP_QUEUE
-├── kernel/             pure shared building blocks: DomainError, Clock, Ids, RequestContext
-├── platform/           shared infrastructure: Drizzle client, email service, queue send, clock, ids,
-│                       request context; ports/ (Logger, ErrorReporter) and adapters/<vendor>/
+├── job-catalog.ts      composition root: every background job type and its handler
+├── cron-catalog.ts     composition root: every cron entry (name, schedule, run)
+├── kernel/             pure shared building blocks: DomainError, Clock, Ids, Random, RequestContext,
+│                       defineJob and the job envelope type
+├── platform/           shared infrastructure: Drizzle client, email service, clock, ids, random,
+│                       request context; ports/ (Logger, ErrorReporter, JobQueue) and adapters/<vendor>/
+├── jobs/               background jobs: envelope, backoff, retry policy, idempotency keys, enqueueJob, runJob
 ├── accounts/           Better Auth tables (generated) and user lookups
 ├── audit/              the append-only audit log: event catalog, record, list, purge
 ├── files/              file records and R2 storage (binding and presigned URLs), per workspace
-├── greetings/          the queue and cron demo
+├── greetings/          the job demo (greetings.hello)
 └── workspaces/         tenancy: workspaces, members, invitations, roles, sign-up policy
 ```
 
@@ -45,7 +48,7 @@ files/
 
 1. `src/<feature>/` with `domain/`, `index.ts`, use-case files, and `<feature>.schema.ts` if it has tables.
 2. Add the schema to `src/database.ts` and the barrel to `src/index.ts`.
-3. Messages it sends on the queue go into `src/queue-messages.ts`.
+3. Background jobs: `defineJob` in its `domain/`, the handler registered in `src/job-catalog.ts`, enqueued with `enqueueJob`; cron entries in `src/cron-catalog.ts` ([how-to-add-background-jobs.md](../../docs/guides/how-to-add-background-jobs.md)).
 4. `bun run db:generate` for new tables; `bun run lint` and `bun run test` check the structure.
 
 ## Database

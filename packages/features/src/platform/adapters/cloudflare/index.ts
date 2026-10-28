@@ -1,4 +1,5 @@
 // Cloudflare adapters: the vendor code for Cloudflare-native services lives only here.
+export { createCloudflareJobQueue } from "./cloudflare-job-queue";
 export {
   createWorkersLogsErrorReporter,
   ERROR_REPORT_EVENT,
