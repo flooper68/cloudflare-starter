@@ -47,16 +47,16 @@ export function UploadDemoClient() {
   return (
     <Card className="space-y-5">
       <div className="space-y-2">
-        <CardTitle>R2 Presigned Upload</CardTitle>
+        <CardTitle>Direct to R2 (presigned URL)</CardTitle>
         <CardDescription>
-          Upload a file directly to R2 through a presigned PUT URL. The app
-          stores only a DB-backed file record and signed download access.
+          The browser PUTs straight to R2 with a presigned URL; the Worker only
+          signs. Needs R2 API keys and bucket CORS (docs/how-to-setup-r2.md).
         </CardDescription>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="upload-file">Choose a file</Label>
-        <Input id="upload-file" type="file" onChange={onFileChange} />
+        <Label htmlFor="presigned-upload-file">Choose a file</Label>
+        <Input id="presigned-upload-file" type="file" onChange={onFileChange} />
       </div>
 
       <div className="rounded-xl bg-zinc-100 p-4 text-sm text-zinc-700">

@@ -1,14 +1,17 @@
 ---
+import { env } from "cloudflare:workers";
+
 import { SignInForm } from "@/components/auth/SignInForm";
 import Layout from "@/layouts/Layout.astro";
+import { isGoogleEnabled } from "@/server/auth";
 
-if (Astro.locals.auth().userId) {
+if (Astro.locals.user) {
   return Astro.redirect("/app/dashboard");
 }
 ---
 
 <Layout title="Sign in">
   <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
-    <SignInForm client:load />
+    <SignInForm client:load googleEnabled={isGoogleEnabled(env)} />
   </main>
 </Layout>

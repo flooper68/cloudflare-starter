@@ -1,17 +1,22 @@
 export type { Database, FileBucket } from "./db";
 export {
+  account,
   and,
   createDb,
   desc,
   eq,
   FILE_BUCKETS,
   files,
-  users,
+  schema,
+  session,
+  user,
+  verification,
 } from "./db";
 export type {
   EmailRecipient,
   EmailService,
   MailjetConfig,
+  SendEmailInput,
   SendTestEmailInput,
 } from "./email";
 export { createMailjetEmailService } from "./email";
@@ -27,7 +32,9 @@ export {
   buildFileKey,
   createFileRecord,
   findOwnedFile,
+  getOwnedFileObject,
   presignDownload,
   presignUpload,
+  storeFile,
   uploadInputSchema,
 } from "./storage";

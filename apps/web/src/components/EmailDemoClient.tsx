@@ -13,7 +13,7 @@ export function EmailDemoClient() {
 
   async function sendEmail() {
     setSending(true);
-    setStatus("Sending Mailjet test email to your signed-in Clerk address...");
+    setStatus("Sending Mailjet test email to your signed-in address...");
 
     try {
       await trpc.email.sendTest.mutate();
@@ -33,7 +33,7 @@ export function EmailDemoClient() {
       <div className="space-y-2">
         <CardTitle>Mailjet Test Email</CardTitle>
         <CardDescription>
-          Send a test email to the current Clerk user. The provider integration
+          Send a test email to the signed-in user. The provider integration
           stays behind a small email service interface.
         </CardDescription>
       </div>

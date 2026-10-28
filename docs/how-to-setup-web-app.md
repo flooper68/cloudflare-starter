@@ -2,308 +2,122 @@
 
 This guide explains how to run and deploy the Astro web app in this repo.
 
-The web app lives in [apps/web](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/web). It uses the Cloudflare Astro adapter, Clerk authentication, Astro SSR for public and auth pages, a React SPA mounted at `/app/*` for authenticated pages, a Postgres database, typed tRPC routes, and optional queue, R2, and Mailjet integrations.
+The web app lives in [apps/web](../apps/web/README.md). It is one Worker: the Cloudflare Astro adapter serves HTTP (Better Auth sign-in, Astro SSR pages, a React SPA at `/app/*`, tRPC and REST), and [src/worker.ts](../apps/web/src/worker.ts) adds the queue consumer and Cron Triggers. Data is in D1, files in R2.
 
 ## What You Need
 
-Before you start:
+1. Bun.
+2. A Cloudflare account, and Wrangler logged in (`bunx wrangler login`).
 
-1. Install Bun.
-2. Have a Cloudflare account.
-3. Be able to log in with Wrangler.
-4. Have a Clerk application.
-5. Have a database connection string for `DATABASE_URL`.
+That is enough to run locally: D1, R2 (binding), the queue and cron all run inside Wrangler, and auth needs no external provider.
 
-Optional dependencies:
+Optional:
 
-- Cloudflare Queues if you want `/app/queue-demo`
-- R2 credentials if you want `/app/upload-demo`
-- Mailjet credentials if you want `/app/email-demo`
+- R2 API credentials for the presigned-URL half of `/app/upload-demo` ([how-to-setup-r2.md](./how-to-setup-r2.md))
+- Mailjet for `/app/email-demo` and password-reset mail ([how-to-setup-mailjet.md](./how-to-setup-mailjet.md))
+- A Google OAuth client for "Continue with Google" ([how-to-setup-auth.md](./how-to-setup-auth.md))
 
 Official references:
 
 - [Astro on Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/astro/)
 - [Cloudflare Workers secrets](https://developers.cloudflare.com/workers/configuration/secrets/)
-- [Cloudflare Queues getting started](https://developers.cloudflare.com/queues/get-started/)
+- [Cloudflare D1](https://developers.cloudflare.com/d1/)
 
-## Step 1: Install Dependencies
+## Runtime Values
 
-From the repo root:
+Bindings come from [apps/web/wrangler.jsonc](../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `APP_QUEUE` (producer, and this Worker is also the consumer), `APP_ENV` (var), Cron Triggers. Code reads them with `import { env } from "cloudflare:workers"`.
+
+Secrets, validated in [apps/web/src/lib/config.ts](../apps/web/src/lib/config.ts):
+
+| Name                                       | Required | Notes                               |
+| ------------------------------------------ | -------- | ----------------------------------- |
+| `APP_URL`                                  | yes      | Public origin, no trailing slash    |
+| `BETTER_AUTH_SECRET`                       | yes      | 32+ characters, one per environment |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no       | Enables Google sign-in              |
+| `R2_*`                                     | no       | Upload demo                         |
+| `MAILJET_*`                                | no       | Email demo and reset mail           |
+
+## Run Locally
 
 ```bash
-cd /Users/premylsciompa/dev_personal/cloudflare-starter
 bun install
-```
-
-## Step 2: Prepare Your Required Runtime Values
-
-The web app requires these values:
-
-- `APP_URL`
-- `DATABASE_URL`
-- `PUBLIC_CLERK_PUBLISHABLE_KEY`
-- `CLERK_SECRET_KEY`
-
-Optional values:
-
-- `R2_ACCOUNT_ID`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
-- `R2_FILES_BUCKET_NAME`
-- `MAILJET_API_KEY`
-- `MAILJET_SECRET_KEY`
-- `MAILJET_FROM_EMAIL`
-- `MAILJET_FROM_NAME`
-- `MAILJET_SANDBOX`
-
-The current schema is defined here:
-
-- [apps/web/astro.config.mjs](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/web/astro.config.mjs)
-- [apps/web/src/lib/config.ts](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/web/src/lib/config.ts)
-
-## Step 3: Authenticate Wrangler
-
-If you are not already logged in:
-
-```bash
-bunx wrangler login
-```
-
-Optional check:
-
-```bash
-bunx wrangler whoami
-```
-
-## Step 4: Create Queue Resources If You Want The Queue Demo
-
-If you want `/app/queue-demo` to work in deployed environments, create these queues once:
-
-```bash
-bunx wrangler queues create cloudflare-starter-develop
-bunx wrangler queues create cloudflare-starter-staging
-bunx wrangler queues create cloudflare-starter-production
-```
-
-If you do not plan to use the queue feature, you can still deploy the web app, but queue-related flows will fail when used.
-
-## Step 5: Set Local Environment Values
-
-For local development, copy the example file:
-
-```bash
-cp .env.example .env
-```
-
-Then fill in at least:
-
-- `APP_URL`
-- `DATABASE_URL`
-- `PUBLIC_CLERK_PUBLISHABLE_KEY`
-- `CLERK_SECRET_KEY`
-
-## Step 6: Test It Locally
-
-From the repo root:
-
-```bash
+cp apps/web/.dev.vars.example apps/web/.dev.vars
+bun run db:migrate:local
 bun run dev:web
 ```
 
-Basic verification:
+Open `http://localhost:4321`, create an account at `/sign-up`, and you land on `/app/dashboard`. Blank values in `.dev.vars` count as unset.
 
-1. Open `http://localhost:4321`
-2. Open `/api/hello`
-3. Confirm you get a JSON hello response
+Queue and cron run in the same dev server:
 
-If you also configured the optional integrations:
+- `/app/queue-demo` sends a message; the consumer logs `queue-hello` in the dev output.
+- `curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"` runs the cron handler, which logs `cron-hello`.
 
-- `/app/queue-demo` tests queue publishing
-- `/app/upload-demo` tests R2 upload flow
-- `/app/email-demo` tests Mailjet sending
+## Deploy
 
-## Step 7: Set Secrets For The Deployed Worker
+1. Create the D1 databases and paste their ids into `wrangler.jsonc` ([how-to-setup-d1.md](./how-to-setup-d1.md)).
+2. Create the R2 buckets ([how-to-setup-r2.md](./how-to-setup-r2.md)).
+3. Create the queues and their dead-letter queues, per environment:
 
-Deploy the required secrets to the web worker.
+   ```bash
+   bunx wrangler queues create cloudflare-starter-develop
+   bunx wrangler queues create cloudflare-starter-develop-dlq
+   ```
 
-From [apps/web](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/web):
+   Repeat with `staging` and `production`.
 
-```bash
-cd /Users/premylsciompa/dev_personal/cloudflare-starter/apps/web
-bunx wrangler secret put APP_URL
-bunx wrangler secret put DATABASE_URL
-bunx wrangler secret put PUBLIC_CLERK_PUBLISHABLE_KEY
-bunx wrangler secret put CLERK_SECRET_KEY
-```
+4. Set the secrets (repeat with `--env staging` / `--env production`):
 
-If you want the optional integrations, also set:
+   ```bash
+   cd apps/web
+   bunx wrangler secret put APP_URL
+   bunx wrangler secret put BETTER_AUTH_SECRET
+   ```
 
-```bash
-bunx wrangler secret put R2_ACCOUNT_ID
-bunx wrangler secret put R2_ACCESS_KEY_ID
-bunx wrangler secret put R2_SECRET_ACCESS_KEY
-bunx wrangler secret put R2_FILES_BUCKET_NAME
-bunx wrangler secret put MAILJET_API_KEY
-bunx wrangler secret put MAILJET_SECRET_KEY
-bunx wrangler secret put MAILJET_FROM_EMAIL
-bunx wrangler secret put MAILJET_FROM_NAME
-bunx wrangler secret put MAILJET_SANDBOX
-```
+   Add the optional `GOOGLE_*`, `R2_*` and `MAILJET_*` secrets the same way.
 
-For staging:
+5. Migrate, then build and deploy:
 
-```bash
-bunx wrangler secret put APP_URL --env staging
-bunx wrangler secret put DATABASE_URL --env staging
-bunx wrangler secret put PUBLIC_CLERK_PUBLISHABLE_KEY --env staging
-bunx wrangler secret put CLERK_SECRET_KEY --env staging
-```
+   ```bash
+   cd apps/web
+   bunx wrangler d1 migrations apply DB --remote --env production
+   bun run deploy:production
+   ```
 
-For production:
+The environment is picked when building: `deploy:production` runs `CLOUDFLARE_ENV=production astro build && wrangler deploy`. Running `wrangler deploy --env production` on a bundle built without `CLOUDFLARE_ENV` would deploy the develop config. Use `bun run deploy` for develop and `deploy:staging` for staging. Storybook deploys separately ([how-to-setup-storybook-worker.md](./how-to-setup-storybook-worker.md)).
 
-```bash
-bunx wrangler secret put APP_URL --env production
-bunx wrangler secret put DATABASE_URL --env production
-bunx wrangler secret put PUBLIC_CLERK_PUBLISHABLE_KEY --env production
-bunx wrangler secret put CLERK_SECRET_KEY --env production
-```
+## Queues and Cron
 
-Important:
+- Producer: tRPC `queue.enqueueHello` sends a typed message (schema in `packages/features/src/queue`).
+- Consumer: [src/server/queue.ts](../apps/web/src/server/queue.ts). A malformed message is logged and dropped; a failing handler is retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
+- Cron: [src/server/cron.ts](../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC). With several schedules, branch on `controller.cron`.
+- Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard (observability is on).
 
-- `APP_ENV` is already provided by `wrangler.toml` vars.
-- The queue binding is also configured in `wrangler.toml`.
-- Secrets must be set before deploy if the app depends on them at runtime.
+## Verify
 
-## Step 8: Build The Web App
-
-The app must be built before deployment because Wrangler serves the built assets from `dist`.
-
-From [apps/web](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/web):
-
-```bash
-cd /Users/premylsciompa/dev_personal/cloudflare-starter/apps/web
-bun run build
-```
-
-This builds the Astro app into `dist`.
-
-Storybook is no longer part of the main web worker build. See [docs/how-to-setup-storybook-worker.md](/Users/premylsciompa/dev_personal/cloudflare-starter/docs/how-to-setup-storybook-worker.md) for the separate Storybook deploy.
-
-## Step 9: Deploy The Web App
-
-Deploy the default environment:
-
-```bash
-bunx wrangler deploy
-```
-
-Deploy staging:
-
-```bash
-bunx wrangler deploy --env staging
-```
-
-Deploy production:
-
-```bash
-bunx wrangler deploy --env production
-```
-
-## Step 10: Verify The Deployment
-
-Use the URL printed by Wrangler after deploy.
-
-Basic verification:
-
-```bash
-curl 'https://<your-worker-url>/api/hello'
-```
-
-If deployment is healthy, you should get a JSON hello response.
-
-Additional verification:
-
-1. Open the homepage.
-2. Test sign-in and sign-up.
-3. Confirm signed-in visits to `/` land on `/app/dashboard`.
-4. If queue is configured, test `/app/queue-demo`.
-5. If R2 is configured, test `/app/upload-demo`.
-6. If Mailjet is configured, test `/app/email-demo`.
-
-## Step 11: Deploy Future Changes
-
-Whenever you change the web app:
-
-```bash
-cd /Users/premylsciompa/dev_personal/cloudflare-starter/apps/web
-bun run build
-bunx wrangler deploy
-```
-
-For staging or production:
-
-```bash
-bunx wrangler deploy --env staging
-bunx wrangler deploy --env production
-```
+1. `curl https://<your-worker-url>/api/hello` returns a JSON hello.
+2. Sign up, sign out, sign in.
+3. Signed-in visits to `/` land on `/app/dashboard`; signed-out visits to `/app/*` land on `/sign-in`.
+4. Try the demos you configured.
 
 ## Common Problems
 
-### The Worker Deploys But Crashes At Runtime
+### Every page returns 500 with a zod error
 
-Symptom:
+A required secret is missing or too short. Check `APP_URL` and `BETTER_AUTH_SECRET` (32+ characters) in `.dev.vars` or the Worker secrets.
 
-- The deploy succeeds, but requests fail in production.
+### `no such table: user`
 
-Fix:
+Migrations were not applied to this database. Run `bun run db:migrate:local`, or the remote command for the environment.
 
-- Make sure the required secrets were set on the deployed worker.
-- Re-check `APP_URL`, `DATABASE_URL`, `PUBLIC_CLERK_PUBLISHABLE_KEY`, and `CLERK_SECRET_KEY`.
+### Sign-in succeeds but you bounce back to `/sign-in`
 
-### Queue Demo Fails
+`APP_URL` does not match the origin in the browser (scheme, host, port), so the cookie or origin check fails.
 
-Symptom:
+### Queue demo fails
 
-- `/app/queue-demo` reports that the queue is not configured or messages do not get consumed.
+The queue and its `-dlq` must exist for the environment before deploying; Wrangler refuses to deploy a consumer for a missing queue.
 
-Fix:
+### Upload or email demos fail
 
-- Create the queue resources.
-- Deploy the queue worker.
-- Make sure the web app and queue worker are using matching environments.
-
-### Upload Or Email Demos Fail
-
-Symptom:
-
-- `/app/upload-demo` or `/app/email-demo` returns a configuration error.
-
-Fix:
-
-- Those features are optional and require their own secrets.
-- Add the missing R2 or Mailjet values and redeploy if needed.
-
-### You Deployed Without Building
-
-Symptom:
-
-- Asset output is stale or missing.
-
-Fix:
-
-- Run `bun run build` from `apps/web` before `wrangler deploy`.
-
-## Quick Deploy Checklist
-
-1. `bun install`
-2. `bunx wrangler login`
-3. Create queues if you want `/app/queue-demo`
-4. Fill `.env` for local testing
-5. `bun run dev:web`
-6. `cd apps/web`
-7. `bunx wrangler secret put APP_URL`
-8. `bunx wrangler secret put DATABASE_URL`
-9. `bunx wrangler secret put PUBLIC_CLERK_PUBLISHABLE_KEY`
-10. `bunx wrangler secret put CLERK_SECRET_KEY`
-11. `bun run build`
-12. `bunx wrangler deploy`
+The presigned upload and the email demo need their own secrets; the error message names what is missing. The binding upload needs only the bucket.

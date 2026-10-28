@@ -17,9 +17,10 @@ interface RuntimeEnv {
 function asStrings(
   env: RuntimeEnv | undefined
 ): Record<string, string | undefined> {
+  // Blank lines in .dev.vars (`R2_ACCOUNT_ID=`) count as unset.
   const entries = Object.entries(env ?? {}).map(([key, value]) => [
     key,
-    typeof value === "string" ? value : undefined,
+    typeof value === "string" && value !== "" ? value : undefined,
   ]);
   return Object.fromEntries(entries);
 }

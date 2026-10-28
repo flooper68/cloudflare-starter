@@ -11,3 +11,4 @@ dist/
 tmp/
 *.tsbuildinfo
 storybook-static/
+.dev.vars

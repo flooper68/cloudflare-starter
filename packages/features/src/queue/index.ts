@@ -3,7 +3,7 @@ import { z } from "zod";
 export const helloQueueMessageSchema = z.object({
   type: z.literal("hello"),
   name: z.string().min(1).max(100),
-  userId: z.uuid(),
+  userId: z.string().min(1),
   queuedAt: z.string().datetime(),
 });
 

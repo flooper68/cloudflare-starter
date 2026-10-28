@@ -24,7 +24,7 @@ Official references:
 - The API is called directly with `fetch` from the worker runtime.
 - Auth is HTTP Basic: `base64(API_KEY:SECRET_KEY)`.
 - When `MAILJET_SANDBOX=true`, Mailjet validates the request but does **not** deliver the email. This is the right default for development.
-- The sender address is always `MAILJET_FROM_EMAIL` + `MAILJET_FROM_NAME`. The recipient is whoever is signed in via Clerk when they trigger `/app/email-demo`.
+- The sender address is always `MAILJET_FROM_EMAIL` + `MAILJET_FROM_NAME`. The recipient is whoever is signed in when they trigger `/app/email-demo`.
 
 ## Step 1: Create A Mailjet Account
 
@@ -35,7 +35,7 @@ Sign up at [mailjet.com](https://www.mailjet.com/). The free plan is sufficient 
 Mailjet refuses to send mail from an unverified sender.
 
 1. Open **Account Settings** → **Senders & Domains** → **Add a sender domain or address**.
-2. Add the email address you want the demo to send *from* (this becomes `MAILJET_FROM_EMAIL`).
+2. Add the email address you want the demo to send _from_ (this becomes `MAILJET_FROM_EMAIL`).
 3. Follow Mailjet's verification flow (click the verification email, or set DNS records for a whole domain).
 
 Important:
@@ -56,7 +56,7 @@ Important:
 
 ## Step 4: Fill In Local Environment Values
 
-Edit `.env` at the repo root:
+Edit `apps/web/.dev.vars`:
 
 ```env
 MAILJET_API_KEY=your-api-key
@@ -74,7 +74,7 @@ Start the app:
 bun run dev:web
 ```
 
-Open `http://localhost:4321/app/email-demo` while signed in with Clerk and click the send button. In sandbox mode you should see a successful response with no email delivered. Set `MAILJET_SANDBOX=false` to deliver a real message to your signed-in Clerk address.
+Open `http://localhost:4321/app/email-demo` while signed in and click the send button. In sandbox mode you should see a successful response with no email delivered. Set `MAILJET_SANDBOX=false` to deliver a real message to your signed-in address.
 
 ## Step 5: Set Secrets For Deployed Environments
 
@@ -144,6 +144,6 @@ Fix:
 1. Create a Mailjet account
 2. Verify a sender address or domain
 3. Copy API key + secret from the Mailjet dashboard
-4. Fill `MAILJET_*` in `.env` with `MAILJET_SANDBOX=true` and run `bun run dev:web`
+4. Fill `MAILJET_*` in `apps/web/.dev.vars` with `MAILJET_SANDBOX=true` and run `bun run dev:web`
 5. For deploys: `bunx wrangler secret put MAILJET_*` in `apps/web`
 6. Flip `MAILJET_SANDBOX=false` only in the environment(s) that should actually send mail

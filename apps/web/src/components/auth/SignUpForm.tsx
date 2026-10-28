@@ -9,38 +9,30 @@ import {
   Input,
   Label,
 } from "@cloudflare-starter/ui";
-import { type FormEvent, useEffect, useState } from "react";
-import { useClerkInstance } from "@/components/shared/hooks/use-clerk-client";
-import { getClerkErrorMessage } from "@/lib/clerk";
+import { type FormEvent, useState } from "react";
 
-type Step = "form" | "verification";
+import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { GoogleSignInButton } from "./GoogleSignInButton";
+
+const MIN_PASSWORD_LENGTH = 8;
 
 interface FieldErrors {
-  firstName?: string;
-  lastName?: string;
+  name?: string;
   email?: string;
   password?: string;
-  code?: string;
 }
 
-export function SignUpForm() {
-  const clerk = useClerkInstance();
-
-  const [step, setStep] = useState<Step>("form");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+export function SignUpForm({
+  googleEnabled,
+}: {
+  readonly googleEnabled: boolean;
+}) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-
-  useEffect(() => {
-    if (clerk?.session) {
-      window.location.href = "/app/dashboard";
-    }
-  }, [clerk]);
 
   function clearField(field: keyof FieldErrors) {
     setFieldErrors((current) => {
@@ -54,32 +46,20 @@ export function SignUpForm() {
   function validateForm() {
     const next: FieldErrors = {};
 
-    if (!firstName.trim()) next.firstName = "First name is required";
-    if (!lastName.trim()) next.lastName = "Last name is required";
+    if (!name.trim()) next.name = "Name is required";
     if (!email.trim()) next.email = "Email is required";
     if (!password) next.password = "Password is required";
+    else if (password.length < MIN_PASSWORD_LENGTH) {
+      next.password = `Use at least ${MIN_PASSWORD_LENGTH} characters`;
+    }
 
     setFieldErrors(next);
     return Object.keys(next).length === 0;
   }
 
-  function validateCode() {
-    const next: FieldErrors = {};
-
-    if (!code.trim()) next.code = "Verification code is required";
-
-    setFieldErrors(next);
-    return Object.keys(next).length === 0;
-  }
-
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-
-    if (!clerk?.client) {
-      setError("Clerk is still loading.");
-      return;
-    }
 
     if (!validateForm()) {
       return;
@@ -87,59 +67,20 @@ export function SignUpForm() {
 
     setLoading(true);
 
-    try {
-      await clerk.client.signUp.create({
-        firstName,
-        lastName,
-        emailAddress: email,
-        password,
-      });
+    // Better Auth signs the new user in right away (autoSignIn).
+    const { error: signUpError } = await authClient.signUp.email({
+      name: name.trim(),
+      email,
+      password,
+    });
 
-      await clerk.client.signUp.prepareEmailAddressVerification({
-        strategy: "email_code",
-      });
-
-      setFieldErrors({});
-      setStep("verification");
-    } catch (cause) {
-      setError(getClerkErrorMessage(cause, "Unable to sign up."));
-    } finally {
+    if (signUpError) {
+      setError(authErrorMessage(signUpError, "Unable to sign up."));
       setLoading(false);
-    }
-  }
-
-  async function handleVerification(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-
-    if (!clerk?.client) {
-      setError("Clerk is still loading.");
       return;
     }
 
-    if (!validateCode()) {
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const result = await clerk.client.signUp.attemptEmailAddressVerification({
-        code,
-      });
-
-      if (result.status === "complete") {
-        await clerk.setActive({ session: result.createdSessionId });
-        window.location.href = "/app/dashboard";
-        return;
-      }
-
-      setError("Verification could not be completed.");
-    } catch (cause) {
-      setError(getClerkErrorMessage(cause, "Unable to verify your email."));
-    } finally {
-      setLoading(false);
-    }
+    window.location.href = "/app/dashboard";
   }
 
   return (
@@ -148,118 +89,71 @@ export function SignUpForm() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
           Cloudflare Starter
         </p>
-        <CardTitle>
-          {step === "form" ? "Create an account" : "Verify your email"}
-        </CardTitle>
+        <CardTitle>Create an account</CardTitle>
         <p className="text-sm text-zinc-600">
-          {step === "form"
-            ? "Use email and password auth, following the same custom Clerk pattern as Vertical Casting Hub."
-            : `We sent a verification code to ${email}.`}
+          Email and password accounts, stored in D1 by Better Auth.
         </p>
       </CardHeader>
 
-      <CardContent>
-        {step === "form" ? (
-          <form className="space-y-4" onSubmit={handleCreate}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  autoComplete="given-name"
-                  value={firstName}
-                  aria-invalid={Boolean(fieldErrors.firstName)}
-                  onChange={(event) => {
-                    setFirstName(event.target.value);
-                    clearField("firstName");
-                  }}
-                />
-                <FieldError message={fieldErrors.firstName} />
-              </div>
+      <CardContent className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              type="text"
+              autoComplete="name"
+              value={name}
+              aria-invalid={Boolean(fieldErrors.name)}
+              onChange={(event) => {
+                setName(event.target.value);
+                clearField("name");
+              }}
+            />
+            <FieldError message={fieldErrors.name} />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  autoComplete="family-name"
-                  value={lastName}
-                  aria-invalid={Boolean(fieldErrors.lastName)}
-                  onChange={(event) => {
-                    setLastName(event.target.value);
-                    clearField("lastName");
-                  }}
-                />
-                <FieldError message={fieldErrors.lastName} />
-              </div>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              aria-invalid={Boolean(fieldErrors.email)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                clearField("email");
+              }}
+            />
+            <FieldError message={fieldErrors.email} />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                value={email}
-                aria-invalid={Boolean(fieldErrors.email)}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  clearField("email");
-                }}
-              />
-              <FieldError message={fieldErrors.email} />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              aria-invalid={Boolean(fieldErrors.password)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                clearField("password");
+              }}
+            />
+            <FieldError message={fieldErrors.password} />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                aria-invalid={Boolean(fieldErrors.password)}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  clearField("password");
-                }}
-              />
-              <FieldError message={fieldErrors.password} />
-            </div>
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          <Button className="w-full" disabled={loading} type="submit">
+            {loading ? "Creating account..." : "Create account"}
+          </Button>
+        </form>
 
-            <Button className="w-full" disabled={loading} type="submit">
-              {loading ? "Creating account..." : "Create account"}
-            </Button>
-          </form>
-        ) : (
-          <form className="space-y-4" onSubmit={handleVerification}>
-            <div className="space-y-2">
-              <Label htmlFor="code">Verification code</Label>
-              <Input
-                id="code"
-                type="text"
-                inputMode="numeric"
-                placeholder="Enter code"
-                value={code}
-                aria-invalid={Boolean(fieldErrors.code)}
-                onChange={(event) => {
-                  setCode(event.target.value);
-                  clearField("code");
-                }}
-              />
-              <FieldError message={fieldErrors.code} />
-            </div>
-
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-            <Button className="w-full" disabled={loading} type="submit">
-              {loading ? "Verifying..." : "Verify email"}
-            </Button>
-          </form>
-        )}
+        {googleEnabled ? <GoogleSignInButton onError={setError} /> : null}
       </CardContent>
 
       <CardFooter className="justify-center">

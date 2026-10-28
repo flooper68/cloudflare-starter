@@ -1,16 +1,13 @@
 import { createDb, type Database } from "@cloudflare-starter/features";
-import { buildRequiredConfig } from "@/lib/env";
 
-let localDb: Database | null = null;
+import type { AppEnv } from "@/server/env";
 
-export function getDb(
-  runtimeEnv?: Record<string, unknown>,
-  hyperdrive?: Hyperdrive
-): Database {
-  if (hyperdrive) {
-    return createDb(hyperdrive.connectionString);
+/** Per-isolate cache: the `env` from `cloudflare:workers` is stable for the isolate's lifetime. */
+let cache: { readonly d1: D1Database; readonly db: Database } | undefined;
+
+export function getDb(env: Pick<AppEnv, "DB">): Database {
+  if (!cache || cache.d1 !== env.DB) {
+    cache = { d1: env.DB, db: createDb(env.DB) };
   }
-
-  localDb ??= createDb(buildRequiredConfig(runtimeEnv).DATABASE_URL);
-  return localDb;
+  return cache.db;
 }

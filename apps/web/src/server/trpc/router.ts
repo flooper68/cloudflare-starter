@@ -17,7 +17,7 @@ export const appRouter = router({
   health: router({
     hello: protectedProcedure.query(({ ctx }) => ({
       message: "hello world",
-      user: ctx.appUser?.email ?? "unknown",
+      user: ctx.user?.email ?? "unknown",
       environment: ctx.config.APP_ENV,
     })),
   }),
@@ -35,7 +35,7 @@ export const appRouter = router({
 
         const file = await createFileRecord(ctx.db, {
           ...input,
-          ownerUserId: ctx.appUser.id,
+          ownerUserId: ctx.user.id,
         });
         const uploadUrl = await presignUpload(ctx.r2.value, file.r2Key, input);
 
@@ -58,7 +58,7 @@ export const appRouter = router({
 
         const file = await findOwnedFile(ctx.db, {
           fileId: input.fileId,
-          ownerUserId: ctx.appUser.id,
+          ownerUserId: ctx.user.id,
         });
 
         if (!file) {
@@ -88,7 +88,7 @@ export const appRouter = router({
         await enqueueAppMessage(ctx.queue, {
           type: "hello",
           name: input.name,
-          userId: ctx.appUser.id,
+          userId: ctx.user.id,
           queuedAt: new Date().toISOString(),
         });
 
@@ -107,22 +107,10 @@ export const appRouter = router({
         });
       }
 
-      const email = ctx.clerkUser.primaryEmailAddress?.emailAddress;
-      if (!email) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Signed-in Clerk user is missing a primary email address",
-        });
-      }
-
       await ctx.email.value.sendTestEmail({
         to: {
-          email,
-          name: displayName({
-            firstName: ctx.clerkUser.firstName,
-            lastName: ctx.clerkUser.lastName,
-            email,
-          }),
+          email: ctx.user.email,
+          name: displayName(ctx.user),
         },
         environment: ctx.config.APP_ENV,
       });

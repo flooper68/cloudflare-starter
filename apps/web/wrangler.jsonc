@@ -1,0 +1,105 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // One Worker: Astro serves HTTP, src/worker.ts adds the queue consumer and Cron Triggers.
+  // Bindings are not inherited by `env.*`, so each environment repeats them.
+  // Build for an environment with CLOUDFLARE_ENV=<env> (see the deploy:* scripts);
+  // `wrangler deploy --env` does not retarget an already built bundle.
+  "name": "cloudflare-starter-web",
+  "main": "./src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": { "APP_ENV": "develop" },
+  // Create with `bunx wrangler d1 create <name>` and paste the id (docs/how-to-setup-d1.md).
+  // The placeholder id is enough for local dev.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cloudflare-starter-develop",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../packages/features/migrations"
+    }
+  ],
+  "r2_buckets": [
+    { "binding": "FILES", "bucket_name": "cloudflare-starter-files-develop" }
+  ],
+  "queues": {
+    "producers": [
+      { "binding": "APP_QUEUE", "queue": "cloudflare-starter-develop" }
+    ],
+    "consumers": [
+      {
+        "queue": "cloudflare-starter-develop",
+        "max_batch_size": 10,
+        "max_retries": 3,
+        "dead_letter_queue": "cloudflare-starter-develop-dlq"
+      }
+    ]
+  },
+  "triggers": { "crons": ["*/5 * * * *"] },
+
+  "env": {
+    "staging": {
+      "vars": { "APP_ENV": "staging" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cloudflare-starter-staging",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "../../packages/features/migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES",
+          "bucket_name": "cloudflare-starter-files-staging"
+        }
+      ],
+      "queues": {
+        "producers": [
+          { "binding": "APP_QUEUE", "queue": "cloudflare-starter-staging" }
+        ],
+        "consumers": [
+          {
+            "queue": "cloudflare-starter-staging",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "cloudflare-starter-staging-dlq"
+          }
+        ]
+      },
+      "triggers": { "crons": ["*/5 * * * *"] }
+    },
+    "production": {
+      "vars": { "APP_ENV": "production" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cloudflare-starter-production",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "../../packages/features/migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "FILES",
+          "bucket_name": "cloudflare-starter-files-production"
+        }
+      ],
+      "queues": {
+        "producers": [
+          { "binding": "APP_QUEUE", "queue": "cloudflare-starter-production" }
+        ],
+        "consumers": [
+          {
+            "queue": "cloudflare-starter-production",
+            "max_batch_size": 10,
+            "max_retries": 3,
+            "dead_letter_queue": "cloudflare-starter-production-dlq"
+          }
+        ]
+      },
+      "triggers": { "crons": ["*/5 * * * *"] }
+    }
+  }
+}

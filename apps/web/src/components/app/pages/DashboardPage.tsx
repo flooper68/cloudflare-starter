@@ -11,7 +11,7 @@ const sections = [
     href: "/app/profile",
     title: "Profile",
     description:
-      "Inspect the current Clerk user and manage password changes in-app.",
+      "Inspect the signed-in user and manage password changes in-app.",
   },
   {
     href: "/app/upload-demo",

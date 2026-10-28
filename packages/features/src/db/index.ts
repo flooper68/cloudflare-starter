@@ -1,21 +1,14 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { type DrizzleD1Database, drizzle } from "drizzle-orm/d1";
 
 export { and, desc, eq } from "drizzle-orm";
 export * from "./schema";
 
 import * as schema from "./schema";
 
-export function createDb(connectionString: string) {
-  const client = postgres(connectionString, {
-    max: 1,
-    prepare: false,
-  });
+export { schema };
+export type Database = DrizzleD1Database<typeof schema>;
 
-  return drizzle(client, {
-    schema,
-    casing: "snake_case",
-  });
+/** Creates the Drizzle client over the D1 binding (`env.DB`). */
+export function createDb(d1: D1Database): Database {
+  return drizzle(d1, { schema });
 }
-
-export type Database = ReturnType<typeof createDb>;

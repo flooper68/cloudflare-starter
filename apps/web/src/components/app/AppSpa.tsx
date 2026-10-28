@@ -9,12 +9,12 @@ function AppSpaRouter() {
   const [router] = useState(() => createAppRouter());
 
   useEffect(() => {
-    if (!auth.userId) {
+    if (!auth.user) {
       window.location.href = "/sign-in";
     }
-  }, [auth.userId]);
+  }, [auth.user]);
 
-  if (!auth.userId) {
+  if (!auth.user) {
     return null;
   }
 

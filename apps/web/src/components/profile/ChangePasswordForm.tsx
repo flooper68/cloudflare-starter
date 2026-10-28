@@ -9,11 +9,7 @@ import {
   Label,
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
-import {
-  useClerkInstance,
-  useUser,
-} from "@/components/shared/hooks/use-clerk-client";
-import { getClerkErrorMessage, isReverificationRequired } from "@/lib/clerk";
+import { authClient, authErrorMessage } from "@/lib/auth-client";
 
 interface FieldErrors {
   currentPassword?: string;
@@ -22,9 +18,6 @@ interface FieldErrors {
 }
 
 export function ChangePasswordForm() {
-  const clerk = useClerkInstance();
-  const user = useUser();
-
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -65,30 +58,6 @@ export function ChangePasswordForm() {
     return Object.keys(next).length === 0;
   }
 
-  async function runUpdate() {
-    if (!user) {
-      throw new Error("You need to be signed in.");
-    }
-
-    await user.updatePassword({
-      currentPassword,
-      newPassword,
-      signOutOfOtherSessions: true,
-    });
-  }
-
-  async function reverifyWithPassword() {
-    if (!clerk?.session) {
-      throw new Error("No active session.");
-    }
-
-    await clerk.session.startVerification({ level: "first_factor" });
-    await clerk.session.attemptFirstFactorVerification({
-      strategy: "password",
-      password: currentPassword,
-    });
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -100,25 +69,21 @@ export function ChangePasswordForm() {
 
     setLoading(true);
 
-    try {
-      try {
-        await runUpdate();
-      } catch (cause) {
-        if (!isReverificationRequired(cause)) {
-          throw cause;
-        }
+    const { error: changeError } = await authClient.changePassword({
+      currentPassword,
+      newPassword,
+      revokeOtherSessions: true,
+    });
 
-        await reverifyWithPassword();
-        await runUpdate();
-      }
+    setLoading(false);
 
-      resetForm();
-      setSuccess("Password updated. Other sessions were signed out.");
-    } catch (cause) {
-      setError(getClerkErrorMessage(cause, "Unable to update password."));
-    } finally {
-      setLoading(false);
+    if (changeError) {
+      setError(authErrorMessage(changeError, "Unable to update password."));
+      return;
     }
+
+    resetForm();
+    setSuccess("Password updated. Other sessions were signed out.");
   }
 
   return (
@@ -126,8 +91,7 @@ export function ChangePasswordForm() {
       <CardHeader>
         <CardTitle>Security</CardTitle>
         <p className="text-sm text-zinc-600">
-          Change your password using the same Clerk session reverification flow
-          used in Vertical Casting Hub.
+          Change your password. Other signed-in sessions are revoked.
         </p>
       </CardHeader>
 
@@ -184,7 +148,7 @@ export function ChangePasswordForm() {
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           {success ? <p className="text-sm text-teal-700">{success}</p> : null}
 
-          <Button disabled={loading || !user} type="submit">
+          <Button disabled={loading} type="submit">
             {loading ? "Updating password..." : "Update password"}
           </Button>
         </form>

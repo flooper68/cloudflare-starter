@@ -21,7 +21,7 @@ const demos = [
   {
     title: "Mailjet Demo",
     description:
-      "Send a test email to the currently signed-in Clerk account using the Mailjet adapter.",
+      "Send a test email to the currently signed-in account using the Mailjet adapter.",
     href: "/app/email-demo",
   },
 ] as const;
@@ -40,7 +40,7 @@ export function HomePage({ signedIn }: HomePageProps) {
         <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-3xl">
             <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 md:text-5xl">
-              Bun, Astro, React, Clerk, R2, Queues, Mailjet.
+              Bun, Astro, React, Better Auth, D1, R2, Queues.
             </h1>
             <p className="mt-4 text-base leading-7 text-zinc-600">
               A Cloudflare-first starter kit for personal products. The demos

@@ -9,29 +9,26 @@ import {
   Input,
   Label,
 } from "@cloudflare-starter/ui";
-import { type FormEvent, useEffect, useState } from "react";
-import { useClerkInstance } from "@/components/shared/hooks/use-clerk-client";
-import { getClerkErrorMessage } from "@/lib/clerk";
+import { type FormEvent, useState } from "react";
+
+import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { GoogleSignInButton } from "./GoogleSignInButton";
 
 interface FieldErrors {
   email?: string;
   password?: string;
 }
 
-export function SignInForm() {
-  const clerk = useClerkInstance();
-
+export function SignInForm({
+  googleEnabled,
+}: {
+  readonly googleEnabled: boolean;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-
-  useEffect(() => {
-    if (clerk?.session) {
-      window.location.href = "/app/dashboard";
-    }
-  }, [clerk]);
 
   function clearField(field: keyof FieldErrors) {
     setFieldErrors((current) => {
@@ -56,36 +53,24 @@ export function SignInForm() {
     event.preventDefault();
     setError(null);
 
-    if (!clerk?.client) {
-      setError("Clerk is still loading.");
-      return;
-    }
-
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
 
-    try {
-      const result = await clerk.client.signIn.create({
-        strategy: "password",
-        identifier: email,
-        password,
-      });
+    const { error: signInError } = await authClient.signIn.email({
+      email,
+      password,
+    });
 
-      if (result.status === "complete") {
-        await clerk.setActive({ session: result.createdSessionId });
-        window.location.href = "/app/dashboard";
-        return;
-      }
-
-      setError("Sign in could not be completed.");
-    } catch (cause) {
-      setError(getClerkErrorMessage(cause, "Unable to sign in."));
-    } finally {
+    if (signInError) {
+      setError(authErrorMessage(signInError, "Unable to sign in."));
       setLoading(false);
+      return;
     }
+
+    window.location.href = "/app/dashboard";
   }
 
   return (
@@ -100,7 +85,7 @@ export function SignInForm() {
         </p>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-4">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -149,6 +134,8 @@ export function SignInForm() {
             {loading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
+
+        {googleEnabled ? <GoogleSignInButton onError={setError} /> : null}
       </CardContent>
 
       <CardFooter className="justify-center">
