@@ -2,7 +2,7 @@ name: Deploy
 
 # Manual deploy of the web app to one environment: Actions → Deploy → Run workflow.
 # Secrets come from the GitHub environment of the same name, so its protection rules
-# (required reviewers, allowed branches) apply. See docs/how-to-setup-ci.md.
+# (required reviewers, allowed branches) apply. See docs/guides/how-to-setup-ci.md.
 on:
   workflow_dispatch:
     inputs:

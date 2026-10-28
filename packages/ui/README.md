@@ -27,9 +27,9 @@ src/
 └── stories/      foundations (brand, colours, type, elevation) and the intro page
 ```
 
-- Theming and branding: [docs/how-to-define-branding.md](../../docs/how-to-define-branding.md)
+- Theming and branding: [docs/guides/how-to-define-branding.md](../../docs/guides/how-to-define-branding.md)
 - Rules for components and stories: [CONVENTIONS.md](CONVENTIONS.md)
-- Storybook: [docs/how-to-use-storybook.md](../../docs/how-to-use-storybook.md)
+- Storybook: [docs/guides/how-to-use-storybook.md](../../docs/guides/how-to-use-storybook.md)
 
 Built on Radix primitives (`radix-ui`), `cmdk`, `sonner`, `@tanstack/react-table`,
 `react-day-picker`, `@dnd-kit` and `lucide-react` icons. This package targets the browser;

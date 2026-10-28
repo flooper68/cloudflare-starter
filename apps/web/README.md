@@ -2,15 +2,15 @@
 
 The main Worker: Astro 7 + React 19 serving the public SSR surface and the Better Auth–protected React SPA under `/app/*`, plus the queue consumer and Cron Triggers ([src/worker.ts](src/worker.ts)). Data, users and sessions live in D1; files in R2.
 
-See [docs/how-to-setup-web-app.md](../../docs/how-to-setup-web-app.md) for setup and deployment.
+See [docs/guides/how-to-setup-web-app.md](../../docs/guides/how-to-setup-web-app.md) for setup and deployment.
 
 Related guides:
 
-- [docs/how-to-setup-auth.md](../../docs/how-to-setup-auth.md) — Better Auth, optional Google sign-in
-- [docs/how-to-setup-d1.md](../../docs/how-to-setup-d1.md) — D1 database and migrations
-- [docs/how-to-setup-r2.md](../../docs/how-to-setup-r2.md) — R2 binding and presigned URLs
-- [docs/how-to-setup-email.md](../../docs/how-to-setup-email.md) — Cloudflare Email Service
-- [docs/how-to-setup-mcp.md](../../docs/how-to-setup-mcp.md) — the MCP server and its parity rule
+- [docs/guides/how-to-setup-auth.md](../../docs/guides/how-to-setup-auth.md) — Better Auth, optional Google sign-in
+- [docs/guides/how-to-setup-d1.md](../../docs/guides/how-to-setup-d1.md) — D1 database and migrations
+- [docs/guides/how-to-setup-r2.md](../../docs/guides/how-to-setup-r2.md) — R2 binding and presigned URLs
+- [docs/guides/how-to-setup-email.md](../../docs/guides/how-to-setup-email.md) — Cloudflare Email Service
+- [docs/guides/how-to-setup-mcp.md](../../docs/guides/how-to-setup-mcp.md) — the MCP server and its parity rule
 
 ## Route layout
 

@@ -23,7 +23,7 @@ before; use the dev server for day-to-day work.
 
 ## Writing Stories
 
-Follow [packages/ui/CONVENTIONS.md](../packages/ui/CONVENTIONS.md): title `<Group>/<Component>`,
+Follow [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md): title `<Group>/<Component>`,
 `tags: ["autodocs"]`, a Playground, every variant and state, and one realistic example. The
 toolbar switches between the dark and light theme; the Accessibility panel runs axe on the
 current story.

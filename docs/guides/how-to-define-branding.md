@@ -19,7 +19,7 @@ edit, the component is missing a token; add the token instead.
 
 ## Step 1: Name, Tagline, Logo
 
-Edit [`brand.tsx`](../packages/ui/src/brand/brand.tsx):
+Edit [`brand.tsx`](../../packages/ui/src/brand/brand.tsx):
 
 ```ts
 export const brand = {
@@ -42,7 +42,7 @@ truth.
 
 ## Step 2: Accent, Fonts, Radius
 
-Edit [`brand.css`](../packages/ui/src/brand/brand.css):
+Edit [`brand.css`](../../packages/ui/src/brand/brand.css):
 
 ```css
 :root {
