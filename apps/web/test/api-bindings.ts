@@ -34,4 +34,10 @@ export const API_TEST_BINDINGS = {
   SIGN_UP: "open",
   SIGN_UP_DOMAINS: "",
   BOOTSTRAP_ADMIN_EMAIL: "",
+  // Not in wrangler.jsonc either (setup:analytics writes them per environment). Product
+  // events go to the simulated ANALYTICS_EVENTS dataset under a test key; no beacon.
+  ANALYTICS: "analytics-engine",
+  ANALYTICS_ID_SECRET: "api-test-analytics-id-secret-0123456789",
+  WEB_ANALYTICS: "none",
+  WEB_ANALYTICS_TOKEN: "",
 } as const satisfies Readonly<Record<string, string>>;

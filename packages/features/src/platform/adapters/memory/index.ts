@@ -15,4 +15,9 @@ export {
   type SentJob,
 } from "./memory-job-queue";
 export { createMemoryLogger, type MemoryLogger } from "./memory-logger";
+export {
+  createMemoryProductAnalytics,
+  type MemoryProductAnalytics,
+  type RecordedAnalytics,
+} from "./memory-product-analytics";
 export { createMemoryRateLimiter } from "./memory-rate-limiter";

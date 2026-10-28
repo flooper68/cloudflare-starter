@@ -1,5 +1,8 @@
 export {
+  ANALYTICS_ENGINE_FIXED_BLOBS,
+  type AnalyticsEngineProductAnalyticsOptions,
   type CapturedError,
+  createAnalyticsEngineProductAnalytics,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
@@ -8,27 +11,39 @@ export {
   createMemoryHumanVerifier,
   createMemoryJobQueue,
   createMemoryLogger,
+  createMemoryProductAnalytics,
   createMemoryRateLimiter,
   createTurnstileVerifier,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
   D1_FLAGS_TTL_MS,
   type D1FeatureFlagsOptions,
+  type DecodedAnalyticsDataPoint,
+  decodeAnalyticsEngineDataPoint,
   ERROR_REPORT_EVENT,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
   type MemoryLogger,
+  type MemoryProductAnalytics,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,
   noopLogger,
+  noopProductAnalytics,
   noopRateLimiter,
+  pseudonymousId,
+  type RecordedAnalytics,
   type SentJob,
   SITEVERIFY_URL,
   type TurnstileVerifierConfig,
+  toAnalyticsEngineDataPoint,
   type WorkersLogsLoggerOptions,
 } from "./adapters";
+export {
+  createPointBudget,
+  undeliverableReason,
+} from "./analytics-delivery";
 export { systemClock } from "./clock";
 export { createDb, type Db } from "./db";
 export {
@@ -45,6 +60,7 @@ export { randomIds } from "./ids";
 export { assertJobDelay, MAX_JOB_DELAY_SECONDS } from "./job-delay";
 export type { LogRecord, LogResource, SeverityText } from "./log-record";
 export type {
+  AnalyticsContext,
   ErrorReporter,
   FeatureFlagStore,
   FeatureFlags,
@@ -59,17 +75,20 @@ export type {
   HumanVerificationInput,
   HumanVerificationResult,
   HumanVerifier,
+  IdentifyTraits,
   InvalidStoredFlag,
   JobQueue,
   JobQueueSendOptions,
   LogFields,
   Logger,
   LogLevel,
+  ProductAnalytics,
   RateLimiter,
   RateLimitResult,
   RateLimitRule,
   StoredFlag,
   StoredFlagEntry,
+  TrackedEvent,
 } from "./ports";
 export { mathRandom } from "./random";
 export {

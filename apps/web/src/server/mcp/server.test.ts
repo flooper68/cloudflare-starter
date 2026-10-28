@@ -5,6 +5,7 @@ import {
   type JobQueue,
   noopFeatureFlags,
   noopLogger,
+  noopProductAnalytics,
   noopRateLimiter,
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
@@ -55,6 +56,7 @@ function context(overrides: Partial<Context> = {}): Context {
     flags: noopFeatureFlags,
     flagStore: null,
     rateLimiter: noopRateLimiter,
+    analytics: noopProductAnalytics,
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },
     ...overrides,
   };

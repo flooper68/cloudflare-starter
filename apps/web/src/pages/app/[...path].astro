@@ -7,6 +7,7 @@ import { env } from "cloudflare:workers";
 import { brand } from "@cloudflare-starter/ui";
 
 import { AppSpa } from "@/components/app/AppSpa";
+import WebAnalytics from "@/components/WebAnalytics.astro";
 import { buildRequiredConfig } from "@/lib/env";
 import { getAuthMethods } from "@/server/auth";
 
@@ -45,5 +46,6 @@ const { mode } = buildRequiredConfig(env).workspaces;
     />
 
     <AppSpa client:only="react" />
+    <WebAnalytics spa />
   </body>
 </html>

@@ -12,6 +12,7 @@ import {
   type JobQueue,
   type Logger,
   mutationPolicy,
+  type ProductAnalytics,
   type R2Config,
   type RateLimiter,
   type RequestContext,
@@ -45,6 +46,8 @@ export interface Context {
   readonly flagStore: FeatureFlagStore | null;
   /** Edge rate limits; every mutation counts against its policy (limitMutations). */
   readonly rateLimiter: RateLimiter;
+  /** Product analytics of this request; use cases track with `trackEvent`. */
+  readonly analytics: ProductAnalytics;
   readonly user: {
     readonly id: string;
     readonly email: string;

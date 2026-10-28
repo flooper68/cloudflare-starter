@@ -1,12 +1,13 @@
 /**
  * Composition root of the platform ports: picks one adapter per port from explicit settings
- * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, RATE_LIMITING, TURNSTILE) and builds it once per isolate. JobQueue has one
+ * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, RATE_LIMITING, TURNSTILE, ANALYTICS) and builds it once per isolate. JobQueue has one
  * adapter, the APP_QUEUE binding, and no setting: it has no "off" (dropping jobs silently is
  * unsafe). Adding a vendor means a new
  * adapter in packages/features/src/platform/adapters/<vendor>/, a new allowed value in
  * src/lib/config.ts and a branch here (docs/architecture/overview.md#ports-and-adapters).
  */
 import {
+  createAnalyticsEngineProductAnalytics,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
@@ -24,7 +25,9 @@ import {
   noopFeatureFlags,
   noopHumanVerifier,
   noopLogger,
+  noopProductAnalytics,
   noopRateLimiter,
+  type ProductAnalytics,
   RATE_LIMIT_POLICIES,
   type RateLimiter,
   type RateLimitPolicy,
@@ -35,8 +38,10 @@ import {
 
 import {
   type AbuseConfig,
+  type AnalyticsConfig,
   ConfigError,
   parseAbuseConfig,
+  parseAnalyticsConfig,
   parsePlatformConfig,
 } from "@/lib/config";
 import { buildRawEnv } from "@/lib/env";
@@ -67,6 +72,14 @@ export interface Platform {
   readonly humanVerifier: HumanVerifier;
   /** What the auth pages need to render the widget; null with TURNSTILE=off. */
   readonly turnstile: { readonly siteKey: string } | null;
+  /**
+   * A ProductAnalytics for one unit of work (ANALYTICS): call it once per request, job or
+   * hook. Each instance counts its own data points (Analytics Engine takes 250 per
+   * invocation). Features track through `trackEvent`, never the port directly.
+   */
+  readonly productAnalytics: () => ProductAnalytics;
+  /** The Web Analytics beacon's site token; null with WEB_ANALYTICS=none. */
+  readonly webAnalytics: { readonly token: string } | null;
 }
 
 /** The Workers Rate Limiting bindings the catalog's edge policies use. */
@@ -97,6 +110,34 @@ function buildRateLimiter(env: AppEnv, config: AbuseConfig): RateLimiter {
   return createCloudflareRateLimiter(bindings);
 }
 
+/** ANALYTICS=analytics-engine needs the ANALYTICS_EVENTS dataset binding. */
+function buildProductAnalytics(
+  env: AppEnv,
+  config: AnalyticsConfig,
+  logger: Logger
+): () => ProductAnalytics {
+  if (config.ANALYTICS === "none") return () => noopProductAnalytics;
+  const dataset = env.ANALYTICS_EVENTS;
+  // parseAnalyticsConfig refused a missing or short secret already.
+  const idSecret = config.ANALYTICS_ID_SECRET ?? "";
+  if (!dataset) {
+    throw new ConfigError(
+      "ANALYTICS_EVENTS",
+      "ANALYTICS=analytics-engine needs the ANALYTICS_EVENTS analytics_engine_datasets binding in every environment of apps/web/wrangler.jsonc"
+    );
+  }
+  return () =>
+    createAnalyticsEngineProductAnalytics({
+      dataset,
+      idSecret,
+      onDrop: (event, reason) =>
+        logger.warn("product_analytics.dropped", {
+          "app.analytics.event": event,
+          "app.analytics.reason": reason,
+        }),
+    });
+}
+
 /** Per-isolate cache, like the database client. A config error is not cached. */
 let cache: { readonly env: AppEnv; readonly platform: Platform } | undefined;
 
@@ -111,6 +152,7 @@ export function buildPlatform(env: AppEnv): Platform {
   const raw = buildRawEnv(env);
   const config = parsePlatformConfig(raw);
   const abuse = parseAbuseConfig(raw);
+  const analytics = parseAnalyticsConfig(raw);
   if (!env.APP_QUEUE) {
     throw new ConfigError(
       "APP_QUEUE",
@@ -163,6 +205,11 @@ export function buildPlatform(env: AppEnv): Platform {
     turnstile:
       abuse.TURNSTILE === "on" && abuse.TURNSTILE_SITE_KEY
         ? { siteKey: abuse.TURNSTILE_SITE_KEY }
+        : null,
+    productAnalytics: buildProductAnalytics(env, analytics, logger),
+    webAnalytics:
+      analytics.WEB_ANALYTICS === "cloudflare" && analytics.WEB_ANALYTICS_TOKEN
+        ? { token: analytics.WEB_ANALYTICS_TOKEN }
         : null,
   };
   cache = { env, platform };

@@ -1,4 +1,13 @@
 // Cloudflare adapters: the vendor code for Cloudflare-native services lives only here.
+export {
+  ANALYTICS_ENGINE_FIXED_BLOBS,
+  type AnalyticsEngineProductAnalyticsOptions,
+  createAnalyticsEngineProductAnalytics,
+  type DecodedAnalyticsDataPoint,
+  decodeAnalyticsEngineDataPoint,
+  pseudonymousId,
+  toAnalyticsEngineDataPoint,
+} from "./analytics-engine-product-analytics";
 export { createCloudflareJobQueue } from "./cloudflare-job-queue";
 export {
   createD1FeatureFlags,

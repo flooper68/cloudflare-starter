@@ -44,6 +44,7 @@ export function createAppContext(
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
+    analytics: platform.productAnalytics(),
     user,
   };
 }

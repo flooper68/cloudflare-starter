@@ -1,6 +1,5 @@
 import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-
 import {
   fixedClock,
   seedUser,
@@ -9,6 +8,7 @@ import {
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
+import { createMemoryProductAnalytics } from "../platform";
 import { provisionUser } from "./provision-user";
 
 let run = 0;
@@ -18,6 +18,7 @@ const deps = () => ({
   // Storage is per file, not per test: fresh ids for every call.
   ids: sequentialIds(`${String(++run).padStart(8, "0")}-0000-4000-8000-`),
   requestContext: testRequestContext(),
+  analytics: createMemoryProductAnalytics(),
 });
 
 async function membershipsOf(userId: string) {
@@ -34,7 +35,8 @@ describe("provisionUser", () => {
     "%s mode: gives the user a personal workspace they own",
     async (mode) => {
       const ada = await seedUser(`Ada ${mode}`);
-      const result = await provisionUser(deps(), {
+      const provisioning = deps();
+      const result = await provisionUser(provisioning, {
         user: ada,
         settings: settings({ mode }),
         sharedWorkspaceName: "Acme",
@@ -48,6 +50,23 @@ describe("provisionUser", () => {
           role: "owner",
         },
       ]);
+      expect(
+        provisioning.analytics.recorded.map((call) => [
+          call.event,
+          call.properties,
+        ])
+      ).toEqual([
+        ["workspaces.created", { kind: "personal" }],
+        ["$identify", { role: "owner", workspace_size: "1", plan: null }],
+      ]);
+      // A second run (resolveActor healing) creates nothing and tracks nothing.
+      const again = deps();
+      await provisionUser(again, {
+        user: ada,
+        settings: settings({ mode }),
+        sharedWorkspaceName: "Acme",
+      });
+      expect(again.analytics.recorded).toEqual([]);
     }
   );
 
@@ -59,13 +78,21 @@ describe("provisionUser", () => {
     const early = await seedUser("Early Bird", "early@acme.test");
     const founder = await seedUser("Founder", "founder@acme.test");
 
+    const joining = deps();
     expect(
-      await provisionUser(deps(), {
+      await provisionUser(joining, {
         user: early,
         settings: single,
         sharedWorkspaceName: "Acme",
       })
     ).toEqual({ workspaceId: "single-workspace", role: "member" });
+    expect(
+      joining.analytics.recorded.map((call) => [call.event, call.properties])
+    ).toEqual([
+      ["workspaces.created", { kind: "shared" }],
+      ["workspaces.member_joined", { role: "member", via: "sign_up" }],
+      ["$identify", { role: "member", workspace_size: "1", plan: null }],
+    ]);
     expect(
       await provisionUser(deps(), {
         user: { ...founder, email: "Founder@Acme.test" },

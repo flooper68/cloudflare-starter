@@ -64,6 +64,20 @@ EMAIL_FROM_NAME=Cloudflare Starter
 # TURNSTILE=off
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
+# Product and web analytics (docs/guides/how-to-setup-product-analytics.md), for local
+# development only: deployed environments get them from `bun run setup:analytics --env <env>`
+# (written into wrangler.jsonc) and the Worker refuses to start without them.
+# ANALYTICS: analytics-engine (product events to the ANALYTICS_EVENTS dataset, simulated
+#   locally: nothing is stored) | none
+# ANALYTICS_ID_SECRET: secret key of the pseudonymous user and workspace ids, 32+
+#   characters; needed with analytics-engine. Generate with: openssl rand -base64 32
+# WEB_ANALYTICS: cloudflare (cookieless Web Analytics beacon on every page) | none
+# WEB_ANALYTICS_TOKEN: the site token from the Cloudflare dashboard, with cloudflare
+ANALYTICS=analytics-engine
+ANALYTICS_ID_SECRET=local-analytics-id-secret-change-me-000
+WEB_ANALYTICS=none
+WEB_ANALYTICS_TOKEN=
+
 # R2 presigned URLs (optional). The FILES binding needs nothing here.
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=

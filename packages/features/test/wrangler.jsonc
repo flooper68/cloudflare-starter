@@ -25,5 +25,10 @@
       "namespace_id": "9001",
       "simple": { "limit": 3, "period": 10 }
     }
+  ],
+  // Workers Analytics Engine, simulated by Miniflare (writes are accepted and not stored):
+  // the analytics-engine ProductAnalytics contract test.
+  "analytics_engine_datasets": [
+    { "binding": "ANALYTICS_TEST", "dataset": "features_test_events" }
   ]
 }

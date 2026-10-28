@@ -3,4 +3,5 @@ export { noopErrorReporter } from "./noop-error-reporter";
 export { noopFeatureFlags } from "./noop-feature-flags";
 export { noopHumanVerifier } from "./noop-human-verifier";
 export { noopLogger } from "./noop-logger";
+export { noopProductAnalytics } from "./noop-product-analytics";
 export { noopRateLimiter } from "./noop-rate-limiter";

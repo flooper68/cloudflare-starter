@@ -4,6 +4,7 @@ import {
   type Actor,
   createDatabase,
   createInvitation,
+  createMemoryProductAnalytics,
   type Database,
   type RequestContext,
   type Role,
@@ -143,7 +144,10 @@ export async function invite(
 
 let depsRun = 0;
 
-/** Dependencies of a workspace use case: real D1, fixed clock, fresh ids, a request context. */
+/**
+ * Dependencies of a workspace use case: real D1, fixed clock, fresh ids, a request
+ * context, and a memory ProductAnalytics whose `recorded` calls tests can assert on.
+ */
 export function useCaseDeps(at?: string) {
   depsRun += 1;
   return {
@@ -151,6 +155,7 @@ export function useCaseDeps(at?: string) {
     clock: fixedClock(at),
     ids: sequentialIds(`${String(depsRun).padStart(8, "0")}-1111-4000-8000-`),
     requestContext: testRequestContext(),
+    analytics: createMemoryProductAnalytics(),
   };
 }
 

@@ -19,6 +19,12 @@ const SETUP_WRITTEN_VARS: Readonly<Record<string, string>> = {
   SIGN_UP: "written by setup:auth; deliberately absent until the owner chooses",
   SIGN_UP_DOMAINS: "written by setup:auth",
   BOOTSTRAP_ADMIN_EMAIL: "written by setup:auth",
+  ANALYTICS:
+    "written by setup:analytics; deliberately absent until the owner chooses whether an environment collects product events",
+  WEB_ANALYTICS:
+    "written by setup:analytics; deliberately absent until the owner chooses",
+  WEB_ANALYTICS_TOKEN:
+    "written by setup:analytics: the Web Analytics site token differs per environment",
 };
 
 type Block = Record<string, unknown>;
@@ -37,6 +43,7 @@ function bindings(block: Block): Record<string, string[]> {
     r2: names("r2_buckets", "binding"),
     sendEmail: names("send_email", "name"),
     ratelimits: names("ratelimits", "name"),
+    analyticsEngine: names("analytics_engine_datasets", "binding"),
     queueProducers: (queues.producers ?? [])
       .map((q) => String(q.binding))
       .sort(),

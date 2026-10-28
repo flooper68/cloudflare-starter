@@ -278,7 +278,9 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
 ];
 
 /** Procedures deliberately not exposed to MCP, with the reason. Keep it empty if you can. */
-export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {};
+export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {
+  "analytics.track": "client telemetry, not an agent capability",
+};
 
 /**
  * HTTP endpoints under src/pages that are not tRPC, relative to src/pages, with the reason

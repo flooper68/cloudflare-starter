@@ -152,7 +152,13 @@ async function provisionNewUser(
   const requestContext = { ...contextFor(env, ctx), userId: user.id };
   try {
     await provisionUser(
-      { db: getDb(env), clock: systemClock, ids: randomIds, requestContext },
+      {
+        db: getDb(env),
+        clock: systemClock,
+        ids: randomIds,
+        requestContext,
+        analytics: buildPlatform(env).productAnalytics(),
+      },
       {
         user,
         settings: buildRequiredConfig(env).workspaces,

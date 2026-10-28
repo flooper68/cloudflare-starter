@@ -25,6 +25,12 @@ export type {
 export type { JobQueue, JobQueueSendOptions } from "./job-queue";
 export type { LogFields, Logger, LogLevel } from "./logger";
 export type {
+  AnalyticsContext,
+  IdentifyTraits,
+  ProductAnalytics,
+  TrackedEvent,
+} from "./product-analytics";
+export type {
   RateLimiter,
   RateLimitResult,
   RateLimitRule,

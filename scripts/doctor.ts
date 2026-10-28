@@ -23,6 +23,12 @@ const PLATFORM_SETTINGS = {
   FEATURE_FLAGS: ["d1", "none"],
 } as const;
 
+/** Analytics settings (apps/web/src/lib/config.ts parseAnalyticsConfig), no defaults. */
+const ANALYTICS_SETTINGS = {
+  ANALYTICS: ["analytics-engine", "none"],
+  WEB_ANALYTICS: ["cloudflare", "none"],
+} as const;
+
 let errors = 0;
 const ok = (message: string) => console.log(`✓ ${message}`);
 const warn = (message: string) => console.log(`! ${message}`);
@@ -30,6 +36,42 @@ const error = (message: string) => {
   errors += 1;
   console.log(`✗ ${message}`);
 };
+
+/**
+ * The analytics vars of one environment, checked like parseAnalyticsConfig does at
+ * startup. `secret` is the ANALYTICS_ID_SECRET when it can be read (locally), undefined
+ * for deployed environments (Worker secrets cannot be read back).
+ */
+function checkAnalyticsVars(
+  label: string,
+  vars: Readonly<Record<string, string | undefined>>,
+  secret?: string
+) {
+  for (const [name, allowed] of Object.entries(ANALYTICS_SETTINGS)) {
+    const value = vars[name];
+    if (!(allowed as readonly string[]).includes(value ?? "")) {
+      error(
+        `${label}: ${name} is ${value ? `"${value}"` : "not set"} (${allowed.join(" | ")}): bun run setup:analytics${label === "local" ? " (or .dev.vars.example)" : ` --env ${label}`}`
+      );
+      return;
+    }
+  }
+  ok(
+    `${label}: ANALYTICS=${vars.ANALYTICS}, WEB_ANALYTICS=${vars.WEB_ANALYTICS}`
+  );
+  if (vars.ANALYTICS === "analytics-engine") {
+    if (secret === undefined)
+      warn(
+        `${label}: ANALYTICS=analytics-engine needs the ANALYTICS_ID_SECRET Worker secret (bun run setup:secrets --env ${label})`
+      );
+    else if (secret.length < 32)
+      error(
+        `${label}: ANALYTICS=analytics-engine needs ANALYTICS_ID_SECRET (32+ characters) in .dev.vars`
+      );
+  }
+  if (vars.WEB_ANALYTICS === "cloudflare" && !vars.WEB_ANALYTICS_TOKEN)
+    error(`${label}: WEB_ANALYTICS=cloudflare needs WEB_ANALYTICS_TOKEN`);
+}
 
 /**
  * The workspace and sign-up vars of one environment, checked like the app does at
@@ -170,6 +212,11 @@ if (!existsSync(DEV_VARS)) {
 
   // Local dev reads them from .dev.vars (wrangler.jsonc ships none).
   checkWorkspaceVars("local", Object.fromEntries(vars));
+  checkAnalyticsVars(
+    "local",
+    Object.fromEntries(vars),
+    value("ANALYTICS_ID_SECRET") ?? ""
+  );
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -221,6 +268,21 @@ for (const env of ENVIRONMENTS) {
   } else {
     checkWorkspaceVars(env, vars);
   }
+  // Analytics vars: no defaults are shipped, setup:analytics writes them.
+  if (!vars.ANALYTICS && !vars.WEB_ANALYTICS) {
+    warn(
+      `${env}: no ANALYTICS/WEB_ANALYTICS yet: bun run setup:analytics --env ${env} before deploying (the Worker refuses to start)`
+    );
+  } else {
+    checkAnalyticsVars(env, vars);
+  }
+  const datasets =
+    (block.analytics_engine_datasets as { binding: string }[] | undefined) ??
+    [];
+  if (!datasets.some((entry) => entry.binding === "ANALYTICS_EVENTS"))
+    error(
+      `${env}: the ANALYTICS_EVENTS analytics_engine_datasets binding is missing`
+    );
   // Abuse protection (docs/guides/how-to-configure-abuse-protection.md).
   if (!["cloudflare", "none"].includes(vars.RATE_LIMITING ?? ""))
     error(`${env}: RATE_LIMITING must be cloudflare or none`);

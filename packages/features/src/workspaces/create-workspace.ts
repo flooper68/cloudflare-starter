@@ -1,12 +1,16 @@
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
 import type { Clock, Ids, RequestContext } from "../kernel";
+import type { ProductAnalytics } from "../platform";
+import { trackEvent } from "../product-analytics";
 import {
   CREATOR_ROLE,
   requireMode,
   type WorkspaceMode,
+  workspaceCreatedEvent,
   workspaceNameSchema,
 } from "./domain";
+import { identifyMember } from "./identify-member";
 import type { WorkspaceSummary } from "./list-workspaces";
 import { workspaceMembers, workspaces } from "./workspaces.schema";
 
@@ -17,6 +21,7 @@ export async function createWorkspace(
     readonly clock: Clock;
     readonly ids: Ids;
     readonly requestContext: RequestContext;
+    readonly analytics: ProductAnalytics;
   },
   input: {
     readonly userId: string;
@@ -46,5 +51,13 @@ export async function createWorkspace(
     target: { type: "workspace", id },
     metadata: { kind: "shared" },
   });
+  const actor = { userId: input.userId, workspaceId: id, role: CREATOR_ROLE };
+  trackEvent(
+    deps,
+    { ...deps.requestContext, userId: input.userId, workspaceId: id },
+    workspaceCreatedEvent,
+    { kind: "shared" }
+  );
+  await identifyMember(deps, actor);
   return { id, name, kind: "shared", role: CREATOR_ROLE };
 }

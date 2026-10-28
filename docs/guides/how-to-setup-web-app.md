@@ -82,6 +82,13 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run setup:auth --env production
    ```
 
+   Analytics, the same way: no choice is shipped ([how-to-setup-product-analytics.md](./how-to-setup-product-analytics.md)); with `ANALYTICS=analytics-engine` step 7 also sets `ANALYTICS_ID_SECRET`:
+
+   ```bash
+   bun run setup:analytics --env production --dry-run
+   bun run setup:analytics --env production
+   ```
+
 5. Turnstile, while `TURNSTILE=on` (the default in every environment): create a Managed widget for the environment's hostname in the Cloudflare dashboard and put its site key in that environment's `TURNSTILE_SITE_KEY` in `wrangler.jsonc` (the shipped value is Cloudflare's test key; `setup:cloudflare` prints these steps). Its secret key is set in step 7. Details: [how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#deployed-environments).
 
 6. Migrate, build and deploy:
@@ -92,7 +99,7 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run deploy:production
    ```
 
-7. Secrets, including `TURNSTILE_SECRET_KEY` (asks for each one, sends them on stdin; this deploys a new version):
+7. Secrets, including `TURNSTILE_SECRET_KEY` and `ANALYTICS_ID_SECRET` (asks for each one, sends them on stdin; this deploys a new version):
 
    ```bash
    bun run setup:secrets --env production
