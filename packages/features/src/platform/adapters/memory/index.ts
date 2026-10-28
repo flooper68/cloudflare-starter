@@ -15,4 +15,6 @@ export {
   type SentJob,
 } from "./memory-job-queue";
 export { createMemoryLogger, type MemoryLogger } from "./memory-logger";
+export { createMemoryMetrics, type MemoryMetrics } from "./memory-metrics";
 export { createMemoryRateLimiter } from "./memory-rate-limiter";
+export { createMemoryTracer, type MemoryTracer } from "./memory-tracer";

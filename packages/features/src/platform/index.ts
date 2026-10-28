@@ -1,5 +1,8 @@
 export {
+  ANALYTICS_ENGINE_LAYOUT,
+  type AnalyticsEngineMetricsOptions,
   type CapturedError,
+  createAnalyticsEngineMetrics,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
@@ -8,26 +11,37 @@ export {
   createMemoryHumanVerifier,
   createMemoryJobQueue,
   createMemoryLogger,
+  createMemoryMetrics,
   createMemoryRateLimiter,
+  createMemoryTracer,
   createTurnstileVerifier,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
+  createWorkersTracer,
   D1_FLAGS_TTL_MS,
   type D1FeatureFlagsOptions,
   ERROR_REPORT_EVENT,
+  fromDataPoint,
+  MAX_POINTS_PER_FLUSH,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
   type MemoryLogger,
+  type MemoryMetrics,
+  type MemoryTracer,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,
   noopLogger,
+  noopMetrics,
   noopRateLimiter,
+  noopTracer,
   type SentJob,
   SITEVERIFY_URL,
   type TurnstileVerifierConfig,
+  toDataPoint,
   type WorkersLogsLoggerOptions,
+  type WorkersTracerOptions,
 } from "./adapters";
 export { systemClock } from "./clock";
 export { createDb, type Db } from "./db";
@@ -44,7 +58,26 @@ export { sha256Hex } from "./hash";
 export { randomIds } from "./ids";
 export { assertJobDelay, MAX_JOB_DELAY_SECONDS } from "./job-delay";
 export type { LogRecord, LogResource, SeverityText } from "./log-record";
+export { MAX_PENDING_SERIES, type MetricSeries } from "./metric-aggregator";
+export {
+  DURATION_BUCKETS_SECONDS,
+  METRIC_CATALOG,
+  METRIC_UNITS,
+  type MetricAttributes,
+  type MetricAttributeValue,
+  type MetricCatalog,
+  type MetricDefinition,
+  type MetricKind,
+  type MetricName,
+  type MetricNameOf,
+  type MetricUnit,
+  metricDefinition,
+  toOpenMetricsLabel,
+  toOpenMetricsName,
+  validateMetricDefinition,
+} from "./metric-catalog";
 export type {
+  Counter,
   ErrorReporter,
   FeatureFlagStore,
   FeatureFlags,
@@ -55,6 +88,7 @@ export type {
   FlagRule,
   FlagValue,
   FlagValueType,
+  Histogram,
   HumanVerificationFailure,
   HumanVerificationInput,
   HumanVerificationResult,
@@ -65,11 +99,18 @@ export type {
   LogFields,
   Logger,
   LogLevel,
+  Metrics,
   RateLimiter,
   RateLimitResult,
   RateLimitRule,
+  Span,
+  SpanAttributes,
+  SpanAttributeValue,
+  SpanStatus,
   StoredFlag,
   StoredFlagEntry,
+  Tracer,
+  UpDownCounter,
 } from "./ports";
 export { mathRandom } from "./random";
 export {
@@ -77,6 +118,7 @@ export {
   createRequestContext,
   requestContextAttributes,
 } from "./request-context";
+export { SPAN_EVENT, type SpanKind, type SpanRecord } from "./span-record";
 export {
   formatTraceparent,
   newSpanId,

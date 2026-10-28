@@ -23,8 +23,9 @@ async function rpc(
   requestContext = testRequestContext()
 ) {
   const handler = createMcpHandler(() =>
-    buildMcpServer(caller, {
+    buildMcpServer(() => caller, {
       errors: buildPlatform(env).errors,
+      tracer: buildPlatform(env).tracer.withContext(requestContext),
       requestContext,
     })
   );

@@ -25,7 +25,20 @@ export type {
 export type { JobQueue, JobQueueSendOptions } from "./job-queue";
 export type { LogFields, Logger, LogLevel } from "./logger";
 export type {
+  Counter,
+  Histogram,
+  Metrics,
+  UpDownCounter,
+} from "./metrics";
+export type {
   RateLimiter,
   RateLimitResult,
   RateLimitRule,
 } from "./rate-limiter";
+export type {
+  Span,
+  SpanAttributes,
+  SpanAttributeValue,
+  SpanStatus,
+  Tracer,
+} from "./tracer";

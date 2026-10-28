@@ -14,6 +14,10 @@
     }
   ],
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "features-test-files" }],
+  // Analytics Engine, simulated locally: the metrics adapter's contract test writes here.
+  "analytics_engine_datasets": [
+    { "binding": "METRICS_DATASET", "dataset": "features_test_metrics" }
+  ],
   // Producer only: tests check what a use case sends; nothing consumes it here.
   "queues": {
     "producers": [{ "binding": "APP_QUEUE", "queue": "features-test-queue" }]

@@ -66,7 +66,7 @@ Every unit of work is a span of a [W3C Trace Context](https://www.w3.org/TR/trac
 curl -si http://localhost:4321/api/hello | grep -iE 'traceparent|x-request-id'
 ```
 
-Workers' automatic traces (`observability.traces`) are created by the runtime with their own ids; this starter does not yet link them to its trace ids or create custom spans.
+Each request, procedure call, MCP tool call, queue message and cron run is also a span on this trace: with `TRACING=workers` a span record (body `trace.span`) lands in Workers Logs next to the logs, with the same `trace_id`. Workers' automatic traces (`observability.traces`) are created by the runtime with their own ids and are not linked to the starter's trace ids. Spans, metrics and how the two kinds of traces relate: [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md).
 
 ## LOG_SINK
 
@@ -158,4 +158,4 @@ Then:
 3. The API key as a secret: `.dev.vars.example`, `scripts/setup-secrets.ts`, [how-to-setup-ci.md](how-to-setup-ci.md) if the deploy needs it.
 4. Set `LOG_SINK` in each environment of `wrangler.jsonc`; keep `observability` on for invocation logs and traces.
 
-Errors go through their own port: [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md). The rules for ports and adapters and the standards they follow: [architecture/overview.md](../architecture/overview.md#ports-and-adapters).
+Errors go through their own port: [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md); metrics and spans through theirs: [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md). The rules for ports and adapters and the standards they follow: [architecture/overview.md](../architecture/overview.md#ports-and-adapters).

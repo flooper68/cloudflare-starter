@@ -18,9 +18,8 @@ import {
 } from "@/server/rate-limit-headers";
 import { refuseOverLimit } from "@/server/rate-limited-response";
 import { createAppContext } from "@/server/trpc/context";
-import { appRouter } from "@/server/trpc/router";
 
-import { buildMcpServer } from "./server";
+import { buildMcpServer, callerInSpan } from "./server";
 
 export const PROTECTED_RESOURCE_METADATA_PATH =
   "/.well-known/oauth-protected-resource/mcp";
@@ -137,11 +136,13 @@ export async function handleMcp(
   if (byUser) return byUser;
 
   const context = createAppContext(user, requestContext);
-  const caller = appRouter.createCaller(context);
-  const handler = createMcpHandler(() => buildMcpServer(caller, context), {
-    // Protocol-level failures (malformed JSON-RPC, transport); tool errors are results.
-    onerror: (error) => context.logger.error("mcp.error", { error }),
-  });
+  const handler = createMcpHandler(
+    () => buildMcpServer(callerInSpan(context), context),
+    {
+      // Protocol-level failures (malformed JSON-RPC, transport); tool errors are results.
+      onerror: (error) => context.logger.error("mcp.error", { error }),
+    }
+  );
 
   const response = await handler.fetch(request, {
     authInfo: {

@@ -57,12 +57,16 @@ describe("platform config", () => {
         LOG_SINK: "workers-logs",
         ERROR_REPORTER: "none",
         FEATURE_FLAGS: "d1",
+        METRICS: "analytics-engine",
+        TRACING: "workers",
       })
     ).toEqual({
       APP_ENV: "staging",
       LOG_SINK: "workers-logs",
       ERROR_REPORTER: "none",
       FEATURE_FLAGS: "d1",
+      METRICS: "analytics-engine",
+      TRACING: "workers",
     });
   });
 
@@ -104,7 +108,13 @@ describe("platform config", () => {
   });
 
   it("requires FEATURE_FLAGS and accepts only d1 or none", () => {
-    const rest = { APP_ENV: "local", LOG_SINK: "none", ERROR_REPORTER: "none" };
+    const rest = {
+      APP_ENV: "local",
+      LOG_SINK: "none",
+      ERROR_REPORTER: "none",
+      METRICS: "none",
+      TRACING: "none",
+    };
     expect(() => parsePlatformConfig(rest)).toThrow(
       new ConfigError(
         "FEATURE_FLAGS",
@@ -117,6 +127,30 @@ describe("platform config", () => {
     expect(
       parsePlatformConfig({ ...rest, FEATURE_FLAGS: "none" }).FEATURE_FLAGS
     ).toBe("none");
+  });
+
+  it("requires METRICS and TRACING and accepts only their adapters", () => {
+    const rest = {
+      APP_ENV: "local",
+      LOG_SINK: "none",
+      ERROR_REPORTER: "none",
+      FEATURE_FLAGS: "none",
+    };
+    expect(() => parsePlatformConfig({ ...rest, TRACING: "none" })).toThrow(
+      new ConfigError(
+        "METRICS",
+        "METRICS is not set: set METRICS to one of analytics-engine, none in the vars of apps/web/wrangler.jsonc for every environment"
+      )
+    );
+    expect(() => parsePlatformConfig({ ...rest, METRICS: "none" })).toThrow(
+      "TRACING is not set: set TRACING to one of workers, none in the vars of apps/web/wrangler.jsonc for every environment"
+    );
+    expect(() =>
+      parsePlatformConfig({ ...rest, METRICS: "prometheus", TRACING: "none" })
+    ).toThrow(/^METRICS is "prometheus"/);
+    expect(() =>
+      parsePlatformConfig({ ...rest, METRICS: "none", TRACING: "otlp" })
+    ).toThrow(/^TRACING is "otlp"/);
   });
 
   it("rejects values that name no adapter", () => {
