@@ -36,6 +36,7 @@ describe("web config", () => {
         WORKSPACE_MODE: "single",
         SIGN_UP: "invite",
         BOOTSTRAP_ADMIN_EMAIL: "founder@acme.test",
+        BILLING: "off",
       }).workspaces
     ).toEqual({
       mode: "single",
@@ -47,6 +48,19 @@ describe("web config", () => {
 
   it("refuses to start without WORKSPACE_MODE and SIGN_UP", () => {
     expect(() => parseAppConfig(core)).toThrow(/WORKSPACE_MODE must be/);
+  });
+
+  it("parses BILLING and refuses to start without it or with an unknown mode", () => {
+    const workspaces = { WORKSPACE_MODE: "multi", SIGN_UP: "open" };
+    expect(
+      parseAppConfig({ ...core, ...workspaces, BILLING: "manual" }).billing
+    ).toEqual({ mode: "manual" });
+    expect(() => parseAppConfig({ ...core, ...workspaces })).toThrow(
+      /BILLING must be off, manual or provider/
+    );
+    expect(() =>
+      parseAppConfig({ ...core, ...workspaces, BILLING: "stripe" })
+    ).toThrow(/BILLING must be off, manual or provider/);
   });
 });
 

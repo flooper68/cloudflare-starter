@@ -4,6 +4,7 @@
  */
 import { existsSync } from "node:fs";
 
+import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 
 import {
@@ -121,6 +122,24 @@ function checkWorkspaceVars(
   }
 }
 
+/** BILLING of one environment: required, off | manual | provider (setup:auth writes it). */
+function checkBillingVar(label: string, value: string | undefined) {
+  const billing = billingSettingsSchema.safeParse({
+    BILLING: value || undefined,
+  });
+  if (!billing.success) {
+    error(
+      `${label}: ${billing.error.issues.map((issue) => issue.message).join("; ")} (bun run setup:auth; the Worker refuses to start)`
+    );
+    return;
+  }
+  ok(`${label}: BILLING=${billing.data.mode}`);
+  if (billing.data.mode === "provider")
+    warn(
+      `${label}: BILLING=provider needs a provider adapter registered in apps/web/src/server/billing-provider.ts (the starter ships none)`
+    );
+}
+
 console.log("Local dev");
 if (!existsSync(DEV_VARS)) {
   error(
@@ -219,6 +238,7 @@ if (!existsSync(DEV_VARS)) {
     Object.fromEntries(vars),
     value("ANALYTICS_ID_SECRET") ?? ""
   );
+  checkBillingVar("local", vars.get("BILLING"));
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -318,6 +338,13 @@ for (const env of ENVIRONMENTS) {
     (block.ratelimits as { namespace_id: string }[] | undefined) ?? []
   ).map((binding) => binding.namespace_id);
   namespaceIds.push(...ids);
+  if (!vars.BILLING) {
+    warn(
+      `${env}: no BILLING yet: bun run setup:auth --env ${env} before deploying (the Worker refuses to start)`
+    );
+  } else {
+    checkBillingVar(env, vars.BILLING);
+  }
 }
 const duplicates = namespaceIds.filter(
   (id, index) => namespaceIds.indexOf(id) !== index

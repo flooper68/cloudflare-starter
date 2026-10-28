@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import {
   type Actor,
+  DomainError,
   NotWorkspaceMemberError,
   randomIds,
   resolveActor,
@@ -12,8 +13,10 @@ import {
 import type { APIRoute } from "astro";
 
 import { buildRequiredConfig } from "@/lib/env";
+import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import {
+  domainErrorResponse,
   httpAttributes,
   internalErrorResponse,
   problemResponse,
@@ -67,6 +70,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
   const db = getDb(env);
   const analytics = platform.productAnalytics();
+  const billing = billingGateFor(env, locals.requestContext);
   let actor: Actor;
   try {
     actor = await resolveActor(
@@ -76,6 +80,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
         ids: randomIds,
         requestContext: locals.requestContext,
         analytics,
+        billing,
       },
       {
         userId: locals.user.id,
@@ -111,6 +116,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
         ids: randomIds,
         requestContext: locals.requestContext,
         analytics,
+        billing,
       },
       actor,
       { ...input.data, body: await file.arrayBuffer() }
@@ -127,6 +133,8 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       }
     );
   } catch (error) {
+    // A refusal the user can act on (limit_reached: the limit and upgrade options).
+    if (error instanceof DomainError) return domainErrorResponse(error);
     // Problem Details 500 with `reference`: the trace id users quote.
     return internalErrorResponse(env, error, locals.requestContext, {
       ...httpAttributes(request),

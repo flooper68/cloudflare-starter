@@ -139,6 +139,16 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "Pages that look up a token from the URL (invitation links), per IP, against guessing",
   },
+  "billing.webhook": {
+    // High: a payment provider sends from a few shared IPs, in bursts after an outage.
+    limit: 300,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_BILLING_WEBHOOK",
+    description:
+      "The billing provider's webhook (POST /api/billing/webhook), per IP, before the signature is checked",
+  },
   "invitation.send": {
     limit: 10,
     periodSeconds: 60,
@@ -182,6 +192,7 @@ export const ROUTE_POLICIES: Readonly<
 > = {
   "api/auth/[...all].ts": ["auth.ip"],
   "api/files/index.ts": ["upload.user"],
+  "api/billing/webhook.ts": ["billing.webhook"],
   "mcp.ts": ["mcp.ip", "mcp.user"],
   "invite/[token].astro": ["token.lookup"],
 };

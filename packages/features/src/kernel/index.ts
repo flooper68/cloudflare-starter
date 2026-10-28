@@ -9,8 +9,13 @@ export {
   defineEvent,
   IDENTIFY_EVENT,
 } from "./analytics-event";
+export type { BillingGate } from "./billing-gate";
 export type { Clock } from "./clock";
-export { DomainError, type DomainErrorKind } from "./domain-error";
+export {
+  DomainError,
+  type DomainErrorDetails,
+  type DomainErrorKind,
+} from "./domain-error";
 export type { Ids } from "./ids";
 export {
   defineJob,

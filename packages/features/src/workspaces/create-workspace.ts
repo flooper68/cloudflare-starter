@@ -1,6 +1,6 @@
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
 import type { ProductAnalytics } from "../platform";
 import { trackEvent } from "../product-analytics";
 import {
@@ -22,6 +22,8 @@ export async function createWorkspace(
     readonly ids: Ids;
     readonly requestContext: RequestContext;
     readonly analytics: ProductAnalytics;
+    /** Starts the new workspace's plan (billing's trial). */
+    readonly billing: BillingGate;
   },
   input: {
     readonly userId: string;
@@ -58,6 +60,8 @@ export async function createWorkspace(
     workspaceCreatedEvent,
     { kind: "shared" }
   );
+  await deps.billing.workspaceCreated(id);
+  // After billing started the plan, so the traits carry it.
   await identifyMember(deps, actor);
   return { id, name, kind: "shared", role: CREATOR_ROLE };
 }

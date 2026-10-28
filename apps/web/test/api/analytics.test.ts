@@ -10,6 +10,7 @@ import {
   decodeAnalyticsEngineDataPoint,
   IDENTIFY_EVENT,
   IDENTIFY_TRAITS_LAYOUT,
+  NEW_WORKSPACE_PLAN_ID,
   pseudonymousId,
   RATE_LIMIT_POLICIES,
 } from "@cloudflare-starter/features";
@@ -193,7 +194,7 @@ describe("server events", () => {
         "$identify",
         key(ada.id),
         key(activeWorkspaceId as string),
-        { role: "owner", workspace_size: "1", plan: null },
+        { role: "owner", workspace_size: "1", plan: NEW_WORKSPACE_PLAN_ID },
       ],
       [
         "auth.signed_up",
@@ -215,7 +216,7 @@ describe("server events", () => {
       [
         "$identify",
         key(team.id),
-        { role: "owner", workspace_size: "1", plan: null },
+        { role: "owner", workspace_size: "1", plan: NEW_WORKSPACE_PLAN_ID },
       ],
     ]);
   });

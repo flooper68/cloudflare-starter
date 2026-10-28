@@ -4,6 +4,7 @@ import {
   addMember,
   seedUser,
   seedWorkspace,
+  testBilling,
   useCaseDeps,
 } from "../../test/fixtures";
 import { identifyMember } from "./identify-member";
@@ -14,7 +15,8 @@ describe("identifyMember", () => {
     const grace = await seedUser("Grace Hopper");
     const owner = await seedWorkspace(ada.id, { id: "ws-acme" });
     const member = await addMember("ws-acme", grace.id);
-    const deps = useCaseDeps();
+    // BILLING=manual and no subscription: the catalog's default plan.
+    const deps = { ...useCaseDeps(), billing: testBilling("manual") };
 
     await identifyMember(deps, owner);
     await identifyMember(deps, member);
@@ -29,13 +31,13 @@ describe("identifyMember", () => {
     ).toEqual([
       {
         event: "$identify",
-        properties: { role: "owner", workspace_size: "2-5", plan: null },
+        properties: { role: "owner", workspace_size: "2-5", plan: "free" },
         userId: ada.id,
         workspaceId: "ws-acme",
       },
       {
         event: "$identify",
-        properties: { role: "member", workspace_size: "2-5", plan: null },
+        properties: { role: "member", workspace_size: "2-5", plan: "free" },
         userId: grace.id,
         workspaceId: "ws-acme",
       },

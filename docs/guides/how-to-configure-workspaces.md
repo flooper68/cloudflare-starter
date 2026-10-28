@@ -4,7 +4,7 @@ The app's data belongs to workspaces, never to a single user: a user reaches dat
 
 ## The settings
 
-Four vars, set per environment in `apps/web/wrangler.jsonc` (`vars`, top level and each `env.*`). `WORKSPACE_MODE` and `SIGN_UP` are required and have no defaults, and the starter ships no choice: `wrangler.jsonc` has none of the four, so a deployed Worker refuses to start (the error names the setting) until you have chosen. Local development and the tests get explicit values from `apps/web/.dev.vars.example` (multi mode, open sign-up) and `apps/web/vitest.config.ts`. Set them per environment with the script, which checks the answers with the same rules as the app:
+Four vars, set per environment in `apps/web/wrangler.jsonc` (`vars`, top level and each `env.*`). `WORKSPACE_MODE` and `SIGN_UP` are required and have no defaults, and the starter ships no choice: `wrangler.jsonc` has none of the four, so a deployed Worker refuses to start (the error names the setting) until you have chosen. Local development and the tests get explicit values from `apps/web/.dev.vars.example` (multi mode, open sign-up) and `apps/web/vitest.config.ts`. Set them per environment with the script, which checks the answers with the same rules as the app (it also asks for `BILLING`, required as well: [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)):
 
 ```bash
 bun run setup:auth --env all --dry-run    # shows what it would write
@@ -46,7 +46,7 @@ Every workspace procedure and MCP tool takes an optional `workspaceId`. Without 
 
 ## Sign-up
 
-The check runs in Better Auth's `databaseHooks.user.create.before` (`enforceSignUpPolicy` in `apps/web/src/server/auth.ts`, calling the `checkSignUpAllowed` use case), so it covers every method, Google included. A refused email + password sign-up answers 403 with code `SIGN_UP_INVITE_ONLY`; a refused Google sign-up comes back to `/sign-in?error=SIGN_UP_INVITE_ONLY`, and both show a message that says to ask for an invitation. `user.create.after` gives the new user their workspace (`provisionUser`).
+The check runs in Better Auth's `databaseHooks.user.create.before` (`enforceSignUpPolicy` in `apps/web/src/server/auth.ts`, calling the `checkSignUpAllowed` use case), so it covers every method, Google included. A refused email + password sign-up answers 403 with code `SIGN_UP_INVITE_ONLY`; a refused Google sign-up comes back to `/sign-in?error=SIGN_UP_INVITE_ONLY`, and both show a message that says to ask for an invitation. In `single` mode, with billing on, a sign-up that would join the app's workspace on its own also takes a seat: past the plan's `seats` limit it is refused with code `LIMIT_REACHED` and a "no free seats" message (the bootstrap admin and invitees are never refused; [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)). With email verification on, Better Auth answers a refused email sign-up like an accepted one (no account is created). `user.create.after` gives the new user their workspace (`provisionUser`).
 
 Provisioning at sign-up (`user.create.after`) fails open: if it fails, the error is reported and the account exists without a workspace. The first workspace request heals it: in `personal` and `multi` mode `resolveActor` provisions the personal workspace then (the same idempotent use case, audited as `workspace.created`; its id is `personal-<userId>`). In `single` mode the user gets FORBIDDEN with code `NOT_A_WORKSPACE_MEMBER` (`data.appCode` in tRPC errors) and joins through an invitation link.
 

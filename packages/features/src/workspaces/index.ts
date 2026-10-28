@@ -1,6 +1,7 @@
 export { acceptInvitation } from "./accept-invitation";
 export { changeMemberRole } from "./change-member-role";
 export { checkSignUpAllowed } from "./check-sign-up-allowed";
+export { countWorkspaceSeats } from "./count-workspace-seats";
 export { type CreatedInvitation, createInvitation } from "./create-invitation";
 export { createWorkspace } from "./create-workspace";
 export {
@@ -26,6 +27,7 @@ export {
   type Role,
   requirePermission,
   SIGN_UP_POLICIES,
+  SINGLE_WORKSPACE_ID,
   SignUpNotAllowedError,
   type SignUpPolicy,
   TransferToSelfError,

@@ -2,7 +2,7 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
 import { type ProductAnalytics, sha256Hex } from "../platform";
 import { trackEvent } from "../product-analytics";
 import {
@@ -33,6 +33,8 @@ export async function acceptInvitation(
     readonly ids: Ids;
     readonly requestContext: RequestContext;
     readonly analytics: ProductAnalytics;
+    /** The joined workspace's plan, for the analytics traits. */
+    readonly billing: BillingGate;
   },
   input: {
     readonly mode: WorkspaceMode;

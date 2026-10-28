@@ -29,14 +29,14 @@ describe("identify traits", () => {
       identifyTraitsSchema.safeParse({
         role: "owner",
         workspace_size: "2-5",
-        plan: null,
+        plan: "pro",
       }).success
     ).toBe(true);
     expect(
       identifyTraitsSchema.safeParse({
         role: "owner",
         workspace_size: "2-5",
-        plan: null,
+        plan: "pro",
         email: "ada@example.test",
       }).success
     ).toBe(false);
@@ -44,6 +44,13 @@ describe("identify traits", () => {
       identifyTraitsSchema.safeParse({
         role: "owner",
         workspace_size: "3",
+        plan: "pro",
+      }).success
+    ).toBe(false);
+    expect(
+      identifyTraitsSchema.safeParse({
+        role: "owner",
+        workspace_size: "1",
         plan: null,
       }).success
     ).toBe(false);

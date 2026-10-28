@@ -30,8 +30,8 @@ export const identifyTraitsSchema = z
   .object({
     role: z.string().min(1).max(32),
     workspace_size: z.enum(WORKSPACE_SIZE_BUCKETS),
-    // TODO(plans): the workspace's plan once plans exist; null until then.
-    plan: z.string().min(1).max(32).nullable(),
+    // The plan in effect (billing), its catalog id.
+    plan: z.string().min(1).max(32),
   })
   .strict();
 

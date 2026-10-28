@@ -42,4 +42,7 @@ export const API_TEST_BINDINGS = {
   ANALYTICS_ID_SECRET: "api-test-analytics-id-secret-0123456789",
   WEB_ANALYTICS: "none",
   WEB_ANALYTICS_TOKEN: "",
+  // Setup-written too: manual billing, so new workspaces start the catalog's trial and
+  // limits apply; billing tests of other modes override it (envWith).
+  BILLING: "manual",
 } as const satisfies Readonly<Record<string, string>>;

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
 import type { ProductAnalytics } from "../platform";
 import { trackEvent } from "../product-analytics";
 import type { Actor } from "../workspaces";
@@ -22,6 +22,7 @@ export async function storeFile(
     readonly ids: Ids;
     readonly requestContext: RequestContext;
     readonly analytics: ProductAnalytics;
+    readonly billing: BillingGate;
   },
   actor: Actor,
   input: UploadInput & { readonly body: ArrayBuffer }

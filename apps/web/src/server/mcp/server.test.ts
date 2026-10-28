@@ -5,6 +5,7 @@ import {
   createMemoryMetrics,
   createMemoryTracer,
   type JobQueue,
+  noopBillingProvider,
   noopFeatureFlags,
   noopLogger,
   noopProductAnalytics,
@@ -50,6 +51,7 @@ function context(overrides: Partial<Context> = {}): Context {
         signUpDomains: [],
         bootstrapAdminEmail: null,
       },
+      billing: { mode: "off" },
     },
     email: { enabled: false, value: null, reason: "Email is not configured" },
     r2: { enabled: false, value: null, reason: "R2 is not configured" },
@@ -62,6 +64,14 @@ function context(overrides: Partial<Context> = {}): Context {
     flagStore: null,
     rateLimiter: noopRateLimiter,
     analytics: noopProductAnalytics,
+    billing: {
+      requireFeature: async () => {},
+      requireLimit: async () => {},
+      recordUsage: async () => {},
+      workspaceCreated: async () => {},
+      planId: async () => "unlimited",
+    },
+    billingProvider: noopBillingProvider,
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },
     ...overrides,
   };
@@ -185,6 +195,9 @@ describe("MCP server", () => {
       httpStatus: 429,
       message: "Too many requests. Try again in 60 seconds.",
       retryAfterSeconds: 60,
+      // The DomainError's code and kind, as for every domain error (tRPC data.domain).
+      appCode: "RATE_LIMITED",
+      domain: { kind: "rate_limited" },
     });
   });
 

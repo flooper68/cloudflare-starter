@@ -6,6 +6,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
@@ -24,6 +25,7 @@ async function storedFile(actor: Actor, idPrefix: string) {
       ids: sequentialIds(idPrefix),
       requestContext: testRequestContext(),
       analytics: createMemoryProductAnalytics(),
+      billing: testBilling(),
     },
     actor,
     {

@@ -18,14 +18,14 @@ describe("identifyUser", () => {
       identifyUser({ analytics }, context, {
         role: "owner",
         workspace_size: "2-5",
-        plan: null,
+        plan: "pro",
       })
     ).toBe(true);
     expect(analytics.recorded).toEqual([
       expect.objectContaining({
         kind: "identify",
         event: "$identify",
-        properties: { role: "owner", workspace_size: "2-5", plan: null },
+        properties: { role: "owner", workspace_size: "2-5", plan: "pro" },
         context,
       }),
     ]);
@@ -37,7 +37,7 @@ describe("identifyUser", () => {
       identifyUser({ analytics }, context, {
         role: "owner",
         workspace_size: "2-5",
-        plan: null,
+        plan: "pro",
         email: "ada@example.test",
       } as never)
     ).toBe(false);
@@ -45,7 +45,7 @@ describe("identifyUser", () => {
       identifyUser(
         { analytics },
         { ...context, userId: null },
-        { role: "owner", workspace_size: "1", plan: null }
+        { role: "owner", workspace_size: "1", plan: "pro" }
       )
     ).toBe(false);
     expect(analytics.recorded).toEqual([]);

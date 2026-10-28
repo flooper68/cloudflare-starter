@@ -33,6 +33,7 @@ export {
 } from "./cloudflare";
 export {
   type CapturedError,
+  createMemoryBillingProvider,
   createMemoryErrorReporter,
   createMemoryFeatureFlags,
   createMemoryHumanVerifier,
@@ -42,6 +43,7 @@ export {
   createMemoryProductAnalytics,
   createMemoryRateLimiter,
   createMemoryTracer,
+  type MemoryBillingProvider,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
@@ -53,6 +55,7 @@ export {
   type SentJob,
 } from "./memory";
 export {
+  noopBillingProvider,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,

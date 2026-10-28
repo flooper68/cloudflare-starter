@@ -1,6 +1,6 @@
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
 import type { ProductAnalytics } from "../platform";
 import { trackEvent } from "../product-analytics";
 import {
@@ -35,6 +35,8 @@ export async function provisionUser(
     readonly ids: Ids;
     readonly requestContext: RequestContext;
     readonly analytics: ProductAnalytics;
+    /** Starts a new workspace's plan (billing's trial). */
+    readonly billing: BillingGate;
   },
   input: {
     readonly user: { readonly id: string; readonly email: string };
@@ -87,6 +89,8 @@ export async function provisionUser(
       workspaceCreatedEvent,
       { kind: "personal" }
     );
+    await deps.billing.workspaceCreated(workspaceId);
+    // After billing started the plan, so the traits carry it.
     await identifyMember(deps, {
       userId: input.user.id,
       workspaceId,
@@ -119,9 +123,11 @@ export async function provisionUser(
     })
     .onConflictDoNothing()
     .returning({ id: workspaces.id });
-  // The first sign-up creates the app's workspace: tracked once, like a personal one.
-  const trackCreated = (created: readonly { id: string }[]) => {
+  // The first sign-up creates the app's workspace: its plan starts and it is tracked once,
+  // like a personal one.
+  const workspaceStarted = async (created: readonly { id: string }[]) => {
     if (created.length === 0) return;
+    await deps.billing.workspaceCreated(SINGLE_WORKSPACE_ID);
     trackEvent(
       deps,
       {
@@ -134,7 +140,7 @@ export async function provisionUser(
     );
   };
   if (!role) {
-    trackCreated(await createWorkspace);
+    await workspaceStarted(await createWorkspace);
     return { workspaceId: null, role: null };
   }
   const [created] = await deps.db.batch([
@@ -149,7 +155,7 @@ export async function provisionUser(
       })
       .onConflictDoNothing(),
   ]);
-  trackCreated(created);
+  await workspaceStarted(created);
   await recordAuditEvent(deps, deps.requestContext, {
     action: "workspace.member_joined",
     actor: { kind: "user", userId: input.user.id },

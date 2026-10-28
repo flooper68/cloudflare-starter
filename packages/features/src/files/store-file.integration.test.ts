@@ -5,6 +5,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
@@ -31,6 +32,7 @@ describe("storeFile", () => {
         ids: sequentialIds("aaaaaaaa-0000-4000-8000-"),
         requestContext: testRequestContext(),
         analytics,
+        billing: testBilling(),
       },
       actor,
       { ...input, body }
@@ -78,6 +80,7 @@ describe("storeFile", () => {
           ids: sequentialIds("bbbbbbbb-0000-4000-8000-"),
           requestContext: testRequestContext(),
           analytics,
+          billing: testBilling(),
         },
         actor,
         { ...input, body }
@@ -103,6 +106,7 @@ describe("storeFile", () => {
           ids: sequentialIds("ffffffff-0000-4000-8000-"),
           requestContext: testRequestContext(),
           analytics: createMemoryProductAnalytics(),
+          billing: testBilling(),
         },
         // A role outside the map, as stored by an older version of the roles.
         { userId: "u", workspaceId: "w", role: "guest" as never },

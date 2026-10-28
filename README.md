@@ -7,6 +7,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Astro 7 + React 19 on Cloudflare Workers, SSR public pages and a client-routed SPA under `/app/*`
 - Better Auth: email + password and/or Google, switched by env; optional email verification; users and sessions in D1
 - Workspaces: data belongs to workspaces, never users; personal, single or multi-workspace mode; open or invite-only sign-up (domain allowlist, bootstrap admin); invitations by email; roles from one permission map; members page, switcher and MCP tools
+- Plans and limits per workspace: a catalog in code (plans, add-ons, gated features, usage limits), trials with a daily expiry cron, admin overrides, usage counters, `limit_reached` errors with upgrade options over tRPC, MCP and HTTP, `BILLING=off|manual|provider`, and a provider port for a project's own payment adapter (Stripe sketched); no vendor SDK
 - MCP server at `/mcp` with OAuth (Claude signs in as the user); a test fails the build if any API lacks an MCP tool or a reasoned exemption
 - Abuse protection: one rate-limit catalog enforced by Workers Rate Limiting bindings and Better Auth on every mutation, auth endpoint, upload and `/mcp`; Cloudflare Turnstile on sign-up, sign-in and password reset; a test fails the build if a mutation or route has neither a policy nor a reasoned exemption
 - Tests at every layer, all in CI: domain and integration tests on real local D1/R2, API tests through tRPC and `/mcp`, every Storybook story as a component test with axe accessibility checks as a hard gate, and Playwright journeys against the local app
@@ -41,7 +42,7 @@ This repository is a template, not a framework. When you start a project from it
 
    [bunfig.toml](bunfig.toml) sets `exact = true`, so updates and new `bun add`s are written without `^`/`~`. Read the changelogs of any major bump. Two known holds: `astro check` needs TypeScript 6 until Astro supports TypeScript 7.1+, so keep `typescript` on the latest 6.x; and any peer ranges in `packages/ui` need bumping by hand.
 
-2. **Choose how users are grouped and who may sign up.** `WORKSPACE_MODE` (personal: everyone works alone; single: one team in one workspace; multi: teams create and join workspaces) and `SIGN_UP` (open or invite-only), per environment with `bun run setup:auth`. The starter ships no choice for deployed environments: a deploy refuses to start until you have run it. Replace the placeholder roles (`owner`, `member`) with the product's. [docs/guides/how-to-configure-workspaces.md](docs/guides/how-to-configure-workspaces.md) Decide the same way whether each environment collects product events and Web Analytics: `bun run setup:analytics` ([docs/guides/how-to-setup-product-analytics.md](docs/guides/how-to-setup-product-analytics.md)).
+2. **Choose how users are grouped and who may sign up.** `WORKSPACE_MODE` (personal: everyone works alone; single: one team in one workspace; multi: teams create and join workspaces) and `SIGN_UP` (open or invite-only), per environment with `bun run setup:auth`. The starter ships no choice for deployed environments: a deploy refuses to start until you have run it. Replace the placeholder roles (`owner`, `member`) with the product's. [docs/guides/how-to-configure-workspaces.md](docs/guides/how-to-configure-workspaces.md) The same script asks for `BILLING` (off, manual or provider); replace the example plans in `packages/features/src/billing/domain/catalog.ts`. [docs/guides/how-to-configure-plans-and-billing.md](docs/guides/how-to-configure-plans-and-billing.md) Decide the same way whether each environment collects product events and Web Analytics: `bun run setup:analytics` ([docs/guides/how-to-setup-product-analytics.md](docs/guides/how-to-setup-product-analytics.md)).
 
 3. **Strip what the product does not use.** Every feature here is a demo of a pattern; keeping unused ones costs bindings, secrets, provisioning and review surface. Typical cuts:
 
@@ -109,7 +110,7 @@ Open `APP_URL` from `apps/web/.dev.vars` (`http://localhost:4321` by default; th
 
 Config lives in `wrangler.jsonc` per app (the format Cloudflare recommends; some newer Wrangler features are JSON-only). Bindings and vars are declared per environment there (`develop` at the top level, `env.staging`, `env.production`); bindings are not inherited between environments.
 
-Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secrets when deployed (`bun run setup:secrets`). It boots with `APP_URL` and `BETTER_AUTH_SECRET`; Google and R2 keys are optional. Sign-in methods, the email sender and the workspace settings (`WORKSPACE_MODE`, `SIGN_UP`, required) are plain vars in `wrangler.jsonc`. See [apps/web/.dev.vars.example](apps/web/.dev.vars.example).
+Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secrets when deployed (`bun run setup:secrets`). It boots with `APP_URL` and `BETTER_AUTH_SECRET`; Google and R2 keys are optional. Sign-in methods, the email sender and the workspace and billing settings (`WORKSPACE_MODE`, `SIGN_UP`, `BILLING`, required) are plain vars in `wrangler.jsonc`. See [apps/web/.dev.vars.example](apps/web/.dev.vars.example).
 
 ## Scripts
 
@@ -132,7 +133,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id into the config                                                     |
 | `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                     |
 | `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                        |
-| `bun run setup:auth`                     | Asks for the workspace mode and sign-up policy and writes them into `wrangler.jsonc`                                            |
+| `bun run setup:auth`                     | Asks for the workspace mode, sign-up policy and billing mode and writes them into `wrangler.jsonc`                              |
 | `bun run setup:analytics`                | Asks whether an environment collects product events and Web Analytics and writes the settings into `wrangler.jsonc`             |
 | `bun run runner:up -- --workers <n>`     | Builds and starts n self-hosted CI runners in Docker ([how-to-setup-ci.md](docs/guides/how-to-setup-ci.md#self-hosted-runners)) |
 | `bun run runner:down` / `runner:logs`    | Stops the runners / follows their logs                                                                                          |
@@ -158,6 +159,7 @@ See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) f
 - [How to add background jobs](docs/guides/how-to-add-background-jobs.md) (queues, retries, idempotency, cron, dead-letter queue)
 - [How to setup authentication (Better Auth)](docs/guides/how-to-setup-auth.md)
 - [How to configure workspaces, sign-up and roles](docs/guides/how-to-configure-workspaces.md)
+- [How to configure plans and billing](docs/guides/how-to-configure-plans-and-billing.md)
 - [How to setup the D1 database](docs/guides/how-to-setup-d1.md)
 - [How to setup R2 storage](docs/guides/how-to-setup-r2.md)
 - [How to setup email (Cloudflare Email Service)](docs/guides/how-to-setup-email.md)

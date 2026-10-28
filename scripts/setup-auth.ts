@@ -7,12 +7,14 @@
  *  - SIGN_UP: open | invite
  *  - SIGN_UP_DOMAINS: email domains that may sign up without an invitation
  *  - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
+ *  - BILLING: off | manual | provider (docs/guides/how-to-configure-plans-and-billing.md)
  * Press Enter to keep the current value. The answers are checked with the same rules the
  * app applies at startup. Deploy afterwards for the change to take effect.
  * docs/guides/how-to-configure-workspaces.md
  */
 import { parseArgs } from "node:util";
 
+import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 import {
   ask,
@@ -59,6 +61,11 @@ const SETTINGS: readonly Setting[] = [
     prompt:
       "Email that may always sign up; owns the workspace in single mode (blank for none)",
   },
+  {
+    name: "BILLING",
+    prompt:
+      "Plans and limits: off (everything unlimited), manual (an admin assigns plans) or provider (online checkout; needs a provider adapter in apps/web/src/server/billing-provider.ts)",
+  },
 ];
 
 const config = readWranglerConfig();
@@ -75,10 +82,10 @@ for (const env of environments) {
     next[setting.name] = answer === "-" ? "" : answer || current;
   }
 
-  if (dryRun && !next.WORKSPACE_MODE && !next.SIGN_UP) {
+  if (dryRun && !next.WORKSPACE_MODE && !next.SIGN_UP && !next.BILLING) {
     // wrangler.jsonc ships no choice; the real run asks for it.
     console.log(
-      `  (dry run) ${env}: WORKSPACE_MODE and SIGN_UP are not set yet; the real run asks for them`
+      `  (dry run) ${env}: WORKSPACE_MODE, SIGN_UP and BILLING are not set yet; the real run asks for them`
     );
     continue;
   }
@@ -91,6 +98,14 @@ for (const env of environments) {
   if (!parsed.success) {
     fail(
       `${env}: ${parsed.error.issues.map((issue) => issue.message).join("; ")}`
+    );
+  }
+  const billing = billingSettingsSchema.safeParse({
+    BILLING: next.BILLING || undefined,
+  });
+  if (!billing.success) {
+    fail(
+      `${env}: ${billing.error.issues.map((issue) => issue.message).join("; ")}`
     );
   }
   // The same refusals as apps/web/src/server/auth.ts at startup.
@@ -116,7 +131,7 @@ for (const env of environments) {
     setWranglerValue(envPath(env, "vars", name), value, dryRun);
   }
   console.log(
-    `✓ ${env}: WORKSPACE_MODE=${next.WORKSPACE_MODE}, SIGN_UP=${next.SIGN_UP}`
+    `✓ ${env}: WORKSPACE_MODE=${next.WORKSPACE_MODE}, SIGN_UP=${next.SIGN_UP}, BILLING=${next.BILLING}`
   );
 }
 

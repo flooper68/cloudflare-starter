@@ -44,7 +44,7 @@ describe("acceptInvitation", () => {
       ],
       [
         "$identify",
-        { role: "owner", workspace_size: "2-5", plan: null },
+        { role: "owner", workspace_size: "2-5", plan: "unlimited" },
         grace.id,
         "ws-acme",
       ],

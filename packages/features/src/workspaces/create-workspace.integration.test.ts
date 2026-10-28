@@ -5,6 +5,7 @@ import {
   rows,
   seedUser,
   sequentialIds,
+  testBilling,
   useCaseDeps,
 } from "../../test/fixtures";
 import { createWorkspace } from "./create-workspace";
@@ -41,7 +42,7 @@ describe("createWorkspace", () => {
       ],
       [
         "$identify",
-        { role: "owner", workspace_size: "1", plan: null },
+        { role: "owner", workspace_size: "1", plan: "unlimited" },
         ada.id,
         "00000000-0000-4000-8000-000000000001",
       ],
@@ -73,5 +74,25 @@ describe("createWorkspace", () => {
     await expect(
       createWorkspace(deps, { userId: ken.id, mode: "multi", name: "   " })
     ).rejects.toThrow();
+  });
+
+  it("starts the new workspace's trial when billing is on", async () => {
+    const ada = await seedUser("Ada Byron");
+    const deps = {
+      ...useCaseDeps(),
+      ids: sequentialIds("eeeeeeee-0000-4000-8000-"),
+      billing: testBilling("manual"),
+    };
+    const created = await createWorkspace(deps, {
+      userId: ada.id,
+      mode: "multi",
+      name: "Analytical Engines",
+    });
+    expect(
+      await rows(
+        "SELECT plan_id, status FROM workspace_subscription WHERE workspace_id = ?",
+        created.id
+      )
+    ).toEqual([{ plan_id: "pro", status: "trialing" }]);
   });
 });

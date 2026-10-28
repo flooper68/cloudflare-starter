@@ -5,6 +5,7 @@ import {
   seedUser,
   sequentialIds,
   settings,
+  testBilling,
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
@@ -17,6 +18,7 @@ const deps = () => ({
   clock: fixedClock(),
   // Storage is per file, not per test: fresh ids for every call.
   ids: sequentialIds(`${String(++run).padStart(8, "0")}-0000-4000-8000-`),
+  billing: testBilling(),
   requestContext: testRequestContext(),
   analytics: createMemoryProductAnalytics(),
 });
@@ -57,7 +59,10 @@ describe("provisionUser", () => {
         ])
       ).toEqual([
         ["workspaces.created", { kind: "personal" }],
-        ["$identify", { role: "owner", workspace_size: "1", plan: null }],
+        [
+          "$identify",
+          { role: "owner", workspace_size: "1", plan: "unlimited" },
+        ],
       ]);
       // A second run (resolveActor healing) creates nothing and tracks nothing.
       const again = deps();
@@ -91,7 +96,7 @@ describe("provisionUser", () => {
     ).toEqual([
       ["workspaces.created", { kind: "shared" }],
       ["workspaces.member_joined", { role: "member", via: "sign_up" }],
-      ["$identify", { role: "member", workspace_size: "1", plan: null }],
+      ["$identify", { role: "member", workspace_size: "1", plan: "unlimited" }],
     ]);
     expect(
       await provisionUser(deps(), {

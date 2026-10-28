@@ -5,6 +5,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
@@ -24,6 +25,7 @@ describe("deleteWorkspaceFiles", () => {
       ids: sequentialIds("abababab-0000-4000-8000-"),
       requestContext: testRequestContext(),
       analytics: createMemoryProductAnalytics(),
+      billing: testBilling(),
     };
     const body = new TextEncoder().encode("x").buffer as ArrayBuffer;
     const input = {
