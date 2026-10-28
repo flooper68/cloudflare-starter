@@ -15,7 +15,8 @@
     "deploy:production": "CLOUDFLARE_ENV=production bun run build && wrangler deploy",
     "cf-typegen": "wrangler types",
     "build:app": "astro build",
-    "deploy:dry-run": "astro build && wrangler deploy --dry-run"
+    "deploy:dry-run": "astro build && wrangler deploy --dry-run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.4.2",
@@ -44,6 +45,7 @@
     "@cloudflare/vitest-plugin": "1.4.9",
     "@cloudflare/workers-types": "5.20261028.1",
     "@modelcontextprotocol/client": "2.4.0",
+    "@playwright/test": "1.64.1",
     "typescript": "6.0.3",
     "wrangler": "4.154.0"
   }
