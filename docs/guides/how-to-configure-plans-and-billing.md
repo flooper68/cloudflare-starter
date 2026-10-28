@@ -92,7 +92,7 @@ curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=17+3+*+*+*"
 
 ## Admin: plans, add-ons and overrides
 
-Platform admins (the admin portal adds the role; until then every call is `NOT_FOUND`) have `admin.billing.*` procedures and the matching MCP tools:
+Platform admins (`adminProcedure`: role admin with `ADMIN_PORTAL=on`, else `NOT_FOUND`; [how-to-use-admin-portal.md](how-to-use-admin-portal.md)) have `admin.billing.*` procedures and the matching MCP tools:
 
 | Procedure                   | MCP tool                      | Does                                                                                                                   |
 | --------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- |

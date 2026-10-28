@@ -78,6 +78,14 @@ function checkWorkspaceVars(
       `${label}: SIGN_UP=invite without EMAIL_FROM: invitation links do not reach anyone`
     );
   }
+  // Required, no default (apps/web/src/lib/config.ts): the Worker refuses to start without it.
+  if (vars.ADMIN_PORTAL === "on" || vars.ADMIN_PORTAL === "off") {
+    ok(`${label}: ADMIN_PORTAL=${vars.ADMIN_PORTAL}`);
+  } else {
+    error(
+      `${label}: ADMIN_PORTAL must be on or off (it is ${vars.ADMIN_PORTAL ? `"${vars.ADMIN_PORTAL}"` : "missing"}): bun run setup:auth`
+    );
+  }
 }
 
 /** BILLING of one environment: required, off | manual | provider (setup:auth writes it). */

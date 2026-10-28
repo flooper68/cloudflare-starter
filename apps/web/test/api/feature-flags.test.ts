@@ -4,8 +4,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { buildMcpServer } from "@/server/mcp/server";
 import { buildPlatform } from "@/server/platform";
-import { createAppContext } from "@/server/trpc/context";
-import { appRouter } from "@/server/trpc/router";
 
 import {
   APP_URL,
@@ -17,18 +15,12 @@ import {
   testRequestContext,
 } from "./helpers";
 
-/**
- * TODO(admin-portal): the platform role has no column yet; until the admin portal lands,
- * an admin is a signed-up user whose context carries role "admin".
- */
-function adminCallerFor(user: TestUser) {
-  return appRouter.createCaller(
-    createAppContext(
-      { id: user.id, email: user.email, name: user.name, role: "admin" },
-      testRequestContext(),
-      env
-    )
-  );
+/** A platform admin (user.role = admin, as `bun run setup:admin` sets it) calling in-process. */
+async function adminCallerFor(user: TestUser) {
+  await env.DB.prepare("UPDATE user SET role = 'admin' WHERE id = ?")
+    .bind(user.id)
+    .run();
+  return callerFor(user);
 }
 
 async function mcp(
@@ -127,7 +119,7 @@ describe("feature flags (FEATURE_FLAGS=d1, real D1)", () => {
   });
 
   it("an admin rolls a flag out to 50 % of workspaces; flags.client follows per workspace and audits each write", async () => {
-    const admin = adminCallerFor(grace);
+    const admin = await adminCallerFor(grace);
     expect(
       await admin.admin.flags.update({
         key: "upload-demo-presigned",
@@ -172,7 +164,7 @@ describe("feature flags (FEATURE_FLAGS=d1, real D1)", () => {
   });
 
   it("an admin's invalid changes are refused: unknown flag, wrong value type, bad rule", async () => {
-    const admin = adminCallerFor(grace);
+    const admin = await adminCallerFor(grace);
     await expect(
       admin.admin.flags.update({
         key: "dark-launch",
@@ -201,7 +193,7 @@ describe("feature flags (FEATURE_FLAGS=d1, real D1)", () => {
     await env.DB.prepare(
       "UPDATE feature_flags SET fallthrough_json = 'on' WHERE key = 'upload-demo-presigned'"
     ).run();
-    const admin = adminCallerFor(grace);
+    const admin = await adminCallerFor(grace);
     // list() always reads D1, so it sees the hand-made change at once.
     const { flags } = await admin.admin.flags.list();
     expect(flags[0]?.stored).toMatchObject({
@@ -218,7 +210,7 @@ describe("feature flags (FEATURE_FLAGS=d1, real D1)", () => {
   });
 
   it("the same calls work through /mcp, with the same admin check", async () => {
-    const admin = adminCallerFor(grace);
+    const admin = await adminCallerFor(grace);
     const inside = workspaces.find(inHalf) as string;
     const updated = await mcp(admin, "update_feature_flag", {
       key: "upload-demo-presigned",

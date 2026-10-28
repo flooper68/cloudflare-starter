@@ -63,15 +63,13 @@ async function override(
 const workspaceOf = async (user: TestUser) =>
   (await callerFor(user).workspace.list()).activeWorkspaceId as string;
 
-/** The caller of a platform admin: the role the admin portal will put on the user. */
-const adminCaller = (user: TestUser, runtimeEnv = env) =>
-  appRouter.createCaller(
-    createAppContext(
-      { id: user.id, email: user.email, name: user.name, role: "admin" },
-      testRequestContext(),
-      runtimeEnv
-    )
-  );
+/** The caller of a platform admin (user.role = admin, as `bun run setup:admin` sets it). */
+async function adminCaller(user: TestUser, runtimeEnv = env) {
+  await env.DB.prepare("UPDATE user SET role = 'admin' WHERE id = ?")
+    .bind(user.id)
+    .run();
+  return callerFor(user, runtimeEnv);
+}
 
 async function mcpCall(
   caller: ReturnType<typeof callerFor>,
@@ -331,7 +329,7 @@ describe("billing (BILLING=manual)", () => {
   });
 
   it("lets a platform admin assign plans, add-ons and overrides, audited", async () => {
-    const admin = adminCaller(colleague);
+    const admin = await adminCaller(colleague);
     const target = await workspaceOf(colleague);
     await admin.admin.billing.assignPlan({
       workspaceId: target,
@@ -376,7 +374,7 @@ describe("billing (BILLING=manual)", () => {
   });
 
   it("gives flags.client the workspace's plan, so plan rules target it", async () => {
-    const admin = adminCaller(owner);
+    const admin = await adminCaller(owner);
     await admin.admin.flags.update({
       key: "upload-demo-presigned",
       enabled: true,

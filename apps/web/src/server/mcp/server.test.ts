@@ -50,6 +50,7 @@ function context(overrides: Partial<Context> = {}): Context {
         signUpDomains: [],
         bootstrapAdminEmail: null,
       },
+      ADMIN_PORTAL: "on",
       billing: { mode: "off" },
     },
     email: { enabled: false, value: null, reason: "Email is not configured" },
@@ -70,6 +71,9 @@ function context(overrides: Partial<Context> = {}): Context {
     },
     billingProvider: noopBillingProvider,
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },
+    session: null,
+    browser: null,
+    adminAuth: {} as Context["adminAuth"],
     ...overrides,
   };
 }
@@ -206,10 +210,11 @@ describe("MCP server", () => {
     expect(body.result.structuredContent.error.code).toBe("UNAUTHORIZED");
   });
 
-  it("hides the flag admin tools from users without the admin role", async () => {
+  // Non-admins (the role is read from D1) are covered in test/api/admin.test.ts.
+  it("hides the flag admin tools from anonymous callers", async () => {
     const memory = createMemoryFeatureFlags();
     const { body } = await rpc(
-      context({ flags: memory, flagStore: memory }),
+      context({ user: null, flags: memory, flagStore: memory }),
       "tools/call",
       { name: "list_feature_flags", arguments: {} }
     );

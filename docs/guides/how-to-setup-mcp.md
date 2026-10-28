@@ -14,6 +14,8 @@ Enforced by [apps/web/src/server/mcp/parity.test.ts](../../apps/web/src/server/m
 
 Reviews treat a new exemption as a design decision: it needs a reason a reviewer would accept, not "later".
 
+Exempt today: `admin.impersonation.start` and `admin.impersonation.stop`, because they create a browser cookie session (impersonation swaps the browser's session cookie; an MCP client has none). Every other admin procedure has an `admin_*` tool: `admin_get_overview`, `admin_get_settings`, `admin_list_users`, `admin_get_user`, `admin_ban_user`, `admin_unban_user`, `admin_revoke_user_sessions`, `admin_set_user_role`, `admin_remove_user`, `admin_send_password_reset` (outward), `admin_list_workspaces`, `admin_get_workspace`, `admin_assign_workspace_owner`, `admin_delete_workspace`, `admin_list_audit_events`, and the feature-flag tools `list_feature_flags`, `update_feature_flag`, `set_feature_flag_rules`. They answer `NOT_FOUND` unless the token's user is a platform admin and `ADMIN_PORTAL=on`; the destructive ones need the admin's newest sign-in to the web app to be at most 15 minutes old ([how-to-use-admin-portal.md](how-to-use-admin-portal.md#recent-sign-in-for-destructive-actions)).
+
 ## How It Works
 
 | Piece                                                                                                       | Where                                                                                        |

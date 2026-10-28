@@ -31,11 +31,12 @@ export const API_TEST_BINDINGS = {
   TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
   TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
   // Not in wrangler.jsonc (setup:auth writes them per environment); tests of other modes
-  // override them (test/api/helpers.ts envWith).
+  // or with the admin portal off override them (test/api/helpers.ts envWith).
   WORKSPACE_MODE: "multi",
   SIGN_UP: "open",
   SIGN_UP_DOMAINS: "",
   BOOTSTRAP_ADMIN_EMAIL: "",
+  ADMIN_PORTAL: "on",
   // Setup-written too: manual billing, so new workspaces start the catalog's trial and
   // limits apply; billing tests of other modes override it (envWith).
   BILLING: "manual",

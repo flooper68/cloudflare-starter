@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 
-import { recordAuditEvent } from "../audit";
+import { type AuditActor, recordAuditEvent } from "../audit";
 import type { Database } from "../database";
 import type { Clock, Ids, RequestContext } from "../kernel";
 import { isRole, type MemberRole, requireManagerRemains } from "./domain";
@@ -25,7 +25,11 @@ export async function prepareUserDeletion(
       workspaceIds: readonly string[]
     ) => Promise<void>;
   },
-  input: { readonly userId: string }
+  input: {
+    readonly userId: string;
+    /** Who deletes the account: the user by default, an admin from the admin portal. */
+    readonly actor?: AuditActor;
+  }
 ): Promise<{
   readonly deletedWorkspaceIds: readonly string[];
   readonly leftWorkspaceIds: readonly string[];
@@ -94,7 +98,7 @@ export async function prepareUserDeletion(
   const [first, ...rest] = statements;
   if (first) await deps.db.batch([first, ...rest]);
 
-  const actor = { kind: "user" as const, userId: input.userId };
+  const actor = input.actor ?? { kind: "user" as const, userId: input.userId };
   for (const workspaceId of deleted) {
     await recordAuditEvent(deps, deps.requestContext, {
       action: "workspace.deleted",

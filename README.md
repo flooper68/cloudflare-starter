@@ -7,6 +7,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Astro 7 + React 19 on Cloudflare Workers, SSR public pages and a client-routed SPA under `/app/*`
 - Better Auth: email + password and/or Google, switched by env; optional email verification; users and sessions in D1
 - Workspaces: data belongs to workspaces, never users; personal, single or multi-workspace mode; open or invite-only sign-up (domain allowlist, bootstrap admin); invitations by email; roles from one permission map; members page, switcher and MCP tools
+- Admin portal for platform admins (`ADMIN_PORTAL`, Better Auth's admin plugin behind our own use cases): users (search, suspend, sign out, reset password, role, delete), impersonation, workspace rescue and deletion, audit log, a D1 overview and read-only settings; every action audited and an `admin_*` MCP tool, destructive ones behind a recent sign-in
 - Plans and limits per workspace: a catalog in code (plans, add-ons, gated features, usage limits), trials with a daily expiry cron, admin overrides, usage counters, `limit_reached` errors with upgrade options over tRPC, MCP and HTTP, `BILLING=off|manual|provider`, and a provider port for a project's own payment adapter (Stripe sketched); no vendor SDK
 - MCP server at `/mcp` with OAuth (Claude signs in as the user); a test fails the build if any API lacks an MCP tool or a reasoned exemption
 - Abuse protection: one rate-limit catalog enforced by Workers Rate Limiting bindings and Better Auth on every mutation, auth endpoint, upload and `/mcp`; Cloudflare Turnstile on sign-up, sign-in and password reset; a test fails the build if a mutation or route has neither a policy nor a reasoned exemption
@@ -24,7 +25,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Component library in Linear's visual language (dark-first, dense, keyboard-first): 60+ components from buttons to data tables, command palette, kanban and app shell, themed by tokens, re-branded in two files
 - Storybook built into the web app at `/_storybook/` in every environment
 - Cloudflare Container demo, deployed as its own Worker
-- Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:auth`, `setup:email`, `doctor`), agent skills in `.claude/skills/`, and CI that can run on self-hosted runners in Docker (`runner:up`)
+- Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:auth`, `setup:admin`, `setup:email`, `doctor`), agent skills in `.claude/skills/`, and CI that can run on self-hosted runners in Docker (`runner:up`)
 - Every dependency pinned to an exact version
 
 ## Starting a new project from this starter
@@ -132,7 +133,8 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id into the config                                                     |
 | `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                     |
 | `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                        |
-| `bun run setup:auth`                     | Asks for the workspace mode, sign-up policy and billing mode and writes them into `wrangler.jsonc`                              |
+| `bun run setup:auth`                     | Asks for the workspace mode, sign-up policy, billing mode and `ADMIN_PORTAL` and writes them into `wrangler.jsonc`              |
+| `bun run setup:admin --email <address>`  | Makes an account a platform admin (`--demote` reverses, `--remote --env <env>` for a deployed database), audited                |
 | `bun run runner:up -- --workers <n>`     | Builds and starts n self-hosted CI runners in Docker ([how-to-setup-ci.md](docs/guides/how-to-setup-ci.md#self-hosted-runners)) |
 | `bun run runner:down` / `runner:logs`    | Stops the runners / follows their logs                                                                                          |
 | `bun run runner:remove -- --all`         | Unregisters the runners and deletes their containers and volumes                                                                |

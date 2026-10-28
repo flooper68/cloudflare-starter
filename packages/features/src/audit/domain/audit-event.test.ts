@@ -62,6 +62,11 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     metadata: { sessionCount: 3 },
   },
   "user.deleted": { action: "user.deleted", target: user },
+  "user.password_reset_sent": {
+    action: "user.password_reset_sent",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+  },
   "impersonation.started": {
     action: "impersonation.started",
     actor: { kind: "admin", userId: "user-grace" },
@@ -71,6 +76,12 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     action: "impersonation.stopped",
     actor: { kind: "admin", userId: "user-grace" },
     target: user,
+  },
+  "impersonation.oauth_refused": {
+    action: "impersonation.oauth_refused",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+    metadata: { clientId: "claude-desktop" },
   },
   "workspace.invitation_created": {
     action: "workspace.invitation_created",
@@ -119,6 +130,13 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     workspaceId: null,
     target: { type: "feature_flag", id: "upload-demo-presigned" },
     metadata: { ruleCount: 2, ruleKinds: ["workspace", "percentage"] },
+  },
+  "workspace.owner_assigned": {
+    action: "workspace.owner_assigned",
+    actor: { kind: "admin", userId: "user-grace" },
+    workspaceId: workspace,
+    target: user,
+    metadata: { previousRole: null },
   },
   "workspace.deleted": {
     action: "workspace.deleted",

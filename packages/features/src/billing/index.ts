@@ -43,6 +43,10 @@ export {
   validateCatalog,
 } from "./domain";
 export { expireTrials } from "./expire-trials";
+export {
+  type BillingOverview,
+  getBillingOverview,
+} from "./get-billing-overview";
 export { type BillingSummary, getBillingSummary } from "./get-billing-summary";
 export {
   getUsageSummary,

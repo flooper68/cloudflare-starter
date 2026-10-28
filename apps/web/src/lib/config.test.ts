@@ -35,6 +35,7 @@ describe("web config", () => {
         WORKSPACE_MODE: "single",
         SIGN_UP: "invite",
         BOOTSTRAP_ADMIN_EMAIL: "founder@acme.test",
+        ADMIN_PORTAL: "on",
         BILLING: "off",
       }).workspaces
     ).toEqual({
@@ -45,12 +46,34 @@ describe("web config", () => {
     });
   });
 
+  it("requires ADMIN_PORTAL, on or off, without a default", () => {
+    const workspaces = {
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      BILLING: "off",
+    };
+    expect(
+      parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "off" })
+        .ADMIN_PORTAL
+    ).toBe("off");
+    expect(() => parseAppConfig({ ...core, ...workspaces })).toThrow(
+      /ADMIN_PORTAL is not set: set ADMIN_PORTAL to one of on, off/
+    );
+    expect(() =>
+      parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "true" })
+    ).toThrow(ConfigError);
+  });
+
   it("refuses to start without WORKSPACE_MODE and SIGN_UP", () => {
     expect(() => parseAppConfig(core)).toThrow(/WORKSPACE_MODE must be/);
   });
 
   it("parses BILLING and refuses to start without it or with an unknown mode", () => {
-    const workspaces = { WORKSPACE_MODE: "multi", SIGN_UP: "open" };
+    const workspaces = {
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      ADMIN_PORTAL: "on",
+    };
     expect(
       parseAppConfig({ ...core, ...workspaces, BILLING: "manual" }).billing
     ).toEqual({ mode: "manual" });
