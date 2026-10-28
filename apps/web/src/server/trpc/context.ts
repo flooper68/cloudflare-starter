@@ -1,5 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
 import {
+  type BillingProvider,
   type RequestContext,
   randomIds,
   systemClock,
@@ -15,9 +16,10 @@ import {
   createAdminAuthGateway,
 } from "@/server/admin-auth-gateway";
 import { getAuth } from "@/server/auth";
+import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
-import { buildPlatform, loggerFor } from "@/server/platform";
+import { buildPlatform, loggerFor, tracerFor } from "@/server/platform";
 
 import type { Context, SessionInfo } from "./init";
 
@@ -31,15 +33,20 @@ export interface BrowserContext {
  * The tRPC context for a signed-in (or anonymous) user. The web endpoint passes the
  * session user and the request context from Astro.locals; the MCP endpoint passes the user
  * of the access token. Same context, same procedures, same checks. `env` defaults to the
- * Worker's; API tests pass one with other vars (another WORKSPACE_MODE). `browser` is the
- * cookie session and headers of a web request; MCP calls have none.
+ * Worker's; API tests pass one with other vars (another WORKSPACE_MODE) and, for
+ * BILLING=provider, a billing provider (the memory adapter). `browser` is the cookie
+ * session and headers of a web request; MCP calls have none.
  */
 export function createAppContext(
   user: Context["user"],
   requestContext: RequestContext,
   env: AppEnv = workerEnv as AppEnv,
-  browser: BrowserContext = { session: null, exchange: null }
+  options: {
+    readonly billingProvider?: BillingProvider;
+    readonly browser?: BrowserContext;
+  } = {}
 ): Context {
+  const browser = options.browser ?? { session: null, exchange: null };
   const platform = buildPlatform(env);
   const scoped = {
     ...requestContext,
@@ -56,9 +63,13 @@ export function createAppContext(
     r2: buildR2Feature(env),
     bucket: env.FILES,
     jobQueue: platform.jobQueue,
+    billing: billingGateFor(env, scoped),
+    billingProvider: options.billingProvider ?? billingProviderFor(env),
     requestContext: scoped,
     logger: loggerFor(platform, scoped),
     errors: platform.errors,
+    tracer: tracerFor(platform, scoped),
+    metrics: platform.metrics,
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
@@ -91,5 +102,6 @@ export function userOf(
     readonly name: string;
   } | null
 ): Context["user"] {
+  // The platform role is read from D1 by adminProcedure, never from the session.
   return user ? { id: user.id, email: user.email, name: user.name } : null;
 }

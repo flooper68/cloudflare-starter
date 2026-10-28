@@ -4,6 +4,7 @@
  */
 import { existsSync } from "node:fs";
 
+import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 
 import {
@@ -21,6 +22,8 @@ const PLATFORM_SETTINGS = {
   LOG_SINK: ["workers-logs", "none"],
   ERROR_REPORTER: ["workers-logs", "none"],
   FEATURE_FLAGS: ["d1", "none"],
+  METRICS: ["analytics-engine", "none"],
+  TRACING: ["workers", "none"],
 } as const;
 
 let errors = 0;
@@ -83,6 +86,24 @@ function checkWorkspaceVars(
       `${label}: ADMIN_PORTAL must be on or off (it is ${vars.ADMIN_PORTAL ? `"${vars.ADMIN_PORTAL}"` : "missing"}): bun run setup:auth`
     );
   }
+}
+
+/** BILLING of one environment: required, off | manual | provider (setup:auth writes it). */
+function checkBillingVar(label: string, value: string | undefined) {
+  const billing = billingSettingsSchema.safeParse({
+    BILLING: value || undefined,
+  });
+  if (!billing.success) {
+    error(
+      `${label}: ${billing.error.issues.map((issue) => issue.message).join("; ")} (bun run setup:auth; the Worker refuses to start)`
+    );
+    return;
+  }
+  ok(`${label}: BILLING=${billing.data.mode}`);
+  if (billing.data.mode === "provider")
+    warn(
+      `${label}: BILLING=provider needs a provider adapter registered in apps/web/src/server/billing-provider.ts (the starter ships none)`
+    );
 }
 
 console.log("Local dev");
@@ -178,6 +199,7 @@ if (!existsSync(DEV_VARS)) {
 
   // Local dev reads them from .dev.vars (wrangler.jsonc ships none).
   checkWorkspaceVars("local", Object.fromEntries(vars));
+  checkBillingVar("local", vars.get("BILLING"));
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -203,6 +225,22 @@ for (const env of ENVIRONMENTS) {
     else if (!(allowed as readonly string[]).includes(value))
       error(`${env}: ${name} is "${value}" (${allowed.join(" | ")})`);
     else ok(`${env}: ${name}=${value}`);
+  }
+  // METRICS=analytics-engine writes to the METRICS_DATASET binding of this environment.
+  const datasets =
+    (block.analytics_engine_datasets as
+      | { binding: string; dataset?: string }[]
+      | undefined) ?? [];
+  const metricsDataset = datasets.find(
+    (entry) => entry.binding === "METRICS_DATASET"
+  );
+  if (vars.METRICS === "analytics-engine") {
+    if (metricsDataset?.dataset)
+      ok(`${env}: METRICS_DATASET → ${metricsDataset.dataset}`);
+    else
+      error(
+        `${env}: METRICS=analytics-engine needs the METRICS_DATASET binding in analytics_engine_datasets`
+      );
   }
   // APP_ENV is required too (no default) and names the environment it is set in.
   if (vars.APP_ENV === env) ok(`${env}: APP_ENV=${env}`);
@@ -249,6 +287,13 @@ for (const env of ENVIRONMENTS) {
     (block.ratelimits as { namespace_id: string }[] | undefined) ?? []
   ).map((binding) => binding.namespace_id);
   namespaceIds.push(...ids);
+  if (!vars.BILLING) {
+    warn(
+      `${env}: no BILLING yet: bun run setup:auth --env ${env} before deploying (the Worker refuses to start)`
+    );
+  } else {
+    checkBillingVar(env, vars.BILLING);
+  }
 }
 const duplicates = namespaceIds.filter(
   (id, index) => namespaceIds.indexOf(id) !== index

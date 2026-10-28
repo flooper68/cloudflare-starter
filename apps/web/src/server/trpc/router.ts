@@ -3,6 +3,7 @@ import {
   createPresignedUpload,
   evaluateClientFlags,
   listWorkspaceFiles,
+  resolveEntitlements,
   sendHello,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
@@ -101,8 +102,13 @@ export const appRouter = router({
       flags: await evaluateClientFlags(ctx, {
         userId: ctx.actor.userId,
         workspaceId: ctx.actor.workspaceId,
-        // TODO(plans): the workspace's plan once plans exist.
-        plan: null,
+        // Plan-targeted rules see the workspace's plan in effect (billing).
+        plan: (
+          await resolveEntitlements(
+            { ...ctx, settings: ctx.config.billing },
+            ctx.actor.workspaceId
+          )
+        ).planId,
         environment: ctx.config.APP_ENV,
       }),
     })),

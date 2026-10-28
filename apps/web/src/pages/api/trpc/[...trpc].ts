@@ -29,8 +29,10 @@ async function handler(context: Parameters<APIRoute>[0]) {
         context.locals.requestContext,
         undefined,
         {
-          session: sessionOf(context.locals.session),
-          exchange: { headers: context.request.headers, resHeaders },
+          browser: {
+            session: sessionOf(context.locals.session),
+            exchange: { headers: context.request.headers, resHeaders },
+          },
         }
       ),
     // Mutations name their quota (RateLimit-Policy); a refused one answers 429 with

@@ -8,6 +8,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Better Auth: email + password and/or Google, switched by env; optional email verification; users and sessions in D1
 - Workspaces: data belongs to workspaces, never users; personal, single or multi-workspace mode; open or invite-only sign-up (domain allowlist, bootstrap admin); invitations by email; roles from one permission map; members page, switcher and MCP tools
 - Admin portal for platform admins (`ADMIN_PORTAL`, Better Auth's admin plugin behind our own use cases): users (search, suspend, sign out, reset password, role, delete), impersonation, workspace rescue and deletion, audit log, a D1 overview and read-only settings; every action audited and an `admin_*` MCP tool, destructive ones behind a recent sign-in
+- Plans and limits per workspace: a catalog in code (plans, add-ons, gated features, usage limits), trials with a daily expiry cron, admin overrides, usage counters, `limit_reached` errors with upgrade options over tRPC, MCP and HTTP, `BILLING=off|manual|provider`, and a provider port for a project's own payment adapter (Stripe sketched); no vendor SDK
 - MCP server at `/mcp` with OAuth (Claude signs in as the user); a test fails the build if any API lacks an MCP tool or a reasoned exemption
 - Abuse protection: one rate-limit catalog enforced by Workers Rate Limiting bindings and Better Auth on every mutation, auth endpoint, upload and `/mcp`; Cloudflare Turnstile on sign-up, sign-in and password reset; a test fails the build if a mutation or route has neither a policy nor a reasoned exemption
 - Tests at every layer, all in CI: domain and integration tests on real local D1/R2, API tests through tRPC and `/mcp`, every Storybook story as a component test with axe accessibility checks as a hard gate, and Playwright journeys against the local app
@@ -19,6 +20,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Cloudflare Email Service through the `send_email` binding (simulated in local dev)
 - Append-only audit log in D1 (sign-in, failed sign-in, sign-up, password reset and change; admin and workspace actions in the catalog): typed actions with strict metadata, the request's trace id on every event, OCSF-aligned fields, daily retention purge, and an architecture test that every state change is audited
 - OpenTelemetry-shaped logs and error reports in Workers Logs (exportable over OTLP) behind swappable ports (Logger, ErrorReporter), W3C Trace Context across HTTP and background jobs, and a reference (the trace id) users can quote instead of a stack trace
+- Metrics and tracing behind ports shaped on the OpenTelemetry API: a typed metric catalog with semantic-convention names (OpenMetrics when exported), request, procedure, queue and cron latency in Workers Analytics Engine (queryable from Grafana), and spans for every request, procedure, MCP tool, message and cron run on the same trace
 - Feature flags shaped like OpenFeature: a typed catalog in code (owner and removal condition per flag, enforced in CI), workspace, plan and percentage rules stored in D1 behind a swappable port, `useFlag`/`FlagGate` in the SPA, admin procedures and MCP tools
 - Component library in Linear's visual language (dark-first, dense, keyboard-first): 60+ components from buttons to data tables, command palette, kanban and app shell, themed by tokens, re-branded in two files
 - Storybook built into the web app at `/_storybook/` in every environment
@@ -40,7 +42,7 @@ This repository is a template, not a framework. When you start a project from it
 
    [bunfig.toml](bunfig.toml) sets `exact = true`, so updates and new `bun add`s are written without `^`/`~`. Read the changelogs of any major bump. Two known holds: `astro check` needs TypeScript 6 until Astro supports TypeScript 7.1+, so keep `typescript` on the latest 6.x; and any peer ranges in `packages/ui` need bumping by hand.
 
-2. **Choose how users are grouped and who may sign up.** `WORKSPACE_MODE` (personal: everyone works alone; single: one team in one workspace; multi: teams create and join workspaces) and `SIGN_UP` (open or invite-only), per environment with `bun run setup:auth`. The starter ships no choice for deployed environments: a deploy refuses to start until you have run it. Replace the placeholder roles (`owner`, `member`) with the product's. [docs/guides/how-to-configure-workspaces.md](docs/guides/how-to-configure-workspaces.md)
+2. **Choose how users are grouped and who may sign up.** `WORKSPACE_MODE` (personal: everyone works alone; single: one team in one workspace; multi: teams create and join workspaces) and `SIGN_UP` (open or invite-only), per environment with `bun run setup:auth`. The starter ships no choice for deployed environments: a deploy refuses to start until you have run it. Replace the placeholder roles (`owner`, `member`) with the product's. [docs/guides/how-to-configure-workspaces.md](docs/guides/how-to-configure-workspaces.md) The same script asks for `BILLING` (off, manual or provider); replace the example plans in `packages/features/src/billing/domain/catalog.ts`. [docs/guides/how-to-configure-plans-and-billing.md](docs/guides/how-to-configure-plans-and-billing.md)
 
 3. **Strip what the product does not use.** Every feature here is a demo of a pattern; keeping unused ones costs bindings, secrets, provisioning and review surface. Typical cuts:
 
@@ -108,7 +110,7 @@ Open `APP_URL` from `apps/web/.dev.vars` (`http://localhost:4321` by default; th
 
 Config lives in `wrangler.jsonc` per app (the format Cloudflare recommends; some newer Wrangler features are JSON-only). Bindings and vars are declared per environment there (`develop` at the top level, `env.staging`, `env.production`); bindings are not inherited between environments.
 
-Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secrets when deployed (`bun run setup:secrets`). It boots with `APP_URL` and `BETTER_AUTH_SECRET`; Google and R2 keys are optional. Sign-in methods, the email sender and the workspace settings (`WORKSPACE_MODE`, `SIGN_UP`, required) are plain vars in `wrangler.jsonc`. See [apps/web/.dev.vars.example](apps/web/.dev.vars.example).
+Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secrets when deployed (`bun run setup:secrets`). It boots with `APP_URL` and `BETTER_AUTH_SECRET`; Google and R2 keys are optional. Sign-in methods, the email sender and the workspace and billing settings (`WORKSPACE_MODE`, `SIGN_UP`, `BILLING`, required) are plain vars in `wrangler.jsonc`. See [apps/web/.dev.vars.example](apps/web/.dev.vars.example).
 
 ## Scripts
 
@@ -131,7 +133,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id into the config                                                     |
 | `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                     |
 | `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                        |
-| `bun run setup:auth`                     | Asks for the workspace mode, sign-up policy and `ADMIN_PORTAL` and writes them into `wrangler.jsonc`                            |
+| `bun run setup:auth`                     | Asks for the workspace mode, sign-up policy, billing mode and `ADMIN_PORTAL` and writes them into `wrangler.jsonc`              |
 | `bun run setup:admin --email <address>`  | Makes an account a platform admin (`--demote` reverses, `--remote --env <env>` for a deployed database), audited                |
 | `bun run runner:up -- --workers <n>`     | Builds and starts n self-hosted CI runners in Docker ([how-to-setup-ci.md](docs/guides/how-to-setup-ci.md#self-hosted-runners)) |
 | `bun run runner:down` / `runner:logs`    | Stops the runners / follows their logs                                                                                          |
@@ -157,6 +159,7 @@ See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) f
 - [How to add background jobs](docs/guides/how-to-add-background-jobs.md) (queues, retries, idempotency, cron, dead-letter queue)
 - [How to setup authentication (Better Auth)](docs/guides/how-to-setup-auth.md)
 - [How to configure workspaces, sign-up and roles](docs/guides/how-to-configure-workspaces.md)
+- [How to configure plans and billing](docs/guides/how-to-configure-plans-and-billing.md)
 - [How to setup the D1 database](docs/guides/how-to-setup-d1.md)
 - [How to setup R2 storage](docs/guides/how-to-setup-r2.md)
 - [How to setup email (Cloudflare Email Service)](docs/guides/how-to-setup-email.md)

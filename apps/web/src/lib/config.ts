@@ -1,4 +1,6 @@
 import {
+  type BillingSettings,
+  billingSettingsSchema,
   type WorkspaceSettings,
   workspaceSettingsSchema,
 } from "@cloudflare-starter/features";
@@ -37,10 +39,13 @@ export type AdminPortalSetting = (typeof ADMIN_PORTAL_VALUES)[number];
 /**
  * The environment's config. `workspaces` holds WORKSPACE_MODE, SIGN_UP, SIGN_UP_DOMAINS and
  * BOOTSTRAP_ADMIN_EMAIL, required and without defaults (docs/guides/how-to-configure-workspaces.md).
- * `ADMIN_PORTAL` (on | off) is required too (docs/guides/how-to-use-admin-portal.md).
+ * `billing` holds BILLING (off | manual | provider), required and without a default
+ * (docs/guides/how-to-configure-plans-and-billing.md). `ADMIN_PORTAL` (on | off) is
+ * required too (docs/guides/how-to-use-admin-portal.md).
  */
 export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
+  readonly billing: BillingSettings;
   readonly ADMIN_PORTAL: AdminPortalSetting;
 };
 
@@ -72,6 +77,7 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       ADMIN_PORTAL_VALUES,
       "(bun run setup:auth writes it into each environment's vars; .dev.vars for local)"
     ),
+    billing: billingSettingsSchema.parse(env),
   };
 }
 
@@ -79,6 +85,10 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
 export const LOG_SINKS = ["workers-logs", "none"] as const;
 /** Where error reports go: Cloudflare Workers Logs, or nowhere (users still get a reference). */
 export const ERROR_REPORTERS = ["workers-logs", "none"] as const;
+/** Where metrics go: the Workers Analytics Engine dataset (METRICS_DATASET binding), or nowhere. */
+export const METRICS_BACKENDS = ["analytics-engine", "none"] as const;
+/** Where spans go: span records in Workers Logs next to the request's logs, or nowhere. */
+export const TRACING_BACKENDS = ["workers", "none"] as const;
 
 /**
  * Where feature flags come from: the D1 provider (flags stored in the app's database, managed
@@ -94,6 +104,8 @@ export interface PlatformConfig {
   readonly LOG_SINK: (typeof LOG_SINKS)[number];
   readonly ERROR_REPORTER: (typeof ERROR_REPORTERS)[number];
   readonly FEATURE_FLAGS: (typeof FEATURE_FLAG_PROVIDERS)[number];
+  readonly METRICS: (typeof METRICS_BACKENDS)[number];
+  readonly TRACING: (typeof TRACING_BACKENDS)[number];
 }
 
 /** A required setting is missing or invalid; the message names it and the allowed values. */
@@ -140,6 +152,8 @@ export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
     LOG_SINK: requiredChoice(env, "LOG_SINK", LOG_SINKS),
     ERROR_REPORTER: requiredChoice(env, "ERROR_REPORTER", ERROR_REPORTERS),
     FEATURE_FLAGS: requiredChoice(env, "FEATURE_FLAGS", FEATURE_FLAG_PROVIDERS),
+    METRICS: requiredChoice(env, "METRICS", METRICS_BACKENDS),
+    TRACING: requiredChoice(env, "TRACING", TRACING_BACKENDS),
   };
 }
 

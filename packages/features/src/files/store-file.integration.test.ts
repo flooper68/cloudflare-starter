@@ -6,6 +6,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
 } from "../../test/fixtures";
 import { storeFile } from "./store-file";
@@ -27,6 +28,7 @@ describe("storeFile", () => {
         bucket: env.FILES,
         clock: fixedClock(),
         ids: sequentialIds("aaaaaaaa-0000-4000-8000-"),
+        billing: testBilling(),
       },
       actor,
       { ...input, body }
@@ -55,6 +57,7 @@ describe("storeFile", () => {
           bucket: failingBucket,
           clock: fixedClock(),
           ids: sequentialIds("bbbbbbbb-0000-4000-8000-"),
+          billing: testBilling(),
         },
         actor,
         { ...input, body }
@@ -76,6 +79,7 @@ describe("storeFile", () => {
           bucket: env.FILES,
           clock: fixedClock(),
           ids: sequentialIds("ffffffff-0000-4000-8000-"),
+          billing: testBilling(),
         },
         // A role outside the map, as stored by an older version of the roles.
         { userId: "u", workspaceId: "w", role: "guest" as never },

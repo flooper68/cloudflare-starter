@@ -76,8 +76,9 @@ async function mcpCall(
   args: Record<string, unknown> = {}
 ) {
   const handler = createMcpHandler(() =>
-    buildMcpServer(caller, {
+    buildMcpServer(() => caller, {
       errors: buildPlatform(env).errors,
+      tracer: buildPlatform(env).tracer.withContext(testRequestContext()),
       requestContext: testRequestContext(),
     })
   );
@@ -182,7 +183,10 @@ describe("admin procedures", () => {
     const overview = await caller.admin.overview.get();
     expect(overview.users.total).toBeGreaterThanOrEqual(4);
     expect(overview.users.admins).toBe(1);
-    expect(overview.plans).toBeNull();
+    // BILLING=manual in the API tests: every new workspace starts the catalog trial.
+    expect(overview.plans?.plans[0]).toMatchObject({ status: "trialing" });
+    expect(overview.plans?.trials.active).toBeGreaterThanOrEqual(4);
+    expect(overview.usage?.period).toMatch(/^\d{4}-\d{2}$/);
 
     expect(await caller.admin.settings.get()).toMatchObject({
       environment: "develop",
@@ -674,11 +678,13 @@ async function workerEnvFetchTrpc(path: string, input: unknown) {
         testRequestContext(),
         env,
         {
-          session: {
-            createdAt: new Date(Date.now() - 60 * 60 * 1000),
-            impersonatedBy: null,
+          browser: {
+            session: {
+              createdAt: new Date(Date.now() - 60 * 60 * 1000),
+              impersonatedBy: null,
+            },
+            exchange: null,
           },
-          exchange: null,
         }
       ),
   });

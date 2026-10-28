@@ -212,6 +212,64 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Accepts an invitation by the token from its link (the part after /invite/) and joins the workspace, making it current. The invitation must be pending and sent to the user's email."
   ),
   direct(
+    "get_billing_summary",
+    "read",
+    "workspace.billing.summary",
+    "Get billing summary",
+    "Shows the workspace's plan, subscription status, trial end, included features, add-ons and usage of each metric against its limit (null is unlimited). With billing off the plan is unlimited. Use it to explain a limit_reached error."
+  ),
+  direct(
+    "get_checkout_url",
+    "write",
+    "workspace.billing.checkoutUrl",
+    "Get checkout URL",
+    "Returns a payment provider checkout page where the user buys a plan (and optional add-ons) for the workspace. Owners only; needs online billing (otherwise PRECONDITION_FAILED). Confirm the plan with the user before calling; the user completes payment themselves.",
+    { outward: true }
+  ),
+  direct(
+    "get_billing_portal_url",
+    "write",
+    "workspace.billing.portalUrl",
+    "Get billing portal URL",
+    "Returns the payment provider's customer portal (invoices, payment method, cancellation) for the workspace. Owners only; needs online billing and a completed checkout. Confirm with the user before calling.",
+    { outward: true }
+  ),
+  direct(
+    "admin_get_workspace_billing",
+    "read",
+    "admin.billing.get",
+    "Admin: get workspace billing",
+    "Platform admins only: a workspace's subscription, add-ons, entitlement overrides and the resulting features and limits. Others get NOT_FOUND."
+  ),
+  direct(
+    "admin_get_workspace_usage",
+    "read",
+    "admin.billing.usage",
+    "Admin: get workspace usage",
+    "Platform admins only: a workspace's usage of each metric against its limit, this month for counters. Others get NOT_FOUND."
+  ),
+  direct(
+    "admin_assign_plan",
+    "write",
+    "admin.billing.assignPlan",
+    "Admin: assign plan",
+    "Platform admins only: puts a workspace on a plan, active or trialing until trialEndsAt (ISO 8601). With online billing the provider's next event overrides it. Confirm the workspace and plan with the user before calling."
+  ),
+  direct(
+    "admin_set_addons",
+    "write",
+    "admin.billing.setAddons",
+    "Admin: set add-ons",
+    "Platform admins only: replaces a workspace's add-ons with the given list (addonId, quantity); an empty list removes them all. Confirm with the user before calling."
+  ),
+  direct(
+    "admin_set_override",
+    "write",
+    "admin.billing.setOverride",
+    "Admin: set entitlement override",
+    "Platform admins only: an exception for one workspace that wins over its plan: grant or revoke a feature (kind feature, enabled), or set a metric's limit (kind limit, limit; null is unlimited). override null removes it. A reason is required and audited. Confirm with the user before calling."
+  ),
+  direct(
     "list_files",
     "read",
     "storage.listFiles",
@@ -230,7 +288,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "write",
     "storage.createUpload",
     "Create upload URL",
-    "Creates a file record in the workspace and returns a presigned PUT URL for uploading up to 10 MB. Upload with an HTTP PUT and the same Content-Type."
+    "Creates a file record in the workspace and returns a presigned PUT URL for uploading up to 10 MB. Upload with an HTTP PUT and the same Content-Type. Needs a plan with direct uploads (files.presigned_upload) and room in the storage and monthly upload limits; otherwise FORBIDDEN with domain.kind limit_reached."
   ),
   direct(
     "enqueue_hello",
@@ -417,6 +475,8 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
     "binary download through the Worker; MCP clients use list_files and get_download_url",
   ".well-known/[...path].ts": "OAuth discovery documents for MCP clients",
   "mcp.ts": "the MCP endpoint itself",
+  "api/billing/webhook.ts":
+    "the billing provider's webhook (signed server-to-server events); people and agents use get_billing_summary",
 };
 
 export function annotationsOf(tool: ToolDefinition) {

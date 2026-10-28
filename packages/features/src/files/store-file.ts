@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import type { Database } from "../database";
-import type { Clock, Ids } from "../kernel";
+import type { BillingGate, Clock, Ids } from "../kernel";
 import type { Actor } from "../workspaces";
 import { type CreatedFile, createFileRecord } from "./create-file-record";
 import type { UploadInput } from "./domain";
@@ -18,6 +18,7 @@ export async function storeFile(
     readonly bucket: R2Bucket;
     readonly clock: Clock;
     readonly ids: Ids;
+    readonly billing: BillingGate;
   },
   actor: Actor,
   input: UploadInput & { readonly body: ArrayBuffer }
