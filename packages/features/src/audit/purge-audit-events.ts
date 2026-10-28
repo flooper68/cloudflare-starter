@@ -10,7 +10,7 @@ const PURGE_BATCH = 500;
 
 /**
  * Deletes audit events older than the retention period (AUDIT_RETENTION_DAYS by default),
- * in batches. The only use case that deletes audit rows; run daily by the cron handler.
+ * in batches. The only use case that deletes audit rows; run daily by the `audit.purge-events` job (cron-catalog.ts).
  */
 export async function purgeAuditEvents(
   deps: { readonly db: Database; readonly clock: Clock },

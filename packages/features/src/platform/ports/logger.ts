@@ -5,14 +5,14 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 /**
  * Attributes of a log record. Use OpenTelemetry semantic-convention keys where one exists
  * (`http.request.method`, `url.path`, `user.id`, `messaging.message.id`) and namespaced
- * `app.*` keys otherwise (`app.queue.attempts`). An Error under the key `error` becomes the
+ * `app.*` keys otherwise (`app.job.attempts`). An Error under the key `error` becomes the
  * `exception.type`, `exception.message` and `exception.stacktrace` attributes.
  */
 export type LogFields = Readonly<Record<string, unknown>>;
 
 /**
  * Port: structured logging in the OpenTelemetry Logs Data Model. `event` is the record's
- * body, a stable dotted name (`queue.hello`, `error.captured`) that queries filter on.
+ * body, a stable dotted name (`greetings.hello`, `error.captured`) that queries filter on.
  * Implementations live in `platform/adapters/<vendor>/` and pass `describeLoggerContract`
  * (logger.contract.ts). Logging never throws, whatever the attributes hold.
  */

@@ -1,5 +1,7 @@
 import {
   createMemoryErrorReporter,
+  createMemoryJobQueue,
+  type JobQueue,
   noopLogger,
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
@@ -31,7 +33,7 @@ function context(overrides: Partial<Context> = {}): Context {
     },
     email: { enabled: false, value: null, reason: "Email is not configured" },
     r2: { enabled: false, value: null, reason: "R2 is not configured" },
-    queue: { send: vi.fn() } as unknown as Context["queue"],
+    jobQueue: createMemoryJobQueue(),
     requestContext: {
       traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
       spanId: "00f067aa0ba902b7",
@@ -135,7 +137,7 @@ describe("MCP server", () => {
     const errors = createMemoryErrorReporter();
     const send = vi.fn().mockRejectedValue(new Error("queue unavailable"));
     const { body } = await rpc(
-      context({ errors, queue: { send } as unknown as Context["queue"] }),
+      context({ errors, jobQueue: { send } as JobQueue }),
       "tools/call",
       { name: "enqueue_hello", arguments: { name: "Nicole" } }
     );

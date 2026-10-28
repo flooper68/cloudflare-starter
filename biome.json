@@ -83,6 +83,18 @@
     },
     {
       "includes": [
+        "packages/features/src/**",
+        "apps/web/src/**",
+        "!packages/features/src/jobs/**",
+        "!packages/features/src/platform/adapters/cloudflare/cloudflare-job-queue.ts",
+        "!apps/web/src/server/platform.ts",
+        "!**/*.test.ts",
+        "!**/*.contract.ts"
+      ],
+      "plugins": ["./lint/rules/no-direct-queue-send.grit"]
+    },
+    {
+      "includes": [
         "packages/ui/src/**",
         "apps/web/src/**",
         "!packages/ui/src/brand/**"

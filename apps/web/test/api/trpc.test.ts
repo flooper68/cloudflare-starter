@@ -68,7 +68,10 @@ describe("tRPC procedures (real D1, real bindings)", () => {
   it("queue.enqueueHello sends to the real APP_QUEUE binding", async () => {
     expect(
       await callerFor(user).queue.enqueueHello({ name: "Barbara" })
-    ).toEqual({ queued: true });
+    ).toEqual({
+      queued: true,
+      jobId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    });
   });
 
   it("email.sendTest sends through the simulated send_email binding", async () => {

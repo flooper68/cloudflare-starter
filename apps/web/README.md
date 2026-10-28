@@ -61,4 +61,4 @@ bunx wrangler d1 migrations apply DB --remote --env staging
 bun run deploy:staging
 ```
 
-The environment is chosen at build time (`CLOUDFLARE_ENV`), which the `deploy:*` scripts set. Bindings: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer and consumer), Cron Triggers, plus plain vars. Secrets match [`.dev.vars.example`](.dev.vars.example).
+The environment is chosen at build time (`CLOUDFLARE_ENV`), which the `deploy:*` scripts set. Bindings: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer and consumer of background jobs, with a dead-letter queue: [how-to-add-background-jobs.md](../../docs/guides/how-to-add-background-jobs.md)), Cron Triggers, plus plain vars. Secrets match [`.dev.vars.example`](.dev.vars.example).

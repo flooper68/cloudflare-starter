@@ -6,8 +6,8 @@ import {
   type EmailService,
   type ErrorReporter,
   type Ids,
+  type JobQueue,
   type Logger,
-  type QueueMessage,
   type R2Config,
   type RequestContext,
   resolveActor,
@@ -26,7 +26,7 @@ export interface Context {
   readonly config: RequiredAppConfig;
   readonly email: FeatureConfig<EmailService>;
   readonly r2: FeatureConfig<R2Config>;
-  readonly queue: Queue<QueueMessage> | undefined;
+  readonly jobQueue: JobQueue;
   /** The request (or MCP call) this procedure runs for; its trace id is the error reference. */
   readonly requestContext: RequestContext;
   /** Logger bound to the request context. */

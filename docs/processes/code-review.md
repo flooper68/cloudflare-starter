@@ -40,12 +40,12 @@ If CI is green, these hold; reviewers do not check them manually:
 - Import cycles (Biome `noImportCycles`)
 - `drizzle-orm` in `apps/web` (Biome `noRestrictedImports`)
 - `export *` outside the package roots (Biome `noReExportAll`)
-- Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters, no `AsyncLocalStorage` or `request-scope` import outside the Better Auth hook bridge (GritQL rules in `lint/rules/*.grit`)
+- Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters, no `AsyncLocalStorage` or `request-scope` import outside the Better Auth hook bridge, no direct queue sends outside the jobs feature (GritQL rules in `lint/rules/*.grit`)
 - Vendor SDKs only in `platform/adapters/<vendor>/`: packages/features imports only zod, drizzle-orm and aws4fetch elsewhere, `apps/web/src/server` imports none of the listed vendor SDKs (dependency-cruiser `vendor-sdks-only-in-adapters`, `vendor-sdks-not-in-app-server`)
 - Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
 - `audit_events` append-only (only `recordAuditEvent` inserts, only `purgeAuditEvents` deletes) and every state-changing use case of an audited feature records an event or is exempt (`test/architecture/audit-coverage.test.ts`)
 - Every var and secret of `.dev.vars.example` and the top-level `vars` pinned for the API tests (`test/architecture/api-test-bindings.test.ts`)
-- One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, a contract test per platform adapter, every UI component has stories, exact pins, bindings in all environments, the same `observability` and `version_metadata` in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
+- One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, a contract test per platform adapter, every UI component has stories, exact pins, bindings in all environments, the same `observability` and `version_metadata` in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations, a dead-letter queue (14 days of retention in `setup:cloudflare`) and `max_retries` equal to `JOB_MAX_RETRIES` for every queue consumer, `triggers.crons` equal to the cron catalog and every cron entry named in a test (`test/architecture/`)
 - Workspace scope: `workspace_id` on every data table, `meta.scope: "workspace"` on every procedure of the workspace routers, an `expectCrossWorkspaceDenied` API test per workspace procedure, `actor: Actor` as the second parameter of workspace use cases (`test/architecture/workspace-scope.test.ts`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 - No AI agent credited in a PR's commits (`scripts/check-attribution.ts` in the CI `lint` job)
@@ -63,6 +63,7 @@ Automation proves a test exists, not that it is good: reviewers still check that
 - [ ] Dependencies point apps → features → domain; `packages/ui` and `packages/features` stay apart.
 - [ ] Failures are typed domain errors, mapped to transport errors in the adapter.
 - [ ] Use cases take explicit deps (`db`, `bucket`, `clock`, `ids`), no globals or `cloudflare:workers` imports.
+- [ ] Background work goes through `enqueueJob` (no direct queue send); a job whose repeat would do harm (charge, email, external call) has an idempotency key or a handler that is safe to run twice, since retries and redeliveries run it again; permanent failures throw a `DomainError` of a permanent kind instead of being retried ([how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md)).
 - [ ] Outside services only via a port; vendor code only in `platform/adapters/<vendor>/`; no `console` (log through the Logger, report unexpected errors once with the ErrorReporter, and give users the reference, never the error).
 - [ ] A new wire, log or event format (HTTP error body, log attributes, queue message, webhook, analytics event, metric) follows the standard listed in [overview.md Standards](../architecture/overview.md#standards), or the PR states why not.
 - [ ] Every new procedure has an MCP tool with a model-facing description, or an exemption with a reason.

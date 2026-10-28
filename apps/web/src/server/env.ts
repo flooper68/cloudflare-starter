@@ -1,4 +1,4 @@
-import type { QueueMessage } from "@cloudflare-starter/features";
+import type { JobEnvelope } from "@cloudflare-starter/features";
 
 /**
  * Worker bindings and variables, read with `import { env } from "cloudflare:workers"`.
@@ -8,7 +8,8 @@ import type { QueueMessage } from "@cloudflare-starter/features";
 export interface AppEnv {
   readonly DB: D1Database;
   readonly FILES: R2Bucket;
-  readonly APP_QUEUE?: Queue<QueueMessage>;
+  /** Producer of the job queue; `buildPlatform` fails naming it when it is missing. */
+  readonly APP_QUEUE?: Queue<JobEnvelope>;
   /** version_metadata binding: the deployed version id is the `release` in logs and reports. */
   readonly CF_VERSION_METADATA?: WorkerVersionMetadata;
   readonly APP_ENV?: string;

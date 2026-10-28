@@ -258,6 +258,16 @@ CREATE TABLE `files` (
 --> statement-breakpoint
 CREATE UNIQUE INDEX `files_r2_key_unique` ON `files` (`r2_key`);--> statement-breakpoint
 CREATE INDEX `files_workspace_id_created_at_idx` ON `files` (`workspace_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `job_idempotency_keys` (
+	`key` text PRIMARY KEY NOT NULL,
+	`job_type` text NOT NULL,
+	`job_id` text NOT NULL,
+	`status` text NOT NULL,
+	`locked_until` integer,
+	`expires_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `job_idempotency_keys_expires_at_idx` ON `job_idempotency_keys` (`expires_at`);--> statement-breakpoint
 CREATE TABLE `workspace_invitations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`workspace_id` text NOT NULL,

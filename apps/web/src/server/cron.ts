@@ -1,27 +1,78 @@
 import {
+  type CronCatalog,
+  type CronDeps,
   createRequestContext,
-  type Database,
-  purgeAuditEvents,
+  cronCatalog,
+  cronEntriesFor,
   randomIds,
-  scheduledGreeting,
+  systemClock,
 } from "@cloudflare-starter/features";
 
 import { loggerFor, type Platform } from "@/server/platform";
 
-/** Daily at 03:17 UTC: delete audit events past retention (AUDIT_RETENTION_DAYS). */
-export const AUDIT_PURGE_CRON = "17 3 * * *";
-
 /**
- * Cron Triggers from `triggers.crons` in wrangler.jsonc. Each run gets its own request
- * context; branch on `controller.cron` for several schedules. A failure is reported and
- * rethrown, so the run shows as failed in the Workers dashboard.
+ * Cron Triggers from `triggers.crons` in wrangler.jsonc. Runs every entry of the cron catalog
+ * (packages/features/src/cron-catalog.ts) whose schedule is `controller.cron`, each with its
+ * own request context (a new trace). Entries enqueue jobs; the queue does the work. A
+ * failing entry is reported and the others still run; the run then rethrows so it shows as
+ * failed in the Workers dashboard. A trigger with no entry is reported as a failure too.
  */
 export async function runScheduled(
-  controller: ScheduledController,
+  controller: Pick<ScheduledController, "cron" | "scheduledTime">,
   platform: Platform,
-  deps: { readonly db: Database }
+  catalog: CronCatalog<CronDeps> = cronCatalog
 ): Promise<void> {
-  const context = createRequestContext(
+  const entries = cronEntriesFor(catalog, controller.cron);
+  const failures: unknown[] = [];
+
+  if (entries.length === 0) {
+    const context = cronContext(platform);
+    const error = new Error(
+      `No cron catalog entry has the schedule "${controller.cron}"`
+    );
+    platform.errors.capture(error, context, {
+      "app.cron.schedule": controller.cron,
+    });
+    throw error;
+  }
+
+  for (const entry of entries) {
+    const context = cronContext(platform);
+    const fields = {
+      "app.cron.name": entry.name,
+      "app.cron.schedule": controller.cron,
+      "app.cron.scheduled_time": new Date(
+        controller.scheduledTime
+      ).toISOString(),
+    };
+    const logger = loggerFor(platform, context).child(fields);
+    try {
+      await entry.run(
+        {
+          jobQueue: platform.jobQueue,
+          clock: systemClock,
+          ids: randomIds,
+          logger,
+        },
+        { scheduledTime: controller.scheduledTime, context }
+      );
+      logger.info("cron.completed");
+    } catch (error) {
+      platform.errors.capture(error, context, fields);
+      failures.push(error);
+    }
+  }
+
+  if (failures.length > 0) {
+    throw new AggregateError(
+      failures,
+      `${failures.length} cron entr${failures.length === 1 ? "y" : "ies"} failed for "${controller.cron}"`
+    );
+  }
+}
+
+function cronContext(platform: Platform) {
+  return createRequestContext(
     { ids: randomIds },
     {
       source: "cron",
@@ -29,28 +80,4 @@ export async function runScheduled(
       environment: platform.environment,
     }
   );
-  try {
-    if (controller.cron === AUDIT_PURGE_CRON) {
-      const clock = { now: () => new Date(controller.scheduledTime) };
-      const result = await purgeAuditEvents({ db: deps.db, clock });
-      loggerFor(platform, context).info("cron.audit_purge", {
-        "app.cron.schedule": controller.cron,
-        "app.audit.deleted": result.deleted,
-        "app.audit.cutoff": result.cutoff,
-      });
-      return;
-    }
-    loggerFor(platform, context).info(
-      "cron.hello",
-      scheduledGreeting({
-        cron: controller.cron,
-        scheduledTime: controller.scheduledTime,
-      })
-    );
-  } catch (error) {
-    platform.errors.capture(error, context, {
-      "app.cron.schedule": controller.cron,
-    });
-    throw error;
-  }
 }

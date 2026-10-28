@@ -1,33 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import { helloGreeting } from "./greeting-log";
-import { scheduledGreeting } from "./scheduled-greeting";
+import { helloJob } from "./hello-job";
 
 describe("greetings", () => {
-  it("describes a consumed hello message as app.* attributes", () => {
+  it("describes a hello job that ran as app.* attributes", () => {
     expect(
-      helloGreeting({
-        type: "hello",
-        name: "Nicole",
-        userId: "u1",
-        queuedAt: "2026-04-20T12:00:00.000Z",
-      })
+      helloGreeting({ name: "Nicole", queuedAt: "2026-04-20T12:00:00.000Z" })
     ).toEqual({
       "app.greeting.message": "Hello, Nicole",
       "app.greeting.queued_at": "2026-04-20T12:00:00.000Z",
     });
   });
 
-  it("describes a cron run as app.* attributes", () => {
-    expect(
-      scheduledGreeting({
-        cron: "*/5 * * * *",
-        scheduledTime: Date.parse("2026-04-20T12:00:00.000Z"),
-      })
-    ).toEqual({
-      "app.greeting.message": "Hello from cron",
-      "app.cron.schedule": "*/5 * * * *",
-      "app.cron.scheduled_time": "2026-04-20T12:00:00.000Z",
+  it("declares the hello job with a name payload", () => {
+    expect(helloJob.type).toBe("greetings.hello");
+    expect(helloJob.payload.safeParse({ name: " Nicole " })).toMatchObject({
+      success: true,
+      data: { name: "Nicole" },
     });
+    for (const bad of [{}, { name: "" }, { name: "x".repeat(101) }, null]) {
+      expect(helloJob.payload.safeParse(bad).success).toBe(false);
+    }
   });
 });

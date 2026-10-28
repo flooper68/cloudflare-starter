@@ -1,0 +1,17 @@
+// Jobs go on the queue only through enqueueJob (packages/features/src/jobs), which validates
+// the payload and wraps it in the job envelope the consumer expects (trace, user,
+// idempotency key). No code reads the APP_QUEUE binding or calls `.send(` on a queue
+// directly. Applied to packages/features/src and apps/web/src, except the jobs feature, the
+// Cloudflare JobQueue adapter, the composition root that builds it
+// (apps/web/src/server/platform.ts) and tests (biome.json overrides).
+or {
+  `$env.APP_QUEUE` as $call,
+  `$queue.send($args)` as $call where {
+    $queue <: or {
+      r".*[Qq]ueue.*",
+      r".*QUEUE.*"
+    }
+  }
+} where {
+  register_diagnostic(span=$call, message="No direct queue sends: declare a job with defineJob and enqueue it with enqueueJob. See docs/guides/how-to-add-background-jobs.md.")
+}

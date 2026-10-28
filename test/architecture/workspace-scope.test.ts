@@ -21,6 +21,8 @@ import { filesUnder, read } from "./repo";
 const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
   workspaces: "the tenant itself; its id is what workspace_id points at",
   audit_events: "platform table; workspace_id optional",
+  job_idempotency_keys:
+    "platform table of the job queue: keys are per job type and payload, the workspace travels in the job envelope",
 };
 
 /** Routers whose procedures act inside one workspace. */

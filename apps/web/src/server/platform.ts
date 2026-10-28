@@ -1,13 +1,16 @@
 /**
  * Composition root of the platform ports: picks one adapter per port from explicit settings
- * (LOG_SINK, ERROR_REPORTER) and builds it once per isolate. Adding a vendor means a new
+ * (LOG_SINK, ERROR_REPORTER) and builds it once per isolate. JobQueue has one adapter, the
+ * APP_QUEUE binding, and no setting: it has no "off" (dropping jobs silently is unsafe). Adding a vendor means a new
  * adapter in packages/features/src/platform/adapters/<vendor>/, a new allowed value in
  * src/lib/config.ts and a branch here (docs/architecture/overview.md#ports-and-adapters).
  */
 import {
+  createCloudflareJobQueue,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
   type ErrorReporter,
+  type JobQueue,
   type Logger,
   type LogResource,
   noopErrorReporter,
@@ -15,7 +18,7 @@ import {
   type RequestContext,
 } from "@cloudflare-starter/features";
 
-import { parsePlatformConfig } from "@/lib/config";
+import { ConfigError, parsePlatformConfig } from "@/lib/config";
 import { buildRawEnv } from "@/lib/env";
 import type { AppEnv } from "@/server/env";
 
@@ -28,6 +31,8 @@ export const SERVICE_NAME = "cloudflare-starter-web";
 export interface Platform {
   readonly logger: Logger;
   readonly errors: ErrorReporter;
+  /** The job queue (APP_QUEUE). Enqueue through `enqueueJob`, never `send` directly. */
+  readonly jobQueue: JobQueue;
   /** The deployed version id from CF_VERSION_METADATA, "local" without the binding. */
   readonly release: string;
   /** APP_ENV: required, no default (local, develop, staging, production). */
@@ -39,11 +44,18 @@ let cache: { readonly env: AppEnv; readonly platform: Platform } | undefined;
 
 /**
  * The platform of this isolate. Throws a ConfigError naming the setting when LOG_SINK or
- * ERROR_REPORTER is missing or invalid; the HTTP edge turns that into a 500.
+ * ERROR_REPORTER is missing or invalid, or the APP_QUEUE binding is missing; the HTTP edge
+ * turns that into a 500.
  */
 export function buildPlatform(env: AppEnv): Platform {
   if (cache?.env === env) return cache.platform;
   const config = parsePlatformConfig(buildRawEnv(env));
+  if (!env.APP_QUEUE) {
+    throw new ConfigError(
+      "APP_QUEUE",
+      "APP_QUEUE is not bound: declare the queue producer in every environment of apps/web/wrangler.jsonc"
+    );
+  }
   const release = env.CF_VERSION_METADATA?.id || "local";
   const environment = config.APP_ENV;
   // OpenTelemetry resource attributes on every record.
@@ -61,6 +73,7 @@ export function buildPlatform(env: AppEnv): Platform {
       config.ERROR_REPORTER === "workers-logs"
         ? createWorkersLogsErrorReporter({ resource })
         : noopErrorReporter,
+    jobQueue: createCloudflareJobQueue(env.APP_QUEUE),
     release,
     environment,
   };

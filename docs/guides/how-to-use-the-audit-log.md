@@ -91,11 +91,11 @@ Use `--remote --env <env>` for a deployed environment. To see what else happened
 
 ## Retention
 
-`AUDIT_RETENTION_DAYS` in `packages/features/src/audit/domain/retention.ts` is 400 days: a yearly review plus a margin. Change the constant to keep events longer or shorter (some regulations ask for several years; then also consider an archive, below). The cron schedule `17 3 * * *` (daily, 03:17 UTC, `AUDIT_PURGE_CRON` in `apps/web/src/server/cron.ts`, in `triggers.crons` of every environment) runs `purgeAuditEvents`, which deletes events older than the cutoff in batches of 500 and logs `cron.audit_purge` with the count and the cutoff. Run it locally:
+`AUDIT_RETENTION_DAYS` in `packages/features/src/audit/domain/retention.ts` is 400 days: a yearly review plus a margin. Change the constant to keep events longer or shorter (some regulations ask for several years; then also consider an archive, below). The cron entry `audit.purge-events` (`packages/features/src/cron-catalog.ts`, schedule `17 3 * * *`: daily, 03:17 UTC, in `triggers.crons` of every environment) enqueues the job `audit.purge-events` with the run's time as `asOf`; the job runs `purgeAuditEvents`, which deletes events older than the cutoff in batches of 500, and is retried with backoff if it fails ([how-to-add-background-jobs.md](how-to-add-background-jobs.md)). The dev output shows `cron.completed` and then the job's `job.completed`. Run it locally:
 
 ```bash
 bun run dev:web    # in another terminal
-curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=17+3+*+*+*"
+curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"
 ```
 
 ## Options not built

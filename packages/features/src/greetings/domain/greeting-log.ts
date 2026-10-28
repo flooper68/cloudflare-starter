@@ -1,12 +1,13 @@
-import type { HelloMessage } from "./hello-message";
-
 /**
- * Log attributes for a consumed hello message (OpenTelemetry `app.*` keys; the event name,
+ * Log attributes for a hello job that ran (OpenTelemetry `app.*` keys; the event name,
  * user, environment and trace ids come from the logger).
  */
-export function helloGreeting(message: HelloMessage) {
+export function helloGreeting(input: {
+  readonly name: string;
+  readonly queuedAt: string;
+}) {
   return {
-    "app.greeting.message": `Hello, ${message.name}`,
-    "app.greeting.queued_at": message.queuedAt,
+    "app.greeting.message": `Hello, ${input.name}`,
+    "app.greeting.queued_at": input.queuedAt,
   } as const;
 }
