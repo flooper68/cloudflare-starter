@@ -38,6 +38,15 @@ bun run db:migrate:local
 bun run dev:web
 ```
 
+## Test
+
+```bash
+bun run test --project web-api   # API tests in workerd (from the repo root)
+bun run test:e2e                 # Playwright journeys in test/e2e against astro dev
+```
+
+The E2E run needs the same `.dev.vars` and migrated local D1 as `dev:web`, and Chromium once (`bunx playwright install chromium` in `apps/web`). Playwright starts and stops the dev server itself. See [docs/architecture/testing.md](../../docs/architecture/testing.md#e2e-tests).
+
 ## Deploy
 
 ```bash

@@ -48,6 +48,7 @@ Edit [`brand.css`](../../packages/ui/src/brand/brand.css):
 :root {
   --brand-accent: #0f9d76;
   --brand-accent-fg: #ffffff;
+  --brand-accent-text: #3cc89d; /* the accent as text on dark surfaces */
   --brand-font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --brand-font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --brand-radius: 8px;
@@ -55,18 +56,28 @@ Edit [`brand.css`](../../packages/ui/src/brand/brand.css):
 
 [data-theme="light"] {
   --brand-accent: #0b8a67; /* a touch darker for contrast on white */
+  --brand-accent-text: #08734f;
 }
 ```
+
+Repeat each light value in the `@media (prefers-color-scheme: light)` block of `brand.css`,
+which applies when the page sets no `data-theme`.
 
 What derives from these automatically (in `tokens.css`): accent hover, the subtle accent tint
 (selected rows, chips), the focus ring, and the `sm/lg/xl` radii.
 
 Choosing values:
 
-- **Accent**: one colour, used sparingly (primary buttons, selection, focus, links). It must
+- **Accent**: one colour, used sparingly (primary buttons, selection, focus, icons). It must
   reach 4.5:1 contrast with `--brand-accent-fg` for button text, and 3:1 against the canvas
   of each theme for focus rings and icons. Check both themes in Storybook (toolbar ›
   Theme) and with the a11y panel.
+- **Accent text** (`--brand-accent-text`, Tailwind `text-accent-text`): the accent wherever it
+  is text (links, an accent badge, a highlighted word). It must reach **4.5:1 on every surface
+  of its theme**, including the accent tint `bg-accent-subtle` behind it, so it is usually a
+  lighter accent in the dark theme and a darker one in the light theme. Use `text-accent` only
+  for icons and other non-text marks (3:1). The component tests fail on any text below 4.5:1
+  (axe `color-contrast`), so `bun run test:components` checks a new brand for you.
 - **Fonts**: a variable sans with good small sizes (the UI is dense: 13px body). Install it
   self-hosted (e.g. `bun add @fontsource-variable/geist` in `packages/ui`) and import it at
   the top of `src/globals.css` in place of Inter; avoid runtime font CDNs.
@@ -80,8 +91,9 @@ bun run storybook
 ```
 
 Open **Foundations › Brand** and **Foundations › Colors** in both themes, then
-**Patterns › Examples › Issue tracker** to see the brand on a whole screen. Run the a11y
-panel on Buttons and Forms. Finally `bun run dev:web` for the app.
+**Patterns › Examples › Issue tracker** to see the brand on a whole screen. Then run
+`bun run test:components`: every story runs axe, so a text colour below 4.5:1 anywhere fails
+with the element and the measured ratio. Finally `bun run dev:web` for the app.
 
 ## Changing The System Layer (rarely)
 
@@ -91,15 +103,24 @@ product needs a different feel (warmer greys, higher contrast), not for a logo c
 the same variable names; add new ones to both themes and map them in `theme.css` so they
 become Tailwind classes.
 
+Contrast rules the values must keep (WCAG AA; the component tests enforce them):
+
+- `fg`, `fg-muted`, `fg-subtle` and the status colours (`success`, `warning`, `danger`, `info`)
+  are text: 4.5:1 on every surface of their theme, including the tints (`bg-*-subtle`).
+- White text sits on the `*-solid` fills (`bg-danger-solid` for the danger button, solid badges,
+  avatar initials), not on the status colours themselves: each `--ui-*-solid` reaches 4.5:1
+  with `--ui-on-solid`.
+
 The default theme follows the OS; the app can force one with `<html data-theme="dark">` or
 `"light"`.
 
 ## Checklist
 
 - [ ] `brand.tsx`: name, tagline, support email, `LogoMark` SVG
-- [ ] `brand.css`: accent (+ light-theme tweak), accent foreground, fonts, radius
+- [ ] `brand.css`: accent (+ light-theme tweak), accent foreground, accent text (4.5:1 in both
+  themes), fonts, radius
 - [ ] Font package installed and imported in `globals.css`
 - [ ] `apps/web/public/favicon.svg` replaced
-- [ ] Contrast checked in both themes
+- [ ] Contrast checked in both themes: `bun run test:components` passes
 - [ ] Email sender name (`EMAIL_FROM_NAME` in `apps/web/wrangler.jsonc`) and Better Auth
   `appName` (`apps/web/src/server/auth.ts`) use the new name
