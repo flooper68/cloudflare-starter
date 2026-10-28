@@ -33,16 +33,16 @@ interface HomePageProps {
 export function HomePage({ signedIn }: HomePageProps) {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-12 px-6 py-10">
-      <header className="rounded-[2rem] border border-zinc-200 bg-white/70 p-8 shadow-sm backdrop-blur">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
+      <header className="rounded-xl border border-line bg-surface p-8 shadow-raised backdrop-blur">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
           Personal Cloudflare Starter
         </p>
         <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-semibold tracking-tight text-zinc-950 md:text-5xl">
+            <h1 className="text-4xl font-semibold tracking-tight text-fg md:text-5xl">
               Bun, Astro, React, Better Auth, D1, R2, Queues.
             </h1>
-            <p className="mt-4 text-base leading-7 text-zinc-600">
+            <p className="mt-4 text-base leading-7 text-fg-muted">
               A Cloudflare-first starter kit for personal products. The demos
               are intentionally real: typed APIs, protected pages, DB-backed
               uploads, a real queue consumer, and provider-backed email.
@@ -70,7 +70,7 @@ export function HomePage({ signedIn }: HomePageProps) {
               {demo.description}
             </CardDescription>
             <a
-              className="text-sm font-semibold text-teal-700 hover:text-teal-800"
+              className="text-sm font-semibold text-accent hover:text-accent-hover"
               href={signedIn ? demo.href : "/sign-in"}
             >
               {signedIn ? "Open demo" : "Sign in to use"}

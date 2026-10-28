@@ -1,6 +1,6 @@
 # Cloudflare Starter
 
-A Bun monorepo for building Cloudflare-first products: one Astro web Worker that serves the site, a Better Auth–protected React SPA, the API, a queue consumer and Cron Triggers, plus a shared feature package and optional Container and Storybook Workers.
+A Bun monorepo for building Cloudflare-first products: one Astro web Worker that serves the site, a Better Auth–protected React SPA, the API, a queue consumer and Cron Triggers, plus a shared feature package, a component library with Storybook at `/_storybook`, and an optional Container Worker.
 
 ## Highlights
 
@@ -12,7 +12,9 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - One Worker for HTTP, the queue consumer (with a dead-letter queue) and Cron Triggers
 - R2 two ways: through the Worker with the `FILES` binding, or direct with presigned URLs
 - Cloudflare Email Service through the `send_email` binding (simulated in local dev)
-- Cloudflare Container demo and a standalone Storybook Worker, each deployed on its own
+- Component library in Linear's visual language (dark-first, dense, keyboard-first): 60+ components from buttons to data tables, command palette, kanban and app shell, themed by tokens, re-branded in two files
+- Storybook built into the web app at `/_storybook/` in every environment
+- Cloudflare Container demo, deployed as its own Worker
 - Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:email`, `doctor`), agent skills in `.claude/skills/`, and CI
 - Every dependency pinned to an exact version
 
@@ -35,7 +37,7 @@ This repository is a template, not a framework. When you start a project from it
    | Not needed      | Remove                                                                                                                                  |
    | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
    | Containers      | `apps/container`, `docs/how-to-setup-container.md`, `dev:container` script                                                              |
-   | Storybook       | `apps/storybook`, its scripts, `docs/how-to-setup-storybook-worker.md`                                                                  |
+   | Storybook       | `apps/storybook`, the root `storybook`/`build-storybook` scripts, the Storybook step in `apps/web`'s `build`                            |
    | Background jobs | `queue` in `apps/web/src/worker.ts`, `src/server/queue.ts`, `queues` in `wrangler.jsonc`, `packages/features/src/queue`, the queue demo |
    | Scheduled work  | `scheduled` in `src/worker.ts`, `src/server/cron.ts`, `triggers` in `wrangler.jsonc`                                                    |
    | File storage    | `packages/features/src/storage`, `files` table, `r2_buckets`, `/api/files`, the upload demo; or keep only one of the two R2 paths       |
@@ -54,14 +56,14 @@ Apps:
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | [apps/web](apps/web/README.md)             | The main Worker: Astro site + `/app/*` SPA, Better Auth, D1, R2, email, tRPC + REST, MCP, queue consumer, Cron Triggers |
 | [apps/container](apps/container/README.md) | Cloudflare Container demo (Dockerized pi), its own Worker                                                               |
-| [apps/storybook](apps/storybook/README.md) | Standalone Storybook deploy target                                                                                      |
+| [apps/storybook](apps/storybook/README.md) | Storybook config; built into the web app at `/_storybook/`                                                              |
 
 Packages:
 
-| Path                                             | Description                                    |
-| ------------------------------------------------ | ---------------------------------------------- |
-| [packages/features](packages/features/README.md) | Shared feature code: db, email, queue, storage |
-| [packages/ui](packages/ui/README.md)             | Shared UI primitives and global styles         |
+| Path                                             | Description                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| [packages/features](packages/features/README.md) | Shared feature code: db, email, queue, storage                                |
+| [packages/ui](packages/ui/README.md)             | Component library: tokens, brand, components, app patterns, Storybook stories |
 
 ## Working on this repo (people and agents)
 
@@ -105,8 +107,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run dev:web`          | Starts the web Worker (Astro dev, with D1, R2, queue and cron simulated)    |
 | `bun run dev:container`    | Starts the Container pi demo                                                |
 | `bun run storybook`        | Starts Storybook on port `6006`                                             |
-| `bun run build-storybook`  | Builds the static Storybook bundle                                          |
-| `bun run deploy:storybook` | Builds and deploys the Storybook Worker                                     |
+| `bun run build-storybook`  | Builds Storybook into `apps/web/public/_storybook`                          |
 | `bun run build`            | Builds every deployable app workspace                                       |
 | `bun run verify`           | Typecheck + Biome lint + Vitest                                             |
 | `bun run test`             | Vitest once                                                                 |
@@ -140,4 +141,5 @@ See [docs/how-to-setup-web-app.md](docs/how-to-setup-web-app.md) for first-time 
 - [How to setup email (Cloudflare Email Service)](docs/how-to-setup-email.md)
 - [MCP: using the app from Claude](docs/how-to-setup-mcp.md)
 - [How to setup the container demo](docs/how-to-setup-container.md)
-- [How to setup the Storybook worker](docs/how-to-setup-storybook-worker.md)
+- [How to use Storybook](docs/how-to-use-storybook.md)
+- [How to define the brand](docs/how-to-define-branding.md)

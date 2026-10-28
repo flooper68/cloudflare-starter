@@ -1,27 +1,16 @@
 # @cloudflare-starter/storybook
 
-Standalone Storybook workspace and Cloudflare Worker deploy target. Storybook authoring and the static deploy target both live here — Storybook is intentionally isolated from the main web worker.
+Storybook for the component library in [`packages/ui`](../../packages/ui/README.md). It has no
+Worker of its own: the static build is written into the web app (`apps/web/public/_storybook`)
+and served at **`/_storybook/`** of every environment.
 
-See [docs/how-to-setup-storybook-worker.md](../../docs/how-to-setup-storybook-worker.md) for setup, the Cloudflare Access boundary, and deployment.
-
-## Layout
-
-- UI stories live in [`packages/ui/src/components/*.stories.tsx`](../../packages/ui/src/components)
-- Storybook config lives in `.storybook/`
-- The built static bundle is written to `./dist` and served by a dedicated Cloudflare Worker
-
-## Develop
+- Stories: `packages/ui/src/**/*.stories.tsx` and `*.mdx`
+- Config: `.storybook/` (theme toolbar, docs, a11y)
 
 ```bash
-bun run storybook
+bun run storybook         # dev server on :6006
+bun run build-storybook   # static build into apps/web/public/_storybook
 ```
 
-Runs on port `6006`.
-
-## Deploy
-
-```bash
-bun run deploy:storybook
-```
-
-Builds the static bundle and runs `wrangler deploy`. Protect the public hostname with Cloudflare Access.
+The web app's `build` (and so every `deploy:*`) builds Storybook first. See
+[docs/how-to-use-storybook.md](../../docs/how-to-use-storybook.md).

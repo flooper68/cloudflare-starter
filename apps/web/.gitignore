@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # local secrets
 .dev.vars
+
+# Storybook is built into the web app at /_storybook
+public/_storybook/

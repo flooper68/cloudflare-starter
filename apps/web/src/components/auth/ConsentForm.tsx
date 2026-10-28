@@ -4,6 +4,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Logo,
 } from "@cloudflare-starter/ui";
 import { useEffect, useState } from "react";
 
@@ -69,25 +70,23 @@ export function ConsentForm({
   return (
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
-          Cloudflare Starter
-        </p>
+        <Logo className="mb-3" />
         <CardTitle>Allow access?</CardTitle>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           <strong>{clientName ?? clientId}</strong> wants to use this app as
           you, with the same permissions you have.
         </p>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           After you allow it, you are sent back to{" "}
           <strong>{hostOf(redirectUri)}</strong>. Only continue if that is the
           app you are connecting.
         </p>
-        <p className="text-xs text-zinc-500">Scopes: {scope || "none"}</p>
+        <p className="text-xs text-fg-subtle">Scopes: {scope || "none"}</p>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm text-danger">{error}</p> : null}
 
         <div className="flex gap-3">
           <Button

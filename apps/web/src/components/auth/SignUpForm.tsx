@@ -8,6 +8,7 @@ import {
   FieldError,
   Input,
   Label,
+  Logo,
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
 
@@ -100,11 +101,9 @@ export function SignUpForm({
   return (
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
-          Cloudflare Starter
-        </p>
+        <Logo className="mb-3" />
         <CardTitle>Create an account</CardTitle>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           {checkEmail
             ? `We sent a verification link to ${email}. Open it to finish signing up.`
             : emailPassword
@@ -165,14 +164,19 @@ export function SignUpForm({
               <FieldError message={fieldErrors.password} />
             </div>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-            <Button className="w-full" disabled={loading} type="submit">
+            <Button
+              className="w-full"
+              disabled={loading}
+              type="submit"
+              variant="primary"
+            >
               {loading ? "Creating account..." : "Create account"}
             </Button>
           </form>
         ) : error ? (
-          <p className="text-sm text-red-600">{error}</p>
+          <p className="text-sm text-danger">{error}</p>
         ) : null}
 
         {google && !checkEmail ? (
@@ -181,10 +185,10 @@ export function SignUpForm({
       </CardContent>
 
       <CardFooter className="justify-center">
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           Already have an account?{" "}
           <a
-            className="font-medium text-teal-700 underline underline-offset-4"
+            className="font-medium text-accent underline underline-offset-4"
             href={`/sign-in${search}`}
           >
             Sign in
