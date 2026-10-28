@@ -2,6 +2,8 @@ import {
   createMemoryErrorReporter,
   createMemoryFeatureFlags,
   createMemoryJobQueue,
+  createMemoryMetrics,
+  createMemoryTracer,
   type JobQueue,
   noopFeatureFlags,
   noopLogger,
@@ -12,13 +14,27 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
 
 import type { Context } from "@/server/trpc/init";
-import { appRouter } from "@/server/trpc/router";
 
-import { buildMcpServer } from "./server";
+import { buildMcpServer, callerInSpan } from "./server";
 import { MCP_TOOLS } from "./tools";
+
+const REQUEST_CONTEXT: Context["requestContext"] = {
+  traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+  spanId: "00f067aa0ba902b7",
+  parentSpanId: null,
+  traceFlags: "01",
+  source: "http",
+  userId: "user-1",
+  workspaceId: null,
+  ip: null,
+  release: "local",
+  environment: "local",
+};
 
 function context(overrides: Partial<Context> = {}): Context {
   return {
+    tracer: createMemoryTracer().withContext(REQUEST_CONTEXT),
+    metrics: createMemoryMetrics(),
     db: {} as Context["db"],
     clock: { now: () => new Date("2026-10-28T12:00:00.000Z") },
     ids: { uuid: () => "9f4c17b6-e154-4db2-b97b-08e09ec90f4e" },
@@ -38,18 +54,7 @@ function context(overrides: Partial<Context> = {}): Context {
     email: { enabled: false, value: null, reason: "Email is not configured" },
     r2: { enabled: false, value: null, reason: "R2 is not configured" },
     jobQueue: createMemoryJobQueue(),
-    requestContext: {
-      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
-      spanId: "00f067aa0ba902b7",
-      parentSpanId: null,
-      traceFlags: "01",
-      source: "http",
-      userId: "user-1",
-      workspaceId: null,
-      ip: null,
-      release: "local",
-      environment: "local",
-    },
+    requestContext: REQUEST_CONTEXT,
     logger: noopLogger,
     errors: createMemoryErrorReporter(),
     bucket: {} as R2Bucket,
@@ -64,7 +69,7 @@ function context(overrides: Partial<Context> = {}): Context {
 
 async function rpc(ctx: Context, method: string, params: unknown = {}) {
   const handler = createMcpHandler(() =>
-    buildMcpServer(appRouter.createCaller(ctx), ctx)
+    buildMcpServer(callerInSpan(ctx), ctx)
   );
   const response = await handler.fetch(
     new Request("http://localhost/mcp", {
@@ -158,7 +163,7 @@ describe("MCP server", () => {
     });
     expect(errors.captured).toHaveLength(1);
     expect(errors.captured[0]?.extra).toEqual({
-      "rpc.system": "trpc",
+      "rpc.system.name": "trpc",
       "rpc.method": "queue.enqueueHello",
       "app.trpc.type": "mutation",
     });
@@ -199,6 +204,51 @@ describe("MCP server", () => {
       { name: "list_feature_flags", arguments: {} }
     );
     expect(body.result.structuredContent.error.code).toBe("NOT_FOUND");
+  });
+
+  it("wraps each tool call in a span on the request's trace, with the procedure span inside it", async () => {
+    const tracer = createMemoryTracer().withContext(REQUEST_CONTEXT);
+    const metrics = createMemoryMetrics();
+    await rpc(context({ tracer, metrics }), "tools/call", {
+      name: "whoami",
+      arguments: {},
+    });
+    const [procedure, tool] = tracer.spans;
+    expect(tool).toMatchObject({
+      name: "tools/call whoami",
+      trace_id: REQUEST_CONTEXT.traceId,
+      parent_span_id: REQUEST_CONTEXT.spanId,
+      attributes: {
+        "mcp.method.name": "tools/call",
+        "gen_ai.tool.name": "whoami",
+      },
+    });
+    expect(procedure).toMatchObject({
+      name: "health.hello",
+      trace_id: REQUEST_CONTEXT.traceId,
+      parent_span_id: tool?.span_id,
+      attributes: { "rpc.system.name": "trpc", "rpc.method": "health.hello" },
+    });
+    metrics.flush();
+    expect(metrics.exported).toEqual([
+      expect.objectContaining({
+        name: "rpc.server.call.duration",
+        attributes: { "rpc.system.name": "trpc", "rpc.method": "health.hello" },
+        count: 1,
+      }),
+    ]);
+  });
+
+  it("marks the tool span with the error type of a failed call", async () => {
+    const tracer = createMemoryTracer().withContext(REQUEST_CONTEXT);
+    await rpc(context({ tracer, user: null }), "tools/call", {
+      name: "whoami",
+      arguments: {},
+    });
+    expect(tracer.spans.map((span) => span.attributes["error.type"])).toEqual([
+      "UNAUTHORIZED",
+      "UNAUTHORIZED",
+    ]);
   });
 
   it("refuses protected tools without a user", async () => {

@@ -12,7 +12,7 @@ import {
 } from "@/lib/env";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
-import { buildPlatform, loggerFor } from "@/server/platform";
+import { buildPlatform, loggerFor, tracerFor } from "@/server/platform";
 
 import type { Context } from "./init";
 
@@ -41,6 +41,8 @@ export function createAppContext(
     requestContext: scoped,
     logger: loggerFor(platform, scoped),
     errors: platform.errors,
+    tracer: tracerFor(platform, scoped),
+    metrics: platform.metrics,
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,

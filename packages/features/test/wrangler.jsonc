@@ -14,6 +14,12 @@
     }
   ],
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "features-test-files" }],
+  // Analytics Engine, simulated locally (writes are accepted and not stored): the metrics
+  // and ProductAnalytics adapters' contract tests write here.
+  "analytics_engine_datasets": [
+    { "binding": "METRICS_DATASET", "dataset": "features_test_metrics" },
+    { "binding": "ANALYTICS_TEST", "dataset": "features_test_events" }
+  ],
   // Producer only: tests check what a use case sends; nothing consumes it here.
   "queues": {
     "producers": [{ "binding": "APP_QUEUE", "queue": "features-test-queue" }]
@@ -25,10 +31,5 @@
       "namespace_id": "9001",
       "simple": { "limit": 3, "period": 10 }
     }
-  ],
-  // Workers Analytics Engine, simulated by Miniflare (writes are accepted and not stored):
-  // the analytics-engine ProductAnalytics contract test.
-  "analytics_engine_datasets": [
-    { "binding": "ANALYTICS_TEST", "dataset": "features_test_events" }
   ]
 }

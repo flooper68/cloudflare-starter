@@ -64,6 +64,14 @@ EMAIL_FROM_NAME=Cloudflare Starter
 # TURNSTILE=off
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
+# Metrics and tracing. METRICS (analytics-engine | none) and TRACING (workers | none) are
+# required vars in apps/web/wrangler.jsonc too, with the same rules: uncomment to override,
+# never leave blank. Locally the METRICS_DATASET Analytics Engine binding is simulated and
+# span records print in the dev server output. Guide:
+# docs/guides/how-to-setup-metrics-and-tracing.md
+# METRICS=none
+# TRACING=none
+
 # Product and web analytics (docs/guides/how-to-setup-product-analytics.md), for local
 # development only: deployed environments get them from `bun run setup:analytics --env <env>`
 # (written into wrangler.jsonc) and the Worker refuses to start without them.

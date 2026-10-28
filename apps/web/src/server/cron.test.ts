@@ -4,6 +4,8 @@ import {
   createMemoryErrorReporter,
   createMemoryJobQueue,
   createMemoryLogger,
+  createMemoryMetrics,
+  createMemoryTracer,
   cronCatalog,
   noopFeatureFlags,
   noopHumanVerifier,
@@ -19,10 +21,14 @@ function memoryPlatform() {
   const logger = createMemoryLogger();
   const errors = createMemoryErrorReporter();
   const jobQueue = createMemoryJobQueue();
+  const metrics = createMemoryMetrics();
+  const tracer = createMemoryTracer();
   const platform: Platform = {
     logger,
     errors,
     jobQueue,
+    metrics,
+    tracer,
     flags: noopFeatureFlags,
     flagStore: null,
     release: "v-test",
@@ -33,7 +39,7 @@ function memoryPlatform() {
     productAnalytics: () => noopProductAnalytics,
     webAnalytics: null,
   };
-  return { platform, logger, errors, jobQueue };
+  return { platform, logger, errors, jobQueue, metrics, tracer };
 }
 
 const controller = (cron: string) => ({
@@ -113,10 +119,80 @@ describe("cron handler", () => {
   });
 
   it("reports a trigger that no entry handles", async () => {
-    const { platform, errors } = memoryPlatform();
+    const { platform, errors, metrics } = memoryPlatform();
     await expect(
       runScheduled(controller("*/5 * * * *"), platform)
     ).rejects.toThrow(/No cron catalog entry/);
     expect(errors.captured).toHaveLength(1);
+    expect(metrics.exported).toEqual([
+      expect.objectContaining({
+        name: "app.cron.run.duration",
+        attributes: {
+          "app.cron.schedule": "*/5 * * * *",
+          "error.type": "missing_catalog_entry",
+        },
+      }),
+    ]);
+  });
+
+  it("makes each entry's run a span with the log's trace and span ids, and measures it, flushed per run", async () => {
+    const { platform, logger, metrics, tracer } = memoryPlatform();
+    await runScheduled(controller("17 3 * * *"), platform);
+
+    expect(tracer.spans.map((span) => span.name)).toEqual([
+      "cron audit.purge-events",
+      "cron jobs.purge-idempotency-keys",
+    ]);
+    expect(tracer.spans[0]).toMatchObject({
+      kind: "internal",
+      trace_id: logger.records[0]?.trace_id,
+      span_id: logger.records[0]?.span_id,
+      status: { code: "unset" },
+      attributes: {
+        "app.cron.name": "audit.purge-events",
+        "app.cron.schedule": "17 3 * * *",
+      },
+    });
+    expect(metrics.exported).toEqual([
+      expect.objectContaining({
+        name: "app.cron.run.duration",
+        attributes: {
+          "app.cron.name": "audit.purge-events",
+          "app.cron.schedule": "17 3 * * *",
+        },
+        count: 1,
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "jobs.purge-idempotency-keys",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+    ]);
+  });
+
+  it("records a failing entry as an error span and with its error type", async () => {
+    const { platform, metrics, tracer } = memoryPlatform();
+    const catalog = createCronCatalog<CronDeps>([
+      {
+        name: "reports.broken",
+        schedule: "0 6 * * 1",
+        run: async () => {
+          throw new RangeError("queue unavailable");
+        },
+      },
+    ]);
+    await expect(
+      runScheduled(controller("0 6 * * 1"), platform, catalog)
+    ).rejects.toThrow();
+    expect(tracer.spans[0]).toMatchObject({
+      status: { code: "error", message: "queue unavailable" },
+      events: [{ name: "exception" }],
+    });
+    expect(metrics.exported[0]?.attributes).toEqual({
+      "app.cron.name": "reports.broken",
+      "app.cron.schedule": "0 6 * * 1",
+      "error.type": "RangeError",
+    });
   });
 });

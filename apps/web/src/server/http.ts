@@ -2,7 +2,9 @@
  * The HTTP edge: every on-demand request gets a request context (a W3C trace: continued
  * from a valid incoming `traceparent`, with our own span), every response `traceparent`
  * and `x-request-id` (the trace id) headers, and an unhandled error becomes an RFC 9457
- * Problem Details 500 with a reference the user can quote. Used by
+ * Problem Details 500 with a reference the user can quote. Each request is also an
+ * OpenTelemetry server span (the context's own span id) and one measurement of
+ * `http.server.request.duration`; the request's metrics are flushed when it ends. Used by
  * server/app-middleware.ts; API tests call it directly.
  */
 import {
@@ -11,12 +13,15 @@ import {
   type LogFields,
   type RequestContext,
   randomIds,
+  type Span,
+  systemClock,
 } from "@cloudflare-starter/features";
 
 import { ConfigError } from "@/lib/config";
 import { redactUrlPath } from "@/lib/redact-url";
 import type { AppEnv } from "@/server/env";
-import { buildPlatform } from "@/server/platform";
+import { httpMethodAttribute, secondsSince } from "@/server/instrumentation";
+import { buildPlatform, tracerFor } from "@/server/platform";
 import { runInRequestScope } from "@/server/request-scope";
 
 /** The trace id, for people: quote it to find the request's logs. */
@@ -115,10 +120,20 @@ export function httpAttributes(request: Request): LogFields {
   };
 }
 
+export interface HttpEdgeOptions {
+  /**
+   * The matched route template (`/api/files/[id]`, Astro's `routePattern`): the
+   * low-cardinality `http.route` of the span and metric. Omitted when unknown; never the
+   * raw path.
+   */
+  readonly route?: string;
+}
+
 export async function withRequestContext(
   request: Request,
   env: AppEnv,
-  handle: (scope: RequestScope) => Promise<Response>
+  handle: (scope: RequestScope) => Promise<Response>,
+  options: HttpEdgeOptions = {}
 ): Promise<Response> {
   let platform: ReturnType<typeof buildPlatform>;
   try {
@@ -158,25 +173,67 @@ export async function withRequestContext(
       ip: request.headers.get("cf-connecting-ip"),
     }
   );
+  let serverSpan: Span | undefined;
   const scope: RequestScope = {
     get context() {
       return context;
     },
     setUserId(userId) {
       context = { ...context, userId };
+      serverSpan?.setAttribute("user.id", userId ?? undefined);
       return context;
     },
   };
 
-  let response: Response;
-  try {
-    // In scope for code that cannot take the context as an argument (Better Auth hooks).
-    response = await runInRequestScope(scope, () => handle(scope));
-  } catch (error) {
-    response = internalErrorResponse(env, error, context, {
-      ...httpAttributes(request),
-      "app.error.origin": "http",
+  const started = systemClock.now();
+  const method = httpMethodAttribute(request.method);
+  const scheme = new URL(request.url).protocol.replace(/:$/, "");
+  const attributes = {
+    "http.request.method": method,
+    "url.scheme": scheme,
+    "http.route": options.route,
+  };
+
+  // The request's own span (OpenTelemetry server span): name `{method} {http.route}`.
+  const response = await tracerFor(platform, context).startContextSpan(
+    options.route ? `${method} ${options.route}` : method,
+    {
+      ...attributes,
+      // Spans may carry the (redacted) path and the ray id; metrics never do.
+      "url.path": redactUrlPath(new URL(request.url).pathname),
+      "app.cloudflare.ray_id": request.headers.get("cf-ray") ?? undefined,
+    },
+    async (span) => {
+      serverSpan = span;
+      let result: Response;
+      try {
+        // In scope for code that cannot take the context as an argument (Better Auth hooks).
+        result = await runInRequestScope(scope, () => handle(scope));
+      } catch (error) {
+        span.recordException(error);
+        result = internalErrorResponse(env, error, context, {
+          ...httpAttributes(request),
+          "app.error.origin": "http",
+        });
+      }
+      span.setAttribute("http.response.status_code", result.status);
+      if (result.status >= 500) {
+        span.setAttribute("error.type", String(result.status));
+        span.setStatus({ code: "error" });
+      }
+      return result;
+    }
+  );
+
+  platform.metrics
+    .histogram("http.server.request.duration")
+    .record(secondsSince(systemClock, started), {
+      ...attributes,
+      "http.response.status_code": response.status,
+      "error.type":
+        response.status >= 500 ? String(response.status) : undefined,
     });
-  }
+  // One flush per request: everything measured while serving it (tRPC, MCP) goes out now.
+  platform.metrics.flush();
   return withTraceHeaders(response, context);
 }

@@ -1,4 +1,13 @@
 // Cloudflare adapters: the vendor code for Cloudflare-native services lives only here.
+
+export {
+  ANALYTICS_ENGINE_LAYOUT,
+  type AnalyticsEngineMetricsOptions,
+  createAnalyticsEngineMetrics,
+  fromDataPoint,
+  MAX_POINTS_PER_FLUSH,
+  toDataPoint,
+} from "./analytics-engine-metrics";
 export {
   ANALYTICS_ENGINE_FIXED_BLOBS,
   type AnalyticsEngineProductAnalyticsOptions,
@@ -28,3 +37,7 @@ export {
   type WorkersLogsLoggerOptions,
 } from "./workers-logs-logger";
 export { createCloudflareRateLimiter } from "./workers-rate-limiter";
+export {
+  createWorkersTracer,
+  type WorkersTracerOptions,
+} from "./workers-tracer";

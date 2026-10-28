@@ -30,6 +30,8 @@
   // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
   // FEATURE_FLAGS is required (no default): d1 (flags in the DB, managed by admins) | none
   // (every flag is its catalog default). Guide: docs/guides/how-to-use-feature-flags.md
+  // METRICS (analytics-engine | none) and TRACING (workers | none) are required too
+  // (docs/guides/how-to-setup-metrics-and-tracing.md).
   // Product and web analytics are deliberately NOT set here either: whether an environment
   // collects anything is the owner's choice, written by `bun run setup:analytics --env <env>`
   // (docs/guides/how-to-setup-product-analytics.md):
@@ -41,6 +43,8 @@
     "LOG_SINK": "workers-logs",
     "ERROR_REPORTER": "workers-logs",
     "FEATURE_FLAGS": "d1",
+    "METRICS": "analytics-engine",
+    "TRACING": "workers",
     "AUTH_EMAIL_PASSWORD": "true",
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
     "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -64,6 +68,21 @@
   ],
   "r2_buckets": [
     { "binding": "FILES", "bucket_name": "cloudflare-starter-files-develop" }
+  ],
+  // Workers Analytics Engine: the metrics (METRICS_DATASET, METRICS=analytics-engine;
+  // docs/guides/how-to-setup-metrics-and-tracing.md) and the product events
+  // (ANALYTICS_EVENTS, ANALYTICS=analytics-engine; docs/guides/how-to-setup-product-analytics.md),
+  // one dataset each per environment. Datasets are created on the first write; simulated
+  // locally (writes are accepted and not stored).
+  "analytics_engine_datasets": [
+    {
+      "binding": "METRICS_DATASET",
+      "dataset": "cloudflare_starter_develop_metrics"
+    },
+    {
+      "binding": "ANALYTICS_EVENTS",
+      "dataset": "cloudflare_starter_develop_product_events"
+    }
   ],
   // Cloudflare Email Service. Simulated in local dev (mail is logged); deployed it needs
   // Workers Paid and a sender domain onboarded with `bun run setup:email`. Add
@@ -137,16 +156,6 @@
       "simple": { "limit": 120, "period": 60 }
     }
   ],
-  // Product analytics (docs/guides/how-to-setup-product-analytics.md): the Workers
-  // Analytics Engine dataset product events go to with ANALYTICS=analytics-engine. Created
-  // on the first write, nothing to set up; one dataset per environment. Simulated locally
-  // (writes are accepted and not stored). Distinct from the metrics dataset.
-  "analytics_engine_datasets": [
-    {
-      "binding": "ANALYTICS_EVENTS",
-      "dataset": "cloudflare_starter_product_events_develop"
-    }
-  ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
   "triggers": { "crons": ["17 3 * * *"] },
 
@@ -163,6 +172,8 @@
         "LOG_SINK": "workers-logs",
         "ERROR_REPORTER": "workers-logs",
         "FEATURE_FLAGS": "d1",
+        "METRICS": "analytics-engine",
+        "TRACING": "workers",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -184,6 +195,16 @@
         {
           "binding": "FILES",
           "bucket_name": "cloudflare-starter-files-staging"
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "METRICS_DATASET",
+          "dataset": "cloudflare_starter_staging_metrics"
+        },
+        {
+          "binding": "ANALYTICS_EVENTS",
+          "dataset": "cloudflare_starter_staging_product_events"
         }
       ],
       "queues": {
@@ -243,12 +264,6 @@
           "simple": { "limit": 120, "period": 60 }
         }
       ],
-      "analytics_engine_datasets": [
-        {
-          "binding": "ANALYTICS_EVENTS",
-          "dataset": "cloudflare_starter_product_events_staging"
-        }
-      ],
       "triggers": { "crons": ["17 3 * * *"] }
     },
     "production": {
@@ -263,6 +278,8 @@
         "LOG_SINK": "workers-logs",
         "ERROR_REPORTER": "workers-logs",
         "FEATURE_FLAGS": "d1",
+        "METRICS": "analytics-engine",
+        "TRACING": "workers",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -284,6 +301,16 @@
         {
           "binding": "FILES",
           "bucket_name": "cloudflare-starter-files-production"
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "METRICS_DATASET",
+          "dataset": "cloudflare_starter_production_metrics"
+        },
+        {
+          "binding": "ANALYTICS_EVENTS",
+          "dataset": "cloudflare_starter_production_product_events"
         }
       ],
       "queues": {
@@ -341,12 +368,6 @@
           "name": "RL_ANALYTICS",
           "namespace_id": "3008",
           "simple": { "limit": 120, "period": 60 }
-        }
-      ],
-      "analytics_engine_datasets": [
-        {
-          "binding": "ANALYTICS_EVENTS",
-          "dataset": "cloudflare_starter_product_events_production"
         }
       ],
       "triggers": { "crons": ["17 3 * * *"] }

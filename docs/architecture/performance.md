@@ -32,14 +32,14 @@ Targets are stated at a data volume, because most regressions on this stack come
 
 ## Checks
 
-| Check                       | What it catches                                                              | Where it runs                                                      | Deterministic | Use as a gate                                         |
-| --------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------- | ----------------------------------------------------- |
-| D1 query budgets            | N+1 queries, full scans, a use case that reads far more rows than it returns | Integration layer, real local D1                                   | Yes           | Yes                                                   |
-| Query plans                 | Missing or unused indexes                                                    | Review, with `EXPLAIN QUERY PLAN` against local D1                 | Yes           | By review                                             |
-| Bundle-size budgets         | Heavy client dependencies, server code leaking into the client bundle        | After `bun run build`                                              | Yes           | Yes                                                   |
-| Lighthouse / lab Web Vitals | Slow page loads, layout shift, render-blocking resources                     | Against the built app (`astro build` + preview, or a staging URL)  | No (noisy)    | Warn first; gate only with repeated runs and a margin |
-| Load tests                  | Latency and errors under concurrency, D1 contention, limits hit              | Run deliberately against a staging deployment                      | No            | No; a report attached to the PR that needs it         |
-| Production observation      | Everything real users experience                                             | Workers analytics and observability, D1 insights, field Web Vitals | n/a           | Source of truth for the targets                       |
+| Check                       | What it catches                                                              | Where it runs                                                                     | Deterministic | Use as a gate                                         |
+| --------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------- |
+| D1 query budgets            | N+1 queries, full scans, a use case that reads far more rows than it returns | Integration layer, real local D1                                                  | Yes           | Yes                                                   |
+| Query plans                 | Missing or unused indexes                                                    | Review, with `EXPLAIN QUERY PLAN` against local D1                                | Yes           | By review                                             |
+| Bundle-size budgets         | Heavy client dependencies, server code leaking into the client bundle        | After `bun run build`                                                             | Yes           | Yes                                                   |
+| Lighthouse / lab Web Vitals | Slow page loads, layout shift, render-blocking resources                     | Against the built app (`astro build` + preview, or a staging URL)                 | No (noisy)    | Warn first; gate only with repeated runs and a margin |
+| Load tests                  | Latency and errors under concurrency, D1 contention, limits hit              | Run deliberately against a staging deployment                                     | No            | No; a report attached to the PR that needs it         |
+| Production observation      | Everything real users experience                                             | The app's metrics and spans, Workers observability, D1 insights, field Web Vitals | n/a           | Source of truth for the targets                       |
 
 ### D1 query budgets
 
@@ -70,6 +70,8 @@ A k6- or autocannon-style script against a staging deployment with seeded data, 
 ### Production observation
 
 Production is where the targets are measured. Workers observability (logs, invocation metrics, CPU time and wall time per request) and D1 insights (slowest and most row-reading queries) show the real behaviour; field Web Vitals come from real browsers. A regression found here gets a check at the cheapest layer that would have caught it.
+
+The starter's own metrics ([how-to-setup-metrics-and-tracing.md](../guides/how-to-setup-metrics-and-tracing.md)) measure server latency targets directly: `http.server.request.duration` per route, `rpc.server.call.duration` per procedure (web app and MCP alike), `messaging.process.duration` per queue and `app.cron.run.duration` per schedule, each a histogram in seconds with OpenTelemetry's buckets, in the Workers Analytics Engine dataset for three months. A target such as "`storage.listFiles`: p95 under 250 ms" is checked as "at most 5 % of its calls fall in the buckets above 0.25 s", per environment and release (`service.version`), with the SQL in the guide or a Grafana panel; state targets at a bucket boundary (0.1, 0.25, 0.5, 1 s, …) so they can be read without interpolation. The span records of a slow request (filter Workers Logs on its `trace_id`) show which procedure or step took the time, and Workers' automatic traces show the D1 queries and subrequests inside it. The Workers clock advances only on I/O, so these durations are wall time spent waiting, not CPU time; CPU time comes from Workers observability.
 
 ## Data for performance checks
 

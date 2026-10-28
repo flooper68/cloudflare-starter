@@ -16,7 +16,8 @@ src/
 │                       defineJob and the job envelope type
 ├── platform/           shared infrastructure: Drizzle client, email service, clock, ids, random,
 │                       request context; ports/ (Logger, ErrorReporter, JobQueue, FeatureFlags,
-│                       RateLimiter, HumanVerifier) and adapters/<vendor>/
+│                       RateLimiter, HumanVerifier, Metrics, Tracer), adapters/<vendor>/
+│                       and the metric catalog
 ├── abuse/              the rate-limit catalog (RATE_LIMIT_POLICIES), limitKey, enforceRateLimit, verifyHuman
 ├── jobs/               background jobs: envelope, backoff, retry policy, idempotency keys, enqueueJob, runJob
 ├── accounts/           Better Auth tables (generated) and user lookups

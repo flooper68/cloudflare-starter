@@ -1,12 +1,13 @@
 /**
  * Composition root of the platform ports: picks one adapter per port from explicit settings
- * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, RATE_LIMITING, TURNSTILE, ANALYTICS) and builds it once per isolate. JobQueue has one
+ * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, RATE_LIMITING, TURNSTILE, ANALYTICS) and builds it once per isolate. JobQueue has one
  * adapter, the APP_QUEUE binding, and no setting: it has no "off" (dropping jobs silently is
  * unsafe). Adding a vendor means a new
  * adapter in packages/features/src/platform/adapters/<vendor>/, a new allowed value in
  * src/lib/config.ts and a branch here (docs/architecture/overview.md#ports-and-adapters).
  */
 import {
+  createAnalyticsEngineMetrics,
   createAnalyticsEngineProductAnalytics,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
@@ -14,6 +15,7 @@ import {
   createTurnstileVerifier,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
+  createWorkersTracer,
   type ErrorReporter,
   type FeatureFlagStore,
   type FeatureFlags,
@@ -21,12 +23,15 @@ import {
   type JobQueue,
   type Logger,
   type LogResource,
+  type Metrics,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,
   noopLogger,
+  noopMetrics,
   noopProductAnalytics,
   noopRateLimiter,
+  noopTracer,
   type ProductAnalytics,
   RATE_LIMIT_POLICIES,
   type RateLimiter,
@@ -34,6 +39,7 @@ import {
   type RequestContext,
   randomIds,
   systemClock,
+  type Tracer,
 } from "@cloudflare-starter/features";
 
 import {
@@ -62,6 +68,9 @@ export interface Platform {
   readonly flags: FeatureFlags;
   /** The provider's own store (D1), or null when flags are managed elsewhere or off. */
   readonly flagStore: FeatureFlagStore | null;
+  /** Flushed once at the end of each unit of work (HTTP request, queue batch, cron run). */
+  readonly metrics: Metrics;
+  readonly tracer: Tracer;
   /** The deployed version id from CF_VERSION_METADATA, "local" without the binding. */
   readonly release: string;
   /** APP_ENV: required, no default (local, develop, staging, production). */
@@ -110,6 +119,25 @@ function buildRateLimiter(env: AppEnv, config: AbuseConfig): RateLimiter {
   return createCloudflareRateLimiter(bindings);
 }
 
+/** METRICS=analytics-engine needs the METRICS_DATASET binding. */
+function buildMetrics(
+  env: AppEnv,
+  choice: "analytics-engine" | "none",
+  resource: LogResource
+): Metrics {
+  if (choice === "none") return noopMetrics;
+  if (!env.METRICS_DATASET) {
+    throw new ConfigError(
+      "METRICS",
+      "METRICS is analytics-engine but the METRICS_DATASET binding is missing: add analytics_engine_datasets to this environment of apps/web/wrangler.jsonc, or set METRICS to none"
+    );
+  }
+  return createAnalyticsEngineMetrics({
+    dataset: env.METRICS_DATASET,
+    resource,
+  });
+}
+
 /** ANALYTICS=analytics-engine needs the ANALYTICS_EVENTS dataset binding. */
 function buildProductAnalytics(
   env: AppEnv,
@@ -143,8 +171,8 @@ let cache: { readonly env: AppEnv; readonly platform: Platform } | undefined;
 
 /**
  * The platform of this isolate. Throws a ConfigError naming the setting when LOG_SINK,
- * ERROR_REPORTER or FEATURE_FLAGS is missing or invalid, or the APP_QUEUE binding is
- * missing; the HTTP edge turns that into a 500. The D1 flag provider caches flags per
+ * ERROR_REPORTER, FEATURE_FLAGS, METRICS or TRACING is missing or invalid, or the APP_QUEUE
+ * or METRICS_DATASET binding is missing; the HTTP edge turns that into a 500. The D1 flag provider caches flags per
  * isolate for 30 s (D1_FLAGS_TTL_MS).
  */
 export function buildPlatform(env: AppEnv): Platform {
@@ -190,6 +218,11 @@ export function buildPlatform(env: AppEnv): Platform {
     jobQueue: createCloudflareJobQueue(env.APP_QUEUE),
     flags: d1Flags ?? noopFeatureFlags,
     flagStore: d1Flags,
+    metrics: buildMetrics(env, config.METRICS, resource),
+    tracer:
+      config.TRACING === "workers"
+        ? createWorkersTracer({ resource })
+        : noopTracer,
     release,
     environment,
     rateLimiter: buildRateLimiter(env, abuse),
@@ -222,4 +255,12 @@ export function loggerFor(
   context: RequestContext
 ): Logger {
   return platform.logger.withContext(context);
+}
+
+/** The tracer for one unit of work: its spans are children of the context's span. */
+export function tracerFor(
+  platform: Pick<Platform, "tracer">,
+  context: RequestContext
+): Tracer {
+  return platform.tracer.withContext(context);
 }

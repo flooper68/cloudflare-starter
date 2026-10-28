@@ -21,6 +21,8 @@ const PLATFORM_SETTINGS = {
   LOG_SINK: ["workers-logs", "none"],
   ERROR_REPORTER: ["workers-logs", "none"],
   FEATURE_FLAGS: ["d1", "none"],
+  METRICS: ["analytics-engine", "none"],
+  TRACING: ["workers", "none"],
 } as const;
 
 /** Analytics settings (apps/web/src/lib/config.ts parseAnalyticsConfig), no defaults. */
@@ -243,6 +245,22 @@ for (const env of ENVIRONMENTS) {
       error(`${env}: ${name} is "${value}" (${allowed.join(" | ")})`);
     else ok(`${env}: ${name}=${value}`);
   }
+  // METRICS=analytics-engine writes to the METRICS_DATASET binding of this environment.
+  const datasets =
+    (block.analytics_engine_datasets as
+      | { binding: string; dataset?: string }[]
+      | undefined) ?? [];
+  const metricsDataset = datasets.find(
+    (entry) => entry.binding === "METRICS_DATASET"
+  );
+  if (vars.METRICS === "analytics-engine") {
+    if (metricsDataset?.dataset)
+      ok(`${env}: METRICS_DATASET → ${metricsDataset.dataset}`);
+    else
+      error(
+        `${env}: METRICS=analytics-engine needs the METRICS_DATASET binding in analytics_engine_datasets`
+      );
+  }
   // APP_ENV is required too (no default) and names the environment it is set in.
   if (vars.APP_ENV === env) ok(`${env}: APP_ENV=${env}`);
   else
@@ -276,9 +294,6 @@ for (const env of ENVIRONMENTS) {
   } else {
     checkAnalyticsVars(env, vars);
   }
-  const datasets =
-    (block.analytics_engine_datasets as { binding: string }[] | undefined) ??
-    [];
   if (!datasets.some((entry) => entry.binding === "ANALYTICS_EVENTS"))
     error(
       `${env}: the ANALYTICS_EVENTS analytics_engine_datasets binding is missing`

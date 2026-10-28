@@ -67,6 +67,10 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
 export const LOG_SINKS = ["workers-logs", "none"] as const;
 /** Where error reports go: Cloudflare Workers Logs, or nowhere (users still get a reference). */
 export const ERROR_REPORTERS = ["workers-logs", "none"] as const;
+/** Where metrics go: the Workers Analytics Engine dataset (METRICS_DATASET binding), or nowhere. */
+export const METRICS_BACKENDS = ["analytics-engine", "none"] as const;
+/** Where spans go: span records in Workers Logs next to the request's logs, or nowhere. */
+export const TRACING_BACKENDS = ["workers", "none"] as const;
 
 /**
  * Where feature flags come from: the D1 provider (flags stored in the app's database, managed
@@ -82,6 +86,8 @@ export interface PlatformConfig {
   readonly LOG_SINK: (typeof LOG_SINKS)[number];
   readonly ERROR_REPORTER: (typeof ERROR_REPORTERS)[number];
   readonly FEATURE_FLAGS: (typeof FEATURE_FLAG_PROVIDERS)[number];
+  readonly METRICS: (typeof METRICS_BACKENDS)[number];
+  readonly TRACING: (typeof TRACING_BACKENDS)[number];
 }
 
 /** A required setting is missing or invalid; the message names it and the allowed values. */
@@ -128,6 +134,8 @@ export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
     LOG_SINK: requiredChoice(env, "LOG_SINK", LOG_SINKS),
     ERROR_REPORTER: requiredChoice(env, "ERROR_REPORTER", ERROR_REPORTERS),
     FEATURE_FLAGS: requiredChoice(env, "FEATURE_FLAGS", FEATURE_FLAG_PROVIDERS),
+    METRICS: requiredChoice(env, "METRICS", METRICS_BACKENDS),
+    TRACING: requiredChoice(env, "TRACING", TRACING_BACKENDS),
   };
 }
 

@@ -10,6 +10,8 @@ export const API_TEST_BINDINGS = {
   LOG_SINK: "workers-logs",
   ERROR_REPORTER: "workers-logs",
   FEATURE_FLAGS: "d1",
+  METRICS: "analytics-engine",
+  TRACING: "workers",
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "api-test-secret-0123456789abcdefghij",
   AUTH_EMAIL_PASSWORD: "true",

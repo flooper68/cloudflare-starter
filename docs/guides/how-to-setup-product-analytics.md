@@ -18,7 +18,7 @@ The settings are not shipped in `apps/web/wrangler.jsonc`: whether an environmen
 
 1. `bun run setup:analytics --env <env>` (try `--dry-run` first) asks for `ANALYTICS`, `WEB_ANALYTICS` and, with `WEB_ANALYTICS=cloudflare`, `WEB_ANALYTICS_TOKEN`, and writes them into that environment's `vars` in `wrangler.jsonc`.
 2. With `ANALYTICS=analytics-engine`: `bun run setup:secrets --env <env>` stores `ANALYTICS_ID_SECRET`; type a key the first time (`openssl rand -base64 32`), later runs keep it when you press Enter (locally an empty value generates one). Keep it: rotating it starts every pseudonymous id afresh, so old and new data no longer join.
-3. Nothing to create for Analytics Engine: the dataset (`cloudflare_starter_product_events_<env>` in `wrangler.jsonc`) appears on its first write. For Web Analytics, add the site in the dashboard first ([Web Analytics](#web-analytics)).
+3. Nothing to create for Analytics Engine: the dataset (`cloudflare_starter_<env>_product_events` in `wrangler.jsonc`) appears on its first write. For Web Analytics, add the site in the dashboard first ([Web Analytics](#web-analytics)).
 4. `bun run doctor` checks the settings; deploy.
 
 | Setting               | Kind                                  | Values                          | Needs                                                                              |
@@ -147,7 +147,7 @@ Reading is deliberately not part of the app. The owner creates an API token with
 curl "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/analytics_engine/sql" \
   --header "Authorization: Bearer $ANALYTICS_READ_TOKEN" \
   --data "SELECT blob1 AS event, SUM(_sample_interval) AS events
-          FROM cloudflare_starter_product_events_production
+          FROM cloudflare_starter_production_product_events
           WHERE timestamp > NOW() - INTERVAL '7' DAY
           GROUP BY event ORDER BY events DESC"
 ```
@@ -157,7 +157,7 @@ More queries (replace the dataset name per environment):
 ```sql
 -- Sign-ups per day, by method
 SELECT toStartOfDay(timestamp) AS day, blob7 AS method, SUM(_sample_interval) AS sign_ups
-FROM cloudflare_starter_product_events_production
+FROM cloudflare_starter_production_product_events
 WHERE index1 = 'auth.signed_up' AND timestamp > NOW() - INTERVAL '30' DAY
 GROUP BY day, method ORDER BY day;
 
@@ -166,7 +166,7 @@ SELECT blob7 AS content_category,
        SUM(_sample_interval) AS uploads,
        SUM(double1 * _sample_interval) AS bytes,
        quantileExactWeighted(0.5)(double1, _sample_interval) AS median_bytes
-FROM cloudflare_starter_product_events_production
+FROM cloudflare_starter_production_product_events
 WHERE index1 = 'files.uploaded' AND timestamp > NOW() - INTERVAL '30' DAY
 GROUP BY content_category ORDER BY uploads DESC;
 
@@ -174,20 +174,20 @@ GROUP BY content_category ORDER BY uploads DESC;
 SELECT toStartOfWeek(timestamp) AS week,
        COUNT(DISTINCT blob2) AS active_users,
        COUNT(DISTINCT blob3) AS active_workspaces
-FROM cloudflare_starter_product_events_production
+FROM cloudflare_starter_production_product_events
 WHERE blob2 != '' AND timestamp > NOW() - INTERVAL '90' DAY
 GROUP BY week ORDER BY week;
 
 -- Most viewed SPA pages
 SELECT blob7 AS route, SUM(_sample_interval) AS views
-FROM cloudflare_starter_product_events_production
+FROM cloudflare_starter_production_product_events
 WHERE index1 = 'app.page_viewed' AND timestamp > NOW() - INTERVAL '7' DAY
 GROUP BY route ORDER BY views DESC;
 
 -- Workspaces by size bucket (latest identify per workspace)
 SELECT size, COUNT() AS workspaces FROM (
   SELECT blob3 AS workspace, argMax(blob8, timestamp) AS size
-  FROM cloudflare_starter_product_events_production
+  FROM cloudflare_starter_production_product_events
   WHERE index1 = '$identify' GROUP BY workspace
 ) GROUP BY size;
 ```
@@ -196,7 +196,7 @@ SELECT size, COUNT() AS workspaces FROM (
 
 ```sql
 SELECT $timeSeries AS t, blob1 AS event, SUM(_sample_interval) AS events
-FROM cloudflare_starter_product_events_production
+FROM cloudflare_starter_production_product_events
 WHERE $timeFilter
 GROUP BY event, t ORDER BY t
 ```
@@ -270,5 +270,5 @@ Amplitude is the same shape over its HTTP V2 API (`POST https://api2.amplitude.c
 | `product_analytics.dropped` warnings in the logs                | An event over the limits or more than 250 points in one request; `app.analytics.reason` says which                                                                                    |
 | `analytics.track` answers 400 `INVALID_ANALYTICS_EVENT`         | The SPA sent an event that is not `client: true` in the catalog, or properties its schema rejects                                                                                     |
 | `analytics.track` answers 429                                   | More than 120 batches a minute from one user (`analytics.client`); the SPA batches, so look for a loop                                                                                |
-| No rows in the dataset                                          | Locally nothing is stored (simulation). Deployed: check `ANALYTICS=analytics-engine`, and that the query names `cloudflare_starter_product_events_<env>`; rows appear within a minute |
+| No rows in the dataset                                          | Locally nothing is stored (simulation). Deployed: check `ANALYTICS=analytics-engine`, and that the query names `cloudflare_starter_<env>_product_events`; rows appear within a minute |
 | Build fails: property "…" looks like personal data              | Rename the property (`signup_email_domain` → `signup_domain_category`), or drop it                                                                                                    |
