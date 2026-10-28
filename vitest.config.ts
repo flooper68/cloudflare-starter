@@ -19,6 +19,8 @@ export default defineConfig({
             "**/*.integration.test.ts",
             "apps/web/test/**",
             "apps/web/public/**",
+            // Agents' git worktrees: each is a full checkout with its own tests.
+            ".claude/worktrees/**",
           ],
         },
       },
