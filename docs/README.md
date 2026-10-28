@@ -52,7 +52,7 @@ How work is planned, reviewed, documented and decided, and how dependencies are 
 | Doc                                                            | Use when …                                                                                |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | [../README.md](../README.md)                                   | you start a new project from the starter or need the list of scripts                      |
-| [../CLAUDE.md](../CLAUDE.md)                                   | you are an agent starting work here                                                       |
+| [../AGENTS.md](../AGENTS.md)                                   | you are an agent starting work here                                                       |
 | [../packages/ui/CONVENTIONS.md](../packages/ui/CONVENTIONS.md) | you write or review a UI component or its stories                                         |
 | [../packages/ui/README.md](../packages/ui/README.md)           | you need the UI package layout and imports                                                |
 | [../apps/web/README.md](../apps/web/README.md)                 | you work in the web app                                                                   |

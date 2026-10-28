@@ -67,7 +67,7 @@ Packages:
 
 ## Working on this repo (people and agents)
 
-Rules live in [CLAUDE.md](CLAUDE.md). The one that shapes every change: anything the app can do over HTTP, an MCP client can do too ([docs/guides/how-to-setup-mcp.md](docs/guides/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
+Rules live in [AGENTS.md](AGENTS.md). The one that shapes every change: anything the app can do over HTTP, an MCP client can do too ([docs/guides/how-to-setup-mcp.md](docs/guides/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
 
 ## Why one Worker
 

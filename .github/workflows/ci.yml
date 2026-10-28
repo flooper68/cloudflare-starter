@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: bun run lint
-      # No AI agent as author or co-author in the PR's commits (CLAUDE.md rule 9).
+      # No AI agent as author or co-author in the PR's commits (AGENTS.md rule 9).
       - name: No agent attribution
         if: github.event_name == 'pull_request'
         env:
