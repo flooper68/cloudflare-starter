@@ -2,7 +2,11 @@ import { env as workerEnv } from "cloudflare:workers";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { getAuth, mcpResource } from "@/server/auth";
+import {
+  getAuth,
+  IMPERSONATION_OAUTH_REFUSED,
+  mcpResource,
+} from "@/server/auth";
 import type { AppEnv } from "@/server/env";
 import { handleMcp } from "@/server/mcp/handler";
 import { buildMcpServer } from "@/server/mcp/server";
@@ -368,6 +372,51 @@ describe("impersonation", () => {
     );
   });
 
+  it("refuses OAuth (MCP) authorization and consent from an impersonation session, recorded", async () => {
+    const start = browserCallerFor(admin);
+    await start.caller.admin.impersonation.start({ userId: member.id });
+    const asUser = cookiesFrom(start.resHeaders);
+    const auth = (path: string, init: RequestInit = {}) =>
+      getAuth(env).handler(
+        new Request(`${APP_URL}/api/auth${path}`, {
+          ...init,
+          headers: {
+            "content-type": "application/json",
+            origin: APP_URL,
+            cookie: asUser,
+          },
+        })
+      );
+
+    const consent = await auth("/oauth2/consent", {
+      method: "POST",
+      body: JSON.stringify({ accept: true }),
+    });
+    expect(consent.status).toBe(403);
+    expect(await consent.json()).toMatchObject({
+      code: IMPERSONATION_OAUTH_REFUSED,
+    });
+    const authorize = await auth(
+      "/oauth2/authorize?client_id=claude-test&response_type=code&redirect_uri=https%3A%2F%2Fclaude.ai%2Fcallback"
+    );
+    expect(authorize.status).toBe(403);
+
+    const events = await browserCallerFor(admin).caller.admin.audit.list({
+      action: "impersonation.oauth_refused",
+    });
+    expect(events.events[0]).toMatchObject({
+      outcome: "failure",
+      actor: { kind: "admin", userId: admin.id },
+      target: { type: "user", id: member.id },
+      metadata: { clientId: "claude-test" },
+    });
+
+    await browserCallerFor(
+      { ...member, cookie: asUser },
+      { impersonatedBy: admin.id }
+    ).caller.admin.impersonation.stop();
+  });
+
   it("refuses admins as targets, and stop outside an impersonation", async () => {
     const { caller } = browserCallerFor(admin);
     const other = await signUp("Olga Admin", "olga@admin.test");
@@ -378,6 +427,69 @@ describe("impersonation", () => {
     await expect(caller.admin.impersonation.stop()).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
+  });
+});
+
+describe("the human check stays on for HTTP (in-process reset links are exempt)", () => {
+  const post = (path: string, body: unknown, headers = {}) =>
+    getAuth(env).handler(
+      new Request(`${APP_URL}/api/auth${path}`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: APP_URL,
+          "cf-connecting-ip": "198.51.100.77",
+          ...headers,
+        },
+        body: JSON.stringify(body),
+      })
+    );
+
+  it.each([
+    [
+      "/sign-up/email",
+      { name: "Bot", email: "bot@spam.test", password: "test-password-1234" },
+    ],
+    [
+      "/sign-in/email",
+      {
+        email: grace?.email ?? "grace@acme.test",
+        password: "test-password-1234",
+      },
+    ],
+    [
+      "/request-password-reset",
+      { email: "grace@acme.test", redirectTo: "/reset-password" },
+    ],
+    [
+      "/request-password-reset?internal=1",
+      { email: "grace@acme.test", redirectTo: "/reset-password" },
+    ],
+  ])("HTTP %s without a token is refused", async (path, body) => {
+    const response = await post(path, body, {
+      // Nothing a client sends turns the exemption on.
+      "x-forwarded-for": "127.0.0.1",
+      "x-trpc-source": "app",
+    });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: "HUMAN_CHECK_FAILED" });
+  });
+
+  it("in-process sign-up through auth.api is still checked; only the reset link is exempt", async () => {
+    await expect(
+      getAuth(env).api.signUpEmail({
+        body: {
+          name: "Server Side",
+          email: "server-side@acme.test",
+          password: "test-password-1234",
+        },
+      })
+    ).rejects.toMatchObject({ body: { code: "HUMAN_CHECK_FAILED" } });
+    await expect(
+      getAuth(mailEnv).api.requestPasswordReset({
+        body: { email: "grace@acme.test", redirectTo: "/reset-password" },
+      })
+    ).resolves.toBeTruthy();
   });
 });
 

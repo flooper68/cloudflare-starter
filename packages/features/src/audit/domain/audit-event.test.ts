@@ -77,6 +77,12 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     actor: { kind: "admin", userId: "user-grace" },
     target: user,
   },
+  "impersonation.oauth_refused": {
+    action: "impersonation.oauth_refused",
+    actor: { kind: "admin", userId: "user-grace" },
+    target: user,
+    metadata: { clientId: "claude-desktop" },
+  },
   "workspace.invitation_created": {
     action: "workspace.invitation_created",
     workspaceId: workspace,

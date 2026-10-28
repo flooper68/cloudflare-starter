@@ -192,6 +192,14 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     target: target("user"),
     metadata: noMetadata,
   }),
+  z.object({
+    ...common,
+    outcome: z.literal("failure").default("failure"),
+    /** An impersonation session tried to authorize an OAuth (MCP) client as the user. */
+    action: z.literal("impersonation.oauth_refused"),
+    target: target("user"),
+    metadata: z.object({ clientId: text.optional() }).strict().default({}),
+  }),
 
   // Workspaces (recorded by the workspace use cases).
   z.object({
