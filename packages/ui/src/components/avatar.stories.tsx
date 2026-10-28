@@ -130,7 +130,6 @@ export const InContext: Story = {
             <Tooltip key={name} content={name}>
               <button
                 type="button"
-                aria-label={name}
                 className="inline-flex rounded-full focus-visible:ring-2 focus-visible:ring-focus outline-none"
               >
                 <Avatar name={name} />

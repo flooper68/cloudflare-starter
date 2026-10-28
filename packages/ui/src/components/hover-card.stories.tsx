@@ -46,7 +46,7 @@ function UserPreview() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-full bg-accent-subtle text-sm font-semibold text-accent">
+        <span className="flex size-10 items-center justify-center rounded-full bg-accent-subtle text-sm font-semibold text-accent-text">
           TN
         </span>
         <div className="flex min-w-0 flex-col">

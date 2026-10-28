@@ -494,9 +494,12 @@ export function SidebarItem({
     <>
       <span className="flex shrink-0">{icon}</span>
       {collapsed ? (
-        count ? (
-          <span className="absolute top-1 right-1 size-1.5 rounded-full bg-accent" />
-        ) : null
+        <>
+          <span className="sr-only">{text}</span>
+          {count ? (
+            <span className="absolute top-1 right-1 size-1.5 rounded-full bg-accent" />
+          ) : null}
+        </>
       ) : (
         <>
           <span className="min-w-0 flex-1 truncate text-left">{text}</span>
@@ -569,7 +572,7 @@ export function TeamIcon({
   readonly className?: string;
 }) {
   const tones = {
-    accent: "bg-accent-subtle text-accent",
+    accent: "bg-accent-subtle text-accent-text",
     success: "bg-success-subtle text-success",
     warning: "bg-warning-subtle text-warning",
     danger: "bg-danger-subtle text-danger",

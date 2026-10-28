@@ -4,6 +4,7 @@ import { useControllableState } from "radix-ui/internal";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useState } from "react";
 
+import { CommandList, CommandListSeparator } from "../lib/command-list";
 import { controlBase, controlSize, focusRing, menuItem } from "../lib/styles";
 import { cn } from "../lib/utils";
 import {
@@ -19,6 +20,7 @@ import {
   comboboxList,
   type FieldControlProps,
   openOnArrowKeys,
+  panelLabel,
 } from "./combobox";
 import {
   Popover,
@@ -166,6 +168,12 @@ function MultiSelectShell({
         </div>
       </PopoverAnchor>
       <PopoverContent
+        aria-label={
+          fieldProps["aria-labelledby"]
+            ? undefined
+            : panelLabel(fieldProps["aria-label"], placeholder)
+        }
+        aria-labelledby={fieldProps["aria-labelledby"]}
         className={cn(
           "w-(--radix-popover-trigger-width) min-w-60 p-0",
           contentClassName
@@ -180,7 +188,7 @@ function MultiSelectShell({
 function ClearSelection({ onClear }: { readonly onClear: () => void }) {
   return (
     <>
-      <Command.Separator className="-mx-1 my-1 h-px bg-line" alwaysRender />
+      <CommandListSeparator className="-mx-1 my-1" alwaysRender />
       <Command.Item
         forceMount
         value="__clear__"
@@ -294,10 +302,10 @@ export function MultiSelect({
           placeholder={searchPlaceholder}
           onKeyDown={removeLastOnBackspace(search, selected, toggle)}
         />
-        <Command.List className={comboboxList}>
-          <Command.Empty>
-            <ComboboxMessage>{emptyText}</ComboboxMessage>
-          </Command.Empty>
+        <CommandList
+          className={comboboxList}
+          forceVisible={value.length > 0 && search === ""}
+        >
           <ComboboxOptions
             options={options}
             indicator="checkbox"
@@ -307,7 +315,10 @@ export function MultiSelect({
           {value.length > 0 && search === "" ? (
             <ClearSelection onClear={() => setValue([])} />
           ) : null}
-        </Command.List>
+        </CommandList>
+        <Command.Empty>
+          <ComboboxMessage>{emptyText}</ComboboxMessage>
+        </Command.Empty>
       </Command>
     </MultiSelectShell>
   );
@@ -395,16 +406,11 @@ export function AsyncMultiSelect({
             state.status === "loading" ? <Spinner label="Loading" /> : null
           }
         />
-        <Command.List
+        <CommandList
           className={comboboxList}
           aria-busy={state.status === "loading"}
+          forceVisible={value.length > 0 && search === ""}
         >
-          <AsyncOptionsStatus
-            state={state}
-            minQueryLength={minQueryLength}
-            emptyText={emptyText}
-            errorText={errorText}
-          />
           <ComboboxOptions
             options={state.options}
             indicator="checkbox"
@@ -416,7 +422,13 @@ export function AsyncMultiSelect({
           {value.length > 0 && search === "" ? (
             <ClearSelection onClear={() => setValue([])} />
           ) : null}
-        </Command.List>
+        </CommandList>
+        <AsyncOptionsStatus
+          state={state}
+          minQueryLength={minQueryLength}
+          emptyText={emptyText}
+          errorText={errorText}
+        />
       </Command>
     </MultiSelectShell>
   );

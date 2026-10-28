@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { issues } from "./fixtures";
 import { type IssueStatus, statusLabel } from "./issue-glyphs";
@@ -89,4 +90,51 @@ export const EmptyColumns: Story = {
       )}
     />
   ),
+};
+
+/**
+ * Interaction test: keyboard drag. Focus a card, Space lifts it, → moves it to the next
+ * column, Space drops it there.
+ */
+export const KeyboardMove: Story = {
+  render: () => <StatefulBoard initial={buildColumns(boardStatuses)} />,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const backlog = canvas.getByRole("region", { name: "Backlog" });
+    const todo = canvas.getByRole("region", { name: "Todo" });
+    const card = within(backlog).getAllByRole("group", { name: /^ENG-/ })[0];
+    if (!card) throw new Error("The Backlog column has no cards");
+    const name = card.getAttribute("aria-label") ?? "";
+    const todoCount = within(todo).getAllByRole("group", {
+      name: /^ENG-/,
+    }).length;
+
+    // dnd-kit announces each step of a keyboard drag in a live region.
+    const announced = (text: RegExp) =>
+      waitFor(() =>
+        expect(
+          canvasElement.ownerDocument.querySelector('[id^="DndLiveRegion"]')
+        ).toHaveTextContent(text)
+      );
+
+    await step("Space lifts the card, → moves it, Space drops it", async () => {
+      card.focus();
+      await userEvent.keyboard(" ");
+      await announced(/is over Backlog/);
+      await userEvent.keyboard("{ArrowRight}");
+      await announced(/is over Todo/);
+      await userEvent.keyboard(" ");
+      await announced(/was dropped in Todo/);
+    });
+
+    await step("The card is now in Todo", async () => {
+      await waitFor(() =>
+        expect(within(todo).getByRole("group", { name })).toBeVisible()
+      );
+      await expect(within(backlog).queryByRole("group", { name })).toBeNull();
+      await expect(
+        within(todo).getAllByRole("group", { name: /^ENG-/ })
+      ).toHaveLength(todoCount + 1);
+    });
+  },
 };

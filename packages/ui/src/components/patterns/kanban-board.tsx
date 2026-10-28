@@ -1,11 +1,13 @@
 import {
   type Announcements,
+  type ClientRect,
   closestCorners,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
+  type KeyboardCoordinateGetter,
   KeyboardSensor,
   PointerSensor,
   useDroppable,
@@ -36,6 +38,45 @@ import {
 } from "./issue-glyphs";
 import type { IssuePatch } from "./issue-list";
 import { GlyphButton, PriorityPicker } from "./issue-pickers";
+
+/**
+ * Keyboard drag: ↑/↓ move within a column (dnd-kit's sortable coordinates), ←/→ move the
+ * lifted card to the neighbouring column at the same height. dnd-kit's own ←/→ compare left
+ * edges, so a card lifted with a sub-pixel offset finds the cards of its own column "to the
+ * right" and only moves down.
+ */
+const boardKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
+  const { code } = event;
+  if (code !== "ArrowLeft" && code !== "ArrowRight") {
+    return sortableKeyboardCoordinates(event, args);
+  }
+  const { collisionRect, droppableRects, droppableContainers } = args.context;
+  if (!collisionRect) return undefined;
+  event.preventDefault();
+  const center = collisionRect.left + collisionRect.width / 2;
+  let target: ClientRect | undefined;
+  let nearest = Number.POSITIVE_INFINITY;
+  for (const container of droppableContainers.getEnabled()) {
+    // Columns are the droppables without sortable data; cards have it.
+    if (container.data.current?.sortable) continue;
+    const rect = droppableRects.get(container.id);
+    if (!rect) continue;
+    const distance =
+      code === "ArrowRight" ? rect.left - center : center - rect.right;
+    if (distance > 0 && distance < nearest) {
+      nearest = distance;
+      target = rect;
+    }
+  }
+  if (!target) return undefined;
+  return {
+    x: target.left + (target.width - collisionRect.width) / 2,
+    y: Math.max(
+      target.top,
+      Math.min(collisionRect.top, target.bottom - collisionRect.height)
+    ),
+  };
+};
 
 export interface KanbanColumn {
   /** Usually the status the column stands for. */
@@ -155,7 +196,7 @@ function SortableCard({
   } = useSortable({ id: issue.id });
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: the card holds buttons, so it can't be a <button>; dnd-kit makes it focusable.
+    // biome-ignore lint/a11y/useSemanticElements: a named group of the card's controls, not a fieldset; dnd-kit makes it focusable for keyboard drag.
     <div
       ref={(node) => {
         setNodeRef(node);
@@ -167,7 +208,8 @@ function SortableCard({
         transition,
       }}
       {...attributes}
-      role="button"
+      // A group, not dnd-kit's default button: the card holds buttons of its own.
+      role="group"
       tabIndex={attributes.tabIndex}
       {...listeners}
       aria-label={`${issue.identifier} ${issue.title}`}
@@ -284,7 +326,7 @@ export function KanbanBoard({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+      coordinateGetter: boardKeyboardCoordinates,
     })
   );
 

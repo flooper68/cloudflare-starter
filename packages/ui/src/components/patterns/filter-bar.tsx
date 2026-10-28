@@ -3,6 +3,7 @@ import { Check, ChevronLeft, ListFilter, X } from "lucide-react";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { type KeyboardEvent, type ReactNode, useState } from "react";
 
+import { CommandList } from "../../lib/command-list";
 import { focusRing, menuItem, overlayContent } from "../../lib/styles";
 import { cn } from "../../lib/utils";
 import { Button } from "../button";
@@ -128,10 +129,7 @@ function ValueList({
           className={cn(commandInput, "border-b-0")}
         />
       </div>
-      <Command.List className="max-h-72 overflow-y-auto p-1">
-        <Command.Empty className="px-2 py-3 text-center text-sm text-fg-subtle">
-          No results
-        </Command.Empty>
+      <CommandList className="max-h-72 overflow-y-auto p-1">
         {property.options.map((option) => {
           const checked = selected.includes(option.value);
           return (
@@ -157,7 +155,10 @@ function ValueList({
             </Command.Item>
           );
         })}
-      </Command.List>
+      </CommandList>
+      <Command.Empty className="px-2 py-3 text-center text-sm text-fg-subtle">
+        No results
+      </Command.Empty>
     </Command>
   );
 }
@@ -234,7 +235,10 @@ function FilterChip({
           {firstIcon}
           <span className="max-w-48 truncate">{valueText}</span>
         </PopoverTrigger>
-        <PopoverContent className="w-60 p-0">
+        <PopoverContent
+          aria-label={`${property.label} values`}
+          className="w-60 p-0"
+        >
           <ValueList
             property={property}
             selected={filter.values}
@@ -347,7 +351,7 @@ export function FilterBar({
             {filters.length === 0 ? "Filter" : "+"}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-60 p-0">
+        <PopoverContent aria-label="Add filter" className="w-60 p-0">
           {property ? (
             <ValueList
               property={property}
@@ -371,10 +375,7 @@ export function FilterBar({
                 placeholder="Filter…"
                 className={commandInput}
               />
-              <Command.List className="max-h-72 overflow-y-auto p-1">
-                <Command.Empty className="px-2 py-3 text-center text-sm text-fg-subtle">
-                  No results
-                </Command.Empty>
+              <CommandList className="max-h-72 overflow-y-auto p-1">
                 {properties.map((p) => (
                   <Command.Item
                     key={p.id}
@@ -393,7 +394,10 @@ export function FilterBar({
                     <span className="flex-1">{p.label}</span>
                   </Command.Item>
                 ))}
-              </Command.List>
+              </CommandList>
+              <Command.Empty className="px-2 py-3 text-center text-sm text-fg-subtle">
+                No results
+              </Command.Empty>
             </Command>
           )}
         </PopoverContent>

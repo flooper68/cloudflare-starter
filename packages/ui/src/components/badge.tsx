@@ -69,19 +69,23 @@ export const badgeVariants = cva(
       {
         variant: "solid",
         tone: "success",
-        className: "bg-success text-on-solid",
+        className: "bg-success-solid text-on-solid",
       },
       {
         variant: "solid",
         tone: "warning",
-        className: "bg-warning text-on-solid",
+        className: "bg-warning-solid text-on-solid",
       },
       {
         variant: "solid",
         tone: "danger",
-        className: "bg-danger text-on-solid",
+        className: "bg-danger-solid text-on-solid",
       },
-      { variant: "solid", tone: "info", className: "bg-info text-on-solid" },
+      {
+        variant: "solid",
+        tone: "info",
+        className: "bg-info-solid text-on-solid",
+      },
       {
         variant: "subtle",
         tone: "neutral",
@@ -90,7 +94,7 @@ export const badgeVariants = cva(
       {
         variant: "subtle",
         tone: "accent",
-        className: "bg-accent-subtle text-accent",
+        className: "bg-accent-subtle text-accent-text",
       },
       {
         variant: "subtle",
@@ -120,7 +124,7 @@ export const badgeVariants = cva(
       {
         variant: "outline",
         tone: "accent",
-        className: "border-accent/40 text-accent",
+        className: "border-accent/40 text-accent-text",
       },
       {
         variant: "outline",

@@ -28,6 +28,27 @@ Follow [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md): title `<G
 toolbar switches between the dark and light theme; the Accessibility panel runs axe on the
 current story.
 
+## Stories Are Tests
+
+Every story is a component test (`@storybook/addon-vitest`, Vitest browser mode in Chromium):
+
+```bash
+(cd apps/web && bunx playwright install chromium)   # once, with the pinned Playwright
+bun run test:components            # every story: renders, passes axe, runs its play function
+```
+
+- **Accessibility is a gate.** `a11y: { test: "error" }` in `.storybook/preview.tsx` makes any
+  axe violation fail the story, in the Accessibility panel and in CI. Fix it in the component or
+  the story. Only when a third-party library renders the markup and cannot be fixed may one story
+  turn one rule off, with a comment naming the library (see
+  [testing.md](../architecture/testing.md#component-tests)).
+- **Interactions are `play` functions.** Use `userEvent`, `expect`, `within` and `waitFor` from
+  `storybook/test`; the Interactions panel replays them step by step. Popovers, menus and dialogs
+  render in a portal, so query `within(canvasElement.ownerDocument.body)`.
+- One file: `cd apps/storybook && bunx vitest run --config vitest.config.ts ../../packages/ui/src/components/<name>.stories.tsx`.
+- Every story runs twice, in the dark and the light theme (`apps/storybook/vitest.config.ts`),
+  so contrast is checked in both (see [how-to-define-branding.md](how-to-define-branding.md)).
+
 ## Access
 
 `/_storybook/` is public like the rest of the static assets: it contains only components and

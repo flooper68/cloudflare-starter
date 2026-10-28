@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { format } from "date-fns";
 import { Archive, Inbox, Plus } from "lucide-react";
 import { useState } from "react";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Avatar } from "./avatar";
 import type { Tone } from "./badge";
 import { Button } from "./button";
@@ -217,6 +218,76 @@ export const Playground: Story = {};
 
 export const Loading: Story = {
   args: { loading: true },
+};
+
+/** Interaction test: header clicks sort; checkboxes select rows, the header box all. */
+export const SortAndSelect: Story = {
+  args: {
+    pageSize: 5,
+    selectionActions: (rows, clear) => (
+      <Button size="xs" variant="ghost" onClick={clear}>
+        Clear {rows.length}
+      </Button>
+    ),
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const titleHeader = canvas.getByRole("columnheader", { name: /Title/ });
+    const firstTitle = () =>
+      within(canvas.getAllByRole("row")[1] as HTMLElement).getAllByRole(
+        "cell"
+      )[4];
+    const sortedTitles = issues
+      .map((issue) => issue.title.toLowerCase())
+      .sort();
+
+    await step(
+      "Clicking a header sorts ascending, then descending",
+      async () => {
+        await expect(titleHeader).toHaveAttribute("aria-sort", "none");
+        await userEvent.click(within(titleHeader).getByRole("button"));
+        await expect(titleHeader).toHaveAttribute("aria-sort", "ascending");
+        await expect(firstTitle()?.textContent?.toLowerCase()).toBe(
+          sortedTitles[0]
+        );
+        await userEvent.click(within(titleHeader).getByRole("button"));
+        await expect(titleHeader).toHaveAttribute("aria-sort", "descending");
+        await expect(firstTitle()?.textContent?.toLowerCase()).toBe(
+          sortedTitles.at(-1)
+        );
+      }
+    );
+
+    await step(
+      "Row checkboxes select rows; the header box selects all",
+      async () => {
+        const rowBoxes = canvas.getAllByRole("checkbox", {
+          name: "Select row",
+        });
+        await userEvent.click(rowBoxes[0] as HTMLElement);
+        await expect(rowBoxes[0]).toBeChecked();
+        await expect(canvas.getByText("1 selected")).toBeVisible();
+        await userEvent.click(
+          canvas.getByRole("checkbox", { name: "Select all rows" })
+        );
+        await expect(
+          canvas.getByText(`${issues.length} selected`)
+        ).toBeVisible();
+        for (const box of canvas.getAllByRole("checkbox", {
+          name: "Select row",
+        })) {
+          await expect(box).toBeChecked();
+        }
+      }
+    );
+
+    await step("The selection action clears it", async () => {
+      await userEvent.click(
+        canvas.getByRole("button", { name: `Clear ${issues.length}` })
+      );
+      await waitFor(() => expect(canvas.queryByText(/selected$/)).toBeNull());
+    });
+  },
 };
 
 export const Empty: Story = {

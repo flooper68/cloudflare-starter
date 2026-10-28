@@ -9,7 +9,10 @@ export const PopoverTrigger = PopoverPrimitive.Trigger;
 export const PopoverAnchor = PopoverPrimitive.Anchor;
 export const PopoverClose = PopoverPrimitive.Close;
 
-/** Floating panel anchored to its trigger; closes on outside click and Escape. */
+/**
+ * Floating panel anchored to its trigger; closes on outside click and Escape. It is a dialog,
+ * so give it a name: `aria-label`, or `aria-labelledby` pointing at its heading.
+ */
 export function PopoverContent({
   className,
   align = "start",

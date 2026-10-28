@@ -28,3 +28,7 @@ pnpm-debug.log*
 
 # Storybook is built into the web app at /_storybook
 public/_storybook/
+
+# Playwright (bun run test:e2e)
+playwright-report/
+test-results/

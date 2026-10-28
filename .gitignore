@@ -11,3 +11,5 @@ tmp/
 *.tsbuildinfo
 storybook-static/
 .dev.vars
+# Git worktrees created by agents (each is a full checkout)
+.claude/worktrees/

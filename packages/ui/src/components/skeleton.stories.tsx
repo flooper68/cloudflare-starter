@@ -113,7 +113,7 @@ export const LoadingThenLoaded: Story = {
                     {issue.id}
                   </span>
                   <span className="flex-1 truncate">{issue.title}</span>
-                  <span className="flex size-5 items-center justify-center rounded-full bg-accent-subtle text-[9px] font-semibold text-accent">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-accent-subtle text-[9px] font-semibold text-accent-text">
                     {issue.who}
                   </span>
                 </div>

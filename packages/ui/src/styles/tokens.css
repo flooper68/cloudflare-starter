@@ -5,6 +5,10 @@
  * Brand-specific values (accent, fonts, radius) live in ../brand/brand.css.
  *
  * Theme: <html data-theme="dark|light">. Without the attribute the OS setting wins.
+ *
+ * Contrast: every text colour (fg, fg-muted, fg-subtle, the status colours) reaches WCAG AA
+ * (4.5:1) on every surface of its theme, and white reaches 4.5:1 on the *-solid colours.
+ * The Storybook component tests fail on any regression (axe color-contrast).
  */
 
 :root,
@@ -23,12 +27,12 @@
   --ui-line-strong: rgb(255 255 255 / 0.15);
 
   --ui-fg: #f7f8f8;
-  --ui-fg-muted: #8a8f98;
-  --ui-fg-subtle: #62666d;
+  --ui-fg-muted: #999ea5;
+  --ui-fg-subtle: #8b8e93;
 
   --ui-success: #4cb782;
   --ui-warning: #f2994a;
-  --ui-danger: #eb5757;
+  --ui-danger: #ec6161;
   --ui-info: #4ea7fc;
 
   --ui-shadow-overlay:
@@ -53,13 +57,13 @@
   --ui-line-strong: rgb(0 0 0 / 0.15);
 
   --ui-fg: #1b1c1f;
-  --ui-fg-muted: #6b6f76;
-  --ui-fg-subtle: #9a9ea6;
+  --ui-fg-muted: #595c62;
+  --ui-fg-subtle: #5c5e64;
 
-  --ui-success: #2f9e69;
-  --ui-warning: #d9730d;
-  --ui-danger: #d93f3f;
-  --ui-info: #2c86e0;
+  --ui-success: #206e4a;
+  --ui-warning: #954f09;
+  --ui-danger: #ab3131;
+  --ui-info: #2063a6;
 
   --ui-shadow-overlay:
     0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.12),
@@ -82,12 +86,12 @@
     --ui-line: rgb(0 0 0 / 0.08);
     --ui-line-strong: rgb(0 0 0 / 0.15);
     --ui-fg: #1b1c1f;
-    --ui-fg-muted: #6b6f76;
-    --ui-fg-subtle: #9a9ea6;
-    --ui-success: #2f9e69;
-    --ui-warning: #d9730d;
-    --ui-danger: #d93f3f;
-    --ui-info: #2c86e0;
+    --ui-fg-muted: #595c62;
+    --ui-fg-subtle: #5c5e64;
+    --ui-success: #206e4a;
+    --ui-warning: #954f09;
+    --ui-danger: #ab3131;
+    --ui-info: #2063a6;
     --ui-shadow-overlay:
       0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.12),
       0 2px 6px rgb(0 0 0 / 0.06);
@@ -98,12 +102,17 @@
 
 /* Derived from the brand: hover, pressed and tinted variants of the accent. */
 :root {
-  /* Text and icons on solid status colours (danger button, solid badges). */
+  /* Solid status fills (danger button, solid badges) and the text on them. */
   --ui-on-solid: #ffffff;
+  --ui-success-solid: #36825c;
+  --ui-warning-solid: #a26732;
+  --ui-danger-solid: #c84a4a;
+  --ui-info-solid: #3878b5;
   /* Knobs of switches and sliders. */
   --ui-thumb: #ffffff;
   --ui-accent: var(--brand-accent);
   --ui-accent-fg: var(--brand-accent-fg);
+  --ui-accent-text: var(--brand-accent-text);
   --ui-accent-hover: color-mix(in oklab, var(--brand-accent) 86%, white);
   --ui-accent-subtle: color-mix(in oklab, var(--brand-accent) 18%, transparent);
   --ui-success-subtle: color-mix(in oklab, var(--ui-success) 16%, transparent);

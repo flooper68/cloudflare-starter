@@ -5,7 +5,11 @@ const config: StorybookConfig = {
     "../../../packages/ui/src/**/*.mdx",
     "../../../packages/ui/src/**/*.stories.@(ts|tsx)",
   ],
-  addons: ["@storybook/addon-docs", "@storybook/addon-a11y"],
+  addons: [
+    "@storybook/addon-docs",
+    "@storybook/addon-a11y",
+    "@storybook/addon-vitest",
+  ],
   framework: {
     name: "@storybook/react-vite",
     options: {},

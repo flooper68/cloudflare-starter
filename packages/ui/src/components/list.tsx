@@ -90,15 +90,15 @@ export interface ListHeaderProps extends HTMLAttributes<HTMLDivElement> {
   readonly icon?: ReactNode;
   /** Number of rows in the group. */
   readonly count?: number;
-  /** Actions at the right (e.g. an "Add issue" icon button). */
-  readonly actions?: ReactNode;
 }
 
-/** A group heading inside a List: "In Progress 3". */
+/**
+ * A group heading inside a List: "In Progress 3". It holds no buttons: a listbox may only
+ * contain options. Rows or headers with their own controls belong in a grid (see IssueList).
+ */
 export function ListHeader({
   icon,
   count,
-  actions,
   className,
   children,
   ...props
@@ -116,9 +116,6 @@ export function ListHeader({
       <span>{children}</span>
       {count !== undefined ? (
         <span className="text-fg-subtle tabular-nums">{count}</span>
-      ) : null}
-      {actions ? (
-        <div className="ml-auto flex items-center">{actions}</div>
       ) : null}
     </div>
   );

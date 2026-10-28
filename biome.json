@@ -24,7 +24,10 @@
       "!**/.wrangler",
       "!**/coverage",
       "!**/*.svg",
-      "!**/public/_storybook"
+      "!**/public/_storybook",
+      "!**/playwright-report",
+      "!**/test-results",
+      "!.claude/worktrees"
     ]
   },
   "javascript": {

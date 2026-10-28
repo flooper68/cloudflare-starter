@@ -3,7 +3,8 @@ import { X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import type { ComponentProps, HTMLAttributes } from "react";
 
-import { backdrop } from "../lib/styles";
+import { backdrop, focusRing } from "../lib/styles";
+import { useKeyboardScrollable } from "../lib/use-keyboard-scrollable";
 import { cn } from "../lib/utils";
 import { IconButton } from "./button";
 
@@ -117,14 +118,24 @@ export function DialogDescription({
   );
 }
 
-/** The content area; scrolls when the dialog hits the viewport height. */
+/**
+ * The content area; scrolls when the dialog hits the viewport height. A scrolling body
+ * without focusable content becomes a tab stop so the keyboard can scroll it.
+ */
 export function DialogBody({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
+  const scrollRef = useKeyboardScrollable<HTMLDivElement>();
   return (
     <div
-      className={cn("min-h-0 flex-1 overflow-y-auto px-5 py-2", className)}
+      ref={scrollRef}
+      className={cn(
+        "min-h-0 flex-1 overflow-y-auto px-5 py-2",
+        focusRing,
+        "focus-visible:ring-inset",
+        className
+      )}
       {...props}
     />
   );

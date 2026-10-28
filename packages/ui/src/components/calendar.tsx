@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import {
   ChevronDown,
   ChevronLeft,
@@ -16,6 +17,21 @@ import { focusRing } from "../lib/styles";
 import { cn } from "../lib/utils";
 
 export type CalendarProps = DayPickerProps;
+
+/**
+ * "28 September 2026, Monday, selected": the visible day number comes first, so the
+ * name of the day (a button, or a plain grid cell when the calendar is read-only)
+ * contains its text (WCAG 2.5.3, label in name).
+ */
+function labelDay(
+  date: Date,
+  modifiers?: { readonly today?: boolean; readonly selected?: boolean }
+): string {
+  let label = format(date, "d MMMM yyyy, EEEE");
+  if (modifiers?.today) label += ", today";
+  if (modifiers?.selected) label += ", selected";
+  return label;
+}
 
 const chevrons = {
   left: ChevronLeft,
@@ -65,6 +81,7 @@ export function Calendar({
   classNames,
   components,
   showOutsideDays = true,
+  labels,
   ...props
 }: CalendarProps) {
   return (
@@ -103,6 +120,7 @@ export function Calendar({
         footer: "pt-2 text-fg-muted text-xs",
         ...classNames,
       }}
+      labels={{ labelDayButton: labelDay, labelGridcell: labelDay, ...labels }}
       components={{
         Chevron: CalendarChevron,
         DayButton: CalendarDayButton,

@@ -15,7 +15,7 @@ export const linkVariants = cva(
     variants: {
       variant: {
         /** Accent text, underline on hover: links in running text. */
-        default: "text-accent hover:underline",
+        default: "text-accent-text hover:underline",
         /** Body colour with an underline: links inside dense text where accent is too loud. */
         subtle:
           "text-fg underline decoration-line-strong hover:decoration-fg-muted",

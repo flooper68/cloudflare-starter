@@ -78,10 +78,14 @@ export function Switch({
       )}
     >
       <div className="flex h-5 items-center">{control}</div>
-      <div className={cn("flex flex-col", props.disabled && "opacity-50")}>
+      {/* Disabled dims the label to muted, not opacity: the text still reaches 4.5:1. */}
+      <div className="flex flex-col">
         <label
           htmlFor={id}
-          className="cursor-pointer select-none text-fg text-sm"
+          className={cn(
+            "cursor-pointer select-none text-fg text-sm",
+            props.disabled && "cursor-not-allowed text-fg-muted"
+          )}
         >
           {label}
         </label>

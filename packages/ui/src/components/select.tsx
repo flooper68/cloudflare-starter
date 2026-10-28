@@ -1,6 +1,7 @@
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 import type { ComponentProps, ReactNode } from "react";
+import { useId } from "react";
 
 import {
   controlBase,
@@ -103,19 +104,30 @@ export function SelectItem({
   children,
   ...props
 }: SelectItemProps) {
+  const id = useId();
+  const labelId = `${id}-label`;
+  const descriptionId = `${id}-description`;
   return (
     <SelectPrimitive.Item
       className={cn(menuItem, "pr-8", className)}
+      // The name covers all visible text (label in name, WCAG 2.5.3), description included.
+      aria-labelledby={description ? `${labelId} ${descriptionId}` : labelId}
       {...props}
     >
-      <SelectPrimitive.ItemText>
+      {/* The id is ours (not Radix's) so the item can be labelled by text and description. */}
+      <SelectPrimitive.ItemText id={labelId}>
         <span className="flex min-w-0 items-center gap-2">
           {icon}
           <span className="truncate">{children}</span>
         </span>
       </SelectPrimitive.ItemText>
+      {/* The space keeps "1 week Fast" one phrase for the label-in-name check. */}
+      {description ? " " : null}
       {description ? (
-        <span className="ml-auto shrink-0 text-fg-subtle text-xs">
+        <span
+          id={descriptionId}
+          className="ml-auto shrink-0 text-fg-subtle text-xs"
+        >
           {description}
         </span>
       ) : null}

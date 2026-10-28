@@ -220,8 +220,18 @@ function IssueActionsMenu({
   );
 }
 
+/**
+ * An open Radix DropdownMenu (modal by default) hides the rest of the page with `aria-hidden` (so screen
+ * readers stay in the popup) but leaves the trigger focusable underneath; axe reports that
+ * as `aria-hidden-focus`. Radix renders that markup and offers no inert option, so the
+ * rule is off for stories that render the popup open. Closed stories still check it.
+ */
+const radixOpenPopupA11y = {
+  a11y: { config: { rules: [{ id: "aria-hidden-focus", enabled: false }] } },
+} as const;
+
 /** Linear's “…” menu on an issue row, open by default. */
 export const IssueActions: Story = {
-  parameters: openInFrame,
+  parameters: { ...openInFrame, ...radixOpenPopupA11y },
   render: () => <IssueActionsMenu defaultOpen />,
 };

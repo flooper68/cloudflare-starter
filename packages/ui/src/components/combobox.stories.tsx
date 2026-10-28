@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Box, Hash, Layers } from "lucide-react";
 import { useState } from "react";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { Avatar } from "./avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { Combobox, type ComboboxOption } from "./combobox";
@@ -61,6 +62,14 @@ const people: ComboboxOption[] = [
   description: `${name.split(" ")[0]?.toLowerCase()}@acme.dev`,
 }));
 
+/** The popover moves focus to its search field once it has opened. */
+const searchFocused = (canvasElement: HTMLElement) =>
+  waitFor(() =>
+    expect(canvasElement.ownerDocument.activeElement).toHaveAttribute(
+      "cmdk-input"
+    )
+  );
+
 /**
  * Searchable single select (cmdk in a Popover). Type to filter, arrows to move, Enter to
  * pick, Escape to close. `onCreate` adds a "Create …" row when nothing matches.
@@ -107,6 +116,47 @@ export const Open: Story = {
   ],
 };
 
+/** Interaction test: search, pick with the keyboard, and the empty state. */
+export const SearchAndPick: Story = {
+  args: { onValueChange: fn() },
+  decorators: Open.decorators,
+  play: async ({ args, canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    const trigger = canvas.getByRole("combobox", { name: /Project/ });
+
+    await step("Typing filters the options", async () => {
+      await userEvent.click(trigger);
+      await searchFocused(canvasElement);
+      await userEvent.keyboard("public");
+      await waitFor(() =>
+        expect(page.getAllByRole("option").map((o) => o.textContent)).toEqual([
+          "Public API v2",
+        ])
+      );
+    });
+
+    await step("Enter picks the highlighted option and closes", async () => {
+      await userEvent.keyboard("{Enter}");
+      await expect(args.onValueChange).toHaveBeenCalledWith("api-v2");
+      await waitFor(() => expect(page.queryByRole("listbox")).toBeNull());
+      await expect(trigger).toHaveTextContent("Public API v2");
+    });
+
+    await step(
+      "No match shows the empty state, not an empty list",
+      async () => {
+        await userEvent.click(trigger);
+        await searchFocused(canvasElement);
+        await userEvent.keyboard("zzz");
+        await expect(await page.findByText("No results")).toBeVisible();
+        await expect(page.queryByRole("option")).toBeNull();
+        await userEvent.keyboard("{Escape}");
+      }
+    );
+  },
+};
+
 export const People: Story = {
   args: {
     options: people,
@@ -145,6 +195,22 @@ export const States: Story = {
 
 /** Type a label that does not exist (e.g. "Regression") and press Enter to create it. */
 export const CreateNew: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(canvas.getByRole("combobox", { name: /Label/ }));
+    await searchFocused(canvasElement);
+    await userEvent.keyboard("Regression");
+    await expect(
+      await page.findByRole("option", { name: /Create label/ })
+    ).toBeVisible();
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() =>
+      expect(canvas.getByRole("combobox", { name: /Label/ })).toHaveTextContent(
+        "Regression"
+      )
+    );
+  },
   render: function Render() {
     const [labels, setLabels] = useState<ComboboxOption[]>(
       ["Bug", "Feature", "Improvement", "Performance"].map((label) => ({

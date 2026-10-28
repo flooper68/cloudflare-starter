@@ -12,13 +12,30 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 
+import {
+  CommandList,
+  CommandListSeparator,
+  type CommandListSeparatorProps,
+} from "../lib/command-list";
 import { backdrop, menuItem } from "../lib/styles";
 import { cn } from "../lib/utils";
 import { Kbd, Shortcut } from "./kbd";
 import { Spinner } from "./spinner";
 
 const ROOT_PAGE = "root";
+
+/**
+ * Where CommandEmpty and CommandLoading render: below the list, not inside it, because a
+ * listbox may only contain options and groups.
+ */
+const StatusSlotContext = createContext<HTMLElement | null>(null);
+
+function StatusSlot({ children }: { readonly children: ReactNode }) {
+  const slot = useContext(StatusSlotContext);
+  return slot ? createPortal(children, slot) : children;
+}
 
 interface PageEntry {
   readonly id: string;
@@ -174,6 +191,8 @@ export function CommandPalette({
     inputRef.current?.focus();
   }, [current.id]);
 
+  const [statusSlot, setStatusSlot] = useState<HTMLDivElement | null>(null);
+
   const crumbs = pages.flatMap((entry) => (entry.title ? [entry.title] : []));
 
   return (
@@ -234,9 +253,12 @@ export function CommandPalette({
                 placeholder={current.placeholder ?? placeholder}
                 className="h-12 w-full border-b border-line bg-transparent px-4 text-base text-fg outline-none placeholder:text-fg-subtle"
               />
-              <CommandPrimitive.List className="h-[min(var(--cmdk-list-height),min(24rem,calc(100dvh-16rem)))] scroll-py-1.5 overflow-y-auto overscroll-contain p-1.5 transition-[height] duration-100">
-                {children}
-              </CommandPrimitive.List>
+              <StatusSlotContext.Provider value={statusSlot}>
+                <CommandList className="h-[min(var(--cmdk-list-height),min(24rem,calc(100dvh-16rem)))] scroll-py-1.5 overflow-y-auto overscroll-contain p-1.5 transition-[height] duration-100">
+                  {children}
+                </CommandList>
+              </StatusSlotContext.Provider>
+              <div ref={setStatusSlot} role="status" />
               {footer === false ? null : (
                 <div className="flex h-9 items-center gap-4 border-t border-line px-3 text-2xs text-fg-subtle">
                   {footer ?? (
@@ -353,13 +375,14 @@ export function CommandItem({
   );
 }
 
+/** A line between groups; hidden while the user searches unless `alwaysRender`. */
 export function CommandSeparator({
   className,
   ...props
-}: ComponentProps<typeof CommandPrimitive.Separator>) {
+}: CommandListSeparatorProps) {
   return (
-    <CommandPrimitive.Separator
-      className={cn("-mx-1.5 my-1.5 h-px bg-line", className)}
+    <CommandListSeparator
+      className={cn("-mx-1.5 my-1.5", className)}
       {...props}
     />
   );
@@ -372,26 +395,36 @@ export function CommandEmpty({
   ...props
 }: ComponentProps<typeof CommandPrimitive.Empty>) {
   return (
-    <CommandPrimitive.Empty
-      className={cn("py-10 text-center text-sm text-fg-muted", className)}
-      {...props}
-    >
-      {children}
-    </CommandPrimitive.Empty>
+    <StatusSlot>
+      <CommandPrimitive.Empty
+        className={cn("py-10 text-center text-sm text-fg-muted", className)}
+        {...props}
+      >
+        {children}
+      </CommandPrimitive.Empty>
+    </StatusSlot>
   );
 }
 
-/** Render while async results load. */
+/** Render while async results load; announced through the palette's status region. */
 export function CommandLoading({
   children = "Searching…",
-  ...props
-}: ComponentProps<typeof CommandPrimitive.Loading>) {
+  className,
+}: {
+  readonly children?: ReactNode;
+  readonly className?: string;
+}) {
   return (
-    <CommandPrimitive.Loading {...props}>
-      <div className="flex items-center justify-center gap-2 py-6 text-sm text-fg-muted">
+    <StatusSlot>
+      <div
+        className={cn(
+          "flex items-center justify-center gap-2 py-6 text-sm text-fg-muted",
+          className
+        )}
+      >
         <Spinner />
         {children}
       </div>
-    </CommandPrimitive.Loading>
+    </StatusSlot>
   );
 }

@@ -1,5 +1,6 @@
 import { ChevronRight, Plus } from "lucide-react";
 import {
+  type ComponentProps,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
@@ -31,6 +32,19 @@ import {
   statusLabel,
 } from "./issue-glyphs";
 import { GlyphButton, PriorityPicker, StatusPicker } from "./issue-pickers";
+
+/*
+ * The list is an ARIA grid built from flex rows, not table markup (a <table> cannot lay
+ * out like Linear's rows), and the grid itself holds focus and points at the active row
+ * with aria-activedescendant. Cells and rows are therefore neither <td>/<tr> nor tab stops.
+ */
+
+/** A cell of the issue grid. */
+function GridCell(props: ComponentProps<"span">) {
+  // biome-ignore lint/a11y/useSemanticElements: flex rows of an ARIA grid, see above.
+  // biome-ignore lint/a11y/useFocusableInteractive: the grid holds focus, see above.
+  return <span role="gridcell" {...props} />;
+}
 
 export type IssuePatch = Partial<Omit<Issue, "id" | "identifier">>;
 
@@ -70,9 +84,10 @@ export function IssueRow({
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: the IssueList handles the keyboard.
+    // biome-ignore lint/a11y/useSemanticElements: flex rows of an ARIA grid, see above.
     <div
       id={id}
-      role="option"
+      role="row"
       tabIndex={-1}
       aria-selected={selected}
       data-active={active || undefined}
@@ -85,7 +100,7 @@ export function IssueRow({
         className
       )}
     >
-      <span
+      <GridCell
         className={cn(
           "flex w-5 shrink-0 justify-center opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100",
           (selected || selectionMode) && "opacity-100"
@@ -97,36 +112,40 @@ export function IssueRow({
           aria-label={`Select ${issue.identifier}`}
           tabIndex={-1}
         />
-      </span>
+      </GridCell>
 
-      <PriorityPicker
-        value={issue.priority}
-        onValueChange={(priority) => onIssueChange?.({ priority })}
-      >
-        <GlyphButton label={`Priority: ${priorityLabel(issue.priority)}`}>
-          <PriorityIcon priority={issue.priority} />
-        </GlyphButton>
-      </PriorityPicker>
+      <GridCell className="flex shrink-0">
+        <PriorityPicker
+          value={issue.priority}
+          onValueChange={(priority) => onIssueChange?.({ priority })}
+        >
+          <GlyphButton label={`Priority: ${priorityLabel(issue.priority)}`}>
+            <PriorityIcon priority={issue.priority} />
+          </GlyphButton>
+        </PriorityPicker>
+      </GridCell>
 
-      <span className="w-16 shrink-0 truncate text-xs tabular-nums text-fg-subtle">
+      <GridCell className="w-16 shrink-0 truncate text-xs tabular-nums text-fg-subtle">
         {issue.identifier}
-      </span>
+      </GridCell>
 
-      <StatusPicker
-        value={issue.status}
-        onValueChange={(status) => onIssueChange?.({ status })}
-      >
-        <GlyphButton label={`Status: ${statusLabel(issue.status)}`}>
-          <StatusIcon status={issue.status} />
-        </GlyphButton>
-      </StatusPicker>
+      <GridCell className="flex shrink-0">
+        <StatusPicker
+          value={issue.status}
+          onValueChange={(status) => onIssueChange?.({ status })}
+        >
+          <GlyphButton label={`Status: ${statusLabel(issue.status)}`}>
+            <StatusIcon status={issue.status} />
+          </GlyphButton>
+        </StatusPicker>
+      </GridCell>
 
-      <span className="min-w-0 flex-1 truncate font-medium text-fg">
+      <GridCell className="min-w-0 flex-1 truncate font-medium text-fg">
         {issue.title}
-      </span>
+      </GridCell>
 
       {issue.labels && issue.labels.length > 0 ? (
-        <span className="hidden min-w-0 items-center gap-1 md:flex">
+        <GridCell className="hidden min-w-0 items-center gap-1 md:flex">
           {issue.labels.slice(0, 3).map((label) => (
             <LabelChip key={label.id} label={label} />
           ))}
@@ -135,26 +154,26 @@ export function IssueRow({
               +{issue.labels.length - 3}
             </span>
           ) : null}
-        </span>
+        </GridCell>
       ) : null}
 
       {issue.dueDate ? (
-        <span
+        <GridCell
           className={cn(
             "hidden w-14 shrink-0 text-right text-xs tabular-nums sm:inline",
             overdue ? "text-danger" : "text-fg-subtle"
           )}
         >
           {formatShortDate(issue.dueDate)}
-        </span>
+        </GridCell>
       ) : (
-        <span className="hidden w-14 shrink-0 sm:inline" />
+        <span aria-hidden="true" className="hidden w-14 shrink-0 sm:inline" />
       )}
 
       <Tooltip content={issue.assignee ? issue.assignee.name : "Unassigned"}>
-        <span className="inline-flex">
+        <GridCell className="inline-flex">
           <PersonAvatar person={issue.assignee} size="sm" />
-        </span>
+        </GridCell>
       </Tooltip>
     </div>
   );
@@ -180,35 +199,42 @@ export function IssueGroupHeader({
   title,
 }: IssueGroupHeaderProps) {
   return (
-    <div className="sticky top-0 z-10 flex h-9 items-center gap-2 border-b border-line bg-surface-raised pr-2 pl-2 text-sm">
-      <button
-        type="button"
-        aria-expanded={!collapsed}
-        onClick={() => onCollapsedChange?.(!collapsed)}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        <ChevronRight
-          aria-hidden="true"
-          className={cn(
-            "size-3.5 text-fg-subtle transition-transform duration-100",
-            !collapsed && "rotate-90"
-          )}
-        />
-        <StatusIcon status={status} />
-        <span className="font-medium text-fg">
-          {title ?? statusLabel(status)}
-        </span>
-        <span className="text-fg-subtle tabular-nums">{count}</span>
-      </button>
-      {onAdd ? (
-        <IconButton
-          label={`New issue in ${statusLabel(status)}`}
-          size="xs"
-          onClick={onAdd}
+    // biome-ignore lint/a11y/useSemanticElements: flex rows of an ARIA grid, see above.
+    // biome-ignore lint/a11y/useFocusableInteractive: the grid holds focus, see above.
+    <div
+      role="row"
+      className="sticky top-0 z-10 flex h-9 items-center border-b border-line bg-surface-raised pr-2 pl-2 text-sm"
+    >
+      <GridCell className="flex min-w-0 flex-1 items-center gap-2">
+        <button
+          type="button"
+          aria-expanded={!collapsed}
+          onClick={() => onCollapsedChange?.(!collapsed)}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-focus"
         >
-          <Plus />
-        </IconButton>
-      ) : null}
+          <ChevronRight
+            aria-hidden="true"
+            className={cn(
+              "size-3.5 text-fg-subtle transition-transform duration-100",
+              !collapsed && "rotate-90"
+            )}
+          />
+          <StatusIcon status={status} />
+          <span className="font-medium text-fg">
+            {title ?? statusLabel(status)}
+          </span>
+          <span className="text-fg-subtle tabular-nums">{count}</span>
+        </button>
+        {onAdd ? (
+          <IconButton
+            label={`New issue in ${statusLabel(status)}`}
+            size="xs"
+            onClick={onAdd}
+          >
+            <Plus />
+          </IconButton>
+        ) : null}
+      </GridCell>
     </div>
   );
 }
@@ -413,9 +439,10 @@ export function IssueList({
   }
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: flex rows of an ARIA grid, see above.
     <div
       ref={listRef}
-      role="listbox"
+      role="grid"
       aria-multiselectable="true"
       aria-label={ariaLabel}
       aria-activedescendant={activeId ? rowId(activeId) : undefined}
@@ -433,10 +460,10 @@ export function IssueList({
       {groups.map((group) => {
         const isCollapsed = collapsed.has(group.status);
         return (
-          // biome-ignore lint/a11y/useSemanticElements: a listbox group, not a form fieldset.
+          // biome-ignore lint/a11y/useSemanticElements: flex rows of an ARIA grid, see above.
           <div
             key={group.status}
-            role="group"
+            role="rowgroup"
             aria-label={statusLabel(group.status)}
           >
             <IssueGroupHeader

@@ -17,7 +17,7 @@ How the starter is built and the rules every change follows: the parts, how a re
 | Storybook       | [apps/storybook](../../apps/storybook/README.md) | Storybook config; the build is served by the web Worker at `/_storybook/`                                                                   |
 | Container demo  | [apps/container](../../apps/container/README.md) | A separate Worker with a Cloudflare Container, deployed on its own                                                                          |
 | Setup scripts   | `scripts/`                                       | `setup:cloudflare`, `setup:secrets`, `setup:email`, `setup:github-runner`, `doctor`                                                         |
-| CI and deploy   | `.github/workflows/`                             | `ci.yml` (lint, typecheck, test, migrations, build) and `deploy.yml` (manual, per environment)                                              |
+| CI and deploy   | `.github/workflows/`                             | `ci.yml` (lint, typecheck, test, components, e2e, migrations, build, deploy dry-run) and `deploy.yml` (manual, per environment)             |
 | Agent skills    | `.claude/skills/`                                | `setup-auth`, `setup-d1`, `setup-email`                                                                                                     |
 
 ## Runtime
@@ -152,13 +152,7 @@ Domain errors are typed classes in `domain/errors.ts`. Adapters map them to tran
 
 ## Current state vs target
 
-Do not cite these as precedent until they are closed:
-
-| Area  | Today                                                                             | Target                                 |
-| ----- | --------------------------------------------------------------------------------- | -------------------------------------- |
-| Tests | No component or E2E layer yet; see [testing.md known gaps](testing.md#known-gaps) | The layers in [testing.md](testing.md) |
-
-Remove a row when the code matches the target.
+Do not cite these as precedent until they are closed. None today. When the code knowingly differs from this document, list it here as a table (area, what the code does today, the target) and remove a row when the code matches the target.
 
 ## To change X, read Y
 

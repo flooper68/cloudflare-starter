@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CircleDashed, Paperclip, SignalHigh, UserCircle } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Button } from "./button";
 import {
   Dialog,
@@ -73,6 +74,50 @@ const openInFrame = {
 } as const;
 
 export const Playground: Story = {};
+
+/**
+ * Interaction test: the trigger opens the modal with focus inside, Tab cycles within it
+ * (focus trap), Escape closes it and focus returns to the trigger.
+ */
+export const FocusTrapAndEscape: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    const trigger = canvas.getByRole("button", { name: "Rename project" });
+
+    await step("Opening moves focus into the dialog", async () => {
+      await userEvent.click(trigger);
+      const dialog = await page.findByRole("dialog", {
+        name: "Rename project",
+      });
+      await waitFor(() =>
+        expect(dialog).toContainElement(document.activeElement as HTMLElement)
+      );
+    });
+
+    await step("Tab and Shift+Tab stay inside the dialog", async () => {
+      const dialog = page.getByRole("dialog");
+      for (let i = 0; i < 6; i++) {
+        await userEvent.tab();
+        await expect(dialog).toContainElement(
+          document.activeElement as HTMLElement
+        );
+      }
+      for (let i = 0; i < 6; i++) {
+        await userEvent.tab({ shift: true });
+        await expect(dialog).toContainElement(
+          document.activeElement as HTMLElement
+        );
+      }
+    });
+
+    await step("Escape closes and returns focus to the trigger", async () => {
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(page.queryByRole("dialog")).toBeNull());
+      await expect(trigger).toHaveFocus();
+    });
+  },
+};
 
 export const Sizes: Story = {
   render: () => (
