@@ -18,7 +18,7 @@ Deploy config (apps/web/wrangler.jsonc)
 ! production: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM (bun run setup:email)
 ! production: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc
 ! production: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env production)
-✓ ratelimits: 15 bindings, unique namespace_ids
+✓ ratelimits: 18 bindings, unique namespace_ids
 ✓ Wrangler is logged in
 
 All good.

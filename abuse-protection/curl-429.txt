@@ -1,26 +1,28 @@
+# an allowed auth request names its quotas
+$ curl -si -H "cf-connecting-ip: 203.0.113.8" http://localhost:4321/api/auth/get-session
+HTTP/1.1 200 OK
+ratelimit-policy: "auth.ip";q=60;w=60
+
 # 62 requests to /api/auth/get-session from one IP (auth.ip: 60 a minute)
-$ for i in $(seq 1 62); do curl -s -o /dev/null -w "%{http_code} retry-after=%header{retry-after}
-" -H "cf-connecting-ip: 203.0.113.9" http://localhost:4321/api/auth/get-session; done | sort | uniq -c
   60 200 retry-after=
    2 429 retry-after=60
 
 # the refused response
 $ curl -si -H "cf-connecting-ip: 203.0.113.9" http://localhost:4321/api/auth/get-session
 HTTP/1.1 429 Too Many Requests
+content-type: application/problem+json
+ratelimit: "auth.ip";r=0;t=60
+ratelimit-policy: "auth.ip";q=60;w=60
 retry-after: 60
-{"error":"Too many requests. Try again in 60 seconds.","retryAfterSeconds":60}
+{"type":"https://iana.org/assignments/http-problem-types#quota-exceeded","title":"Too many requests","status":429,"detail":"Too many requests. Try again in 60 seconds.","instance":"/api/auth/get-session","violated-policies":["auth.ip"],"retryAfterSeconds":60}
 
 # another IP is not affected
 200
 
-# 122 POSTs to /mcp without a token from one IP (mcp.ip: 120 a minute; 401 until then)
- 120 401
-   2 429
-$ curl -si -X POST -H "cf-connecting-ip: 203.0.113.11" http://localhost:4321/mcp
-HTTP/1.1 429 Too Many Requests
-retry-after: 60
-{"jsonrpc":"2.0","error":{"code":-32029,"message":"Too many requests. Try again in 60 seconds.","data":{"retryAfterSeconds":60}},"id":null}
+# /mcp: see curl-mcp-429.txt
 
 # sign-up without a Turnstile token
 HTTP/1.1 400 Bad Request
-{"code":"HUMAN_CHECK_FAILED","message":"The human check did not pass. Try again."}
+content-type: application/problem+json
+ratelimit-policy: "auth.ip";q=60;w=60, "auth.sign-up";q=5;w=60
+{"type":"https://github.com/flooper68/cloudflare-starter/blob/main/docs/guides/how-to-configure-abuse-protection.md#human-check-failed","title":"Human check failed","status":400,"detail":"The human check did not pass. Try again.","instance":"/api/auth/sign-up/email","code":"HUMAN_CHECK_FAILED"}
