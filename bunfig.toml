@@ -1,0 +1,3 @@
+[install]
+# Pin exact versions on every `bun add` / `bun update` (no ^ or ~ ranges).
+exact = true

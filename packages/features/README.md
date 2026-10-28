@@ -7,8 +7,8 @@ Shared feature code consumed by every app and worker in this monorepo — databa
 ```
 src/
 ├── index.ts       Root barrel. Every public symbol is re-exported here.
-├── db/            Drizzle schema + Postgres client factory.
-├── email/         Mailjet email service.
+├── db/            Drizzle schema (Better Auth + app tables) + D1 client factory.
+├── email/         Email service over the Cloudflare send_email binding.
 ├── queue/         Zod schemas + producer/consumer helpers for the app queue.
 └── storage/       R2 presign, file record creation, ownership lookup.
 ```
@@ -38,14 +38,14 @@ This package runs in both Node and Cloudflare Workers. React components and hook
 
 ## Database
 
-- Schema: `src/db/schema/`
-- Migrations: `migrations/` (plain SQL, applied in filename order)
+- Schema: `src/db/schema/` (`auth.ts` holds the Better Auth tables)
+- Migrations: `migrations/` (generated SQL, applied by Wrangler from `apps/web`)
 
 From the repo root:
 
 ```
-bun db:new <name>    # scaffold a new SQL migration file
-bun db:migrate       # apply pending migrations
+bun run db:generate        # write a migration from schema changes
+bun run db:migrate:local   # apply pending migrations to local D1
 ```
 
-The Drizzle config is at `drizzle.config.ts`.
+The Drizzle config is at `drizzle.config.ts`. See [docs/how-to-setup-d1.md](../../docs/how-to-setup-d1.md).

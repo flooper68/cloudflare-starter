@@ -9,38 +9,36 @@ import {
   Input,
   Label,
 } from "@cloudflare-starter/ui";
-import { type FormEvent, useEffect, useState } from "react";
-import { useClerkInstance } from "@/components/shared/hooks/use-clerk-client";
-import { getClerkErrorMessage } from "@/lib/clerk";
+import { type FormEvent, useState } from "react";
 
-type Step = "form" | "verification";
+import { afterSignIn, authClient, authErrorMessage } from "@/lib/auth-client";
+import { GoogleSignInButton } from "./GoogleSignInButton";
+
+const MIN_PASSWORD_LENGTH = 8;
 
 interface FieldErrors {
-  firstName?: string;
-  lastName?: string;
+  name?: string;
   email?: string;
   password?: string;
-  code?: string;
 }
 
-export function SignUpForm() {
-  const clerk = useClerkInstance();
-
-  const [step, setStep] = useState<Step>("form");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+export function SignUpForm({
+  emailPassword,
+  google,
+  search,
+}: {
+  readonly emailPassword: boolean;
+  readonly google: boolean;
+  /** The page query, kept on links so an OAuth authorization survives. */
+  readonly search: string;
+}) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-
-  useEffect(() => {
-    if (clerk?.session) {
-      window.location.href = "/app/dashboard";
-    }
-  }, [clerk]);
 
   function clearField(field: keyof FieldErrors) {
     setFieldErrors((current) => {
@@ -54,32 +52,20 @@ export function SignUpForm() {
   function validateForm() {
     const next: FieldErrors = {};
 
-    if (!firstName.trim()) next.firstName = "First name is required";
-    if (!lastName.trim()) next.lastName = "Last name is required";
+    if (!name.trim()) next.name = "Name is required";
     if (!email.trim()) next.email = "Email is required";
     if (!password) next.password = "Password is required";
+    else if (password.length < MIN_PASSWORD_LENGTH) {
+      next.password = `Use at least ${MIN_PASSWORD_LENGTH} characters`;
+    }
 
     setFieldErrors(next);
     return Object.keys(next).length === 0;
   }
 
-  function validateCode() {
-    const next: FieldErrors = {};
-
-    if (!code.trim()) next.code = "Verification code is required";
-
-    setFieldErrors(next);
-    return Object.keys(next).length === 0;
-  }
-
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-
-    if (!clerk?.client) {
-      setError("Clerk is still loading.");
-      return;
-    }
 
     if (!validateForm()) {
       return;
@@ -87,59 +73,28 @@ export function SignUpForm() {
 
     setLoading(true);
 
-    try {
-      await clerk.client.signUp.create({
-        firstName,
-        lastName,
-        emailAddress: email,
-        password,
-      });
+    // Signs the new user in right away, unless email verification is required:
+    // then there is no session token and the verification link signs them in.
+    const { data, error: signUpError } = await authClient.signUp.email({
+      name: name.trim(),
+      email,
+      password,
+      callbackURL: "/app/dashboard",
+    });
 
-      await clerk.client.signUp.prepareEmailAddressVerification({
-        strategy: "email_code",
-      });
-
-      setFieldErrors({});
-      setStep("verification");
-    } catch (cause) {
-      setError(getClerkErrorMessage(cause, "Unable to sign up."));
-    } finally {
+    if (signUpError) {
+      setError(authErrorMessage(signUpError, "Unable to sign up."));
       setLoading(false);
-    }
-  }
-
-  async function handleVerification(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-
-    if (!clerk?.client) {
-      setError("Clerk is still loading.");
       return;
     }
 
-    if (!validateCode()) {
+    if (!data?.token) {
+      setCheckEmail(true);
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const result = await clerk.client.signUp.attemptEmailAddressVerification({
-        code,
-      });
-
-      if (result.status === "complete") {
-        await clerk.setActive({ session: result.createdSessionId });
-        window.location.href = "/app/dashboard";
-        return;
-      }
-
-      setError("Verification could not be completed.");
-    } catch (cause) {
-      setError(getClerkErrorMessage(cause, "Unable to verify your email."));
-    } finally {
-      setLoading(false);
-    }
+    window.location.href = afterSignIn(data);
   }
 
   return (
@@ -148,51 +103,33 @@ export function SignUpForm() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
           Cloudflare Starter
         </p>
-        <CardTitle>
-          {step === "form" ? "Create an account" : "Verify your email"}
-        </CardTitle>
+        <CardTitle>Create an account</CardTitle>
         <p className="text-sm text-zinc-600">
-          {step === "form"
-            ? "Use email and password auth, following the same custom Clerk pattern as Vertical Casting Hub."
-            : `We sent a verification code to ${email}.`}
+          {checkEmail
+            ? `We sent a verification link to ${email}. Open it to finish signing up.`
+            : emailPassword
+              ? "Email and password accounts, stored in D1 by Better Auth."
+              : "Use your Google account; the first sign-in creates it."}
         </p>
       </CardHeader>
 
-      <CardContent>
-        {step === "form" ? (
-          <form className="space-y-4" onSubmit={handleCreate}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  autoComplete="given-name"
-                  value={firstName}
-                  aria-invalid={Boolean(fieldErrors.firstName)}
-                  onChange={(event) => {
-                    setFirstName(event.target.value);
-                    clearField("firstName");
-                  }}
-                />
-                <FieldError message={fieldErrors.firstName} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  autoComplete="family-name"
-                  value={lastName}
-                  aria-invalid={Boolean(fieldErrors.lastName)}
-                  onChange={(event) => {
-                    setLastName(event.target.value);
-                    clearField("lastName");
-                  }}
-                />
-                <FieldError message={fieldErrors.lastName} />
-              </div>
+      <CardContent className="space-y-4">
+        {emailPassword && !checkEmail ? (
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                autoComplete="name"
+                value={name}
+                aria-invalid={Boolean(fieldErrors.name)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  clearField("name");
+                }}
+              />
+              <FieldError message={fieldErrors.name} />
             </div>
 
             <div className="space-y-2">
@@ -234,32 +171,13 @@ export function SignUpForm() {
               {loading ? "Creating account..." : "Create account"}
             </Button>
           </form>
-        ) : (
-          <form className="space-y-4" onSubmit={handleVerification}>
-            <div className="space-y-2">
-              <Label htmlFor="code">Verification code</Label>
-              <Input
-                id="code"
-                type="text"
-                inputMode="numeric"
-                placeholder="Enter code"
-                value={code}
-                aria-invalid={Boolean(fieldErrors.code)}
-                onChange={(event) => {
-                  setCode(event.target.value);
-                  clearField("code");
-                }}
-              />
-              <FieldError message={fieldErrors.code} />
-            </div>
+        ) : error ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : null}
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-            <Button className="w-full" disabled={loading} type="submit">
-              {loading ? "Verifying..." : "Verify email"}
-            </Button>
-          </form>
-        )}
+        {google && !checkEmail ? (
+          <GoogleSignInButton onError={setError} />
+        ) : null}
       </CardContent>
 
       <CardFooter className="justify-center">
@@ -267,7 +185,7 @@ export function SignUpForm() {
           Already have an account?{" "}
           <a
             className="font-medium text-teal-700 underline underline-offset-4"
-            href="/sign-in"
+            href={`/sign-in${search}`}
           >
             Sign in
           </a>

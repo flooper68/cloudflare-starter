@@ -1,12 +1,9 @@
 import { defineConfig } from "drizzle-kit";
 
+// Only `generate` is used. Migrations are applied by Wrangler
+// (`wrangler d1 migrations apply`), never with `drizzle-kit push`.
 export default defineConfig({
-  dialect: "postgresql",
-  schema: "./src/db/schema/*.ts",
+  dialect: "sqlite",
+  schema: "./src/db/schema/index.ts",
   out: "./migrations",
-  dbCredentials: {
-    url:
-      process.env.DATABASE_URL ??
-      "postgresql://postgres:postgres@127.0.0.1:54329/cloudflare_starter",
-  },
 });

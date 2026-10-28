@@ -2,37 +2,42 @@
   "name": "cloudflare-starter",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.2.22",
+  "packageManager": "bun@1.3.14",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --filter @cloudflare-starter/web --filter @cloudflare-starter/queue-worker --filter @cloudflare-starter/cron-worker --filter @cloudflare-starter/container dev",
+    "dev": "bun run --filter @cloudflare-starter/web --filter @cloudflare-starter/container dev",
     "dev:web": "bun run --filter @cloudflare-starter/web dev",
-    "dev:queue": "bun run --filter @cloudflare-starter/queue-worker dev",
-    "dev:cron": "bun run --filter @cloudflare-starter/cron-worker dev",
     "dev:container": "bun run --filter @cloudflare-starter/container dev",
     "storybook": "bun run --filter @cloudflare-starter/storybook storybook",
     "build-storybook": "bun run --filter @cloudflare-starter/storybook build-storybook",
     "deploy:storybook": "bun run --filter @cloudflare-starter/storybook deploy",
-    "build": "bun run --filter './apps/*' build",
+    "build": "bun run --filter @cloudflare-starter/web --filter @cloudflare-starter/storybook build",
     "verify": "bun run typecheck && bun run lint && bun run test",
-    "typecheck": "bun run --filter './packages/*' typecheck && bun run --filter './apps/*' typecheck",
+    "typecheck": "bun run --filter './packages/*' typecheck && bun run --filter './apps/*' typecheck && tsc --noEmit -p scripts/tsconfig.json",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
-    "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down",
-    "db:new": "bun run --filter @cloudflare-starter/features db:new",
-    "db:migrate": "bun run --filter @cloudflare-starter/features db:migrate"
+    "db:generate": "bun run --filter @cloudflare-starter/features db:generate",
+    "db:migrate:local": "bun run --filter @cloudflare-starter/web db:migrate:local",
+    "setup:cloudflare": "bun scripts/setup-cloudflare.ts",
+    "setup:secrets": "bun scripts/setup-secrets.ts",
+    "setup:email": "bun scripts/setup-email.ts",
+    "doctor": "bun scripts/doctor.ts",
+    "setup:github-runner": "bun scripts/setup-github-runner.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.12",
-    "@types/node": "24.12.2",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
-    "typescript": "5.9.3",
-    "vitest": "3.2.4"
+    "@biomejs/biome": "2.6.3",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "jsonc-parser": "3.3.1",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "engines": {
+    "node": ">=24.14.1"
   }
 }

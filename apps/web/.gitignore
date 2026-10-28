@@ -22,3 +22,9 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# local secrets
+.dev.vars
+
+# Storybook build output (served at /_storybook by the web app)
+public/_storybook/

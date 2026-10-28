@@ -1,0 +1,27 @@
+# Copy to apps/web/.dev.vars for local dev (or run `bun run setup:secrets --env local`).
+# Wrangler and `astro dev` read it. Blank values count as unset.
+# Deployed environments get secrets with `bun run setup:secrets --env <env>`.
+
+# Core (required)
+APP_URL=http://localhost:4321
+# At least 32 characters. Generate with: openssl rand -base64 32
+BETTER_AUTH_SECRET=local-dev-secret-change-me-0000000000
+
+# Sign-in methods. Email + password is on unless set to false; Google turns on
+# when both keys are set. At least one method must be on.
+AUTH_EMAIL_PASSWORD=true
+AUTH_REQUIRE_EMAIL_VERIFICATION=false
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
+# is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
+# email off; auth links are then printed to the log.
+EMAIL_FROM=noreply@example.test
+EMAIL_FROM_NAME=Cloudflare Starter
+
+# R2 presigned URLs (optional). The FILES binding needs nothing here.
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_FILES_BUCKET_NAME=

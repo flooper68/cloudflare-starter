@@ -1,32 +1,32 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
 
-export interface AuthContextValue {
-  readonly userId: string | null;
+export interface AuthUser {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly image: string | null;
 }
 
-interface AuthScriptData {
-  readonly userId: string | null;
+export interface AuthContextValue {
+  readonly user: AuthUser | null;
+  readonly methods: { readonly emailPassword: boolean };
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function readAuthScript(): AuthScriptData {
+function readAuthScript(): AuthContextValue {
   const element = document.getElementById("__APP_AUTH__");
   if (!element?.textContent) {
     throw new Error("Missing __APP_AUTH__ script tag");
   }
 
-  return JSON.parse(element.textContent) as AuthScriptData;
+  return JSON.parse(element.textContent) as AuthContextValue;
 }
 
 export function AuthProvider({ children }: { readonly children: ReactNode }) {
   const [data] = useState(readAuthScript);
 
-  return (
-    <AuthContext.Provider value={{ userId: data.userId }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={data}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

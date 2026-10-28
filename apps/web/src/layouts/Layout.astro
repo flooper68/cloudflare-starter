@@ -7,7 +7,7 @@ interface Props {
 }
 
 const { title } = Astro.props;
-const auth = Astro.locals.auth();
+const signedIn = Boolean(Astro.locals.user);
 ---
 
 <!doctype html>
@@ -25,7 +25,7 @@ const auth = Astro.locals.auth();
         </a>
         <nav class="flex items-center gap-4 text-sm text-zinc-600">
           <a href="/api/hello">API hello</a>
-          {auth.userId ? (
+          {signedIn ? (
             <>
               <a href="/app/dashboard">Dashboard</a>
               <a href="/app/profile">Profile</a>

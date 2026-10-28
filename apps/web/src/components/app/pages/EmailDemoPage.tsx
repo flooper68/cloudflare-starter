@@ -8,7 +8,7 @@ export function EmailDemoPage() {
           Email Demo
         </p>
         <h2 className="text-3xl font-semibold text-zinc-950">
-          Send a Mailjet test email
+          Send a test email
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-zinc-600">
           The UI stays inside the app SPA while the email integration remains

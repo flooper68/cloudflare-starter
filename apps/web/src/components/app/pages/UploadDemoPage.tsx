@@ -1,3 +1,4 @@
+import { BindingUploadDemo } from "@/components/BindingUploadDemo";
 import { UploadDemoClient } from "@/components/UploadDemoClient";
 
 export function UploadDemoPage() {
@@ -8,15 +9,20 @@ export function UploadDemoPage() {
           Upload Demo
         </p>
         <h2 className="text-3xl font-semibold text-zinc-950">
-          R2 presigned uploads
+          Two ways into R2
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-zinc-600">
-          The browser uploads directly to R2. The app keeps ownership and access
-          control in the database and signs download URLs on demand.
+          Both paths share the same file table and ownership rules. Through the
+          Worker, the bytes pass the `FILES` binding and every read is checked.
+          Presigned, the browser talks to R2 directly with a short-lived URL.
+          Pick per feature.
         </p>
       </div>
 
-      <UploadDemoClient />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <BindingUploadDemo />
+        <UploadDemoClient />
+      </div>
     </section>
   );
 }

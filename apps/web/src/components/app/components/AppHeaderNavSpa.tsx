@@ -1,10 +1,9 @@
 import { cn, ProfileMenu, type ProfileMenuItem } from "@cloudflare-starter/ui";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 
-import {
-  useClerkInstance,
-  useUser,
-} from "@/components/shared/hooks/use-clerk-client";
+import { useAuth } from "@/components/shared/spa/auth-context";
+import { authClient } from "@/lib/auth-client";
+import { initials } from "@/lib/user";
 
 const links = [
   { href: "/app/dashboard", label: "Dashboard" },
@@ -14,16 +13,15 @@ const links = [
   { href: "/app/email-demo", label: "Email" },
 ] as const;
 
-function getInitials(firstName?: string | null, lastName?: string | null) {
-  const initials = [firstName?.[0], lastName?.[0]].filter(Boolean).join("");
-  return initials ? initials.toUpperCase() : "ME";
+async function signOut() {
+  await authClient.signOut();
+  window.location.href = "/";
 }
 
 export function AppHeaderNavSpa() {
   const location = useLocation();
   const navigate = useNavigate();
-  const clerk = useClerkInstance();
-  const user = useUser();
+  const { user } = useAuth();
 
   const menuItems: readonly ProfileMenuItem[] = [
     {
@@ -60,12 +58,12 @@ export function AppHeaderNavSpa() {
             </a>
             {user ? (
               <ProfileMenu
-                userName={user.fullName ?? "Signed in"}
-                userEmail={user.primaryEmailAddress?.emailAddress ?? ""}
-                userImageUrl={user.imageUrl}
-                userInitials={getInitials(user.firstName, user.lastName)}
+                userName={user.name || "Signed in"}
+                userEmail={user.email}
+                userImageUrl={user.image}
+                userInitials={initials(user)}
                 menuItems={menuItems}
-                onSignOut={() => void clerk?.signOut({ redirectUrl: "/" })}
+                onSignOut={() => void signOut()}
               />
             ) : null}
           </div>
