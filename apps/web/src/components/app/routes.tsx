@@ -12,6 +12,7 @@ import { EmailDemoPage } from "./pages/EmailDemoPage";
 import { MembersPage } from "./pages/MembersPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { QueueDemoPage } from "./pages/QueueDemoPage";
+import { TrashPage } from "./pages/TrashPage";
 import { UploadDemoPage } from "./pages/UploadDemoPage";
 
 const rootRoute = createRootRoute({
@@ -45,6 +46,12 @@ const membersRoute = createRoute({
   component: MembersPage,
 });
 
+const trashRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/app/trash",
+  component: TrashPage,
+});
+
 const uploadDemoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/app/upload-demo",
@@ -68,6 +75,7 @@ const routeTree = rootRoute.addChildren([
   dashboardRoute,
   profileRoute,
   membersRoute,
+  trashRoute,
   uploadDemoRoute,
   queueDemoRoute,
   emailDemoRoute,

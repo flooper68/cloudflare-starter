@@ -16,6 +16,7 @@ const AUDITED_FEATURES = [
   "billing",
   "workspaces",
   "feature-flags",
+  "trash",
 ] as const;
 
 /** Use cases that change state without an audit event: path → reason. */

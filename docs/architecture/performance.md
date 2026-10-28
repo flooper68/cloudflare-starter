@@ -55,6 +55,8 @@ cd apps/web && bunx wrangler d1 execute DB --local --command "EXPLAIN QUERY PLAN
 
 `SCAN <table>` on a table that grows with users or data is a finding; `SEARCH <table> USING INDEX` is what you want. The PR states the plan for each new query on such a table.
 
+A query that only ever reads a small slice of a big table gets a **partial index** over that slice, which stays as small as the slice. Trashable tables have `(workspace_id, deleted_at) WHERE deleted_at IS NOT NULL` ([how-to-use-trash.md](../guides/how-to-use-trash.md)): the trash list and the daily retention purge read only trashed rows, so the index holds the trash, not the table. SQLite uses a partial index only when the query's `WHERE` implies the index's condition, which is why `trashedIn` and the purge state `deleted_at IS NOT NULL` explicitly. Live reads (`liveIn`) keep using the table's ordinary index that starts with `workspace_id` and filter `deleted_at IS NULL` on the rows it finds.
+
 ### Bundle budgets
 
 After `bun run build`, the client assets for each page are measured (gzip size) and compared with the budget in [Targets](#targets). The Worker bundle size is also bounded by Cloudflare's script size limit; `wrangler deploy --dry-run` reports it.

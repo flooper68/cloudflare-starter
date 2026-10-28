@@ -274,7 +274,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "storage.listFiles",
     "List files",
-    "Lists the files of the workspace, newest first: id, filename, content type, size, upload time."
+    "Lists the files of the workspace, newest first: id, filename, content type, size, upload time. Files in the trash are not listed (see list_trash)."
   ),
   direct(
     "get_download_url",
@@ -289,6 +289,43 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "storage.createUpload",
     "Create upload URL",
     "Creates a file record in the workspace and returns a presigned PUT URL for uploading up to 10 MB. Upload with an HTTP PUT and the same Content-Type. Needs a plan with direct uploads (files.presigned_upload) and room in the storage and monthly upload limits; otherwise FORBIDDEN with domain.kind limit_reached."
+  ),
+  direct(
+    "delete_file",
+    "write",
+    "storage.deleteFile",
+    "Move file to trash",
+    "Moves a file of the workspace (by id, see list_files) to the trash: it leaves the file list and downloads at once and is deleted for good after 30 days. Restorable with restore_from_trash until then. Members and owners."
+  ),
+  direct(
+    "list_trash",
+    "read",
+    "trash.list",
+    "List trash",
+    "Lists what is in the workspace's trash, most recently deleted first: type (file), id, label, size, when and by whom it was deleted, and purgeAt (when it is deleted for good). Optional type filter; page with cursor (nextCursor) and limit (up to 100). can.restore and can.purge say what the user may do."
+  ),
+  direct(
+    "restore_from_trash",
+    "write",
+    "trash.restore",
+    "Restore from trash",
+    "Restores items (1 to 100, each { type, id } from list_trash) from the workspace's trash to where they were. All or nothing: NOT_FOUND if any item is not in this trash."
+  ),
+  direct(
+    "delete_from_trash_permanently",
+    "write",
+    "trash.deletePermanently",
+    "Delete from trash permanently",
+    "Deletes items (1 to 100, each { type, id } from list_trash) from the workspace's trash for good, with their stored bytes. Cannot be undone. Owners only. Confirm the items with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "empty_trash",
+    "write",
+    "trash.empty",
+    "Empty trash",
+    "Deletes everything in the workspace's trash for good. Cannot be undone. Owners only. Confirm with the user before calling.",
+    { destructive: true }
   ),
   direct(
     "enqueue_hello",

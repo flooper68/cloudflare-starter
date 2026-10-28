@@ -122,6 +122,12 @@ export {
   type SettingsSectionProps,
 } from "../components/patterns/settings-page";
 export {
+  TrashList,
+  type TrashListItem,
+  type TrashListProps,
+  TrashListSkeleton,
+} from "../components/patterns/trash-list";
+export {
   type WorkspaceOption,
   WorkspaceSwitcher,
   type WorkspaceSwitcherProps,

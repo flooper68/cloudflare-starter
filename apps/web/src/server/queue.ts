@@ -26,6 +26,8 @@ import { loggerFor, type Platform, tracerFor } from "@/server/platform";
 /** What the consumer needs besides the platform; tests pass their own catalog and random. */
 export interface QueueDeps {
   readonly db: JobDeps["db"];
+  /** The `FILES` bucket (env.FILES): the trash purge deletes objects. */
+  readonly bucket: JobDeps["bucket"];
   readonly catalog: JobCatalog<JobDeps>;
   readonly random: Random;
   /** `max_retries` of the consumer in wrangler.jsonc. */
@@ -36,6 +38,7 @@ export interface QueueDeps {
 export function queueDeps(env: AppEnv): QueueDeps {
   return {
     db: getDb(env),
+    bucket: env.FILES,
     catalog: jobCatalog,
     random: mathRandom,
     maxRetries: JOB_MAX_RETRIES,
@@ -159,6 +162,7 @@ async function handleMessage(
       const outcome = await runJob(
         {
           db: deps.db,
+          bucket: deps.bucket,
           clock: systemClock,
           ids: randomIds,
           logger,

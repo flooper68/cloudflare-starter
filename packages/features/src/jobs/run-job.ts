@@ -24,6 +24,8 @@ export interface JobDeps {
   readonly logger: Logger;
   /** For jobs that fan out into more jobs. */
   readonly jobQueue: JobQueue;
+  /** The `FILES` bucket: purges remove objects before rows. */
+  readonly bucket: R2Bucket;
 }
 
 /**

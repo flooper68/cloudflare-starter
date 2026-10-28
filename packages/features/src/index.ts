@@ -1,5 +1,5 @@
 // Package root: each feature's public API, the shared kernel and platform, and the
-// composition roots (database, job catalog, cron catalog). Apps import only from here.
+// composition roots (database, job catalog, cron catalog, trash catalog). Apps import only from here.
 export * from "./abuse";
 export * from "./accounts";
 export * from "./audit";
@@ -13,4 +13,6 @@ export { jobCatalog } from "./job-catalog";
 export * from "./jobs";
 export * from "./kernel";
 export * from "./platform";
+export * from "./trash";
+export { TRASH_CATALOG } from "./trash-catalog";
 export * from "./workspaces";

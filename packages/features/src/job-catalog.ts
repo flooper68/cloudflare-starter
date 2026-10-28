@@ -11,6 +11,8 @@ import {
   purgeIdempotencyKeysJob,
   registerJob,
 } from "./jobs";
+import { purgeExpiredTrash, purgeExpiredTrashJob } from "./trash";
+import { TRASH_CATALOG } from "./trash-catalog";
 
 export const jobCatalog = createJobCatalog<JobDeps>([
   registerJob(helloJob, sayHello),
@@ -32,5 +34,12 @@ export const jobCatalog = createJobCatalog<JobDeps>([
       ids: deps.ids,
       requestContext: job.context,
     })
+  ),
+  // Cutoff as of the cron run's time; audited and continued with the delivery's trace.
+  registerJob(purgeExpiredTrashJob, (deps: JobDeps, payload, job) =>
+    purgeExpiredTrash(
+      { ...deps, requestContext: job.context, entities: TRASH_CATALOG },
+      payload
+    )
   ),
 ]);

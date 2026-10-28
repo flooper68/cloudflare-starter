@@ -22,6 +22,7 @@ function deps(iso = "2026-10-28T12:00:00.000Z"): JobDeps {
     ids: sequentialIds(),
     logger: createMemoryLogger(),
     jobQueue: createMemoryJobQueue(),
+    bucket: env.FILES,
   };
 }
 

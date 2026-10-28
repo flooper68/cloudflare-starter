@@ -16,6 +16,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - One Worker for HTTP, the queue consumer and Cron Triggers
 - Typed background jobs on Cloudflare Queues: CloudEvents envelopes that carry the caller's trace and user, per-job exponential backoff, idempotency keys in D1, a final-failure report and a dead-letter queue kept 14 days; a cron catalog checked against `wrangler.jsonc`
 - R2 two ways: through the Worker with the `FILES` binding, or direct with presigned URLs
+- Soft delete with a workspace trash: deleted files can be restored for 30 days, owners delete for good sooner, a daily job purges the rest (R2 objects first), a generic trash any table can join, and an architecture test that no live read sees trashed rows
 - Cloudflare Email Service through the `send_email` binding (simulated in local dev)
 - Append-only audit log in D1 (sign-in, failed sign-in, sign-up, password reset and change; admin and workspace actions in the catalog): typed actions with strict metadata, the request's trace id on every event, OCSF-aligned fields, daily retention purge, and an architecture test that every state change is audited
 - OpenTelemetry-shaped logs and error reports in Workers Logs (exportable over OTLP) behind swappable ports (Logger, ErrorReporter), W3C Trace Context across HTTP and background jobs, and a reference (the trace id) users can quote instead of a stack trace

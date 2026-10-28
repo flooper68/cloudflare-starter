@@ -29,6 +29,14 @@ describe("permissions", () => {
     expect(can("member", "billing.manage")).toBe(false);
   });
 
+  it("lets members move files to the trash and restore them; only owners delete permanently", () => {
+    expect(can("member", "files.delete")).toBe(true);
+    expect(can("member", "trash.read")).toBe(true);
+    expect(can("member", "trash.restore")).toBe(true);
+    expect(can("member", "trash.purge")).toBe(false);
+    expect(rolesAllowedTo("trash.purge")).toEqual(["owner"]);
+  });
+
   it("keeps someone able to manage members: the creator's role can, and transfer ownership", () => {
     expect(ACTIONS["members.manage"].length).toBeGreaterThan(0);
     expect(can(CREATOR_ROLE, "members.manage")).toBe(true);

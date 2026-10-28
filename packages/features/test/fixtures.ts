@@ -9,6 +9,8 @@ import {
   type Database,
   type RequestContext,
   type Role,
+  storeFile,
+  trashFile,
   type WorkspaceSettings,
 } from "../src";
 
@@ -177,6 +179,26 @@ export function useCaseDeps(at?: string) {
 /** Dependencies of a billing use case: useCaseDeps plus the BILLING mode (manual unless stated). */
 export function billingDeps(mode: BillingMode = "manual", at?: string) {
   return { ...useCaseDeps(at), settings: { mode } };
+}
+
+/** Stores a small text file in the actor's workspace (D1 row and `FILES` object). */
+export async function storeTestFile(
+  actor: Actor,
+  filename = "roadmap.txt",
+  content = "Q4 roadmap"
+) {
+  const body = new TextEncoder().encode(content).buffer as ArrayBuffer;
+  return storeFile({ ...useCaseDeps(), bucket: env.FILES }, actor, {
+    filename,
+    mimeType: "text/plain",
+    sizeBytes: body.byteLength,
+    body,
+  });
+}
+
+/** Moves a file to the actor's workspace's trash at `at`. */
+export function trashTestFile(actor: Actor, fileId: string, at?: string) {
+  return trashFile(useCaseDeps(at), actor, { fileId });
 }
 
 /** Audit events recorded for a workspace, oldest first: action, target and metadata. */

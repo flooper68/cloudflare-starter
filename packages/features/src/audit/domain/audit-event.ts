@@ -22,8 +22,18 @@ export const AUDIT_TARGET_TYPES = [
   "workspace",
   "invitation",
   "feature_flag",
+  "file",
 ] as const;
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
+
+/**
+ * Targets that can sit in a workspace's trash: one per entity of the trash catalog
+ * (packages/features/src/trash-catalog.ts), whose `type` must be one of these.
+ */
+export const AUDIT_TRASH_TARGET_TYPES = [
+  "file",
+] as const satisfies readonly AuditTargetType[];
+export type AuditTrashTargetType = (typeof AUDIT_TRASH_TARGET_TYPES)[number];
 
 const ID_MAX = 320;
 const TEXT_MAX = 200;
@@ -52,6 +62,10 @@ export type AuditActor = z.infer<typeof auditActorSchema>;
 function target<const T extends AuditTargetType>(type: T) {
   return z.object({ type: z.literal(type), id }).strict();
 }
+
+const trashEntityType = z.enum(AUDIT_TRASH_TARGET_TYPES);
+/** A trashed thing: its type is also `metadata.entityType`. */
+const trashTarget = z.object({ type: trashEntityType, id }).strict();
 
 /** Fields every event has besides its action, target and metadata. */
 const common = {
@@ -275,6 +289,32 @@ export const auditEventSchema = z.discriminatedUnion("action", [
       .object({
         ruleCount: z.number().int().min(0).max(50),
         ruleKinds: z.array(z.enum(["workspace", "plan", "percentage"])).max(50),
+      })
+      .strict(),
+  }),
+
+  // Trash (recorded by the entities' "move to trash" use cases and the trash use cases).
+  z.object({
+    ...inWorkspace,
+    action: z.literal("trash.item_trashed"),
+    target: trashTarget,
+    metadata: z.object({ entityType: trashEntityType }).strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("trash.item_restored"),
+    target: trashTarget,
+    metadata: z.object({ entityType: trashEntityType }).strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    /** Deleted for good; `retention` purges are the system's, the others a member's. */
+    action: z.literal("trash.item_purged"),
+    target: trashTarget,
+    metadata: z
+      .object({
+        entityType: trashEntityType,
+        reason: z.enum(["manual", "empty_trash", "retention"]),
       })
       .strict(),
   }),

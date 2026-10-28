@@ -9,6 +9,7 @@ import { expireTrialsJob } from "./billing";
 import { createCronCatalog, enqueueJob, purgeIdempotencyKeysJob } from "./jobs";
 import type { Clock, Ids } from "./kernel";
 import type { JobQueue, Logger } from "./platform";
+import { purgeExpiredTrashJob } from "./trash";
 
 /** What a cron entry may use. */
 export interface CronDeps {
@@ -46,6 +47,17 @@ export const cronCatalog = createCronCatalog<CronDeps>([
       enqueueJob(
         deps,
         expireTrialsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
+  },
+  {
+    name: "trash.purge-expired",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeExpiredTrashJob,
         { asOf: new Date(scheduledTime).toISOString() },
         { context }
       ),

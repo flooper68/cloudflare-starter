@@ -298,12 +298,16 @@ CREATE TABLE `files` (
 	`size_bytes` integer NOT NULL,
 	`created_by` text,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	`deleted_at` integer,
+	`deleted_by` text,
 	FOREIGN KEY (`workspace_id`) REFERENCES `workspaces`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
+	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null,
+	FOREIGN KEY (`deleted_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `files_r2_key_unique` ON `files` (`r2_key`);--> statement-breakpoint
 CREATE INDEX `files_workspace_id_created_at_idx` ON `files` (`workspace_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `files_workspace_id_deleted_at_idx` ON `files` (`workspace_id`,`deleted_at`) WHERE "files"."deleted_at" IS NOT NULL;--> statement-breakpoint
 CREATE TABLE `job_idempotency_keys` (
 	`key` text PRIMARY KEY NOT NULL,
 	`job_type` text NOT NULL,

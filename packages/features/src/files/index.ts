@@ -5,6 +5,7 @@ export { deleteWorkspaceFiles } from "./delete-workspace-files";
 export {
   buildFileKey,
   FILE_BUCKETS,
+  FILE_TRASH_RETENTION_DAYS,
   type FileBucket,
   FileNotFoundError,
   MAX_UPLOAD_BYTES,
@@ -18,3 +19,5 @@ export { measureWorkspaceStorage } from "./measure-workspace-storage";
 export type { R2Config } from "./r2-presign";
 export { readWorkspaceFile } from "./read-workspace-file";
 export { storeFile } from "./store-file";
+export { fileTrash } from "./trash";
+export { trashFile } from "./trash-file";

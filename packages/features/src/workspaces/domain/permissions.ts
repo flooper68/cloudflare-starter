@@ -25,6 +25,10 @@ export const DEFAULT_MEMBER_ROLE: Role = "member";
 export const ACTIONS = {
   "files.read": ["owner", "member"],
   "files.write": ["owner", "member"],
+  "files.delete": ["owner", "member"],
+  "trash.read": ["owner", "member"],
+  "trash.restore": ["owner", "member"],
+  "trash.purge": ["owner"],
   "members.read": ["owner", "member"],
   "members.manage": ["owner"],
   "invitations.read": ["owner"],

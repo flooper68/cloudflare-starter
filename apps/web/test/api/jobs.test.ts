@@ -88,6 +88,7 @@ function setup(jobs = catalog) {
   };
   const deps: QueueDeps = {
     db: getDb(env as AppEnv),
+    bucket: (env as AppEnv).FILES,
     catalog: jobs,
     random: { next: () => 0.5 },
     maxRetries: JOB_MAX_RETRIES,

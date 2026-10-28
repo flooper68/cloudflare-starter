@@ -30,7 +30,7 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
 };
 
 /** Routers whose procedures act inside one workspace. */
-const WORKSPACE_ROUTERS = ["storage", "workspace", "flags"] as const;
+const WORKSPACE_ROUTERS = ["storage", "workspace", "flags", "trash"] as const;
 
 /** Procedures of those routers that act for the signed-in user, not in one workspace. */
 const USER_LEVEL_PROCEDURES: Readonly<Record<string, string>> = {
@@ -43,7 +43,12 @@ const USER_LEVEL_PROCEDURES: Readonly<Record<string, string>> = {
 };
 
 /** Features whose data is workspace-scoped: their use cases take an actor. */
-const WORKSPACE_SCOPED_FEATURES = ["billing", "files", "workspaces"] as const;
+const WORKSPACE_SCOPED_FEATURES = [
+  "billing",
+  "files",
+  "trash",
+  "workspaces",
+] as const;
 
 /** Files in those features that are not actor use cases, with the reason. */
 const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
@@ -76,6 +81,12 @@ const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
   "files/r2-presign.ts": "S3 signing helper, not a use case",
   "files/delete-workspace-files.ts":
     "runs during account deletion for workspaces being deleted; no actor exists",
+  "files/trash.ts":
+    "the files entity of the trash catalog, not a use case; the trash use cases take the actor",
+  "trash/define-trashable-entity.ts":
+    "declares a trashable entity (the contract), not a use case",
+  "trash/purge-expired-trash.ts":
+    "daily retention job over all workspaces; no actor",
   "workspaces/resolve-actor.ts": "builds the actor",
   "workspaces/list-workspaces.ts": "the user's workspaces across all of them",
   "workspaces/create-workspace.ts": "creates a workspace; no actor yet",
