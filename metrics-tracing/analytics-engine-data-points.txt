@@ -1,0 +1,210 @@
+EVIDENCE_RAW [
+  {
+    "indexes": [
+      "rpc.server.call.duration"
+    ],
+    "blobs": [
+      "trpc",
+      "storage.listFiles",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "histogram",
+      "s",
+      "cloudflare-starter-web",
+      "local",
+      "3e56fe5c-112f-4ef6-9998-1e165cf7d0e1"
+    ],
+    "doubles": [
+      0.002,
+      1,
+      0.002,
+      0.002,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "indexes": [
+      "http.server.request.duration"
+    ],
+    "blobs": [
+      "GET",
+      "/api/trpc/[...trpc]",
+      "200",
+      "http",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "histogram",
+      "s",
+      "cloudflare-starter-web",
+      "local",
+      "3e56fe5c-112f-4ef6-9998-1e165cf7d0e1"
+    ],
+    "doubles": [
+      0.006,
+      1,
+      0.006,
+      0.006,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+]
+EVIDENCE_DECODED [
+  {
+    "name": "rpc.server.call.duration",
+    "kind": "histogram",
+    "unit": "s",
+    "attributes": {
+      "rpc.system.name": "trpc",
+      "rpc.method": "storage.listFiles"
+    },
+    "sum": 0.002,
+    "count": 1,
+    "min": 0.002,
+    "max": 0.002,
+    "boundaries": [
+      0.005,
+      0.01,
+      0.025,
+      0.05,
+      0.075,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      1,
+      2.5,
+      5,
+      7.5,
+      10
+    ],
+    "bucketCounts": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "resource": {
+      "service.name": "cloudflare-starter-web",
+      "deployment.environment.name": "local",
+      "service.version": "3e56fe5c-112f-4ef6-9998-1e165cf7d0e1"
+    }
+  },
+  {
+    "name": "http.server.request.duration",
+    "kind": "histogram",
+    "unit": "s",
+    "attributes": {
+      "http.request.method": "GET",
+      "http.route": "/api/trpc/[...trpc]",
+      "http.response.status_code": "200",
+      "url.scheme": "http"
+    },
+    "sum": 0.006,
+    "count": 1,
+    "min": 0.006,
+    "max": 0.006,
+    "boundaries": [
+      0.005,
+      0.01,
+      0.025,
+      0.05,
+      0.075,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      1,
+      2.5,
+      5,
+      7.5,
+      10
+    ],
+    "bucketCounts": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "resource": {
+      "service.name": "cloudflare-starter-web",
+      "deployment.environment.name": "local",
+      "service.version": "3e56fe5c-112f-4ef6-9998-1e165cf7d0e1"
+    }
+  }
+]
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  16:06:37
+   Duration  13.20s (transform 81%, import 12%, setup 3%, tests 3%)

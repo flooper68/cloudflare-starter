@@ -1,0 +1,240 @@
+{
+  timestamp: '2026-10-28T15:05:55.399Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'trace.span',
+  name: 'GET /api/hello',
+  kind: 'server',
+  trace_id: '9a7115668fad4a8e8bb4b930f4bbb6ca',
+  span_id: '8a819dfafb853fb9',
+  trace_flags: '01',
+  start_time: '2026-10-28T15:05:55.356Z',
+  end_time: '2026-10-28T15:05:55.399Z',
+  duration_ms: 43,
+  status: { code: 'unset' },
+  attributes: {
+    'app.request.source': 'http',
+    'http.request.method': 'GET',
+    'url.scheme': 'http',
+    'http.route': '/api/hello',
+    'url.path': '/api/hello',
+    'http.response.status_code': 200
+  },
+  events: [],
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T15:06:03.659Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'trace.span',
+  name: 'POST /api/auth/[...all]',
+  kind: 'server',
+  trace_id: '10fd2001aa144cb9b7ee1e4b44d74053',
+  span_id: '831754c5b0c75504',
+  trace_flags: '01',
+  start_time: '2026-10-28T15:06:03.564Z',
+  end_time: '2026-10-28T15:06:03.659Z',
+  duration_ms: 95,
+  status: { code: 'unset' },
+  attributes: {
+    'app.request.source': 'http',
+    'http.request.method': 'POST',
+    'url.scheme': 'http',
+    'http.route': '/api/auth/[...all]',
+    'url.path': '/api/auth/sign-up/email',
+    'http.response.status_code': 200
+  },
+  events: [],
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T15:06:03.918Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'trace.span',
+  name: 'health.hello',
+  kind: 'internal',
+  trace_id: '4bf92f3577b34da6a3ce929d0e0e4736',
+  span_id: 'b81da930dd1f3663',
+  parent_span_id: '81f320485145bc4d',
+  trace_flags: '01',
+  start_time: '2026-10-28T15:06:03.918Z',
+  end_time: '2026-10-28T15:06:03.918Z',
+  duration_ms: 0,
+  status: { code: 'unset' },
+  attributes: {
+    'app.request.source': 'http',
+    'user.id': 'EK1q5WyM0mG1jAjsCjhhZtlU2RRIfU7C',
+    'rpc.system.name': 'trpc',
+    'rpc.method': 'health.hello',
+    'app.trpc.type': 'query'
+  },
+  events: [],
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T15:06:03.918Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'trace.span',
+  name: 'GET /api/trpc/[...trpc]',
+  kind: 'server',
+  trace_id: '4bf92f3577b34da6a3ce929d0e0e4736',
+  span_id: '81f320485145bc4d',
+  parent_span_id: '00f067aa0ba902b7',
+  trace_flags: '01',
+  start_time: '2026-10-28T15:06:03.907Z',
+  end_time: '2026-10-28T15:06:03.918Z',
+  duration_ms: 11,
+  status: { code: 'unset' },
+  attributes: {
+    'app.request.source': 'http',
+    'http.request.method': 'GET',
+    'url.scheme': 'http',
+    'http.route': '/api/trpc/[...trpc]',
+    'url.path': '/api/trpc/health.hello',
+    'user.id': 'EK1q5WyM0mG1jAjsCjhhZtlU2RRIfU7C',
+    'http.response.status_code': 200
+  },
+  events: [],
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T15:06:03.976Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'trace.span',
+  name: 'queue.enqueueHello',
+  kind: 'internal',
+  trace_id: 'f77a1eb4751e4a7484cabbdbd320223e',
+  span_id: '8e8c23bf5163dc7f',
+  parent_span_id: '831ebfc2f6be0054',
+  trace_flags: '01',
+  start_time: '2026-10-28T15:06:03.970Z',
+  end_time: '2026-10-28T15:06:03.976Z',
+  duration_ms: 6,
+  status: { code: 'unset' },
+  attributes: {
+    'app.request.source': 'http',
+    'user.id': 'EK1q5WyM0mG1jAjsCjhhZtlU2RRIfU7C',
+    'rpc.system.name': 'trpc',
+    'rpc.method': 'queue.enqueueHello',
+    'app.trpc.type': 'mutation'
+  },
+  events: [],
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T15:06:03.976Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'trace.span',
+  name: 'POST /api/trpc/[...trpc]',
+  kind: 'server',
+  trace_id: 'f77a1eb4751e4a7484cabbdbd320223e',
+  span_id: '831ebfc2f6be0054',
+  trace_flags: '01',
+  start_time: '2026-10-28T15:06:03.964Z',
+  end_time: '2026-10-28T15:06:03.976Z',
+  duration_ms: 12,
+  status: { code: 'unset' },
+  attributes: {
+    'app.request.source': 'http',
+    'http.request.method': 'POST',
+    'url.scheme': 'http',
+    'http.route': '/api/trpc/[...trpc]',
+    'url.path': '/api/trpc/queue.enqueueHello',
+    'user.id': 'EK1q5WyM0mG1jAjsCjhhZtlU2RRIfU7C',
+    'http.response.status_code': 200
+  },
+  events: [],
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T15:06:04.983Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'queue.hello',
+  trace_id: 'f77a1eb4751e4a7484cabbdbd320223e',
+  span_id: 'a0edb68d74061dd9',
+  trace_flags: '01',
+  attributes: {
+    'app.request.source': 'queue',
+    'user.id': 'EK1q5WyM0mG1jAjsCjhhZtlU2RRIfU7C',
+    'messaging.system': 'cloudflare_queues',
+    'messaging.message.id': 'c0054ed53ae45782ca03ffcf641fb9ef',
+    'app.queue.attempts': 1,
+    'app.greeting.message': 'Hello, Barbara',
+    'app.greeting.queued_at': '2026-10-28T15:06:03.971Z'
+  },
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
+
+{
+  timestamp: '2026-10-28T15:06:04.984Z',
+  severity_text: 'INFO',
+  severity_number: 9,
+  body: 'trace.span',
+  name: 'process cloudflare-starter-develop',
+  kind: 'consumer',
+  trace_id: 'f77a1eb4751e4a7484cabbdbd320223e',
+  span_id: 'a0edb68d74061dd9',
+  parent_span_id: '8e8c23bf5163dc7f',
+  trace_flags: '01',
+  start_time: '2026-10-28T15:06:04.983Z',
+  end_time: '2026-10-28T15:06:04.984Z',
+  duration_ms: 1,
+  status: { code: 'unset' },
+  attributes: {
+    'app.request.source': 'queue',
+    'user.id': 'EK1q5WyM0mG1jAjsCjhhZtlU2RRIfU7C',
+    'messaging.system': 'cloudflare_queues',
+    'messaging.operation.name': 'process',
+    'messaging.destination.name': 'cloudflare-starter-develop',
+    'messaging.message.id': 'c0054ed53ae45782ca03ffcf641fb9ef',
+    'app.queue.attempts': 1,
+    'app.queue.message_type': 'hello',
+    'app.queue.outcome': 'ack'
+  },
+  events: [],
+  resource: {
+    'service.name': 'cloudflare-starter-web',
+    'service.version': '4f8233d7-3927-4808-af86-77457cc6d8bb',
+    'deployment.environment.name': 'local'
+  }
+}
