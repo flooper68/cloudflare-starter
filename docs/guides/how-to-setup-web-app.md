@@ -25,7 +25,7 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), Cron Triggers. Plain vars there: `APP_ENV`, `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`.
+Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
 
 Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config.ts):
 
@@ -52,8 +52,10 @@ Open `http://localhost:4321`, create an account at `/sign-up`, and you land on `
 
 Queue and cron run in the same dev server:
 
-- `/app/queue-demo` sends a message; the consumer logs `queue-hello` in the dev output.
-- `curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"` runs the cron handler, which logs `cron-hello`.
+- `/app/queue-demo` sends a message; the consumer logs a `body: 'queue.hello'` record in the dev output, with the `trace_id` of the request that queued it.
+- `curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"` runs the cron handler, which logs a `body: 'cron.hello'` record.
+
+Every response has `traceparent` and `x-request-id` headers; the trace id in them is the `trace_id` of that request's log records.
 
 ## Deploy
 
@@ -93,9 +95,9 @@ The environment is picked when building: `deploy:production` runs `CLOUDFLARE_EN
 ## Queues and Cron
 
 - Producer: tRPC `queue.enqueueHello` sends a typed message (the greetings feature's `sendHello`; message types in `packages/features/src/queue-messages.ts`).
-- Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). A malformed message is logged and dropped; a failing handler is retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
-- Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC). With several schedules, branch on `controller.cron`.
-- Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard (observability is on).
+- Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). Each message runs with its own request context, continuing the trace of the `traceparent` the producer put on it. A malformed message is logged (`queue.invalid`) and dropped; a failing handler is reported (`error.captured`) and retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
+- Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC), a request context per run. With several schedules, branch on `controller.cron`.
+- Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard; filtering and fields in [how-to-setup-logging.md](how-to-setup-logging.md).
 
 ## Verify
 
@@ -109,6 +111,14 @@ The environment is picked when building: `deploy:production` runs `CLOUDFLARE_EN
 ### Every page returns 500 with a zod error
 
 A required secret is missing or too short. Check `APP_URL` and `BETTER_AUTH_SECRET` (32+ characters) in `.dev.vars` or the Worker secrets.
+
+### Every request returns 500 "LOG_SINK is not set" (or ERROR_REPORTER, APP_ENV)
+
+The var is missing from this environment's `vars` in `wrangler.jsonc`, or `.dev.vars` has a blank `LOG_SINK=` line that unsets it. Set it to `workers-logs` or `none`, or `APP_ENV` to the environment's name ([how-to-setup-logging.md](how-to-setup-logging.md)); `bun run doctor` points at the environment.
+
+### A user reports an error with a reference
+
+The reference is the trace id. Search Workers Logs for `trace_id = <reference>` ([how-to-setup-error-reporting.md](how-to-setup-error-reporting.md#finding-a-report)).
 
 ### `no such table: user`
 

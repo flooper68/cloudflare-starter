@@ -1,0 +1,7 @@
+// Server code logs through the Logger port, never the console: console output is
+// unstructured, skips redaction and cannot be switched off or sent to another sink.
+// Applied to packages/features/src and apps/web/src/server, except the Cloudflare adapters
+// (the one place that writes to the console) and tests (biome.json overrides).
+`console.$method($...)` as $call where {
+  register_diagnostic(span=$call, message="No console in server code: log through the Logger port (ctx.logger, or loggerFor(platform, context)) and report errors with the ErrorReporter. See docs/architecture/overview.md#ports-and-adapters.")
+}

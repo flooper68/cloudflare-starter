@@ -3,6 +3,10 @@
 # Deployed environments get secrets with `bun run setup:secrets --env <env>`.
 
 # Core (required)
+# Overrides APP_ENV=develop from wrangler.jsonc: "local" marks this as local
+# development, the only environment where auth links (which carry tokens) may be
+# logged when email is off.
+APP_ENV=local
 APP_URL=http://localhost:4321
 # At least 32 characters. Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=local-dev-secret-change-me-0000000000
@@ -16,9 +20,17 @@ GOOGLE_CLIENT_SECRET=
 
 # Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
 # is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
-# email off; auth links are then printed to the log.
+# email off; auth links are then printed to the dev log (only with APP_ENV=local).
 EMAIL_FROM=noreply@example.test
 EMAIL_FROM_NAME=Cloudflare Starter
+
+# Logging and error reports. LOG_SINK and ERROR_REPORTER are required vars set in
+# apps/web/wrangler.jsonc for every environment (workers-logs | none); they are not
+# secrets. To override them locally, uncomment a line here. Never leave one blank:
+# a blank value here unsets the wrangler.jsonc var and every request fails with
+# "LOG_SINK is not set". Guide: docs/guides/how-to-setup-logging.md
+# LOG_SINK=none
+# ERROR_REPORTER=none
 
 # R2 presigned URLs (optional). The FILES binding needs nothing here.
 R2_ACCOUNT_ID=

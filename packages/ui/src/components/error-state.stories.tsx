@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 
 import { Button } from "./button";
 import { Card } from "./card";
@@ -65,6 +66,34 @@ export const Inline: Story = {
       <ErrorState
         variant="inline"
         description="Couldn't save the title."
+        onRetry={() => new Promise((resolve) => setTimeout(resolve, 800))}
+      />
+    </div>
+  ),
+};
+
+/** An unexpected server error: the reference (trace id) is what the user quotes to support. */
+export const WithReference: Story = {
+  args: {
+    title: "Couldn't queue the message",
+    description: "Something went wrong on our side. Try again in a moment.",
+    reference: "4bf92f3577b34da6a3ce929d0e0e4736",
+  },
+  play: async ({ canvasElement }) => {
+    const alert = within(canvasElement).getByRole("alert");
+    await expect(alert).toHaveTextContent(
+      "Reference 4bf92f3577b34da6a3ce929d0e0e4736"
+    );
+  },
+};
+
+export const InlineWithReference: Story = {
+  render: () => (
+    <div className="w-96">
+      <ErrorState
+        variant="inline"
+        description="Internal error"
+        reference="4bf92f3577b34da6a3ce929d0e0e4736"
         onRetry={() => new Promise((resolve) => setTimeout(resolve, 800))}
       />
     </div>

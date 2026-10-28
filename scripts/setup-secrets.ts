@@ -99,8 +99,9 @@ const names = Object.keys(collected);
 if (dryRun) {
   console.log(`(dry run) would store: ${names.join(", ") || "nothing"}`);
 } else if (local) {
-  writeDevVars(collected);
-  console.log(`✓ apps/web/.dev.vars: ${names.join(", ")}`);
+  // APP_ENV=local marks local development: the only place auth links may be logged.
+  writeDevVars({ APP_ENV: "local", ...collected });
+  console.log(`✓ apps/web/.dev.vars: ${["APP_ENV", ...names].join(", ")}`);
 } else {
   const [env] = parseEnvironments(target) as [Environment];
   if (names.length === 0) {

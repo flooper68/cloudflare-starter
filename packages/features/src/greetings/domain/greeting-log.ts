@@ -1,12 +1,12 @@
 import type { HelloMessage } from "./hello-message";
 
-/** The structured log line for a consumed hello message. */
-export function helloGreeting(message: HelloMessage, environment: string) {
+/**
+ * Log attributes for a consumed hello message (OpenTelemetry `app.*` keys; the event name,
+ * user, environment and trace ids come from the logger).
+ */
+export function helloGreeting(message: HelloMessage) {
   return {
-    tag: "queue-hello",
-    environment,
-    message: `Hello, ${message.name}`,
-    userId: message.userId,
-    queuedAt: message.queuedAt,
+    "app.greeting.message": `Hello, ${message.name}`,
+    "app.greeting.queued_at": message.queuedAt,
   } as const;
 }

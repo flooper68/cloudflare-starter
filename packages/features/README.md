@@ -11,8 +11,9 @@ src/
 ├── index.ts            package root: re-exports each folder's barrel; apps import only from here
 ├── database.ts         composition root: every feature's tables in one schema, createDatabase()
 ├── queue-messages.ts   composition root: every message type on APP_QUEUE
-├── kernel/             pure shared building blocks: DomainError, Clock and Ids interfaces
-├── platform/           shared infrastructure: Drizzle client, email service, queue send, clock, ids
+├── kernel/             pure shared building blocks: DomainError, Clock, Ids, RequestContext
+├── platform/           shared infrastructure: Drizzle client, email service, queue send, clock, ids,
+│                       request context; ports/ (Logger, ErrorReporter) and adapters/<vendor>/
 ├── accounts/           Better Auth tables (generated) and user lookups
 ├── files/              file records and R2 storage (binding and presigned URLs)
 └── greetings/          the queue and cron demo
@@ -36,6 +37,7 @@ files/
 - Folders import each other only through `index.ts`; `platform/` never imports a feature.
 - Use cases throw `DomainError` subclasses; apps map them to tRPC codes or HTTP statuses in one place.
 - Use cases import the `Database` type from `../database` with `import type`.
+- Outside services only through a port in `platform/ports/`; vendor code and `console` only in `platform/adapters/<vendor>/`, each adapter with a contract test ([Ports and adapters](../../docs/architecture/overview.md#ports-and-adapters)).
 
 ## Adding a feature
 

@@ -9,7 +9,13 @@ export interface AppEnv {
   readonly DB: D1Database;
   readonly FILES: R2Bucket;
   readonly APP_QUEUE?: Queue<QueueMessage>;
+  /** version_metadata binding: the deployed version id is the `release` in logs and reports. */
+  readonly CF_VERSION_METADATA?: WorkerVersionMetadata;
   readonly APP_ENV?: string;
+  /** Required var, validated by `parsePlatformConfig`: workers-logs | none. */
+  readonly LOG_SINK?: string;
+  /** Required var, validated by `parsePlatformConfig`: workers-logs | none. */
+  readonly ERROR_REPORTER?: string;
   readonly APP_URL?: string;
   readonly BETTER_AUTH_SECRET?: string;
   readonly GOOGLE_CLIENT_ID?: string;

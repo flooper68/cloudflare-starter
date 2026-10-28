@@ -13,6 +13,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - One Worker for HTTP, the queue consumer (with a dead-letter queue) and Cron Triggers
 - R2 two ways: through the Worker with the `FILES` binding, or direct with presigned URLs
 - Cloudflare Email Service through the `send_email` binding (simulated in local dev)
+- OpenTelemetry-shaped logs and error reports in Workers Logs (exportable over OTLP) behind swappable ports (Logger, ErrorReporter), W3C Trace Context across HTTP and queue messages, and a reference (the trace id) users can quote instead of a stack trace
 - Component library in Linear's visual language (dark-first, dense, keyboard-first): 60+ components from buttons to data tables, command palette, kanban and app shell, themed by tokens, re-branded in two files
 - Storybook built into the web app at `/_storybook/` in every environment
 - Cloudflare Container demo, deployed as its own Worker
@@ -35,15 +36,15 @@ This repository is a template, not a framework. When you start a project from it
 
 2. **Strip what the product does not use.** Every feature here is a demo of a pattern; keeping unused ones costs bindings, secrets, provisioning and review surface. Typical cuts:
 
-   | Not needed      | Remove                                                                                                                                                                                     |
-   | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-   | Containers      | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script                                                                                                          |
-   | Storybook       | `apps/storybook`, the root `storybook`/`build-storybook`/`test:components` scripts, the Storybook step in `apps/web`'s `build`, the CI `components` job                                    |
-   | Background jobs | `queue` in `apps/web/src/worker.ts`, `src/server/queue.ts`, `queues` in `wrangler.jsonc`, `packages/features/src/greetings` and `queue-messages.ts`, the queue demo                        |
-   | Scheduled work  | `scheduled` in `src/worker.ts`, `src/server/cron.ts`, `triggers` in `wrangler.jsonc`                                                                                                       |
-   | File storage    | `packages/features/src/files` (feature, table), `r2_buckets`, `/api/files`, the upload demo and its E2E journey (`apps/web/test/e2e/upload.spec.ts`); or keep only one of the two R2 paths |
-   | Email           | `packages/features/src/platform/email.ts`, `send_email` and `EMAIL_FROM*` in `wrangler.jsonc`, the email demo; auth links then go to the log                                               |
-   | Google sign-in  | `GOOGLE_*` values and `GoogleSignInButton`                                                                                                                                                 |
+   | Not needed      | Remove                                                                                                                                                                                                                             |
+   | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Containers      | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script                                                                                                                                                  |
+   | Storybook       | `apps/storybook`, the root `storybook`/`build-storybook`/`test:components` scripts, the Storybook step in `apps/web`'s `build`, the CI `components` job                                                                            |
+   | Background jobs | `queue` in `apps/web/src/worker.ts`, `src/server/queue.ts`, `queues` in `wrangler.jsonc`, `packages/features/src/greetings` and `queue-messages.ts`, the queue demo                                                                |
+   | Scheduled work  | `scheduled` in `src/worker.ts`, `src/server/cron.ts`, `triggers` in `wrangler.jsonc`                                                                                                                                               |
+   | File storage    | `packages/features/src/files` (feature, table), `r2_buckets`, `/api/files`, the upload demo and its E2E journey (`apps/web/test/e2e/upload.spec.ts`); or keep only one of the two R2 paths                                         |
+   | Email           | `packages/features/src/platform/email.ts`, `send_email` and `EMAIL_FROM*` in `wrangler.jsonc`, the email demo; auth links then go to the dev log locally (APP_ENV=local), and deployed, password reset and verification answer 412 |
+   | Google sign-in  | `GOOGLE_*` values and `GoogleSignInButton`                                                                                                                                                                                         |
 
    Keep MCP: it is how agents use the product. When you delete an API, delete its tool; the parity test tells you.
 

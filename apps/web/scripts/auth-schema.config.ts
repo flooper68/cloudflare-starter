@@ -13,6 +13,7 @@ import type { AppEnv } from "../src/server/env";
 const env = {
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "schema-generation-only-secret-000000",
+  APP_ENV: "local",
 } as unknown as AppEnv;
 
 export const auth = betterAuth(createAuthOptions(env));

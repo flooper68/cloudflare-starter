@@ -3,10 +3,15 @@ import {
   Card,
   CardDescription,
   CardTitle,
+  ErrorState,
   Input,
   Label,
 } from "@cloudflare-starter/ui";
 import { useState } from "react";
+import {
+  errorReference,
+  UNEXPECTED_ERROR_MESSAGE,
+} from "@/lib/error-reference";
 import { trpc } from "@/lib/trpc/client";
 import { usePresignedUpload } from "@/lib/upload-client";
 
@@ -14,6 +19,7 @@ export function UploadDemoClient() {
   const [fileId, setFileId] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("No file uploaded yet.");
+  const [failure, setFailure] = useState<unknown>(null);
 
   const upload = usePresignedUpload(async (file) =>
     trpc.storage.createUpload.mutate({
@@ -29,6 +35,7 @@ export function UploadDemoClient() {
 
     setStatus("Creating file record and uploading to R2...");
     setDownloadUrl(null);
+    setFailure(null);
 
     try {
       const result = await upload.upload(file);
@@ -39,8 +46,8 @@ export function UploadDemoClient() {
       setDownloadUrl(signed.url);
       setStatus("Upload complete. Signed download URL minted.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Upload failed";
-      setStatus(message);
+      setFailure(error);
+      setStatus("Not uploaded.");
     }
   }
 
@@ -60,11 +67,21 @@ export function UploadDemoClient() {
         <Input id="presigned-upload-file" type="file" onChange={onFileChange} />
       </div>
 
+      {failure ? (
+        <ErrorState
+          variant="inline"
+          error={failure}
+          description={
+            errorReference(failure) ? UNEXPECTED_ERROR_MESSAGE : undefined
+          }
+          reference={errorReference(failure)}
+        />
+      ) : null}
+
       <div className="rounded-xl bg-surface p-4 text-sm text-fg-muted">
         <p>Status: {status}</p>
         <p>Uploading: {upload.isUploading ? "yes" : "no"}</p>
         <p>Progress: {upload.progress}%</p>
-        {upload.error ? <p>Error: {upload.error}</p> : null}
         {fileId ? <p>File ID: {fileId}</p> : null}
       </div>
 

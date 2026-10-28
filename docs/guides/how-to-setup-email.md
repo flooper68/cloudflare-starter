@@ -7,7 +7,7 @@ What sends mail:
 - `/app/email-demo` (tRPC `email.sendTest`, MCP tool `send_test_email`)
 - Better Auth: password reset links and, when enabled, email verification
 
-Email is on when the environment has the `EMAIL` binding and an `EMAIL_FROM` var. Without them the demo reports "not configured" and auth links are printed to the log.
+Email is on when the environment has the `EMAIL` binding and an `EMAIL_FROM` var. Without them the demo reports "not configured". Auth links (password reset, verification) then go to the dev log only when `APP_ENV=local` (set in `.dev.vars`); a deployed environment never logs them and answers those requests with 412 `EMAIL_NOT_CONFIGURED` ("Email is not configured for this environment …").
 
 ## Local Development
 

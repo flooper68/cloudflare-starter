@@ -22,7 +22,8 @@ const envSchema = z.object({
   AUTH_REQUIRE_EMAIL_VERIFICATION: flag(false),
   EMAIL_FROM: z.email().optional(),
   EMAIL_FROM_NAME: z.string().min(1).optional(),
-  APP_ENV: z.string().min(1).default("local"),
+  // Required, no default (validated with a named error by parsePlatformConfig).
+  APP_ENV: z.enum(["local", "develop", "staging", "production"]),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
@@ -47,6 +48,66 @@ export interface FeatureConfig<T> {
 
 export function parseAppConfig(env: PartialEnv): AppConfig {
   return envSchema.parse(env);
+}
+
+/** Where logs go: Cloudflare Workers Logs, or nowhere. */
+export const LOG_SINKS = ["workers-logs", "none"] as const;
+/** Where error reports go: Cloudflare Workers Logs, or nowhere (users still get a reference). */
+export const ERROR_REPORTERS = ["workers-logs", "none"] as const;
+
+/** Which deployment this is: `local` only in .dev.vars, the others in wrangler.jsonc. */
+export const APP_ENVS = ["local", "develop", "staging", "production"] as const;
+
+export interface PlatformConfig {
+  readonly APP_ENV: (typeof APP_ENVS)[number];
+  readonly LOG_SINK: (typeof LOG_SINKS)[number];
+  readonly ERROR_REPORTER: (typeof ERROR_REPORTERS)[number];
+}
+
+/** A required setting is missing or invalid; the message names it and the allowed values. */
+export class ConfigError extends Error {
+  readonly setting: string;
+
+  constructor(setting: string, message: string) {
+    super(message);
+    this.name = "ConfigError";
+    this.setting = setting;
+  }
+}
+
+function requiredChoice<T extends string>(
+  env: PartialEnv,
+  name: string,
+  allowed: readonly T[],
+  where = "in the vars of apps/web/wrangler.jsonc for every environment"
+): T {
+  const value = env[name];
+  const hint = `set ${name} to one of ${allowed.join(", ")} ${where}`;
+  if (value === undefined || value === "") {
+    throw new ConfigError(name, `${name} is not set: ${hint}`);
+  }
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new ConfigError(name, `${name} is "${value}": ${hint}`);
+  }
+  return value as T;
+}
+
+/**
+ * The deployment and platform adapters to use. No defaults: a deployment states which
+ * environment it is and where its logs and error reports go, and a missing setting fails
+ * every request with an error that names it.
+ */
+export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
+  return {
+    APP_ENV: requiredChoice(
+      env,
+      "APP_ENV",
+      APP_ENVS,
+      "(develop, staging, production in the vars of apps/web/wrangler.jsonc; local in apps/web/.dev.vars)"
+    ),
+    LOG_SINK: requiredChoice(env, "LOG_SINK", LOG_SINKS),
+    ERROR_REPORTER: requiredChoice(env, "ERROR_REPORTER", ERROR_REPORTERS),
+  };
 }
 
 export function parseOptionalFeature<T>(

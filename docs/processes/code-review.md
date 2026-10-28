@@ -40,9 +40,10 @@ If CI is green, these hold; reviewers do not check them manually:
 - Import cycles (Biome `noImportCycles`)
 - `drizzle-orm` in `apps/web` (Biome `noRestrictedImports`)
 - `export *` outside the package roots (Biome `noReExportAll`)
-- Domain purity, tokens-only UI classes, no DB calls in adapters (GritQL rules in `lint/rules/*.grit`)
+- Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters (GritQL rules in `lint/rules/*.grit`)
+- Vendor SDKs only in `platform/adapters/<vendor>/`: packages/features imports only zod, drizzle-orm and aws4fetch elsewhere, `apps/web/src/server` imports none of the listed vendor SDKs (dependency-cruiser `vendor-sdks-only-in-adapters`, `vendor-sdks-not-in-app-server`)
 - Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
-- One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, every UI component has stories, exact pins, bindings in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
+- One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, a contract test per platform adapter, every UI component has stories, exact pins, bindings in all environments, the same `observability` and `version_metadata` in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 - No AI agent credited in a PR's commits (`scripts/check-attribution.ts` in the CI `lint` job)
 - CI safety for self-hosted runners: every CI job's `runs-on` keeps the fork guard, no workflow uses `pull_request_target`, the deploy only starts by hand, every `actions/cache` step runs only on GitHub-hosted runners, the runner image pins match the repository's Bun, Node and Playwright (`test/architecture/ci.test.ts`)
@@ -59,6 +60,8 @@ Automation proves a test exists, not that it is good: reviewers still check that
 - [ ] Dependencies point apps → features → domain; `packages/ui` and `packages/features` stay apart.
 - [ ] Failures are typed domain errors, mapped to transport errors in the adapter.
 - [ ] Use cases take explicit deps (`db`, `bucket`, `clock`, `ids`), no globals or `cloudflare:workers` imports.
+- [ ] Outside services only via a port; vendor code only in `platform/adapters/<vendor>/`; no `console` (log through the Logger, report unexpected errors once with the ErrorReporter, and give users the reference, never the error).
+- [ ] A new wire, log or event format (HTTP error body, log attributes, queue message, webhook, analytics event, metric) follows the standard listed in [overview.md Standards](../architecture/overview.md#standards), or the PR states why not.
 - [ ] Every new procedure has an MCP tool with a model-facing description, or an exemption with a reason.
 
 ### 2. Security and auth

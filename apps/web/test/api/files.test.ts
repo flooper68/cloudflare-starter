@@ -4,7 +4,13 @@ import { describe, expect, it } from "vitest";
 import { GET } from "@/pages/api/files/[id]";
 import { POST } from "@/pages/api/files/index";
 
-import { APP_URL, callerFor, signUp, type TestUser } from "./helpers";
+import {
+  APP_URL,
+  callerFor,
+  signUp,
+  type TestUser,
+  testRequestContext,
+} from "./helpers";
 
 function context(
   request: Request,
@@ -17,6 +23,7 @@ function context(
     params,
     locals: {
       user: user ? { id: user.id, email: user.email, name: user.name } : null,
+      requestContext: testRequestContext(),
     },
   } as unknown as APIContext;
 }

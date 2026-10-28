@@ -12,7 +12,7 @@ Cloudflare docs change; check https://developers.cloudflare.com/email-service/ b
 
 ## Local
 
-Works out of the box: the binding is simulated by `wrangler dev`. `EMAIL_FROM` in `.dev.vars` (default `noreply@example.test`) turns it on; the dev log prints each message and where its text/HTML was saved. Blank `EMAIL_FROM` turns email off and auth links go to the log.
+Works out of the box: the binding is simulated by `wrangler dev`. `EMAIL_FROM` in `.dev.vars` (default `noreply@example.test`) turns it on; the dev log prints each message and where its text/HTML was saved. Blank `EMAIL_FROM` turns email off: auth links go to the dev log with `APP_ENV=local` only; deployed without email, reset and verification requests fail with 412 `EMAIL_NOT_CONFIGURED`.
 
 ## Deployed
 

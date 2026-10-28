@@ -42,8 +42,21 @@ export interface ErrorStateProps
   readonly onRetry?: () => unknown;
   /** Another way out ("Go to dashboard", "Contact support"). */
   readonly secondaryAction?: ReactNode;
-  /** Technical details (request id, status code) in a collapsed section. */
+  /** Technical details (status code, request path) in a collapsed section. */
   readonly details?: ReactNode;
+  /**
+   * The server's reference for this failure (the trace id), shown as text the user can
+   * select and quote to support. Pass it for unexpected (500) errors.
+   */
+  readonly reference?: string;
+}
+
+function Reference({ value }: { readonly value: string }) {
+  return (
+    <span className="text-xs text-fg-muted">
+      Reference <code className="select-all font-mono text-fg">{value}</code>
+    </span>
+  );
 }
 
 /**
@@ -59,6 +72,7 @@ export function ErrorState({
   onRetry,
   secondaryAction,
   details,
+  reference,
   className,
   ...props
 }: ErrorStateProps) {
@@ -95,8 +109,9 @@ export function ErrorState({
         {...props}
       >
         <TriangleAlert className="size-4 shrink-0 text-danger" />
-        <span className="min-w-0 flex-1 text-sm text-fg">
+        <span className="flex min-w-0 flex-1 flex-col text-sm text-fg">
           {message ?? title}
+          {reference ? <Reference value={reference} /> : null}
         </span>
         {retryButton}
       </div>
@@ -131,6 +146,7 @@ export function ErrorState({
             {message}
           </p>
         ) : null}
+        {reference ? <Reference value={reference} /> : null}
       </div>
       {retryButton || secondaryAction ? (
         <div className="flex flex-wrap items-center justify-center gap-2">

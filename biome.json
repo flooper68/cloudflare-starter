@@ -74,6 +74,15 @@
     },
     {
       "includes": [
+        "packages/features/src/**",
+        "apps/web/src/server/**",
+        "!packages/features/src/platform/adapters/cloudflare/**",
+        "!**/*.test.ts"
+      ],
+      "plugins": ["./lint/rules/no-console.grit"]
+    },
+    {
+      "includes": [
         "packages/ui/src/**",
         "apps/web/src/**",
         "!packages/ui/src/brand/**"

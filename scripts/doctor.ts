@@ -14,6 +14,12 @@ import {
   wrangler,
 } from "./lib";
 
+/** Required platform settings (apps/web/src/lib/config.ts parsePlatformConfig), no defaults. */
+const PLATFORM_SETTINGS = {
+  LOG_SINK: ["workers-logs", "none"],
+  ERROR_REPORTER: ["workers-logs", "none"],
+} as const;
+
 let errors = 0;
 const ok = (message: string) => console.log(`✓ ${message}`);
 const warn = (message: string) => console.log(`! ${message}`);
@@ -50,9 +56,20 @@ if (!existsSync(DEV_VARS)) {
     error("no sign-in method: AUTH_EMAIL_PASSWORD=false and no Google keys");
   }
 
+  if (value("APP_ENV") === "local") ok("APP_ENV=local (local development)");
+  else
+    warn(
+      "APP_ENV is not local in .dev.vars: add APP_ENV=local (auth links are logged only there when email is off)"
+    );
+
   if (value("EMAIL_FROM"))
     ok(`email from ${value("EMAIL_FROM")} (simulated locally)`);
-  else warn("EMAIL_FROM empty: email off, auth links go to the dev log");
+  else if (value("APP_ENV") === "local")
+    warn("EMAIL_FROM empty: email off, auth links go to the dev log");
+  else
+    warn(
+      "EMAIL_FROM empty and APP_ENV not local: password reset and verification requests will fail"
+    );
   if (
     value("AUTH_REQUIRE_EMAIL_VERIFICATION") === "true" &&
     !value("EMAIL_FROM")
@@ -71,6 +88,18 @@ if (!existsSync(DEV_VARS)) {
   else if (r2Set === 0)
     warn("R2 presigned URLs off (the FILES binding works without them)");
   else error(`R2 presigned URLs half configured: set all of ${r2.join(", ")}`);
+
+  // .dev.vars overrides the wrangler.jsonc vars locally; a blank line there unsets them.
+  for (const [name, allowed] of Object.entries(PLATFORM_SETTINGS)) {
+    if (!vars.has(name)) continue;
+    const local = vars.get(name) ?? "";
+    if ((allowed as readonly string[]).includes(local))
+      ok(`${name}=${local} (.dev.vars override)`);
+    else
+      error(
+        `${name} in .dev.vars is "${local}": use one of ${allowed.join(", ")} or delete the line`
+      );
+  }
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -86,11 +115,27 @@ for (const env of ENVIRONMENTS) {
   const block = envBlock(config, env);
   const d1 = (block.d1_databases as { database_id: string }[] | undefined)?.[0];
   const vars = (block.vars as Record<string, string> | undefined) ?? {};
+  for (const [name, allowed] of Object.entries(PLATFORM_SETTINGS)) {
+    const value = vars[name];
+    if (!value)
+      error(`${env}: ${name} missing from vars (${allowed.join(" | ")})`);
+    else if (!(allowed as readonly string[]).includes(value))
+      error(`${env}: ${name} is "${value}" (${allowed.join(" | ")})`);
+    else ok(`${env}: ${name}=${value}`);
+  }
+  // APP_ENV is required too (no default) and names the environment it is set in.
+  if (vars.APP_ENV === env) ok(`${env}: APP_ENV=${env}`);
+  else
+    error(
+      `${env}: APP_ENV must be "${env}" in vars (it is ${vars.APP_ENV ? `"${vars.APP_ENV}"` : "missing"})`
+    );
   const notes = [
     d1?.database_id === PLACEHOLDER_ID
       ? "placeholder D1 id (bun run setup:cloudflare)"
       : null,
-    vars.EMAIL_FROM ? null : "no EMAIL_FROM (bun run setup:email)",
+    vars.EMAIL_FROM
+      ? null
+      : "no EMAIL_FROM: password reset and verification requests fail (bun run setup:email)",
   ].filter(Boolean);
   if (notes.length) warn(`${env}: ${notes.join("; ")}`);
   else ok(`${env}: D1 id and email sender set`);

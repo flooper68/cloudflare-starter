@@ -1,4 +1,9 @@
 import { env } from "cloudflare:workers";
+import {
+  createRequestContext,
+  type RequestContext,
+  randomIds,
+} from "@cloudflare-starter/features";
 
 import { getAuth } from "@/server/auth";
 import { createAppContext } from "@/server/trpc/context";
@@ -32,11 +37,23 @@ export async function signUp(name: string, email: string): Promise<TestUser> {
   return { id: body.user.id, email, name, cookie };
 }
 
+/** A fresh HTTP request context, as middleware.ts builds it. */
+export function testRequestContext(): RequestContext {
+  return createRequestContext(
+    { ids: randomIds },
+    { source: "http", release: "local", environment: "develop" }
+  );
+}
+
 /** The tRPC router called in-process as this user (or anonymously), like the web endpoint does. */
-export function callerFor(user: TestUser | null) {
+export function callerFor(
+  user: TestUser | null,
+  requestContext: RequestContext = testRequestContext()
+) {
   return appRouter.createCaller(
     createAppContext(
-      user ? { id: user.id, email: user.email, name: user.name } : null
+      user ? { id: user.id, email: user.email, name: user.name } : null,
+      requestContext
     )
   );
 }

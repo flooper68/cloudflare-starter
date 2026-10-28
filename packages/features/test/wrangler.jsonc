@@ -13,5 +13,9 @@
       "migrations_dir": "../migrations"
     }
   ],
-  "r2_buckets": [{ "binding": "FILES", "bucket_name": "features-test-files" }]
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "features-test-files" }],
+  // Producer only: tests check what a use case sends; nothing consumes it here.
+  "queues": {
+    "producers": [{ "binding": "APP_QUEUE", "queue": "features-test-queue" }]
+  }
 }
