@@ -1,0 +1,7 @@
+E2E invitee accepted your invitation and joined as Member.
+
+See the members: http://localhost:4377/app/members
+
+--
+Choose which mail you get: http://localhost:4377/app/notifications/preferences
+Unsubscribe from these mails: http://localhost:4377/api/notifications/unsubscribe?t=eyJ1IjoiU1lzTlFEUUhkOWJHYm5PbVBUd0xHUHRXT0xaRlpmblIiLCJ0Ijoid29ya3NwYWNlcy5tZW1iZXItam9pbmVkIn0.MEivlejcNAOweDkVgiE3EFPwpC6z0s8_dMLPnWuns0g

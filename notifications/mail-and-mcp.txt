@@ -1,0 +1,48 @@
+MAIL {
+  "to": {
+    "email": "ada@notifications.test",
+    "name": "Ada Lovelace"
+  },
+  "subject": "Grace Hopper joined Analytical Engines",
+  "text": "Grace Hopper accepted your invitation and joined as Member.
+
+See the members: http://localhost:4321/app/members
+
+--
+Choose which mail you get: http://localhost:4321/app/notifications/preferences
+Unsubscribe from these mails: http://localhost:4321/api/notifications/unsubscribe?t=eyJ1IjoiRlBwYWU3UkJVM2NlS2E5SHFTSExINFBaUmVBM1hVUGYiLCJ0Ijoid29ya3NwYWNlcy5tZW1iZXItam9pbmVkIn0.qeiUDMFGeQW5DURlJyfTAURRcIxymH9L9ry3crzvBgg
+",
+  "html": "<!doctype html><html><body style="margin:0;padding:24px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;color:#1f2328;background:#ffffff"><div style="max-width:560px;margin:0 auto"><p><strong>Grace Hopper</strong> accepted your invitation and joined <strong>Analytical Engines</strong> as Member.</p><p><a href="http://localhost:4321/app/members">See the members</a></p><hr style="border:none;border-top:1px solid #d0d7de;margin:24px 0 12px"><p style="font-size:12px;color:#59636e"><a href="http://localhost:4321/app/notifications/preferences">Notification settings</a> · <a href="http://localhost:4321/api/notifications/unsubscribe?t=eyJ1IjoiRlBwYWU3UkJVM2NlS2E5SHFTSExINFBaUmVBM1hVUGYiLCJ0Ijoid29ya3NwYWNlcy5tZW1iZXItam9pbmVkIn0.qeiUDMFGeQW5DURlJyfTAURRcIxymH9L9ry3crzvBgg">Unsubscribe</a></p></div></body></html>",
+  "headers": {
+    "List-Unsubscribe": "<http://localhost:4321/api/notifications/unsubscribe?t=eyJ1IjoiRlBwYWU3UkJVM2NlS2E5SHFTSExINFBaUmVBM1hVUGYiLCJ0Ijoid29ya3NwYWNlcy5tZW1iZXItam9pbmVkIn0.qeiUDMFGeQW5DURlJyfTAURRcIxymH9L9ry3crzvBgg>",
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+  }
+}
+
+MCP list_notifications {"view":"inbox","limit":5}
+=> {"content":[{"type":"text","text":"<untrusted-data>
+{"items":[{"id":"1a5ef251-1398-4b5f-837f-b6a6affcf100","type":"workspaces.member-joined","title":"Grace Hopper joined Analytical Engines","body":"Grace Hopper accepted your invitation and joined as Member.","href":"/app/members","workspaceId":"6c4411ea-65df-4b3a-988b-876bb32ca3c1","createdAt":"2026-10-28T19:01:37.367Z","readAt":null,"archivedAt":null}],"nextCursor":null,"unread":1}
+</untrusted-data>"}],"structuredContent":{"items":[{"id":"1a5ef251-1398-4b5f-837f-b6a6affcf100","type":"workspaces.member-joined","title":"Grace Hopper joined Analytical Engines","body":"Grace Hopper accepted your invitation and joined as Member.","href":"/app/members","workspaceId":"6c4411ea-65df-4b3a-988b-876bb32ca3c1","createdAt":"2026-10-28T19:01:37.367Z","readAt":null,"archivedAt":null}],"nextCursor":null,"unread":1}}
+
+MCP get_notification_preferences {}
+=> {"content":[{"type":"text","text":"<untrusted-data>
+{"types":[{"type":"workspaces.member-joined","label":"Someone joins a workspace you manage","locked":false,"inApp":true,"email":true},{"type":"workspaces.role-changed","label":"Your role in a workspace changes","locked":false,"inApp":true,"email":true},{"type":"auth.password-changed","label":"Your password changes","locked":true,"inApp":true,"email":true},{"type":"auth.new-sign-in","label":"Someone signs in from a new browser or device","locked":true,"inApp":true,"email":true}],"emailCadence":"instant","emailAvailable":true}
+</untrusted-data>"}],"structuredContent":{"types":[{"type":"workspaces.member-joined","label":"Someone joins a workspace you manage","locked":false,"inApp":true,"email":true},{"type":"workspaces.role-changed","label":"Your role in a workspace changes","locked":false,"inApp":true,"email":true},{"type":"auth.password-changed","label":"Your password changes","locked":true,"inApp":true,"email":true},{"type":"auth.new-sign-in","label":"Someone signs in from a new browser or device","locked":true,"inApp":true,"email":true}],"emailCadence":"instant","emailAvailable":true}}
+
+MCP update_notification_preferences {"changes":[{"type":"workspaces.role-changed","channel":"email","enabled":false}],"emailCadence":"daily"}
+=> {"content":[{"type":"text","text":"<untrusted-data>
+{"changed":2}
+</untrusted-data>"}],"structuredContent":{"changed":2}}
+
+MCP update_notification_preferences {"changes":[{"type":"auth.new-sign-in","channel":"email","enabled":false}]}
+=> {"content":[{"type":"text","text":"{"error":{"code":"BAD_REQUEST","httpStatus":400,"message":"\\"auth.new-sign-in\\" is a security notification and cannot be turned off"}}"}],"structuredContent":{"error":{"code":"BAD_REQUEST","httpStatus":400,"message":""auth.new-sign-in" is a security notification and cannot be turned off"}},"isError":true}
+
+MCP mark_notifications_read {"all":true}
+=> {"content":[{"type":"text","text":"<untrusted-data>
+{"updated":1}
+</untrusted-data>"}],"structuredContent":{"updated":1}}
+
+MCP archive_notifications {"ids":["someone-elses-id"]}
+=> {"content":[{"type":"text","text":"<untrusted-data>
+{"updated":0}
+</untrusted-data>"}],"structuredContent":{"updated":0}}
