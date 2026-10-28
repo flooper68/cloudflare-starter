@@ -2,6 +2,7 @@
 // references (the trace id) on internal errors (tRPC, MCP tools, file routes), and the
 // named error when a platform setting is missing.
 import { env } from "cloudflare:workers";
+import { noopTracer } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { APIContext } from "astro";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -266,7 +267,7 @@ describe("platform edge (trace context and error references)", () => {
         trace_id: header,
         attributes: expect.objectContaining({
           "user.id": user.id,
-          "rpc.system": "trpc",
+          "rpc.system.name": "trpc",
           "rpc.method": "queue.enqueueHello",
           "exception.message": "queue unavailable",
         }),
@@ -298,8 +299,14 @@ describe("platform edge (trace context and error references)", () => {
     const reports = captureReports();
     const requestContext = testRequestContext();
     const caller = callerFor(user, env as AppEnv, requestContext);
-    const context = { errors: { capture: vi.fn() }, requestContext };
-    const handler = createMcpHandler(() => buildMcpServer(caller, context));
+    const context = {
+      errors: { capture: vi.fn() },
+      requestContext,
+      tracer: noopTracer,
+    };
+    const handler = createMcpHandler(() =>
+      buildMcpServer(() => caller, context)
+    );
     const response = await handler.fetch(
       new Request(`${APP_URL}/mcp`, {
         method: "POST",
@@ -411,6 +418,36 @@ describe("platform edge (trace context and error references)", () => {
     const body = (await response.json()) as Record<string, string>;
     expect(body.detail).toMatch(/^APP_ENV is not set/);
     expect(response.headers.get(TRACEPARENT_HEADER)).toMatch(TRACEPARENT);
+  });
+
+  it("fails with an error naming METRICS_DATASET when METRICS=analytics-engine has no binding", async () => {
+    const misconfigured = {
+      ...env,
+      METRICS: "analytics-engine",
+      METRICS_DATASET: undefined,
+    } as AppEnv;
+    const response = await withRequestContext(
+      new Request(`${APP_URL}/api/hello`),
+      misconfigured,
+      async () => new Response("never")
+    );
+    expect(response.status).toBe(500);
+    const body = (await response.json()) as Record<string, string>;
+    expect(body.detail).toMatch(
+      /^METRICS is analytics-engine but the METRICS_DATASET binding is missing/
+    );
+  });
+
+  it("fails with an error naming METRICS when the setting is missing", async () => {
+    const response = await withRequestContext(
+      new Request(`${APP_URL}/api/hello`),
+      { ...env, METRICS: undefined } as AppEnv,
+      async () => new Response("never")
+    );
+    const body = (await response.json()) as Record<string, string>;
+    expect(body.detail).toMatch(
+      /^METRICS is not set: set METRICS to one of analytics-engine, none/
+    );
   });
 
   it("never logs the token in a reset, verification or invitation path", async () => {

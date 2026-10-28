@@ -27,6 +27,12 @@ export interface AppEnv {
   readonly ERROR_REPORTER?: string;
   /** Required var, validated by `parsePlatformConfig`: d1 | none. */
   readonly FEATURE_FLAGS?: string;
+  /** Required var, validated by `parsePlatformConfig`: analytics-engine | none. */
+  readonly METRICS?: string;
+  /** Required var, validated by `parsePlatformConfig`: workers | none. */
+  readonly TRACING?: string;
+  /** Analytics Engine dataset binding; required when METRICS=analytics-engine. */
+  readonly METRICS_DATASET?: AnalyticsEngineDataset;
   readonly APP_URL?: string;
   readonly BETTER_AUTH_SECRET?: string;
   readonly GOOGLE_CLIENT_ID?: string;

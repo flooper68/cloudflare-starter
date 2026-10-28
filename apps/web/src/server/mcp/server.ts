@@ -2,9 +2,14 @@ import {
   type ErrorReporter,
   RateLimitedError,
   type RequestContext,
+  type Span,
+  type Tracer,
 } from "@cloudflare-starter/features";
 import { McpServer } from "@modelcontextprotocol/server";
 import { TRPCError } from "@trpc/server";
+
+import type { Context } from "@/server/trpc/init";
+import { appRouter } from "@/server/trpc/router";
 
 import { annotationsOf, type Caller, MCP_TOOLS } from "./tools";
 
@@ -24,10 +29,14 @@ const HTTP_STATUS: Record<string, number> = {
   INTERNAL_SERVER_ERROR: 500,
 };
 
-/** Where a tool's unexpected failures are reported, and the reference they get. */
+/**
+ * Where a tool's unexpected failures are reported, the reference they get, and the tracer
+ * (bound to the request) its spans go to.
+ */
 export interface ToolErrorReporting {
   readonly errors: ErrorReporter;
   readonly requestContext: RequestContext;
+  readonly tracer: Tracer;
 }
 
 function toolResult(body: Readonly<Record<string, unknown>>) {
@@ -72,9 +81,27 @@ export function toolError(error: unknown, reporting: ToolErrorReporting) {
 const untrustedData = (value: unknown) =>
   `<untrusted-data>\n${JSON.stringify(value)}\n</untrusted-data>`;
 
-/** One MCP server per request, its tools bound to the caller of the token's user. */
+/** The caller a tool call uses, given the tool call's span. */
+export type CallerFactory = (span: Span) => Caller;
+
+/**
+ * Callers for the token's user whose request context, logger and tracer are bound to the
+ * tool call's span, so the procedures a tool calls are its child spans and their logs and
+ * error reports carry the tool span's id.
+ */
+export function callerInSpan(context: Context): CallerFactory {
+  return (span) =>
+    appRouter.createCaller({
+      ...context,
+      requestContext: span.context,
+      logger: context.logger.withContext(span.context),
+      tracer: context.tracer.withContext(span.context),
+    });
+}
+
+/** One MCP server per request, its tools bound to callers of the token's user. */
 export function buildMcpServer(
-  caller: Caller,
+  callerFor: CallerFactory,
   reporting: ToolErrorReporting
 ): McpServer {
   const server = new McpServer(
@@ -95,23 +122,43 @@ export function buildMcpServer(
         inputSchema: tool.input,
         annotations: annotationsOf(tool),
       },
-      (async (args: Record<string, unknown>) => {
-        try {
-          const result = await tool.run(caller, args ?? {});
-          const structured =
-            result && typeof result === "object" && !Array.isArray(result)
-              ? (result as Record<string, unknown>)
-              : { result };
-          return {
-            content: [
-              { type: "text" as const, text: untrustedData(structured) },
-            ],
-            structuredContent: structured,
-          };
-        } catch (error) {
-          return toolError(error, reporting);
-        }
-      }) as never
+      // Each call is a span (OpenTelemetry MCP conventions: `tools/call <tool>`) on the
+      // request's trace; the procedures it calls run as its child spans (callerInSpan, trpc/init.ts).
+      ((args: Record<string, unknown>) =>
+        reporting.tracer.startActiveSpan(
+          `tools/call ${tool.name}`,
+          {
+            "mcp.method.name": "tools/call",
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": tool.name,
+          },
+          async (span) => {
+            try {
+              const result = await tool.run(callerFor(span), args ?? {});
+              const structured =
+                result && typeof result === "object" && !Array.isArray(result)
+                  ? (result as Record<string, unknown>)
+                  : { result };
+              return {
+                content: [
+                  { type: "text" as const, text: untrustedData(structured) },
+                ],
+                structuredContent: structured,
+              };
+            } catch (error) {
+              const result = toolError(error, reporting);
+              span.setAttribute(
+                "error.type",
+                String(result.structuredContent.error.code ?? "tool_error")
+              );
+              if (
+                result.structuredContent.error.code === "INTERNAL_SERVER_ERROR"
+              )
+                span.setStatus({ code: "error", message: "Internal error" });
+              return result;
+            }
+          }
+        )) as never
     );
   }
 

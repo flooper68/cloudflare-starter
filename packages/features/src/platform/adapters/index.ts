@@ -3,18 +3,26 @@
 // Vendor SDKs may be imported only inside their own folder (dependency-cruiser rule
 // vendor-sdks-only-in-adapters).
 export {
+  ANALYTICS_ENGINE_LAYOUT,
+  type AnalyticsEngineMetricsOptions,
+  createAnalyticsEngineMetrics,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
   createTurnstileVerifier,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
+  createWorkersTracer,
   D1_FLAGS_TTL_MS,
   type D1FeatureFlagsOptions,
   ERROR_REPORT_EVENT,
+  fromDataPoint,
+  MAX_POINTS_PER_FLUSH,
   SITEVERIFY_URL,
   type TurnstileVerifierConfig,
+  toDataPoint,
   type WorkersLogsLoggerOptions,
+  type WorkersTracerOptions,
 } from "./cloudflare";
 export {
   type CapturedError,
@@ -23,11 +31,15 @@ export {
   createMemoryHumanVerifier,
   createMemoryJobQueue,
   createMemoryLogger,
+  createMemoryMetrics,
   createMemoryRateLimiter,
+  createMemoryTracer,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
   type MemoryLogger,
+  type MemoryMetrics,
+  type MemoryTracer,
   type SentJob,
 } from "./memory";
 export {
@@ -35,5 +47,7 @@ export {
   noopFeatureFlags,
   noopHumanVerifier,
   noopLogger,
+  noopMetrics,
   noopRateLimiter,
+  noopTracer,
 } from "./noop";

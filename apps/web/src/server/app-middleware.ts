@@ -20,7 +20,9 @@ function isProtected(pathname: string) {
 export type MiddlewareContext = Pick<
   APIContext,
   "request" | "url" | "isPrerendered" | "locals" | "redirect"
->;
+> &
+  // The matched route template, the `http.route` of the request's span and metric.
+  Partial<Pick<APIContext, "routePattern">>;
 
 export async function handleAppRequest(
   context: MiddlewareContext,
@@ -34,31 +36,36 @@ export async function handleAppRequest(
   if (context.isPrerendered) return next();
 
   // Every response gets x-request-id; unhandled errors become a 500 with a reference.
-  return withRequestContext(context.request, env, async (scope) => {
-    context.locals.requestContext = scope.context;
+  return withRequestContext(
+    context.request,
+    env,
+    async (scope) => {
+      context.locals.requestContext = scope.context;
 
-    // The auth handler, OAuth discovery and /mcp (bearer tokens, not cookies) never need
-    // the cookie session. /mcp sets the user on its context itself.
-    const { pathname } = context.url;
-    if (
-      pathname.startsWith(AUTH_BASE_PATH) ||
-      pathname.startsWith("/.well-known/") ||
-      pathname === MCP_PATH
-    ) {
+      // The auth handler, OAuth discovery and /mcp (bearer tokens, not cookies) never need
+      // the cookie session. /mcp sets the user on its context itself.
+      const { pathname } = context.url;
+      if (
+        pathname.startsWith(AUTH_BASE_PATH) ||
+        pathname.startsWith("/.well-known/") ||
+        pathname === MCP_PATH
+      ) {
+        return next();
+      }
+
+      const result = await getAuth(env).api.getSession({
+        headers: context.request.headers,
+      });
+      context.locals.user = result?.user ?? null;
+      context.locals.session = result?.session ?? null;
+      context.locals.requestContext = scope.setUserId(result?.user.id ?? null);
+
+      if (isProtected(pathname) && !result) {
+        return context.redirect("/sign-in");
+      }
+
       return next();
-    }
-
-    const result = await getAuth(env).api.getSession({
-      headers: context.request.headers,
-    });
-    context.locals.user = result?.user ?? null;
-    context.locals.session = result?.session ?? null;
-    context.locals.requestContext = scope.setUserId(result?.user.id ?? null);
-
-    if (isProtected(pathname) && !result) {
-      return context.redirect("/sign-in");
-    }
-
-    return next();
-  });
+    },
+    { route: context.routePattern }
+  );
 }
