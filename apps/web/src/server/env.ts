@@ -1,4 +1,4 @@
-import type { AppQueueMessage } from "@cloudflare-starter/features";
+import type { QueueMessage } from "@cloudflare-starter/features";
 
 /**
  * Worker bindings and variables, read with `import { env } from "cloudflare:workers"`.
@@ -8,7 +8,7 @@ import type { AppQueueMessage } from "@cloudflare-starter/features";
 export interface AppEnv {
   readonly DB: D1Database;
   readonly FILES: R2Bucket;
-  readonly APP_QUEUE?: Queue<AppQueueMessage>;
+  readonly APP_QUEUE?: Queue<QueueMessage>;
   readonly APP_ENV?: string;
   readonly APP_URL?: string;
   readonly BETTER_AUTH_SECRET?: string;

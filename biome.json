@@ -7,7 +7,13 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "suspicious": {
+        "noImportCycles": "error"
+      },
+      "performance": {
+        "noReExportAll": "error"
+      }
     }
   },
   "files": {
@@ -41,6 +47,51 @@
           "correctness": {
             "noUnusedImports": "off",
             "noUnusedVariables": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/features/src/index.ts",
+        "packages/features/src/database.ts",
+        "packages/ui/src/index.ts"
+      ],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noReExportAll": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/features/src/**/domain/**"],
+      "plugins": ["./lint/rules/domain-purity.grit"]
+    },
+    {
+      "includes": [
+        "packages/ui/src/**",
+        "apps/web/src/**",
+        "!packages/ui/src/brand/**"
+      ],
+      "plugins": ["./lint/rules/tokens-only.grit"]
+    },
+    {
+      "includes": ["apps/web/src/**", "!**/*.test.ts"],
+      "plugins": ["./lint/rules/no-db-in-adapters.grit"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "drizzle-orm": "Adapters call use cases from packages/features; no database access in apps/web.",
+                  "drizzle-orm/d1": "Adapters call use cases from packages/features; no database access in apps/web."
+                }
+              }
+            }
           }
         }
       }

@@ -16,7 +16,7 @@
     "build": "bun run --filter @cloudflare-starter/web build",
     "verify": "bun run typecheck && bun run lint && bun run test",
     "typecheck": "bun run --filter './packages/*' typecheck && bun run --filter './apps/*' typecheck && tsc --noEmit -p scripts/tsconfig.json",
-    "lint": "biome check .",
+    "lint": "biome check . && bun run deps:check",
     "lint:fix": "biome check --write .",
     "test": "vitest run",
     "db:generate": "bun run --filter @cloudflare-starter/features db:generate",
@@ -25,13 +25,15 @@
     "setup:secrets": "bun scripts/setup-secrets.ts",
     "setup:email": "bun scripts/setup-email.ts",
     "doctor": "bun scripts/doctor.ts",
-    "setup:github-runner": "bun scripts/setup-github-runner.ts"
+    "setup:github-runner": "bun scripts/setup-github-runner.ts",
+    "deps:check": "depcruise packages/features/src packages/ui/src --config .dependency-cruiser.cjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
     "@types/node": "26.6.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "dependency-cruiser": "18.7.0",
     "jsonc-parser": "3.3.1",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
