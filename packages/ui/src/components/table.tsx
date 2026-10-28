@@ -5,6 +5,8 @@ import type {
   ThHTMLAttributes,
 } from "react";
 
+import { focusRing } from "../lib/styles";
+import { useKeyboardScrollable } from "../lib/use-keyboard-scrollable";
 import { cn } from "../lib/utils";
 
 export interface TableProps extends HTMLAttributes<HTMLTableElement> {
@@ -26,9 +28,17 @@ export function Table({
   className,
   ...props
 }: TableProps) {
+  // A scrolling table without focusable cells becomes a tab stop (keyboard scrolling).
+  const scrollRef = useKeyboardScrollable<HTMLDivElement>();
   return (
     <div
-      className={cn("relative w-full overflow-auto", containerClassName)}
+      ref={scrollRef}
+      className={cn(
+        "relative w-full overflow-auto",
+        focusRing,
+        "focus-visible:ring-inset",
+        containerClassName
+      )}
       data-sticky-header={stickyHeader || undefined}
     >
       <table

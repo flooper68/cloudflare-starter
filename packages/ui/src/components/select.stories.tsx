@@ -67,8 +67,19 @@ type Story = StoryObj<typeof meta>;
 
 export const Playground: Story = {};
 
+/**
+ * Open Radix menus and selects hide the rest of the page with `aria-hidden` (so screen
+ * readers stay in the popup) but leave the trigger focusable underneath; axe reports that
+ * as `aria-hidden-focus`. Radix renders that markup and offers no inert option, so the
+ * rule is off for stories that render the popup open. Closed stories still check it.
+ */
+const radixOpenPopupA11y = {
+  a11y: { config: { rules: [{ id: "aria-hidden-focus", enabled: false }] } },
+} as const;
+
 export const Open: Story = {
   args: { defaultOpen: true, defaultValue: "in_progress" },
+  parameters: radixOpenPopupA11y,
   decorators: [
     (Story) => (
       <div className="h-80">
@@ -135,6 +146,7 @@ export const GroupsAndDisabledItems: Story = {
       </SelectGroup>
     </Select>
   ),
+  parameters: radixOpenPopupA11y,
   decorators: [
     (Story) => (
       <div className="h-80">

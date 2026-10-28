@@ -1,6 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Columns3, List as ListIcon, Map as MapIcon } from "lucide-react";
+import { SegmentedControl, SegmentedControlItem } from "./segmented-control";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
+
+/** Every tab controls a panel (`aria-controls` must point at one); one line each here. */
+function Panels({ panels }: { readonly panels: Record<string, string> }) {
+  return Object.entries(panels).map(([value, text]) => (
+    <TabsContent key={value} value={value} className="text-sm text-fg-muted">
+      {text}
+    </TabsContent>
+  ));
+}
 
 /**
  * Switch between views of the same thing. `underline` for page sections (Overview /
@@ -59,6 +69,13 @@ export const Underline: Story = {
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="backlog">Backlog</TabsTrigger>
           </TabsList>
+          <Panels
+            panels={{
+              all: "Every issue in the team.",
+              active: "Issues in progress or in review.",
+              backlog: "Issues nobody has started.",
+            }}
+          />
         </Tabs>
       ))}
     </div>
@@ -81,6 +98,13 @@ export const Pill: Story = {
               Timeline
             </TabsTrigger>
           </TabsList>
+          <Panels
+            panels={{
+              list: "Issues as rows.",
+              board: "Issues as cards per status.",
+              timeline: "Projects on a timeline.",
+            }}
+          />
         </Tabs>
       ))}
     </div>
@@ -101,6 +125,13 @@ export const WithCounts: Story = {
           Subscribed
         </TabsTrigger>
       </TabsList>
+      <Panels
+        panels={{
+          assigned: "12 issues assigned to you.",
+          created: "48 issues you created.",
+          subscribed: "3 issues you follow.",
+        }}
+      />
     </Tabs>
   ),
 };
@@ -117,16 +148,20 @@ export const InContext: Story = {
             </TabsTrigger>
             <TabsTrigger value="updates">Updates</TabsTrigger>
           </TabsList>
-          <Tabs defaultValue="list">
-            <TabsList variant="pill" size="sm">
-              <TabsTrigger value="list" aria-label="List view">
-                <ListIcon />
-              </TabsTrigger>
-              <TabsTrigger value="board" aria-label="Board view">
-                <Columns3 />
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* A view switch changes how the panel renders, it controls no panel of its
+              own: a SegmentedControl (radio group), not a second Tabs. */}
+          <SegmentedControl defaultValue="list" size="sm" aria-label="Layout">
+            <SegmentedControlItem
+              value="list"
+              icon={<ListIcon />}
+              label="List view"
+            />
+            <SegmentedControlItem
+              value="board"
+              icon={<Columns3 />}
+              label="Board view"
+            />
+          </SegmentedControl>
         </div>
         <div className="border-t border-line p-4 text-sm text-fg-muted">
           <TabsContent value="overview">

@@ -22,6 +22,7 @@ import {
   type FieldControlProps,
   openOnArrowKeys,
   PickerTrigger,
+  panelLabel,
 } from "./combobox";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
@@ -158,7 +159,15 @@ export function DatePicker({
           {value ? formatValue(value) : null}
         </PickerTrigger>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0", contentClassName)}>
+      <PopoverContent
+        aria-label={
+          fieldProps["aria-labelledby"]
+            ? undefined
+            : panelLabel(fieldProps["aria-label"], placeholder)
+        }
+        aria-labelledby={fieldProps["aria-labelledby"]}
+        className={cn("w-auto p-0", contentClassName)}
+      >
         {presets.length > 0 ? (
           <div className="flex flex-col border-line border-b p-1">
             {presets.map((preset) => {
@@ -263,7 +272,15 @@ export function DateRangePicker({
           {value ? formatRange(value) : null}
         </PickerTrigger>
       </PopoverTrigger>
-      <PopoverContent className={cn("flex w-auto p-0", contentClassName)}>
+      <PopoverContent
+        aria-label={
+          fieldProps["aria-labelledby"]
+            ? undefined
+            : panelLabel(fieldProps["aria-label"], placeholder)
+        }
+        aria-labelledby={fieldProps["aria-labelledby"]}
+        className={cn("flex w-auto p-0", contentClassName)}
+      >
         {presets.length > 0 ? (
           <div className="flex w-36 shrink-0 flex-col gap-px border-line border-r p-1">
             {presets.map((preset) => {

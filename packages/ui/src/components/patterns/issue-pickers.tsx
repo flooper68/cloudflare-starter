@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 
+import { CommandList } from "../../lib/command-list";
 import { focusRing } from "../../lib/styles";
 import { cn } from "../../lib/utils";
 import { Kbd } from "../kbd";
@@ -85,6 +86,7 @@ function OptionPicker<T extends string>({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
+        aria-label={placeholder}
         align={align}
         className="w-60 p-0"
         // The content is portalled, but React events still bubble to the row or card.
@@ -100,10 +102,7 @@ function OptionPicker<T extends string>({
             placeholder={placeholder}
             className={commandInput}
           />
-          <Command.List className="max-h-72 overflow-y-auto p-1">
-            <Command.Empty className="px-2 py-3 text-center text-sm text-fg-subtle">
-              No results
-            </Command.Empty>
+          <CommandList className="max-h-72 overflow-y-auto p-1">
             {options.map((option, index) => (
               <Command.Item
                 key={option.value}
@@ -125,7 +124,10 @@ function OptionPicker<T extends string>({
                 ) : null}
               </Command.Item>
             ))}
-          </Command.List>
+          </CommandList>
+          <Command.Empty className="px-2 py-3 text-center text-sm text-fg-subtle">
+            No results
+          </Command.Empty>
         </Command>
       </PopoverContent>
     </Popover>

@@ -131,13 +131,12 @@ export const ActivityFeed: Story = {
 };
 
 export const RelativeTimes: Story = {
-  decorators: [(Story) => <Story />],
   render: () => (
-    <div className="flex flex-col gap-1 text-sm">
+    <li className="flex flex-col gap-1 text-sm">
       <RelativeTime date={minutesAgo(1)} />
       <RelativeTime date={minutesAgo(90)} />
       <RelativeTime date={minutesAgo(60 * 24 * 3)} />
       <RelativeTime date={minutesAgo(60 * 24 * 60)} />
-    </div>
+    </li>
   ),
 };

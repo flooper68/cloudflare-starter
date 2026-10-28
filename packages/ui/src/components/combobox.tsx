@@ -8,7 +8,7 @@ import type {
   Ref,
 } from "react";
 import { useState } from "react";
-
+import { CommandList } from "../lib/command-list";
 import { controlBase, controlSize, menuItem, menuLabel } from "../lib/styles";
 import { cn } from "../lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
@@ -82,12 +82,17 @@ export function PickerTrigger({
   className,
   children,
   type = "button",
+  "aria-label": ariaLabel,
   ...props
 }: PickerTriggerProps) {
   const empty = children == null || children === false || children === "";
+  // A combobox is named by its label alone. A plain button (date picker) is named by its
+  // content, so the label goes in front of the visible value: "Due date, Oct 28".
+  const labelInContent = props.role === undefined && ariaLabel !== undefined;
   return (
     <button
       type={type}
+      aria-label={labelInContent ? undefined : ariaLabel}
       data-placeholder={empty ? "" : undefined}
       className={cn(
         controlBase,
@@ -105,11 +110,20 @@ export function PickerTrigger({
       <span
         className={cn("min-w-0 flex-1 truncate", empty && "text-fg-subtle")}
       >
+        {labelInContent ? <span className="sr-only">{ariaLabel}, </span> : null}
         {empty ? placeholder : children}
       </span>
       <ChevronDown aria-hidden className="text-fg-muted" />
     </button>
   );
+}
+
+/** The accessible name of a picker's popup panel: the field's label, else its placeholder. */
+export function panelLabel(
+  label: string | undefined,
+  placeholder: ReactNode
+): string {
+  return label ?? (typeof placeholder === "string" ? placeholder : "Options");
 }
 
 /** Classes of the scrolling list inside a combobox panel. */
@@ -221,8 +235,11 @@ export function ComboboxOptions({
       // Groups have no id of their own; heading plus position is stable enough.
       // biome-ignore lint/suspicious/noArrayIndexKey: two runs may share a heading.
       key={`${group.heading ?? ""}-${index}`}
+      // undefined, not null: cmdk reads a null heading as a ref and throws.
       heading={
-        group.heading ? <div className={menuLabel}>{group.heading}</div> : null
+        group.heading ? (
+          <div className={menuLabel}>{group.heading}</div>
+        ) : undefined
       }
     >
       {group.options.map((option) => (
@@ -356,6 +373,12 @@ export function Combobox({
         </PickerTrigger>
       </PopoverTrigger>
       <PopoverContent
+        aria-label={
+          fieldProps["aria-labelledby"]
+            ? undefined
+            : panelLabel(fieldProps["aria-label"], placeholder)
+        }
+        aria-labelledby={fieldProps["aria-labelledby"]}
         className={cn(
           "w-(--radix-popover-trigger-width) min-w-60 p-0",
           contentClassName
@@ -367,10 +390,7 @@ export function Combobox({
             onValueChange={setSearch}
             placeholder={searchPlaceholder}
           />
-          <Command.List className={comboboxList}>
-            <Command.Empty>
-              <ComboboxMessage>{emptyText}</ComboboxMessage>
-            </Command.Empty>
+          <CommandList className={comboboxList} forceVisible={canCreate}>
             <ComboboxOptions
               options={options}
               isSelected={(option) => option.value === value}
@@ -392,7 +412,10 @@ export function Combobox({
                 </span>
               </Command.Item>
             ) : null}
-          </Command.List>
+          </CommandList>
+          <Command.Empty>
+            <ComboboxMessage>{emptyText}</ComboboxMessage>
+          </Command.Empty>
         </Command>
       </PopoverContent>
     </Popover>

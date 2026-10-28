@@ -54,7 +54,10 @@ function ReactionPicker({
           </IconButton>
         </PopoverTrigger>
       </Tooltip>
-      <PopoverContent className="flex w-auto gap-0.5 p-1">
+      <PopoverContent
+        aria-label="Reactions"
+        className="flex w-auto gap-0.5 p-1"
+      >
         {emojis.map((emoji) => (
           <button
             key={emoji}

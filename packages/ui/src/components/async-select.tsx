@@ -3,6 +3,7 @@ import { useControllableState } from "radix-ui/internal";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
+import { CommandList } from "../lib/command-list";
 import type { controlSize } from "../lib/styles";
 import { cn } from "../lib/utils";
 import { Button } from "./button";
@@ -15,6 +16,7 @@ import {
   type FieldControlProps,
   openOnArrowKeys,
   PickerTrigger,
+  panelLabel,
 } from "./combobox";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Spinner } from "./spinner";
@@ -242,6 +244,12 @@ export function AsyncSelect({
         </PickerTrigger>
       </PopoverTrigger>
       <PopoverContent
+        aria-label={
+          fieldProps["aria-labelledby"]
+            ? undefined
+            : panelLabel(fieldProps["aria-label"], placeholder)
+        }
+        aria-labelledby={fieldProps["aria-labelledby"]}
         className={cn(
           "w-(--radix-popover-trigger-width) min-w-60 p-0",
           contentClassName
@@ -256,22 +264,22 @@ export function AsyncSelect({
               state.status === "loading" ? <Spinner label="Loading" /> : null
             }
           />
-          <Command.List
+          <CommandList
             className={comboboxList}
             aria-busy={state.status === "loading"}
           >
-            <AsyncOptionsStatus
-              state={state}
-              minQueryLength={minQueryLength}
-              emptyText={emptyText}
-              errorText={errorText}
-            />
             <ComboboxOptions
               options={state.options}
               isSelected={(option) => option.value === value?.value}
               onSelect={select}
             />
-          </Command.List>
+          </CommandList>
+          <AsyncOptionsStatus
+            state={state}
+            minQueryLength={minQueryLength}
+            emptyText={emptyText}
+            errorText={errorText}
+          />
         </Command>
       </PopoverContent>
     </Popover>

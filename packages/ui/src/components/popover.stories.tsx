@@ -23,7 +23,7 @@ export const Open: Story = {
         <PopoverTrigger asChild>
           <Button icon={<CalendarClock />}>Estimate</Button>
         </PopoverTrigger>
-        <PopoverContent>
+        <PopoverContent aria-label="Estimate">
           <div className="flex flex-col gap-2">
             <Label htmlFor="estimate">Estimate (hours)</Label>
             <Input id="estimate" defaultValue="4" />

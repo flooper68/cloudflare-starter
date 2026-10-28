@@ -4,7 +4,10 @@ import { AtSign, Search } from "lucide-react";
 import { Input } from "./input";
 import { Kbd } from "./kbd";
 
-/** Single-line text field. Use inside `Field` for a label, help text and errors. */
+/**
+ * Single-line text field. Use inside `Field` for a label, help text and errors; on its
+ * own it needs an `aria-label` (a placeholder is not a label).
+ */
 const meta = {
   title: "Forms/Input",
   component: Input,
@@ -39,12 +42,18 @@ export const WithAdornments: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
       <Input
+        aria-label="Search issues"
         leading={<Search />}
         trailing={<Kbd>/</Kbd>}
         placeholder="Search issues"
       />
-      <Input leading={<AtSign />} placeholder="username" />
       <Input
+        aria-label="Username"
+        leading={<AtSign />}
+        placeholder="username"
+      />
+      <Input
+        aria-label="Estimate"
         trailing={<span className="text-xs">hours</span>}
         defaultValue="4"
       />
@@ -55,10 +64,10 @@ export const WithAdornments: Story = {
 export const States: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
-      <Input defaultValue="Fix login redirect loop" />
-      <Input aria-invalid defaultValue="no-reply@" />
-      <Input disabled placeholder="Disabled" />
-      <Input readOnly defaultValue="ENG-1284" />
+      <Input aria-label="Title" defaultValue="Fix login redirect loop" />
+      <Input aria-label="Email" aria-invalid defaultValue="no-reply@" />
+      <Input aria-label="Due date" disabled placeholder="Disabled" />
+      <Input aria-label="Issue ID" readOnly defaultValue="ENG-1284" />
     </div>
   ),
 };

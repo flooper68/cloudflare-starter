@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Avatar } from "./avatar";
-import { IconButton } from "./button";
 import {
   type IssuePriority,
   type IssueStatus,
@@ -123,23 +121,22 @@ const meta = {
     selected: false,
     disabled: false,
   },
-  decorators: [
-    (Story) => (
-      <List label="Issues" className="rounded-lg border border-line">
-        <Story />
-      </List>
-    ),
-  ],
 } satisfies Meta<typeof ListItem>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Playground: Story = {};
+export const Playground: Story = {
+  render: (args) => (
+    <List label="Issues" className="rounded-lg border border-line">
+      <ListItem {...args} />
+    </List>
+  ),
+};
 
 export const States: Story = {
   render: () => (
-    <>
+    <List label="Issues" className="rounded-lg border border-line">
       <ListItem title="Default row" trailing="Oct 24" />
       <ListItem title="Selected row" selected trailing="Oct 22" />
       <ListItem title="Disabled row" disabled trailing="Oct 21" />
@@ -148,12 +145,11 @@ export const States: Story = {
         description="Opened by Grace Hopper"
         trailing="Oct 19"
       />
-    </>
+    </List>
   ),
 };
 
 export const IssueList: Story = {
-  decorators: [(Story) => <Story />],
   render: () => {
     const [selected, setSelected] = useState("ENG-405");
     const groups: IssueStatus[] = ["in_progress", "in_review", "todo"];
@@ -169,11 +165,6 @@ export const IssueList: Story = {
               <ListHeader
                 icon={<StatusIcon status={status} label="" />}
                 count={inGroup.length}
-                actions={
-                  <IconButton label="Add issue" size="xs">
-                    <Plus />
-                  </IconButton>
-                }
               >
                 {issueStatusLabel[status]}
               </ListHeader>
