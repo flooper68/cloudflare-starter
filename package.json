@@ -28,7 +28,8 @@
     "setup:github-runner": "bun scripts/setup-github-runner.ts",
     "deps:check": "depcruise packages/features/src packages/ui/src --config .dependency-cruiser.cjs",
     "test:unit": "vitest run --project unit",
-    "test:integration": "vitest run --project features-integration --project web-api"
+    "test:integration": "vitest run --project features-integration --project web-api",
+    "test:components": "bun run --filter @cloudflare-starter/storybook test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

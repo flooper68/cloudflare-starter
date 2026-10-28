@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Button } from "./button";
 import {
   CommandEmpty,
@@ -226,7 +227,7 @@ function IssueCommands({
           <CommandItem
             key={person}
             icon={
-              <span className="flex size-4 items-center justify-center rounded-full bg-accent-subtle text-[9px] font-semibold text-accent">
+              <span className="flex size-4 items-center justify-center rounded-full bg-accent-subtle text-[9px] font-semibold text-accent-text">
                 {person
                   .split(" ")
                   .map((part) => part[0])
@@ -290,6 +291,60 @@ export const WithShortcut: Story = {
         </CommandPalette>
       </div>
     );
+  },
+};
+
+/**
+ * Interaction test: ⌘K/Ctrl+K opens the palette, typing filters, Enter opens a nested page
+ * and runs a command, Escape closes it.
+ */
+export const OpenFilterSelect: Story = {
+  ...WithShortcut,
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+
+    await step("Ctrl+K opens the palette with the search focused", async () => {
+      await userEvent.keyboard("{Control>}k{/Control}");
+      const input = await page.findByRole("combobox");
+      await waitFor(() => expect(input).toHaveFocus());
+    });
+
+    await step("Typing filters the commands", async () => {
+      await userEvent.keyboard("status");
+      await waitFor(() =>
+        expect(page.getAllByRole("option").map((o) => o.textContent)).toEqual([
+          expect.stringContaining("Change status"),
+        ])
+      );
+    });
+
+    await step(
+      "Enter opens the nested page; picking a status runs it",
+      async () => {
+        await userEvent.keyboard("{Enter}");
+        await waitFor(() =>
+          expect(page.getByRole("combobox")).toHaveAttribute(
+            "placeholder",
+            "Change status to…"
+          )
+        );
+        await userEvent.keyboard("done");
+        await userEvent.keyboard("{Enter}");
+        await waitFor(() => expect(page.queryByRole("dialog")).toBeNull());
+        await expect(canvas.getByText("Ran: Status → Done")).toBeVisible();
+      }
+    );
+
+    await step("No match shows the empty state; Escape closes", async () => {
+      await userEvent.keyboard("{Control>}k{/Control}");
+      await page.findByRole("dialog");
+      await userEvent.keyboard("zzzz");
+      await expect(await page.findByText("No results")).toBeVisible();
+      await expect(page.queryByRole("option")).toBeNull();
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(page.queryByRole("dialog")).toBeNull());
+    });
   },
 };
 
