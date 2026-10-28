@@ -26,7 +26,9 @@
     "setup:email": "bun scripts/setup-email.ts",
     "doctor": "bun scripts/doctor.ts",
     "setup:github-runner": "bun scripts/setup-github-runner.ts",
-    "deps:check": "depcruise packages/features/src packages/ui/src --config .dependency-cruiser.cjs"
+    "deps:check": "depcruise packages/features/src packages/ui/src --config .dependency-cruiser.cjs",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project features-integration --project web-api"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

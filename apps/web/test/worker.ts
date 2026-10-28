@@ -1,0 +1,13 @@
+// Test entry for the API tests: the real queue and cron handlers, no Astro (tests call
+// procedures, routes and handlers directly).
+import type { QueueMessage } from "@cloudflare-starter/features";
+
+import { runScheduled } from "@/server/cron";
+import type { AppEnv } from "@/server/env";
+import { handleQueueBatch } from "@/server/queue";
+
+export default {
+  fetch: () => new Response("web API tests"),
+  queue: (batch, env) => handleQueueBatch(batch, env),
+  scheduled: (controller, env) => runScheduled(controller, env),
+} satisfies ExportedHandler<AppEnv, QueueMessage>;

@@ -4,16 +4,20 @@ The only source of test requirements in this repository: which layers of tests e
 
 ## Layers
 
-| Layer       | What it proves                                                                                                                     | Tooling                                                                                                                               | Location                                                |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Domain      | Pure rules, schemas and domain errors give the right output for each input                                                         | Vitest, `node` environment; no mocks needed because domain code has no I/O                                                            | `packages/features/src/<feature>/domain/*.test.ts`      |
-| Integration | Use cases work against real D1, R2 and queues                                                                                      | Vitest in workerd via `@cloudflare/vitest-plugin`; a fresh, migrated D1 per test file                                                 | `packages/features/src/<feature>/*.integration.test.ts` |
-| API         | tRPC procedures as a signed-in user, HTTP routes including auth, origin checks and status codes, and the same calls through `/mcp` | Vitest pool workers against the Worker with real local bindings                                                                       | `apps/web/test/api/`                                    |
-| Component   | Every story renders and passes axe; `play` functions drive interactions                                                            | Storybook stories as tests via `@storybook/addon-vitest` (browser mode)                                                               | `packages/ui/src/components/*.stories.tsx`              |
-| E2E         | A handful of critical journeys work end to end: sign up, sign in, the main CRUD flow, upload, MCP consent                          | Playwright against `astro dev` with local bindings                                                                                    | `apps/web/test/e2e/`                                    |
-| Static      | Types, lint, import rules, MCP parity, migrations in sync with the schema                                                          | `tsc`/`astro check`, Biome (with GritQL plugins), dependency-cruiser, `parity.test.ts`, the CI `migrations` job, `test/architecture/` | CI jobs `lint`, `typecheck`, `test`, `migrations`       |
+| Layer       | What it proves                                                                                                                     | Tooling                                                                                                                                                                                                           | Location                                                |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Domain      | Pure rules, schemas and domain errors give the right output for each input                                                         | Vitest, `node` environment; no mocks needed because domain code has no I/O                                                                                                                                        | `packages/features/src/<feature>/domain/*.test.ts`      |
+| Integration | Use cases work against real D1, R2 and queues                                                                                      | Vitest in workerd via `@cloudflare/vitest-plugin` (project `features-integration`, `packages/features/vitest.config.ts`); bindings from `packages/features/test/wrangler.jsonc`; migrations applied per test file | `packages/features/src/<feature>/*.integration.test.ts` |
+| API         | tRPC procedures as a signed-in user, HTTP routes including auth, origin checks and status codes, and the same calls through `/mcp` | Vitest in workerd (project `web-api`, `apps/web/vitest.config.ts`) with the app's real bindings from `wrangler.jsonc`; users signed up through Better Auth's handler (`test/api/helpers.ts`)                      | `apps/web/test/api/`                                    |
+| Component   | Every story renders and passes axe; `play` functions drive interactions                                                            | Storybook stories as tests via `@storybook/addon-vitest` (browser mode)                                                                                                                                           | `packages/ui/src/components/*.stories.tsx`              |
+| E2E         | A handful of critical journeys work end to end: sign up, sign in, the main CRUD flow, upload, MCP consent                          | Playwright against `astro dev` with local bindings                                                                                                                                                                | `apps/web/test/e2e/`                                    |
+| Static      | Types, lint, import rules, MCP parity, migrations in sync with the schema                                                          | `tsc`/`astro check`, Biome (with GritQL plugins), dependency-cruiser, `parity.test.ts`, the CI `migrations` job, `test/architecture/`                                                                             | CI jobs `lint`, `typecheck`, `test`, `migrations`       |
 
 Pure helpers inside `apps/web` (config parsing, log builders) are unit tests next to the file (`*.test.ts`), like domain tests.
+
+**Real databases, no mocks.** Integration and API tests run inside workerd, Cloudflare's Workers runtime, locally and in CI, through Miniflare. D1 is real SQLite with the real migrations applied, R2, queues and `send_email` are Miniflare's local implementations, and nothing reaches a Cloudflare account. Each test file starts from its own empty, migrated database (storage is isolated per file, not per test), so tests create their own users and data and do not depend on each other. Production settings stay on: for example sign-up is rate limited, so an API test file signs up one user and shares it.
+
+Commands: `bun run test` (all projects), `bun run test:unit` (Node: domain, helpers, architecture), `bun run test:integration` (both workerd projects).
 
 ## Change → required test
 
@@ -64,27 +68,20 @@ A test that breaks its budget is fixed (smaller data, narrower scope, lower laye
 
 What does not exist yet. Until an enabler lands, a required test at that layer is written at the nearest existing layer and the gap is named in the PR.
 
-| Gap                  | Today                                                                                                                                             |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Workers test pool    | Not installed. `vitest.config.ts` runs everything in `node`.                                                                                      |
-| Integration tests    | None. Use cases are untested beyond the router tests; domain rules have unit tests (`domain/*.test.ts`).                                          |
-| API tests on real D1 | None. `apps/web/src/server/trpc/router.test.ts` and `mcp/server.test.ts` call the router with a mocked `db`; `apps/web/test/api/` does not exist. |
-| Component tests      | `@storybook/addon-vitest` is not set up; stories are not run as tests (every component has stories: `test/architecture/stories.test.ts`).         |
-| E2E                  | No Playwright setup.                                                                                                                              |
-| Test presence        | No architecture test yet requires a test per domain file and use case, or an API test per procedure; reviewers check it.                          |
+| Gap             | Today                                                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Component tests | `@storybook/addon-vitest` is not set up; stories are not run as tests (every component has stories: `test/architecture/stories.test.ts`). |
+| E2E             | No Playwright setup.                                                                                                                      |
 
-What exists: Vitest unit tests (`bun run test`) including domain tests, the MCP parity test, the in-process MCP server test, the architecture tests in `test/architecture/`, dependency-cruiser and the GritQL lint rules, and the CI `migrations` job.
+What exists: unit tests (domain, helpers), integration tests on real D1/R2, API tests (tRPC, file routes, auth, `/mcp`), the MCP parity and in-process server tests, and the architecture tests in `test/architecture/`, which also require a test per domain function, use case and tRPC procedure (`test-presence.test.ts`).
 
 ## Enablers
 
 Infrastructure to build, each by the first change that needs it (that change carries the enabler, its docs and the script that runs it):
 
-| Enabler                                                                                                                                        | Built by the first change that adds |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `@cloudflare/vitest-plugin` (Workers runtime in Vitest; supports Vitest 5) project, D1 migrations applied per test file, R2 and queue bindings | an integration test                 |
-| Signed-in test helper and request helpers for tRPC, HTTP and `/mcp` in `apps/web/test/api/`                                                    | an API test                         |
-| `@storybook/addon-vitest` browser-mode project with axe                                                                                        | a component `play` test             |
-| Playwright config against `astro dev`, seeded local D1                                                                                         | an E2E journey                      |
-| Architecture test requiring a test per domain file, use case and tRPC procedure                                                                | the test layers PR                  |
+| Enabler                                                 | Built by the first change that adds |
+| ------------------------------------------------------- | ----------------------------------- |
+| `@storybook/addon-vitest` browser-mode project with axe | a component `play` test             |
+| Playwright config against `astro dev`, seeded local D1  | an E2E journey                      |
 
 Each enabler adds its command to `package.json`, to CI, and to the "Layers" table above.
