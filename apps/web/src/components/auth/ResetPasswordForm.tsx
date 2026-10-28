@@ -8,6 +8,7 @@ import {
   FieldError,
   Input,
   Label,
+  Logo,
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
 
@@ -73,12 +74,10 @@ export function ResetPasswordForm({
   return (
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
-          Cloudflare Starter
-        </p>
+        <Logo className="mb-3" />
         <CardTitle>Choose a new password</CardTitle>
         {done ? (
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-fg-muted">
             Password updated. Other sessions were signed out.
           </p>
         ) : null}
@@ -87,7 +86,7 @@ export function ResetPasswordForm({
       {done || !token ? (
         error ? (
           <CardContent>
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-danger">{error}</p>
           </CardContent>
         ) : null
       ) : (
@@ -119,9 +118,14 @@ export function ResetPasswordForm({
               <FieldError message={fieldErrors.confirmPassword} />
             </div>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-            <Button className="w-full" disabled={loading} type="submit">
+            <Button
+              className="w-full"
+              disabled={loading}
+              type="submit"
+              variant="primary"
+            >
               {loading ? "Resetting password..." : "Reset password"}
             </Button>
           </form>
@@ -130,7 +134,7 @@ export function ResetPasswordForm({
 
       <CardFooter className="justify-center">
         <a
-          className="text-sm font-medium text-teal-700 underline underline-offset-4"
+          className="text-sm font-medium text-accent underline underline-offset-4"
           href={done ? "/sign-in" : "/forgot-password"}
         >
           {done ? "Sign in" : "Request a new link"}

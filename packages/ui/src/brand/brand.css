@@ -1,0 +1,26 @@
+/*
+ * The brand: the only file a project edits to re-skin the UI (with brand.tsx for the name
+ * and logo). Everything else derives from these values; see docs/how-to-define-branding.md.
+ *
+ * Mock brand "Acme": Linear-like lavender accent, Inter, 6px corners.
+ */
+:root {
+  /* Primary action colour. Hover, tint and focus ring are derived from it. */
+  --brand-accent: #5e6ad2;
+  /* Text on the accent; must reach 4.5:1 contrast against --brand-accent. */
+  --brand-accent-fg: #ffffff;
+
+  --brand-font-sans:
+    "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --brand-font-mono:
+    "Berkeley Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Base corner radius; small/large/extra-large are derived (±2px, +6px). */
+  --brand-radius: 6px;
+}
+
+/* A theme may tune the accent, e.g. lighter on dark backgrounds. */
+[data-theme="light"] {
+  --brand-accent: #5e6ad2;
+}

@@ -37,11 +37,11 @@ export function DashboardPage() {
   return (
     <section className="space-y-6">
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
           Dashboard
         </p>
-        <h2 className="text-3xl font-semibold text-zinc-950">Starter app</h2>
-        <p className="max-w-3xl text-sm leading-6 text-zinc-600">
+        <h2 className="text-3xl font-semibold text-fg">Starter app</h2>
+        <p className="max-w-3xl text-sm leading-6 text-fg-muted">
           This dashboard is the authenticated entry route. Each destination
           below is now part of the `/app/*` SPA instead of a separate top-level
           Astro page.

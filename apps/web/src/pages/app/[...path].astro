@@ -4,6 +4,8 @@ import "@/styles/globals.css";
 
 import { env } from "cloudflare:workers";
 
+import { brand } from "@cloudflare-starter/ui";
+
 import { AppSpa } from "@/components/app/AppSpa";
 import { getAuthMethods } from "@/server/auth";
 
@@ -25,7 +27,8 @@ const methods = getAuthMethods(env);
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <meta content="noindex, nofollow" name="robots" />
-    <title>Cloudflare Starter App</title>
+    <title>{brand.name}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
     <script

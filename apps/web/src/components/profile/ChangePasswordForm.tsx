@@ -90,7 +90,7 @@ export function ChangePasswordForm() {
     <Card className="space-y-6">
       <CardHeader>
         <CardTitle>Security</CardTitle>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           Change your password. Other signed-in sessions are revoked.
         </p>
       </CardHeader>
@@ -145,10 +145,10 @@ export function ChangePasswordForm() {
             <FieldError message={fieldErrors.confirmPassword} />
           </div>
 
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          {success ? <p className="text-sm text-teal-700">{success}</p> : null}
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
+          {success ? <p className="text-sm text-accent">{success}</p> : null}
 
-          <Button disabled={loading} type="submit">
+          <Button disabled={loading} type="submit" variant="primary">
             {loading ? "Updating password..." : "Update password"}
           </Button>
         </form>

@@ -20,7 +20,7 @@ export function ProfilePageClient() {
       <Card className="space-y-6">
         <CardHeader>
           <CardTitle>Profile</CardTitle>
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-fg-muted">
             This is a lightweight account page for the starter app. Better Auth
             owns authentication and stores users in D1; the app shows the
             current identity and lets you change your password in place.
@@ -36,15 +36,15 @@ export function ProfilePageClient() {
                 src={user.image}
               />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-950 text-2xl font-semibold text-white">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-semibold text-accent-fg">
                 {initials({ name: user?.name, email: email || "me" })}
               </div>
             )}
 
             <div className="space-y-1">
-              <p className="text-xl font-semibold text-zinc-950">{name}</p>
-              <p className="text-sm text-zinc-600">{email}</p>
-              <p className="text-xs uppercase tracking-[0.25em] text-zinc-400">
+              <p className="text-xl font-semibold text-fg">{name}</p>
+              <p className="text-sm text-fg-muted">{email}</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-fg-subtle">
                 User {user?.id ?? "loading"}
               </p>
             </div>

@@ -8,6 +8,7 @@ import {
   FieldError,
   Input,
   Label,
+  Logo,
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
 
@@ -50,11 +51,9 @@ export function ForgotPasswordForm() {
   return (
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">
-          Cloudflare Starter
-        </p>
+        <Logo className="mb-3" />
         <CardTitle>Reset password</CardTitle>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           {sent
             ? `If an account exists for ${email}, a reset link is on its way.`
             : "Enter your email and we will send you a reset link."}
@@ -81,9 +80,14 @@ export function ForgotPasswordForm() {
               <FieldError message={fieldError} />
             </div>
 
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-            <Button className="w-full" disabled={loading} type="submit">
+            <Button
+              className="w-full"
+              disabled={loading}
+              type="submit"
+              variant="primary"
+            >
               {loading ? "Sending link..." : "Send reset link"}
             </Button>
           </form>
@@ -91,10 +95,10 @@ export function ForgotPasswordForm() {
       )}
 
       <CardFooter className="justify-center">
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-fg-muted">
           Back to{" "}
           <a
-            className="font-medium text-teal-700 underline underline-offset-4"
+            className="font-medium text-accent underline underline-offset-4"
             href="/sign-in"
           >
             sign in

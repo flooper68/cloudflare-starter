@@ -2,6 +2,8 @@
 import "@cloudflare-starter/ui/globals.css";
 import "@/styles/globals.css";
 
+import { brand, Logo } from "@cloudflare-starter/ui";
+
 interface Props {
   title: string;
 }
@@ -15,15 +17,16 @@ const signedIn = Boolean(Astro.locals.user);
   <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>{title}</title>
+    <title>{title}{brand.titleSeparator}{brand.name}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
-    <header class="border-b border-zinc-200 bg-white/60 backdrop-blur">
+    <header class="border-b border-line bg-surface backdrop-blur">
       <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a class="text-sm font-semibold uppercase tracking-[0.3em] text-zinc-950" href="/">
-          Cloudflare Starter
+        <a href="/" aria-label={`${brand.name} home`}>
+          <Logo />
         </a>
-        <nav class="flex items-center gap-4 text-sm text-zinc-600">
+        <nav class="flex items-center gap-4 text-sm text-fg-muted [&_a:hover]:text-fg">
           <a href="/api/hello">API hello</a>
           {signedIn ? (
             <>

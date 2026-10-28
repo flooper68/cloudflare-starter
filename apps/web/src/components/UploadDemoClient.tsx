@@ -59,7 +59,7 @@ export function UploadDemoClient() {
         <Input id="presigned-upload-file" type="file" onChange={onFileChange} />
       </div>
 
-      <div className="rounded-xl bg-zinc-100 p-4 text-sm text-zinc-700">
+      <div className="rounded-xl bg-surface p-4 text-sm text-fg-muted">
         <p>Status: {status}</p>
         <p>Uploading: {upload.isUploading ? "yes" : "no"}</p>
         <p>Progress: {upload.progress}%</p>
