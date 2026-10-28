@@ -5,12 +5,15 @@ import {
   DomainError,
   type EmailService,
   type ErrorReporter,
+  enforceRateLimit,
   type FeatureFlagStore,
   type FeatureFlags,
   type Ids,
   type JobQueue,
   type Logger,
+  mutationPolicy,
   type R2Config,
+  type RateLimiter,
   type RequestContext,
   resolveActor,
 } from "@cloudflare-starter/features";
@@ -40,6 +43,8 @@ export interface Context {
   readonly flags: FeatureFlags;
   /** The provider's store (FEATURE_FLAGS=d1), null otherwise. */
   readonly flagStore: FeatureFlagStore | null;
+  /** Edge rate limits; every mutation counts against its policy (limitMutations). */
+  readonly rateLimiter: RateLimiter;
   readonly user: {
     readonly id: string;
     readonly email: string;
@@ -109,10 +114,26 @@ const mapDomainErrors = t.middleware(async ({ next }) => {
   return result;
 });
 
+/**
+ * Every mutation counts against its policy (PROCEDURE_POLICIES, default mutation.user),
+ * by user, or by IP when anonymous. Refusals become TOO_MANY_REQUESTS.
+ */
+const limitMutations = t.middleware(async ({ ctx, type, path, next }) => {
+  const policy = type === "mutation" ? mutationPolicy(path) : null;
+  if (policy) {
+    await enforceRateLimit(ctx, {
+      policy,
+      subject: { userId: ctx.user?.id ?? null, ip: ctx.requestContext.ip },
+    });
+  }
+  return next();
+});
+
 export const router = t.router;
 export const publicProcedure = t.procedure
   .use(reportInternalErrors)
-  .use(mapDomainErrors);
+  .use(mapDomainErrors)
+  .use(limitMutations);
 
 export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
   if (!ctx.user) {

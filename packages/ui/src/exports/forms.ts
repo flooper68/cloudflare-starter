@@ -33,6 +33,13 @@ export {
   type FlagRuleValue,
   type FlagRuleValueType,
 } from "../components/flag-rule-editor";
+export {
+  HumanCheck,
+  type HumanCheckProps,
+  loadTurnstileScript,
+  TURNSTILE_SCRIPT_URL,
+  type TurnstileApi,
+} from "../components/human-check";
 export { InlineEdit, type InlineEditProps } from "../components/inline-edit";
 export {
   AsyncMultiSelect,

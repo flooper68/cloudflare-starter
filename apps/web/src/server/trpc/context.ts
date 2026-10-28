@@ -43,6 +43,7 @@ export function createAppContext(
     errors: platform.errors,
     flags: platform.flags,
     flagStore: platform.flagStore,
+    rateLimiter: platform.rateLimiter,
     user,
   };
 }

@@ -33,6 +33,9 @@ const target = values.env as string;
 const local = target === "local";
 const existing = local ? readDevVars() : new Map<string, string>();
 
+/** Cloudflare's published always-pass test secret; accepts only the test widget's token. */
+const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
+
 interface Secret {
   readonly name: string;
   readonly prompt: string;
@@ -54,6 +57,16 @@ const SECRETS: readonly Secret[] = [
       local && existing.get("BETTER_AUTH_SECRET")
         ? undefined
         : randomBytes(32).toString("base64"),
+  },
+  {
+    name: "TURNSTILE_SECRET_KEY",
+    prompt:
+      "Turnstile secret key (required with TURNSTILE=on; Enter locally uses Cloudflare's always-pass test secret)",
+    hidden: true,
+    fallback: () =>
+      local && !existing.get("TURNSTILE_SECRET_KEY")
+        ? TURNSTILE_TEST_SECRET
+        : undefined,
   },
   { name: "GOOGLE_CLIENT_ID", prompt: "Google OAuth client id (optional)" },
   {

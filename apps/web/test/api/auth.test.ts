@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { getAuth } from "@/server/auth";
 
-import { APP_URL, signUp } from "./helpers";
+import { APP_URL, humanHeaders, signUp } from "./helpers";
 
 const json = (path: string, body: unknown, cookie?: string) =>
   getAuth(env).handler(
@@ -12,6 +12,7 @@ const json = (path: string, body: unknown, cookie?: string) =>
       headers: {
         "content-type": "application/json",
         origin: APP_URL,
+        ...humanHeaders(),
         ...(cookie ? { cookie } : {}),
       },
       body: JSON.stringify(body),

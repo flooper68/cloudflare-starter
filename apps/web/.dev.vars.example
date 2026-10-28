@@ -53,6 +53,17 @@ EMAIL_FROM_NAME=Cloudflare Starter
 # Guide: docs/guides/how-to-use-feature-flags.md
 # FEATURE_FLAGS=none
 
+# Abuse protection (docs/guides/how-to-configure-abuse-protection.md). RATE_LIMITING
+# (cloudflare | none) and TURNSTILE (on | off) are required vars set in
+# apps/web/wrangler.jsonc, with TURNSTILE_SITE_KEY; the ratelimits bindings are simulated
+# locally. The site key there is Cloudflare's always-pass test key; this secret is its
+# always-pass test secret, which accepts only the token the test widget produces. Swap in
+# 2x00000000000000000000AB (site key, wrangler.jsonc) or 2x0000000000000000000000000000000AA
+# (secret) to see failures. Same rule as above: uncomment to override, never leave blank.
+# RATE_LIMITING=none
+# TURNSTILE=off
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+
 # R2 presigned URLs (optional). The FILES binding needs nothing here.
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=

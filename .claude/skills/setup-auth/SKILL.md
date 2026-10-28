@@ -29,6 +29,9 @@ At least one method must be on, or the app refuses to start. For Google, the use
 ## Workspaces and sign-up
 
 Required vars per environment, no defaults and none shipped in `wrangler.jsonc` (a deploy refuses to start until they are set; `.dev.vars.example` has values for local dev): `WORKSPACE_MODE` (personal | single | multi), `SIGN_UP` (open | invite), optional `SIGN_UP_DOMAINS` and `BOOTSTRAP_ADMIN_EMAIL` (required in single mode; with invite, one of the two is required). Ask the user which mode and policy they want, then `bun run setup:auth --env <env> --dry-run`, then without `--dry-run`; it writes `wrangler.jsonc` and needs a deploy. `BOOTSTRAP_ADMIN_EMAIL` (and `SIGN_UP_DOMAINS` in single mode) refuses to start unless `AUTH_REQUIRE_EMAIL_VERIFICATION=true` or `AUTH_EMAIL_PASSWORD=false`; verification needs email (setup-email skill). Changing the mode on an environment with users is a data migration. Full guide: `docs/guides/how-to-configure-workspaces.md`.
+## Abuse protection
+
+Required vars `RATE_LIMITING` (`cloudflare`|`none`) and `TURNSTILE` (`on`|`off`), plus `TURNSTILE_SITE_KEY` (var) and `TURNSTILE_SECRET_KEY` (secret) with `on`. Locally use Cloudflare's test keys from `.dev.vars.example`. Per deployed environment the user creates a Managed Turnstile widget in the dashboard (`bun run setup:cloudflare --env <env>` prints the steps; you cannot do it for them), you put the site key in that environment's vars and they store the secret with `bun run setup:secrets --env <env>`. Limits live in `RATE_LIMIT_POLICIES` (`packages/features/src/abuse/domain/policies.ts`). Guide: `docs/guides/how-to-configure-abuse-protection.md`.
 
 ## MCP (Claude as a client)
 
@@ -42,4 +45,4 @@ On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with
 
 ## Verify
 
-`bun run doctor` (also checks the workspace vars), then in the dev server: sign up, sign out, sign in; with email/password off, `/forgot-password` must redirect to `/sign-in`; with `SIGN_UP=invite`, a stranger's sign-up shows the invite-only message. `bun run test` covers MCP parity, the MCP server and sign-up in every mode.
+`bun run doctor` (also checks the workspace and abuse-protection vars), then in the dev server: sign up (the Turnstile test widget passes on its own), sign out, sign in; with email/password off, `/forgot-password` must redirect to `/sign-in`; with `SIGN_UP=invite`, a stranger's sign-up shows the invite-only message. `bun run test` covers MCP parity, the MCP server, sign-up in every mode and the human check.

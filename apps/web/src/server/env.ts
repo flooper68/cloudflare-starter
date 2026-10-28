@@ -12,6 +12,13 @@ export interface AppEnv {
   readonly APP_QUEUE?: Queue<JobEnvelope>;
   /** version_metadata binding: the deployed version id is the `release` in logs and reports. */
   readonly CF_VERSION_METADATA?: WorkerVersionMetadata;
+  /** Workers Rate Limiting, used by the edge policies of RATE_LIMIT_POLICIES. */
+  readonly RL_AUTH_IP?: RateLimit;
+  readonly RL_MUTATION?: RateLimit;
+  readonly RL_MCP_IP?: RateLimit;
+  readonly RL_MCP_USER?: RateLimit;
+  readonly RL_UPLOAD?: RateLimit;
+  readonly RL_INVITE?: RateLimit;
   readonly APP_ENV?: string;
   /** Required var, validated by `parsePlatformConfig`: workers-logs | none. */
   readonly LOG_SINK?: string;

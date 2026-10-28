@@ -5,6 +5,7 @@ declare namespace Cloudflare {
     readonly DB: D1Database;
     readonly FILES: R2Bucket;
     readonly APP_QUEUE: Queue<import("../src").JobEnvelope>;
+    readonly RL_TEST: RateLimit;
     readonly TEST_MIGRATIONS: import("cloudflare:test").D1Migration[];
   }
 }

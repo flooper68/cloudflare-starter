@@ -1,6 +1,7 @@
-import type {
-  ErrorReporter,
-  RequestContext,
+import {
+  type ErrorReporter,
+  RateLimitedError,
+  type RequestContext,
 } from "@cloudflare-starter/features";
 import { McpServer } from "@modelcontextprotocol/server";
 import { TRPCError } from "@trpc/server";
@@ -48,6 +49,10 @@ export function toolError(error: unknown, reporting: ToolErrorReporting) {
       code: error.code,
       httpStatus: HTTP_STATUS[error.code] ?? 500,
       message: error.message,
+      // Rate limits say how long to wait, so the model can tell the user.
+      ...(error.cause instanceof RateLimitedError
+        ? { retryAfterSeconds: error.cause.retryAfterSeconds }
+        : {}),
     });
   }
   const reference =

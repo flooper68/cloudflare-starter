@@ -19,6 +19,11 @@ import {
   nextPath,
 } from "@/lib/auth-client";
 import { GoogleSignInButton } from "./GoogleSignInButton";
+import {
+  AuthGuardFields,
+  type HumanCheckConfig,
+  useAuthGuard,
+} from "./use-auth-guard";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -32,9 +37,12 @@ export function SignUpForm({
   emailPassword,
   google,
   search,
+  humanCheck,
 }: {
   readonly emailPassword: boolean;
   readonly google: boolean;
+  /** Turnstile site key when TURNSTILE=on. */
+  readonly humanCheck: HumanCheckConfig;
   /** The page query, kept on links so an OAuth authorization survives. */
   readonly search: string;
 }) {
@@ -45,6 +53,7 @@ export function SignUpForm({
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const guard = useAuthGuard(humanCheck);
 
   function clearField(field: keyof FieldErrors) {
     setFieldErrors((current) => {
@@ -86,10 +95,15 @@ export function SignUpForm({
       email,
       password,
       callbackURL: nextPath(search) ?? "/app/dashboard",
+      fetchOptions: guard.fetchOptions,
     });
+    guard.settle();
 
     if (signUpError) {
-      setError(authErrorMessage(signUpError, "Unable to sign up."));
+      // A 429 shows the rate-limit notice instead (useAuthGuard).
+      if (signUpError.status !== 429) {
+        setError(authErrorMessage(signUpError, "Unable to sign up."));
+      }
       setLoading(false);
       return;
     }
@@ -169,6 +183,12 @@ export function SignUpForm({
               <FieldError message={fieldErrors.password} />
             </div>
 
+            <AuthGuardFields
+              guard={guard}
+              action="sign-up"
+              subject="sign-up attempts"
+            />
+
             {error ? (
               <p role="alert" className="text-sm text-danger">
                 {error}
@@ -177,7 +197,7 @@ export function SignUpForm({
 
             <Button
               className="w-full"
-              disabled={loading}
+              disabled={loading || !guard.ready}
               type="submit"
               variant="primary"
             >

@@ -1,5 +1,6 @@
 // Package root: each feature's public API, the shared kernel and platform, and the
 // composition roots (database, job catalog, cron catalog). Apps import only from here.
+export * from "./abuse";
 export * from "./accounts";
 export * from "./audit";
 export { type CronDeps, cronCatalog } from "./cron-catalog";

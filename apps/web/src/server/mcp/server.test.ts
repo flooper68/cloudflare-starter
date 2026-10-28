@@ -5,6 +5,7 @@ import {
   type JobQueue,
   noopFeatureFlags,
   noopLogger,
+  noopRateLimiter,
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
@@ -53,6 +54,7 @@ function context(overrides: Partial<Context> = {}): Context {
     bucket: {} as R2Bucket,
     flags: noopFeatureFlags,
     flagStore: null,
+    rateLimiter: noopRateLimiter,
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },
     ...overrides,
   };
@@ -157,6 +159,25 @@ describe("MCP server", () => {
       "rpc.system": "trpc",
       "rpc.method": "queue.enqueueHello",
       "app.trpc.type": "mutation",
+    });
+  });
+
+  it("reports a rate-limited tool call with how long to wait", async () => {
+    const { body } = await rpc(
+      context({
+        rateLimiter: {
+          limit: async () => ({ ok: false, retryAfterSeconds: 60 }),
+        },
+      }),
+      "tools/call",
+      { name: "enqueue_hello", arguments: { name: "Ada" } }
+    );
+    expect(body.result.isError).toBe(true);
+    expect(body.result.structuredContent.error).toEqual({
+      code: "TOO_MANY_REQUESTS",
+      httpStatus: 429,
+      message: "Too many requests. Try again in 60 seconds.",
+      retryAfterSeconds: 60,
     });
   });
 

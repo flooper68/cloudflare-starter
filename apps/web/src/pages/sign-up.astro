@@ -5,6 +5,7 @@ import { SignUpForm } from "@/components/auth/SignUpForm";
 import Layout from "@/layouts/Layout.astro";
 import { nextPath } from "@/lib/auth-links";
 import { getAuthMethods } from "@/server/auth";
+import { buildPlatform } from "@/server/platform";
 
 // Signed-in users skip this page, unless it carries a signed OAuth authorization
 // query (an MCP client asked them to sign in again).
@@ -13,6 +14,7 @@ if (Astro.locals.user && !Astro.url.searchParams.has("sig")) {
 }
 
 const methods = getAuthMethods(env);
+const { turnstile } = buildPlatform(env);
 ---
 
 <Layout title="Sign up">
@@ -22,6 +24,7 @@ const methods = getAuthMethods(env);
       emailPassword={methods.emailPassword}
       google={methods.google}
       search={Astro.url.search}
+      humanCheck={turnstile}
     />
   </main>
 </Layout>

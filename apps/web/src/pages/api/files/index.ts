@@ -18,6 +18,12 @@ import {
   internalErrorResponse,
   problemResponse,
 } from "@/server/http";
+import { buildPlatform } from "@/server/platform";
+import { rateLimitPolicyHeader } from "@/server/rate-limit-headers";
+import {
+  rateLimitedResponse,
+  refuseOverLimit,
+} from "@/server/rate-limited-response";
 
 /**
  * Upload through the Worker into the `FILES` R2 binding (multipart field `file`), into
@@ -32,6 +38,13 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   if (!locals.user) {
     return Response.json({ error: "Sign in to upload" }, { status: 401 });
   }
+  const refused = await refuseOverLimit(
+    buildPlatform(env),
+    "upload.user",
+    { userId: locals.user.id, ip: locals.requestContext.ip },
+    (error) => rateLimitedResponse(error, locals.requestContext, url.pathname)
+  );
+  if (refused) return refused;
 
   const form = await request.formData();
   const file = form.get("file");
@@ -96,7 +109,12 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
     const query = new URLSearchParams({ workspaceId: actor.workspaceId });
     return Response.json(
       { fileId: stored.fileId, url: `/api/files/${stored.fileId}?${query}` },
-      { status: 201 }
+      {
+        status: 201,
+        headers: {
+          "RateLimit-Policy": rateLimitPolicyHeader(["upload.user"]),
+        },
+      }
     );
   } catch (error) {
     // Problem Details 500 with `reference`: the trace id users quote.

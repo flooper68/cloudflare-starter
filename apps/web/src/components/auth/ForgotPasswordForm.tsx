@@ -13,13 +13,24 @@ import {
 import { type FormEvent, useState } from "react";
 
 import { authClient, authErrorMessage } from "@/lib/auth-client";
+import {
+  AuthGuardFields,
+  type HumanCheckConfig,
+  useAuthGuard,
+} from "./use-auth-guard";
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({
+  humanCheck,
+}: {
+  /** Turnstile site key when TURNSTILE=on. */
+  readonly humanCheck: HumanCheckConfig;
+}) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  const guard = useAuthGuard(humanCheck);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,12 +47,17 @@ export function ForgotPasswordForm() {
     const { error: requestError } = await authClient.requestPasswordReset({
       email,
       redirectTo: "/reset-password",
+      fetchOptions: guard.fetchOptions,
     });
+    guard.settle();
 
     setLoading(false);
 
     if (requestError) {
-      setError(authErrorMessage(requestError, "Unable to send reset link."));
+      // A 429 shows the rate-limit notice instead (useAuthGuard).
+      if (requestError.status !== 429) {
+        setError(authErrorMessage(requestError, "Unable to send reset link."));
+      }
       return;
     }
 
@@ -80,11 +96,17 @@ export function ForgotPasswordForm() {
               <FieldError message={fieldError} />
             </div>
 
+            <AuthGuardFields
+              guard={guard}
+              action="password-reset"
+              subject="reset requests"
+            />
+
             {error ? <p className="text-sm text-danger">{error}</p> : null}
 
             <Button
               className="w-full"
-              disabled={loading}
+              disabled={loading || !guard.ready}
               type="submit"
               variant="primary"
             >

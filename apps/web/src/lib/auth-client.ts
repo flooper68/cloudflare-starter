@@ -17,12 +17,20 @@ export const authClient = createAuthClient({
 
 export function authErrorMessage(
   error:
-    | { readonly message?: string; readonly code?: string }
+    | {
+        readonly message?: string;
+        readonly code?: string;
+        readonly detail?: string;
+      }
     | null
     | undefined,
   fallback = "Something went wrong"
 ): string {
-  return authErrorForCode(error?.code) ?? (error?.message || fallback);
+  // Better Auth's errors carry `message`; Problem Details (RFC 9457) carry `detail`.
+  return (
+    authErrorForCode(error?.code) ??
+    (error?.message || error?.detail || fallback)
+  );
 }
 
 /**

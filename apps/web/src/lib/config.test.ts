@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ConfigError,
+  parseAbuseConfig,
   parseAppConfig,
   parseOptionalFeature,
   parsePlatformConfig,
@@ -131,5 +132,43 @@ describe("platform config", () => {
       expect((error as ConfigError).setting).toBe("LOG_SINK");
       expect((error as Error).message).toMatch(/^LOG_SINK is "datadog"/);
     }
+  });
+
+  describe("abuse protection settings", () => {
+    const on = {
+      RATE_LIMITING: "cloudflare",
+      TURNSTILE: "on",
+      TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+      TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+    };
+
+    it("parses explicit settings", () => {
+      expect(parseAbuseConfig(on)).toEqual(on);
+      expect(
+        parseAbuseConfig({ RATE_LIMITING: "none", TURNSTILE: "off" })
+      ).toEqual({
+        RATE_LIMITING: "none",
+        TURNSTILE: "off",
+        TURNSTILE_SITE_KEY: null,
+        TURNSTILE_SECRET_KEY: null,
+      });
+    });
+
+    it.each([
+      ["RATE_LIMITING", { ...on, RATE_LIMITING: undefined }],
+      ["RATE_LIMITING", { ...on, RATE_LIMITING: "redis" }],
+      ["TURNSTILE", { ...on, TURNSTILE: undefined }],
+      ["TURNSTILE_SITE_KEY", { ...on, TURNSTILE_SITE_KEY: "" }],
+      ["TURNSTILE_SECRET_KEY", { ...on, TURNSTILE_SECRET_KEY: undefined }],
+    ])("refuses a missing or wrong %s, naming it", (setting, env) => {
+      let error: unknown;
+      try {
+        parseAbuseConfig(env);
+      } catch (caught) {
+        error = caught;
+      }
+      expect(error).toBeInstanceOf(ConfigError);
+      expect((error as ConfigError).setting).toBe(setting);
+    });
   });
 });

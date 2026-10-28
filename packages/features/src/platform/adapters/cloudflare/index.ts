@@ -6,6 +6,11 @@ export {
   type D1FeatureFlagsOptions,
 } from "./d1-feature-flags";
 export {
+  createTurnstileVerifier,
+  SITEVERIFY_URL,
+  type TurnstileVerifierConfig,
+} from "./turnstile-human-verifier";
+export {
   createWorkersLogsErrorReporter,
   ERROR_REPORT_EVENT,
 } from "./workers-logs-error-reporter";
@@ -13,3 +18,4 @@ export {
   createWorkersLogsLogger,
   type WorkersLogsLoggerOptions,
 } from "./workers-logs-logger";
+export { createCloudflareRateLimiter } from "./workers-rate-limiter";

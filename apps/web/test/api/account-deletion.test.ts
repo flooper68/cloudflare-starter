@@ -12,6 +12,7 @@ import {
   inviteByMail,
   signUp,
   type TestUser,
+  testRequestContext,
 } from "./helpers";
 
 async function deleteUser(user: TestUser, runtimeEnv = env) {
@@ -45,7 +46,7 @@ describe("user deletion (Better Auth user.delete.before hook)", () => {
         headers: { origin: APP_URL },
       }),
       url: new URL(`${APP_URL}/api/files`),
-      locals: { user },
+      locals: { user, requestContext: testRequestContext() },
     } as unknown as APIContext);
     expect(uploaded.status).toBe(201);
     const before = await objectCount();

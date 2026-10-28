@@ -37,7 +37,14 @@
     "FEATURE_FLAGS": "d1",
     "AUTH_EMAIL_PASSWORD": "true",
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
-    "EMAIL_FROM_NAME": "Cloudflare Starter"
+    "EMAIL_FROM_NAME": "Cloudflare Starter",
+    // Abuse protection (docs/guides/how-to-configure-abuse-protection.md). Required:
+    // RATE_LIMITING=cloudflare|none, TURNSTILE=on|off. With TURNSTILE=on the
+    // TURNSTILE_SECRET_KEY secret is required too. The site key below is Cloudflare's
+    // always-pass test key: replace it with your widget's (bun run setup:cloudflare prints how).
+    "RATE_LIMITING": "cloudflare",
+    "TURNSTILE": "on",
+    "TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
   },
   // Create with `bunx wrangler d1 create <name>` and paste the id (docs/guides/how-to-setup-d1.md).
   // The placeholder id is enough for local dev.
@@ -77,6 +84,43 @@
       }
     ]
   },
+  // Workers Rate Limiting: one binding per edge policy family of RATE_LIMIT_POLICIES
+  // (packages/features/src/abuse/domain/policies.ts); limit and period must match it
+  // (test/architecture/abuse.test.ts). Periods are 10 or 60 s. namespace_id is any
+  // integer you choose, unique in the account: no resource to create. Each environment
+  // uses its own ids so their counters stay apart. Simulated locally.
+  "ratelimits": [
+    {
+      "name": "RL_AUTH_IP",
+      "namespace_id": "1001",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "RL_MUTATION",
+      "namespace_id": "1002",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "RL_MCP_IP",
+      "namespace_id": "1006",
+      "simple": { "limit": 600, "period": 60 }
+    },
+    {
+      "name": "RL_MCP_USER",
+      "namespace_id": "1003",
+      "simple": { "limit": 120, "period": 60 }
+    },
+    {
+      "name": "RL_UPLOAD",
+      "namespace_id": "1004",
+      "simple": { "limit": 20, "period": 60 }
+    },
+    {
+      "name": "RL_INVITE",
+      "namespace_id": "1005",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
   "triggers": { "crons": ["17 3 * * *"] },
 
@@ -95,7 +139,11 @@
         "FEATURE_FLAGS": "d1",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
-        "EMAIL_FROM_NAME": "Cloudflare Starter"
+        "EMAIL_FROM_NAME": "Cloudflare Starter",
+        "RATE_LIMITING": "cloudflare",
+        "TURNSTILE": "on",
+        // Test key: replace with the staging widget's site key (bun run doctor warns).
+        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
       },
       "send_email": [{ "name": "EMAIL" }],
       "d1_databases": [
@@ -127,6 +175,38 @@
           }
         ]
       },
+      "ratelimits": [
+        {
+          "name": "RL_AUTH_IP",
+          "namespace_id": "2001",
+          "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "RL_MUTATION",
+          "namespace_id": "2002",
+          "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "RL_MCP_IP",
+          "namespace_id": "2006",
+          "simple": { "limit": 600, "period": 60 }
+        },
+        {
+          "name": "RL_MCP_USER",
+          "namespace_id": "2003",
+          "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_UPLOAD",
+          "namespace_id": "2004",
+          "simple": { "limit": 20, "period": 60 }
+        },
+        {
+          "name": "RL_INVITE",
+          "namespace_id": "2005",
+          "simple": { "limit": 10, "period": 60 }
+        }
+      ],
       "triggers": { "crons": ["17 3 * * *"] }
     },
     "production": {
@@ -143,7 +223,11 @@
         "FEATURE_FLAGS": "d1",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
-        "EMAIL_FROM_NAME": "Cloudflare Starter"
+        "EMAIL_FROM_NAME": "Cloudflare Starter",
+        "RATE_LIMITING": "cloudflare",
+        "TURNSTILE": "on",
+        // Test key: replace with the production widget's site key (bun run doctor warns).
+        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
       },
       "send_email": [{ "name": "EMAIL" }],
       "d1_databases": [
@@ -175,6 +259,38 @@
           }
         ]
       },
+      "ratelimits": [
+        {
+          "name": "RL_AUTH_IP",
+          "namespace_id": "3001",
+          "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "RL_MUTATION",
+          "namespace_id": "3002",
+          "simple": { "limit": 60, "period": 60 }
+        },
+        {
+          "name": "RL_MCP_IP",
+          "namespace_id": "3006",
+          "simple": { "limit": 600, "period": 60 }
+        },
+        {
+          "name": "RL_MCP_USER",
+          "namespace_id": "3003",
+          "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_UPLOAD",
+          "namespace_id": "3004",
+          "simple": { "limit": 20, "period": 60 }
+        },
+        {
+          "name": "RL_INVITE",
+          "namespace_id": "3005",
+          "simple": { "limit": 10, "period": 60 }
+        }
+      ],
       "triggers": { "crons": ["17 3 * * *"] }
     }
   }

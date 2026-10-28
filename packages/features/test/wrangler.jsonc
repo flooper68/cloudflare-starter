@@ -17,5 +17,13 @@
   // Producer only: tests check what a use case sends; nothing consumes it here.
   "queues": {
     "producers": [{ "binding": "APP_QUEUE", "queue": "features-test-queue" }]
-  }
+  },
+  // Workers Rate Limiting, simulated by Miniflare (the cloudflare RateLimiter contract test).
+  "ratelimits": [
+    {
+      "name": "RL_TEST",
+      "namespace_id": "9001",
+      "simple": { "limit": 3, "period": 10 }
+    }
+  ]
 }

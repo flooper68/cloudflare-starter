@@ -1,5 +1,6 @@
 import {
   findUserById,
+  type RateLimitedError,
   type RequestContext,
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
@@ -9,6 +10,13 @@ import { buildRequiredConfig } from "@/lib/env";
 import { AUTH_BASE_PATH, getAuth, mcpResource } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
+import { withHeaders } from "@/server/http";
+import { buildPlatform } from "@/server/platform";
+import {
+  rateLimitedHeaders,
+  rateLimitPolicyHeader,
+} from "@/server/rate-limit-headers";
+import { refuseOverLimit } from "@/server/rate-limited-response";
 import { createAppContext } from "@/server/trpc/context";
 import { appRouter } from "@/server/trpc/router";
 
@@ -31,6 +39,35 @@ function unauthorized(appUrl: string, error?: "invalid_token"): Response {
     {
       status: 401,
       headers: { "WWW-Authenticate": `Bearer ${params.join(", ")}` },
+    }
+  );
+}
+
+/**
+ * A refused request: HTTP 429 with a JSON-RPC error (MCP clients read JSON-RPC, not
+ * Problem Details), Retry-After and the RateLimit header fields.
+ */
+function tooManyRequests(
+  error: RateLimitedError,
+  requestContext: RequestContext
+): Response {
+  return Response.json(
+    {
+      jsonrpc: "2.0",
+      error: {
+        code: -32029,
+        message: error.message,
+        data: {
+          code: error.code,
+          retryAfterSeconds: error.retryAfterSeconds,
+          reference: requestContext.traceId,
+        },
+      },
+      id: null,
+    },
+    {
+      status: 429,
+      headers: rateLimitedHeaders(error.policy, error.retryAfterSeconds),
     }
   );
 }
@@ -61,6 +98,20 @@ export async function handleMcp(
   requestContext: RequestContext
 ): Promise<Response> {
   const appUrl = buildRequiredConfig(env).APP_URL.replace(/\/+$/, "");
+  const platform = buildPlatform(env);
+  const { ip } = requestContext;
+  const refuse = (error: RateLimitedError) =>
+    tooManyRequests(error, requestContext);
+
+  // Per IP before any token work, so invalid tokens cannot be tried at full speed.
+  const byIp = await refuseOverLimit(
+    platform,
+    "mcp.ip",
+    { userId: null, ip },
+    refuse
+  );
+  if (byIp) return byIp;
+
   const token = /^Bearer\s+(.+)$/i
     .exec(request.headers.get("Authorization") ?? "")?.[1]
     ?.trim();
@@ -77,6 +128,14 @@ export async function handleMcp(
   const user = await findUserById({ db: getDb(env) }, String(claims.sub));
   if (!user) return unauthorized(appUrl, "invalid_token");
 
+  const byUser = await refuseOverLimit(
+    platform,
+    "mcp.user",
+    { userId: user.id, ip },
+    refuse
+  );
+  if (byUser) return byUser;
+
   const context = createAppContext(user, requestContext);
   const caller = appRouter.createCaller(context);
   const handler = createMcpHandler(() => buildMcpServer(caller, context), {
@@ -84,7 +143,7 @@ export async function handleMcp(
     onerror: (error) => context.logger.error("mcp.error", { error }),
   });
 
-  return handler.fetch(request, {
+  const response = await handler.fetch(request, {
     authInfo: {
       token,
       clientId: String(claims.azp),
@@ -92,5 +151,8 @@ export async function handleMcp(
       ...(typeof claims.exp === "number" ? { expiresAt: claims.exp } : {}),
       resource: new URL(mcpResource(appUrl)),
     },
+  });
+  return withHeaders(response, {
+    "RateLimit-Policy": rateLimitPolicyHeader(["mcp.ip", "mcp.user"]),
   });
 }

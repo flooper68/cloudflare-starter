@@ -15,8 +15,9 @@ src/
 ├── kernel/             pure shared building blocks: DomainError, Clock, Ids, Random, RequestContext,
 │                       defineJob and the job envelope type
 ├── platform/           shared infrastructure: Drizzle client, email service, clock, ids, random,
-│                       request context; ports/ (Logger, ErrorReporter, JobQueue, FeatureFlags) and
-│                       adapters/<vendor>/
+│                       request context; ports/ (Logger, ErrorReporter, JobQueue, FeatureFlags,
+│                       RateLimiter, HumanVerifier) and adapters/<vendor>/
+├── abuse/              the rate-limit catalog (RATE_LIMIT_POLICIES), limitKey, enforceRateLimit, verifyHuman
 ├── jobs/               background jobs: envelope, backoff, retry policy, idempotency keys, enqueueJob, runJob
 ├── accounts/           Better Auth tables (generated) and user lookups
 ├── audit/              the append-only audit log: event catalog, record, list, purge

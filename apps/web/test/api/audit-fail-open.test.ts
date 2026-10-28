@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getAuth } from "@/server/auth";
 import { REQUEST_ID_HEADER, withRequestContext } from "@/server/http";
 
-import { APP_URL } from "./helpers";
+import { APP_URL, humanHeaders } from "./helpers";
 
 interface Report {
   readonly body: string;
@@ -18,7 +18,11 @@ interface Report {
 function authPost(path: string, body: unknown): Promise<Response> {
   const request = new Request(`${APP_URL}/api/auth${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json", origin: APP_URL },
+    headers: {
+      "content-type": "application/json",
+      origin: APP_URL,
+      ...humanHeaders(),
+    },
     body: JSON.stringify(body),
   });
   return withRequestContext(request, env, () => getAuth(env).handler(request));

@@ -95,6 +95,20 @@ export const auditEventSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     ...common,
+    outcome: z.literal("failure").default("failure"),
+    action: z.literal("auth.human_check_failed"),
+    target: target("email"),
+    metadata: z
+      .object({
+        /** The form the check guarded. */
+        form: z.enum(["sign-up", "sign-in", "password-reset"]),
+        /** missing: no token; rejected: Siteverify said no; unavailable: no answer. */
+        reason: z.enum(["missing", "rejected", "unavailable"]),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...common,
     action: z.literal("auth.sign_up"),
     target: target("user"),
     metadata: z

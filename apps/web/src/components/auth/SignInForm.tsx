@@ -14,6 +14,11 @@ import { type FormEvent, useState } from "react";
 
 import { afterSignIn, authClient, authErrorMessage } from "@/lib/auth-client";
 import { GoogleSignInButton } from "./GoogleSignInButton";
+import {
+  AuthGuardFields,
+  type HumanCheckConfig,
+  useAuthGuard,
+} from "./use-auth-guard";
 
 interface FieldErrors {
   email?: string;
@@ -25,9 +30,12 @@ export function SignInForm({
   google,
   search,
   initialError = null,
+  humanCheck,
 }: {
   readonly emailPassword: boolean;
   readonly google: boolean;
+  /** Turnstile site key when TURNSTILE=on. */
+  readonly humanCheck: HumanCheckConfig;
   /** The page query, kept on links so an OAuth authorization survives sign-up. */
   readonly search: string;
   /** A message for the page's `?error=` code (a refused Google sign-up). */
@@ -38,6 +46,7 @@ export function SignInForm({
   const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const guard = useAuthGuard(humanCheck);
 
   function clearField(field: keyof FieldErrors) {
     setFieldErrors((current) => {
@@ -71,10 +80,15 @@ export function SignInForm({
     const { data, error: signInError } = await authClient.signIn.email({
       email,
       password,
+      fetchOptions: guard.fetchOptions,
     });
+    guard.settle();
 
     if (signInError) {
-      setError(authErrorMessage(signInError, "Unable to sign in."));
+      // A 429 shows the rate-limit notice instead (useAuthGuard).
+      if (signInError.status !== 429) {
+        setError(authErrorMessage(signInError, "Unable to sign in."));
+      }
       setLoading(false);
       return;
     }
@@ -138,6 +152,12 @@ export function SignInForm({
               <FieldError message={fieldErrors.password} />
             </div>
 
+            <AuthGuardFields
+              guard={guard}
+              action="sign-in"
+              subject="sign-in attempts"
+            />
+
             {error ? (
               <p role="alert" className="text-sm text-danger">
                 {error}
@@ -146,7 +166,7 @@ export function SignInForm({
 
             <Button
               className="w-full"
-              disabled={loading}
+              disabled={loading || !guard.ready}
               type="submit"
               variant="primary"
             >
