@@ -1,0 +1,138 @@
+
+ RUN  v5.0.5 /Users/premylsciompa/dev_personal/cloudflare-starter/.claude/worktrees/agent-a99660cd63f0986de
+
+ ✓ |unit| apps/web/src/server/mcp/server.test.ts > MCP server > lists every tool 30ms
+ ✓ |unit| apps/web/src/server/mcp/server.test.ts > MCP server > calls a procedure as the token's user 3ms
+ ✓ |unit| apps/web/src/server/mcp/server.test.ts > MCP server > calls tools whose input fields are all optional with no arguments 1ms
+ ✓ |unit| apps/web/src/server/mcp/server.test.ts > MCP server > turns tRPC errors into tool errors 1ms
+ ✓ |unit| apps/web/src/server/mcp/server.test.ts > MCP server > reports a rate-limited tool call with how long to wait 2ms
+ ✓ |unit| apps/web/src/server/mcp/server.test.ts > MCP server > refuses protected tools without a user 1ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  14:32:05
+   Duration  608ms (import 71%, transform 20%, tests 8%, worker 1%)
+
+
+ RUN  v5.0.5 /Users/premylsciompa/dev_personal/cloudflare-starter/.claude/worktrees/agent-a99660cd63f0986de
+
+Using secrets defined in apps/web/.dev.vars
+ ✓ |web-api| test/api/abuse.test.ts > rate limits > answers a mutation over mutation.user with 429 and Retry-After 60ms
+ ✓ |web-api| test/api/abuse.test.ts > rate limits > limits storage.createUpload by upload.user, with the wait on the error 19ms
+ ✓ |web-api| test/api/abuse.test.ts > rate limits > answers POST /api/files over upload.user with 429 and Retry-After 96ms
+ ✓ |web-api| test/api/abuse.test.ts > rate limits > answers /api/auth/* over auth.ip with 429 before Better Auth runs 122ms
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.437Z WARN [Better Auth]: Invalid password
+
+stdout | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.085Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.090Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.091Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.092Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.093Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.094Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.095Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.096Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.097Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.098Z"}
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.503Z WARN [Better Auth]: Invalid password
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.562Z WARN [Better Auth]: Invalid password
+
+stdout | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.099Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.099Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.100Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.101Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.102Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.102Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.103Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.103Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.104Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.105Z"}
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.620Z WARN [Better Auth]: Invalid password
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.679Z WARN [Better Auth]: Invalid password
+
+stdout | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.105Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.106Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.106Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.108Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.108Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.109Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.110Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.111Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.111Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.112Z"}
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.737Z WARN [Better Auth]: Invalid password
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.795Z WARN [Better Auth]: Invalid password
+
+stdout | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.113Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.113Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.114Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.114Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.115Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.115Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.116Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.117Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.117Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.118Z"}
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.855Z WARN [Better Auth]: Invalid password
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.913Z WARN [Better Auth]: Invalid password
+
+stdout | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.118Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.119Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.120Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.120Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.121Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.122Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.123Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.124Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.125Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.125Z"}
+
+stderr | test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in)
+2026-10-28T13:32:13.972Z WARN [Better Auth]: Invalid password
+
+ ✓ |web-api| test/api/abuse.test.ts > rate limits > answers repeated sign-ins with 429 and Retry-After (Better Auth's auth.sign-in) 598ms
+ ✓ |web-api| test/api/abuse.test.ts > rate limits > answers /mcp over mcp.ip with a JSON-RPC 429 before verifying the token 51ms
+ ✓ |web-api| test/api/abuse.test.ts > human check (Turnstile) > passes sign-up with the always-pass secret and the dummy token 60ms
+stdout | test/api/abuse.test.ts > human check (Turnstile) > refuses sign-up when Siteverify rejects the token (always-fail secret)
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.126Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.127Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.127Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.128Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.129Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.129Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.130Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.132Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.132Z"}
+{"tag":"queue-hello","environment":"develop","message":"Hello, Ada","userId":"9xaWiFj2nRj7uhrb1xHqvmiBH22jABC0","queuedAt":"2026-10-28T13:32:13.134Z"}
+
+ ✓ |web-api| test/api/abuse.test.ts > human check (Turnstile) > refuses sign-up without a token 9ms
+ ✓ |web-api| test/api/abuse.test.ts > human check (Turnstile) > refuses sign-up when Siteverify rejects the token (always-fail secret) 8ms
+ ✓ |web-api| test/api/abuse.test.ts > human check (Turnstile) > refuses /sign-in/email without a token 8ms
+ ✓ |web-api| test/api/abuse.test.ts > human check (Turnstile) > refuses /request-password-reset without a token 2ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  14:32:07
+   Duration  7.10s (transform 66%, tests 19%, import 11%, setup 4%)
+

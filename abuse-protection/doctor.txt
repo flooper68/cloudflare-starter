@@ -1,0 +1,24 @@
+$ bun scripts/doctor.ts
+Local dev
+✓ RATE_LIMITING=cloudflare
+✓ Turnstile on
+✓ APP_URL http://localhost:4321
+✓ BETTER_AUTH_SECRET set
+✓ sign-in: email + password
+✓ email from noreply@example.test (simulated locally)
+! R2 presigned URLs off (the FILES binding works without them)
+✓ local D1 migrations applied
+
+Deploy config (apps/web/wrangler.jsonc)
+! develop: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM (bun run setup:email)
+! develop: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env develop)
+! staging: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM (bun run setup:email)
+! staging: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc
+! staging: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env staging)
+! production: placeholder D1 id (bun run setup:cloudflare); no EMAIL_FROM (bun run setup:email)
+! production: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc
+! production: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env production)
+✓ ratelimits: 15 bindings, unique namespace_ids
+✓ Wrangler is logged in
+
+All good.

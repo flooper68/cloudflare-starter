@@ -1,0 +1,26 @@
+# 62 requests to /api/auth/get-session from one IP (auth.ip: 60 a minute)
+$ for i in $(seq 1 62); do curl -s -o /dev/null -w "%{http_code} retry-after=%header{retry-after}
+" -H "cf-connecting-ip: 203.0.113.9" http://localhost:4321/api/auth/get-session; done | sort | uniq -c
+  60 200 retry-after=
+   2 429 retry-after=60
+
+# the refused response
+$ curl -si -H "cf-connecting-ip: 203.0.113.9" http://localhost:4321/api/auth/get-session
+HTTP/1.1 429 Too Many Requests
+retry-after: 60
+{"error":"Too many requests. Try again in 60 seconds.","retryAfterSeconds":60}
+
+# another IP is not affected
+200
+
+# 122 POSTs to /mcp without a token from one IP (mcp.ip: 120 a minute; 401 until then)
+ 120 401
+   2 429
+$ curl -si -X POST -H "cf-connecting-ip: 203.0.113.11" http://localhost:4321/mcp
+HTTP/1.1 429 Too Many Requests
+retry-after: 60
+{"jsonrpc":"2.0","error":{"code":-32029,"message":"Too many requests. Try again in 60 seconds.","data":{"retryAfterSeconds":60}},"id":null}
+
+# sign-up without a Turnstile token
+HTTP/1.1 400 Bad Request
+{"code":"HUMAN_CHECK_FAILED","message":"The human check did not pass. Try again."}
