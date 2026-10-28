@@ -249,6 +249,30 @@ describe("rate limits", () => {
     });
   });
 
+  it("limits anonymous verification mails to auth.verification-email (3 a minute per IP)", async () => {
+    const { limit } = RATE_LIMIT_POLICIES["auth.verification-email"];
+    const { call, response } = await until429(limit, () =>
+      authRoute(
+        context(
+          new Request(`${APP_URL}/api/auth/send-verification-email`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              origin: APP_URL,
+              "cf-connecting-ip": "192.0.2.17",
+            },
+            body: JSON.stringify({ email: "stranger@example.test" }),
+          })
+        )
+      )
+    );
+    expect(call).toBe(limit + 1);
+    expect(await response.json()).toMatchObject({
+      code: "RATE_LIMITED",
+      "violated-policies": ["auth.verification-email"],
+    });
+  });
+
   it("answers /mcp over mcp.ip with a JSON-RPC 429 before verifying the token", async () => {
     const { limit } = RATE_LIMIT_POLICIES["mcp.ip"];
     const { response } = await until429(limit, () =>

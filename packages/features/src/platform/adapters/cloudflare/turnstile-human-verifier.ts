@@ -40,7 +40,8 @@ const CONFIG_ERRORS = new Set(["missing-input-secret", "invalid-input-secret"]);
 /**
  * HumanVerifier on Cloudflare Turnstile Siteverify. Fails closed: a timeout, network
  * error, 5xx or `internal-error` is retried once with the same idempotency key, then
- * the check reports `unavailable` and the request is refused.
+ * the check reports `unavailable` (with a `detail` for the caller's error report; the
+ * adapter writes nothing itself) and the request is refused.
  */
 export function createTurnstileVerifier(
   config: TurnstileVerifierConfig
@@ -88,10 +89,11 @@ export function createTurnstileVerifier(
 
         const codes = result.body["error-codes"] ?? [];
         if (codes.some((code) => CONFIG_ERRORS.has(code))) {
-          console.error(
-            `[turnstile] Siteverify rejected the secret key (${codes.join(", ")}); check TURNSTILE_SECRET_KEY`
-          );
-          return { ok: false, reason: "unavailable" };
+          return {
+            ok: false,
+            reason: "unavailable",
+            detail: `Siteverify rejected the secret key (${codes.join(", ")}): check TURNSTILE_SECRET_KEY`,
+          };
         }
         if (result.body.success !== true) {
           return { ok: false, reason: "rejected" };
@@ -103,10 +105,11 @@ export function createTurnstileVerifier(
         return { ok: true };
       }
 
-      console.error(
-        `[turnstile] Siteverify did not answer after ${attempts} attempts`
-      );
-      return { ok: false, reason: "unavailable" };
+      return {
+        ok: false,
+        reason: "unavailable",
+        detail: `Siteverify did not answer after ${attempts} attempts`,
+      };
     },
   };
 }

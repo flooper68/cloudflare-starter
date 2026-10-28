@@ -22,4 +22,4 @@ export {
   ROUTE_POLICIES,
 } from "./domain";
 export { enforceRateLimit } from "./enforce-rate-limit";
-export { verifyHuman } from "./verify-human";
+export { type HumanCheckFailure, verifyHuman } from "./verify-human";

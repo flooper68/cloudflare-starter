@@ -9,6 +9,7 @@ describe("betterAuthRules", () => {
       "/sign-in/*": { window: 60, max: 10 },
       "/sign-up/*": { window: 60, max: 5 },
       "/request-password-reset": { window: 60, max: 3 },
+      "/send-verification-email": { window: 60, max: 3 },
       "/oauth2/register": { window: 3600, max: 5 },
       "/oauth2/token": { window: 60, max: 10 },
       "/oauth2/authorize": { window: 60, max: 10 },

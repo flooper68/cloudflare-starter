@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  createMemoryHumanVerifier,
-  type HumanVerificationFailure,
-} from "../platform";
+import { createMemoryHumanVerifier } from "../platform";
 import { HumanCheckFailedError, HumanCheckUnavailableError } from "./domain";
-import { verifyHuman } from "./verify-human";
+import { type HumanCheckFailure, verifyHuman } from "./verify-human";
 
 const input = { remoteIp: "203.0.113.7", action: "sign-up" };
 const verifier = createMemoryHumanVerifier({ passToken: "human" });
@@ -18,11 +15,11 @@ describe("verifyHuman", () => {
   });
 
   it("throws HumanCheckFailedError for a missing or rejected token and says why", async () => {
-    const reasons: HumanVerificationFailure[] = [];
+    const failures: HumanCheckFailure[] = [];
     const deps = {
       humanVerifier: verifier,
-      onFailure: async (reason: HumanVerificationFailure) => {
-        reasons.push(reason);
+      onFailure: async (failure: HumanCheckFailure) => {
+        failures.push(failure);
       },
     };
     await expect(
@@ -31,19 +28,33 @@ describe("verifyHuman", () => {
     await expect(
       verifyHuman(deps, { ...input, token: "bot" })
     ).rejects.toBeInstanceOf(HumanCheckFailedError);
-    expect(reasons).toEqual(["missing", "rejected"]);
+    expect(failures).toEqual([{ reason: "missing" }, { reason: "rejected" }]);
   });
 
-  it("throws HumanCheckUnavailableError when the provider cannot answer", async () => {
+  it("throws HumanCheckUnavailableError when the provider cannot answer, passing the detail on", async () => {
+    const failures: HumanCheckFailure[] = [];
     await expect(
       verifyHuman(
         {
           humanVerifier: {
-            verify: async () => ({ ok: false, reason: "unavailable" }),
+            verify: async () => ({
+              ok: false,
+              reason: "unavailable",
+              detail: "Siteverify did not answer after 2 attempts",
+            }),
+          },
+          onFailure: async (failure) => {
+            failures.push(failure);
           },
         },
         { ...input, token: "human" }
       )
     ).rejects.toBeInstanceOf(HumanCheckUnavailableError);
+    expect(failures).toEqual([
+      {
+        reason: "unavailable",
+        detail: "Siteverify did not answer after 2 attempts",
+      },
+    ]);
   });
 });

@@ -63,3 +63,26 @@ test("too many reset requests show the rate-limit notice", async ({ page }) => {
     page.getByRole("button", { name: "Send reset link" })
   ).toBeDisabled();
 });
+
+test("guessing invitation links is refused per IP (token.lookup)", async ({
+  request,
+}) => {
+  const octet = () => Math.floor(Math.random() * 250) + 1;
+  const ip = `10.${octet()}.${octet()}.${octet()}`;
+  // 30 lookups a minute per IP; windows align to the minute, so allow two windows.
+  let refused: Awaited<ReturnType<typeof request.get>> | null = null;
+  for (let attempt = 0; attempt < 61 && !refused; attempt++) {
+    const guess = `${attempt}`.padStart(64, "0");
+    const response = await request.get(`/invite/${guess}`, {
+      headers: { "cf-connecting-ip": ip },
+    });
+    if (response.status() === 429) refused = response;
+  }
+  expect(refused, "never rate limited").not.toBeNull();
+  expect(refused?.headers()["retry-after"]).toBe("60");
+  expect(refused?.headers()["content-type"]).toBe("application/problem+json");
+  expect(await refused?.json()).toMatchObject({
+    code: "RATE_LIMITED",
+    "violated-policies": ["token.lookup"],
+  });
+});

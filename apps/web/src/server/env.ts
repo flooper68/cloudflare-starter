@@ -19,6 +19,7 @@ export interface AppEnv {
   readonly RL_MCP_USER?: RateLimit;
   readonly RL_UPLOAD?: RateLimit;
   readonly RL_INVITE?: RateLimit;
+  readonly RL_TOKEN_LOOKUP?: RateLimit;
   readonly APP_ENV?: string;
   /** Required var, validated by `parsePlatformConfig`: workers-logs | none. */
   readonly LOG_SINK?: string;

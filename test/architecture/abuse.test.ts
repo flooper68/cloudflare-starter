@@ -4,7 +4,7 @@
  * or a RATE_LIMIT_EXEMPT entry with a reason, and every binding the catalog names exists
  * in every environment of wrangler.jsonc with the catalog's limit and period.
  */
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { AnyProcedure } from "@trpc/server";
 import { parse } from "jsonc-parser";
@@ -31,12 +31,23 @@ const mutations = Object.entries(procedures)
   .map(([path]) => path);
 
 const PAGES = "apps/web/src/pages/";
-/** Endpoint files under src/pages, including dot folders such as .well-known. */
+/**
+ * An .astro page that reads a route param or a `token` query parameter on the server: it
+ * can be used to guess tokens, so it needs a policy or an exemption like an endpoint.
+ */
+const READS_URL_TOKEN = /Astro\.params|searchParams\.get\(\s*["']token["']/;
+
+/** Endpoint files under src/pages (dot folders such as .well-known included), and the
+ * .astro pages that read tokens from the URL. */
 function endpointFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
     if (statSync(path).isDirectory()) return endpointFiles(path);
-    return name.endsWith(".ts") && !name.endsWith(".test.ts") ? [path] : [];
+    return (name.endsWith(".ts") && !name.endsWith(".test.ts")) ||
+      (name.endsWith(".astro") &&
+        READS_URL_TOKEN.test(readFileSync(path, "utf8")))
+      ? [path]
+      : [];
   });
 }
 const endpoints = endpointFiles(join(ROOT, PAGES)).map((path) =>
@@ -90,16 +101,19 @@ describe("abuse protection coverage", () => {
     expect(unknown).toEqual([]);
   });
 
-  it.each(endpoints)("endpoint %s has a policy or an exemption", (file) => {
-    const limited = file in ROUTE_POLICIES;
-    const exempt = file in RATE_LIMIT_EXEMPT;
-    expect(
-      limited !== exempt,
-      "add it to ROUTE_POLICIES or RATE_LIMIT_EXEMPT (not both)"
-    ).toBe(true);
-    if (exempt)
-      expect(RATE_LIMIT_EXEMPT[file]?.trim().length).toBeGreaterThan(10);
-  });
+  it.each(endpoints)(
+    "endpoint or token page %s has a policy or an exemption",
+    (file) => {
+      const limited = file in ROUTE_POLICIES;
+      const exempt = file in RATE_LIMIT_EXEMPT;
+      expect(
+        limited !== exempt,
+        "add it to ROUTE_POLICIES or RATE_LIMIT_EXEMPT (not both)"
+      ).toBe(true);
+      if (exempt)
+        expect(RATE_LIMIT_EXEMPT[file]?.trim().length).toBeGreaterThan(10);
+    }
+  );
 
   it.each(Object.entries(ROUTE_POLICIES))(
     "%s applies its policies",

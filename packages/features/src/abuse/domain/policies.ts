@@ -62,6 +62,15 @@ export const RATE_LIMIT_POLICIES = {
     authPath: "/request-password-reset",
     description: "Password reset mails",
   },
+  "auth.verification-email": {
+    limit: 3,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "better-auth",
+    authPath: "/send-verification-email",
+    description:
+      "Verification mails on request (anonymous, to any address; no human check: no form of ours sends it)",
+  },
   "auth.oauth-register": {
     limit: 5,
     periodSeconds: 3600,
@@ -121,6 +130,15 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "Every /mcp request, per token user; tool calls that mutate also count against their mutation policy",
   },
+  "token.lookup": {
+    limit: 30,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_TOKEN_LOOKUP",
+    description:
+      "Pages that look up a token from the URL (invitation links), per IP, against guessing",
+  },
   "invitation.send": {
     limit: 10,
     periodSeconds: 60,
@@ -144,7 +162,8 @@ export const PROCEDURE_POLICIES: Readonly<Record<string, RateLimitPolicyId>> = {
 export const DEFAULT_MUTATION_POLICY: RateLimitPolicyId = "mutation.user";
 
 /**
- * The policies each non-tRPC endpoint applies, by file under apps/web/src/pages.
+ * The policies each non-tRPC endpoint applies, by file under apps/web/src/pages (endpoints,
+ * and .astro pages that look up a token from the URL).
  * test/architecture/abuse.test.ts checks that each file uses them.
  */
 export const ROUTE_POLICIES: Readonly<
@@ -153,6 +172,7 @@ export const ROUTE_POLICIES: Readonly<
   "api/auth/[...all].ts": ["auth.ip"],
   "api/files/index.ts": ["upload.user"],
   "mcp.ts": ["mcp.ip", "mcp.user"],
+  "invite/[token].astro": ["token.lookup"],
 };
 
 /**
@@ -166,6 +186,8 @@ export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
   "api/files/[id].ts":
     "authenticated read of the user's own file; reads are not limited",
   ".well-known/[...path].ts": "static OAuth discovery documents",
+  "reset-password.astro":
+    "only hands the token to the form; Better Auth checks it under auth.ip",
 };
 
 /** The policy a tRPC mutation is limited by, or null when it is exempt. */

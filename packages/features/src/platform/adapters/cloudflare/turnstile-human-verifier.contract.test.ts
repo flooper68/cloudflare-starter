@@ -103,6 +103,7 @@ describe("turnstile verifier", () => {
     expect(await verifier.verify(input)).toEqual({
       ok: false,
       reason: "unavailable",
+      detail: "Siteverify did not answer after 2 attempts",
     });
     expect(calls).toHaveLength(2);
     expect(calls[0]?.get("idempotency_key")).toBe(
@@ -137,7 +138,7 @@ describe("turnstile verifier", () => {
         }),
       ids,
     });
-    expect(await verifier.verify(input)).toEqual({
+    expect(await verifier.verify(input)).toMatchObject({
       ok: false,
       reason: "unavailable",
     });
@@ -152,6 +153,8 @@ describe("turnstile verifier", () => {
     expect(await verifier.verify(input)).toEqual({
       ok: false,
       reason: "unavailable",
+      detail:
+        "Siteverify rejected the secret key (invalid-input-secret): check TURNSTILE_SECRET_KEY",
     });
   });
 

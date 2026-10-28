@@ -76,15 +76,27 @@ async function enforceHumanCheck(
   const form = HUMAN_CHECKED_PATHS[ctx.path];
   if (!form) return;
   const headers = ctx.headers ?? new Headers();
+  const platform = buildPlatform(env);
+  const requestContext = contextFor(env, ctx);
   try {
     await verifyHuman(
       {
-        humanVerifier: buildPlatform(env).humanVerifier,
-        onFailure: (reason) => auditHumanCheckFailed(env, ctx, form, reason),
+        humanVerifier: platform.humanVerifier,
+        onFailure: async ({ reason, detail }) => {
+          // The provider failing is ours to fix, not the visitor's: report it.
+          if (reason === "unavailable") {
+            platform.errors.capture(
+              new Error(detail ?? "Human verification unavailable"),
+              requestContext,
+              { "app.auth.human_check.form": form }
+            );
+          }
+          await auditHumanCheckFailed(env, ctx, form, reason);
+        },
       },
       {
         token: headers.get(HUMAN_CHECK_HEADER),
-        remoteIp: contextFor(env, ctx).ip,
+        remoteIp: requestContext.ip,
         action: form,
       }
     );

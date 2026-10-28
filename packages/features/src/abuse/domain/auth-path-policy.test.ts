@@ -9,6 +9,7 @@ describe("authPathPolicy", () => {
     ["/sign-up/email", "auth.sign-up"],
     ["/request-password-reset", "auth.password-reset"],
     ["/oauth2/token", "auth.oauth-token"],
+    ["/send-verification-email", "auth.verification-email"],
   ])("maps %s to %s", (path, id) => {
     expect(authPathPolicy(path)).toBe(id);
   });

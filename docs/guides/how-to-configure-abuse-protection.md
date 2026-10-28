@@ -4,16 +4,18 @@ The web app limits how often each IP and each user may call it, and asks for a C
 
 ## What Is Wired Up
 
-| Where                                                    | Policy (catalog id)                                                                             | Enforced by                                  |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Every `/api/auth/*` request                              | `auth.ip` (per IP)                                                                              | `RL_AUTH_IP` binding, before Better Auth     |
-| `/sign-in/*`, `/sign-up/*`, `/request-password-reset`    | `auth.sign-in`, `auth.sign-up`, `auth.password-reset`                                           | Better Auth's limiter (counters in D1)       |
-| `/oauth2/register`, `/oauth2/token`, `/oauth2/authorize` | `auth.oauth-*`                                                                                  | Better Auth's limiter                        |
-| Every tRPC mutation (web and MCP tool calls)             | `mutation.user` unless `PROCEDURE_POLICIES` says otherwise                                      | `RL_MUTATION`, tRPC middleware (`init.ts`)   |
-| `storage.createUpload`, `POST /api/files`                | `upload.user`                                                                                   | `RL_UPLOAD`                                  |
-| `/mcp`                                                   | `mcp.ip` (600/min, MCP clients share server IPs) before the token is verified, `mcp.user` after | `RL_MCP_IP`, `RL_MCP_USER`                   |
-| `workspace.invitations.create` (mails a link)            | `invitation.send`                                                                               | `RL_INVITE`                                  |
-| Sign-up, sign-in, password reset (email + password)      | Turnstile human check                                                                           | Better Auth `hooks.before` → `HumanVerifier` |
+| Where                                                         | Policy (catalog id)                                                                             | Enforced by                                                                                                                                          |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Every `/api/auth/*` request                                   | `auth.ip` (per IP)                                                                              | `RL_AUTH_IP` binding, before Better Auth                                                                                                             |
+| `/sign-in/*`, `/sign-up/*`, `/request-password-reset`         | `auth.sign-in`, `auth.sign-up`, `auth.password-reset`                                           | Better Auth's limiter (counters in D1)                                                                                                               |
+| `/oauth2/register`, `/oauth2/token`, `/oauth2/authorize`      | `auth.oauth-*`                                                                                  | Better Auth's limiter                                                                                                                                |
+| `/send-verification-email` (anonymous, mails any address)     | `auth.verification-email` (3 a minute per IP)                                                   | Better Auth's limiter. No human check: no page of ours sends this request, so no widget could supply a token; the tight limit and `auth.ip` bound it |
+| Every tRPC mutation (web and MCP tool calls)                  | `mutation.user` unless `PROCEDURE_POLICIES` says otherwise                                      | `RL_MUTATION`, tRPC middleware (`init.ts`)                                                                                                           |
+| `storage.createUpload`, `POST /api/files`                     | `upload.user`                                                                                   | `RL_UPLOAD`                                                                                                                                          |
+| `/mcp`                                                        | `mcp.ip` (600/min, MCP clients share server IPs) before the token is verified, `mcp.user` after | `RL_MCP_IP`, `RL_MCP_USER`                                                                                                                           |
+| `workspace.invitations.create` (mails a link)                 | `invitation.send`                                                                               | `RL_INVITE`                                                                                                                                          |
+| `/invite/[token]` (looks up an invitation token from the URL) | `token.lookup` (30 a minute per IP)                                                             | `RL_TOKEN_LOOKUP`, in the page before the lookup                                                                                                     |
+| Sign-up, sign-in, password reset (email + password)           | Turnstile human check                                                                           | Better Auth `hooks.before` → `HumanVerifier`                                                                                                         |
 
 The numbers live in one place: `RATE_LIMIT_POLICIES` in [packages/features/src/abuse/domain/policies.ts](../../packages/features/src/abuse/domain/policies.ts). User-scoped policies count a signed-in user by id and an anonymous caller by IP (`CF-Connecting-IP`).
 
@@ -27,12 +29,14 @@ What the caller sees:
   ```json
   {
     "type": "https://iana.org/assignments/http-problem-types#quota-exceeded",
-    "title": "Too many requests",
+    "title": "Too Many Requests",
     "status": 429,
     "detail": "Too many requests. Try again in 60 seconds.",
     "instance": "/api/files",
+    "code": "RATE_LIMITED",
     "violated-policies": ["upload.user"],
-    "retryAfterSeconds": 60
+    "retryAfterSeconds": 60,
+    "reference": "4bf92f3577b34da6a3ce929d0e0e4736"
   }
   ```
 
@@ -51,7 +55,7 @@ Status 400, `code: "HUMAN_CHECK_FAILED"`: no Turnstile token, or Siteverify reje
 
 ### Human check unavailable
 
-Status 503, `code: "HUMAN_CHECK_UNAVAILABLE"`: Siteverify did not answer (5 s per attempt, one retry with the same idempotency key, so about 10 s at most) or rejected the secret key. The request is refused; the visitor tries again later.
+Status 503, `code: "HUMAN_CHECK_UNAVAILABLE"`: Siteverify did not answer (5 s per attempt, one retry with the same idempotency key, so about 10 s at most) or rejected the secret key. The request is refused; the visitor tries again later. Each occurrence is also sent to the ErrorReporter with the request context and the reason (`ERROR_REPORTER`, [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)): the provider failing is ours to fix.
 
 ## Settings
 
@@ -64,11 +68,11 @@ Required in every environment, no defaults; a missing or wrong value fails the f
 | `TURNSTILE_SITE_KEY`   | var (public)                        | the widget's site key; required with `on`                                                   |
 | `TURNSTILE_SECRET_KEY` | secret (`.dev.vars`, Worker secret) | the widget's secret key; required with `on`                                                 |
 
-Bindings, in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc`: `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE` (`ratelimits`). Their `limit` and `period` must equal the catalog's; `test/architecture/abuse.test.ts` checks it. `namespace_id` is any positive integer you pick, unique in the Cloudflare account; bindings sharing one share counters, so every environment uses its own ids (1001–1006, 2001–2006, 3001–3006). There is no resource to create.
+Bindings, in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc`: `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP` (`ratelimits`). Their `limit` and `period` must equal the catalog's; `test/architecture/abuse.test.ts` checks it. `namespace_id` is any positive integer you pick, unique in the Cloudflare account; bindings sharing one share counters, so every environment uses its own ids (1001–1007, 2001–2007, 3001–3007). There is no resource to create.
 
 ## Local Development
 
-`apps/web/.dev.vars.example` sets `RATE_LIMITING=cloudflare`, `TURNSTILE=on` and Cloudflare's test keys:
+The top-level `vars` of `apps/web/wrangler.jsonc`, which local dev uses too, set `RATE_LIMITING=cloudflare`, `TURNSTILE=on` and Cloudflare's always-pass test site key; `apps/web/.dev.vars.example` sets the matching test secret `TURNSTILE_SECRET_KEY` and shows how to override the two settings (commented lines). Cloudflare's test keys:
 
 | Key                                          | Behaviour                                           |
 | -------------------------------------------- | --------------------------------------------------- |
@@ -110,7 +114,7 @@ Workers Rate Limiting counts per Cloudflare location and is eventually consisten
 
 ## Give A Mutation Or Route A Policy
 
-Every tRPC mutation is limited by `mutation.user` automatically. A tighter limit (anything that sends mail, invites, or costs money): add an edge policy with its own binding, then `PROCEDURE_POLICIES["<router>.<procedure>"] = "<policy id>"`. An endpoint under `apps/web/src/pages`: call `refuseOverLimit(buildPlatform(env), "<policy id>", { userId, ip: locals.requestContext.ip }, (error) => rateLimitedResponse(error, locals.requestContext, url.pathname))` before doing work, and list the file in `ROUTE_POLICIES`. Not limiting something is a decision: add it to `RATE_LIMIT_EXEMPT` with the reason. `test/architecture/abuse.test.ts` fails until one of these is done.
+Every tRPC mutation is limited by `mutation.user` automatically. A tighter limit (anything that sends mail, invites, or costs money): add an edge policy with its own binding, then `PROCEDURE_POLICIES["<router>.<procedure>"] = "<policy id>"`. An endpoint under `apps/web/src/pages`: call `refuseOverLimit(buildPlatform(env), "<policy id>", { userId, ip: locals.requestContext.ip }, (error) => rateLimitedResponse(error, locals.requestContext, url.pathname))` before doing work, and list the file in `ROUTE_POLICIES`. The same holds for an `.astro` page that reads a token from the URL on the server (`Astro.params`, a `token` query parameter): `/invite/[token]` applies `token.lookup` in its frontmatter; the architecture test finds such pages. Not limiting something is a decision: add it to `RATE_LIMIT_EXEMPT` with the reason. `test/architecture/abuse.test.ts` fails until one of these is done.
 
 A new binding: add it to the `ratelimits` of all three environments with a new `namespace_id` each, to `AppEnv` in `apps/web/src/server/env.ts`, and the architecture test and `buildPlatform` pick it up from the catalog.
 
@@ -134,11 +138,11 @@ The limiter and the human check are ports in `packages/features/src/platform/por
 
 ## Troubleshooting
 
-| Symptom                                                                 | Cause and fix                                                                                         |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `Set RATE_LIMITING to cloudflare or none`, `Set TURNSTILE to on or off` | The setting is missing in that environment's vars or `.dev.vars`.                                     |
-| `TURNSTILE=on needs the TURNSTILE_SECRET_KEY secret`                    | `bun run setup:secrets --env <env>`, or copy it from `.dev.vars.example` locally.                     |
-| `RATE_LIMITING=cloudflare needs the RL_… ratelimits binding`            | The binding is missing in that environment of `wrangler.jsonc`.                                       |
-| Every sign-up fails with "The human check did not pass"                 | Site key and secret key belong to different widgets, or a test site key is paired with a real secret. |
-| `[turnstile] Siteverify rejected the secret key` in the log             | `TURNSTILE_SECRET_KEY` is wrong for this widget.                                                      |
-| Everyone shares one limit                                               | Requests arrive without `CF-Connecting-IP` (local dev, or a proxy in front of the Worker).            |
+| Symptom                                                                                      | Cause and fix                                                                                         |
+| -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `Set RATE_LIMITING to cloudflare or none`, `Set TURNSTILE to on or off`                      | The setting is missing in that environment's vars or `.dev.vars`.                                     |
+| `TURNSTILE=on needs the TURNSTILE_SECRET_KEY secret`                                         | `bun run setup:secrets --env <env>`, or copy it from `.dev.vars.example` locally.                     |
+| `RATE_LIMITING=cloudflare needs the RL_… ratelimits binding`                                 | The binding is missing in that environment of `wrangler.jsonc`.                                       |
+| Every sign-up fails with "The human check did not pass"                                      | Site key and secret key belong to different widgets, or a test site key is paired with a real secret. |
+| An error report "Siteverify rejected the secret key" (attribute `app.auth.human_check.form`) | `TURNSTILE_SECRET_KEY` is wrong for this widget.                                                      |
+| Everyone shares one limit                                                                    | Requests arrive without `CF-Connecting-IP` (local dev, or a proxy in front of the Worker).            |

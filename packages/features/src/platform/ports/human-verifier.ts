@@ -23,7 +23,12 @@ export type HumanVerificationFailure = "missing" | "rejected" | "unavailable";
 
 export type HumanVerificationResult =
   | { readonly ok: true }
-  | { readonly ok: false; readonly reason: HumanVerificationFailure };
+  | {
+      readonly ok: false;
+      readonly reason: HumanVerificationFailure;
+      /** Why the provider could not answer (`unavailable` only), for the error report. */
+      readonly detail?: string;
+    };
 
 export interface HumanVerifier {
   verify(input: HumanVerificationInput): Promise<HumanVerificationResult>;
