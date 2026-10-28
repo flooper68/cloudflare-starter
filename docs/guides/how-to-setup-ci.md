@@ -112,7 +112,7 @@ A self-hosted runner runs whatever code a job checks out. **This repository is p
 - **Outside contributors need approval.** Turn on **Settings → Actions → General → Fork pull request workflows → Require approval for all external contributors**. It is a repository setting, not code; check it after creating the repository from this template.
 - **Deploys only from the trusted repository.** `deploy.yml` starts only by hand (`workflow_dispatch`), which needs write access, and its secrets come from GitHub environments with their own protection rules. Only give write access to people you trust with your machine: they can run code on the runners by pushing a branch.
 - **The containers have no access to the host.** No Docker socket, no host paths, no host network: a job sees only its container (its own network namespace, so a dev server it starts on `:4321` never meets yours). Anything with access to your Docker daemon can still read a running job's environment, including the deploy secrets while a deploy runs.
-- **The registration token never reaches a job.** `runner:up` fetches a one-hour registration token with your `gh` session and passes it only in the environment of a throwaway `register` container (`docker compose run --rm`), never on a command line, in a file or in the long-running container. It is never printed.
+- **The registration token never reaches a job.** `runner:up` fetches a one-hour registration token with your `gh` session and passes it only in the environment of a throwaway `register` container (`docker compose run --rm`), which hands it to `config.sh` as `ACTIONS_RUNNER_INPUT_TOKEN`: never on a command line, in a file or in the long-running container. It is never printed.
 
 Why persistent and not ephemeral runners: an ephemeral runner registers again for every job, so the machine needs a fresh registration token per job, which only an admin token (a personal access token or GitHub App with administration rights on the repository) can mint. That token would have to live on the machine, next to the jobs. A persistent registration needs the admin rights only once, from your own `gh`, and keeps just the runner's own credentials (`.runner`, `.credentials`) in the worker's volume. Between jobs `actions/checkout` cleans the workspace and the runner wipes `RUNNER_TEMP`; caches in the container (Bun's install cache, the tool cache, Playwright's browser) persist, which is what makes the runners fast.
 
@@ -133,7 +133,7 @@ bun run runner:up -- --workers 2
 
 1. Reads the repository from `git remote get-url origin` (override with `--repo owner/name`) and checks that `ops/runner/Dockerfile` pins the same Bun (`packageManager`), Node (`.nvmrc`) and Playwright (`apps/web`) as the repository.
 2. Builds the image `<owner>-<repo>-runner:local` from `ops/runner/Dockerfile`: the official [actions-runner](https://github.com/actions/runner/pkgs/container/actions-runner) image (pinned by version and digest), plus Bun and Node (each checked against a SHA-256 in the Dockerfile) and Chromium's Ubuntu packages for the pinned Playwright.
-3. For each worker whose volume holds no registration yet, registers it (one registration token for all of them) as `<hostname>-<repo>-<n>` with the labels `self-hosted`, `Linux`, the architecture, and `<repo>` (`--labels a,b` replaces `<repo>`).
+3. For each worker whose volume holds no registration yet, registers it (one registration token for all of them) as `<hostname>-<repo>-<n>` with the labels `self-hosted`, `Linux`, the architecture, and `<repo>` (`--labels a,b` replaces `<repo>`). A registered worker keeps its name even if the hostname changes later; registration never replaces an existing runner of the same name.
 4. Starts workers 1 to n, one Compose project each (`ops/runner/docker-compose.yml`): container `<owner>-<repo>-runner-<n>`, volume `<owner>-<repo>-runner-<n>-state`, `restart: unless-stopped`, `init: true` (reaps processes a job leaves behind), `shm_size: 2g` (Chromium).
 5. Stops any running worker above n. It stays registered and shows as Offline in GitHub; a later `--workers` that includes it starts it again without registering.
 
@@ -182,7 +182,7 @@ gh variable delete CI_RUNS_ON          # first, or jobs queue forever
 bun run runner:remove -- --all
 ```
 
-This stops each worker, deletes it in GitHub (`gh api -X DELETE repos/<owner>/<repo>/actions/runners/<id>`), and removes its container, network and volume. The image stays; delete it with `docker image rm <owner>-<repo>-runner:local`.
+This stops each worker, deletes it in GitHub (`gh api -X DELETE repos/<owner>/<repo>/actions/runners/<id>`, with the id from the registration in the worker's volume, so a changed hostname does not matter), and removes its container, network and volume. The image stays; delete it with `docker image rm <owner>-<repo>-runner:local`.
 
 ## Troubleshooting
 
@@ -199,6 +199,8 @@ This stops each worker, deletes it in GitHub (`gh api -X DELETE repos/<owner>/<r
 **`runner:up` says Docker is not running.** Start Docker Desktop (or the Docker daemon) and run it again.
 
 **A worker restarts in a loop, its log says `not registered` or the runner rejects its credentials.** The registration in its volume is missing or was deleted in GitHub. `bun run runner:remove -- --worker <n>`, then `runner:up` registers it again.
+
+**Registering fails because a runner with that name already exists.** Another machine with the same short hostname registered workers for this repository (names are `<hostname>-<repo>-<n>`). Registration never replaces an existing runner; rename one machine, or remove the stale runner in Settings → Actions → Runners if it is gone.
 
 **A worker shows in GitHub as Offline but no longer exists on any machine.** Delete it in Settings → Actions → Runners (… → Remove runner). Stopped workers above the `--workers` count also show as Offline; `runner:remove -- --worker <n>` unregisters them.
 

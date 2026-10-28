@@ -30,13 +30,14 @@ register() {
     exit 1
   fi
   echo "runner-entrypoint: registering $RUNNER_NAME at $RUNNER_URL (labels: $RUNNER_LABELS)"
-  ./config.sh --unattended \
+  # The runner reads ACTIONS_RUNNER_INPUT_<ARG> like --<arg>: the token stays off every
+  # command line. No --replace: a name another machine already uses fails instead of
+  # silently taking over its runner.
+  ACTIONS_RUNNER_INPUT_TOKEN="$RUNNER_TOKEN" ./config.sh --unattended \
     --url "$RUNNER_URL" \
-    --token "$RUNNER_TOKEN" \
     --name "$RUNNER_NAME" \
     --labels "$RUNNER_LABELS" \
-    --work _work \
-    --replace
+    --work _work
   for file in "${FILES[@]}"; do
     if [ -f "$file" ]; then cp -p "$file" "$STATE/$file"; fi
   done

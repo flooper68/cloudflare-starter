@@ -8,6 +8,7 @@ import {
   imageName,
   parseLabels,
   parseOptions,
+  parseRegistration,
   planUp,
   projectName,
   removeTargets,
@@ -213,6 +214,22 @@ describe("removeTargets", () => {
 
   it("--worker takes the listed ones", () => {
     expect(removeTargets({ all: false, worker: [2] }, existing)).toEqual([2]);
+  });
+});
+
+describe("parseRegistration", () => {
+  it("reads id and name from .runner, with or without a byte-order mark", () => {
+    const runner = '{"agentId": 42, "agentName": "old-host-n-1", "poolId": 1}';
+    expect(parseRegistration(runner)).toEqual({ id: 42, name: "old-host-n-1" });
+    expect(parseRegistration(`﻿${runner}`)).toEqual({
+      id: 42,
+      name: "old-host-n-1",
+    });
+  });
+
+  it("returns undefined for an empty or foreign file", () => {
+    expect(parseRegistration("")).toBeUndefined();
+    expect(parseRegistration('{"agentId": "x"}')).toBeUndefined();
   });
 });
 

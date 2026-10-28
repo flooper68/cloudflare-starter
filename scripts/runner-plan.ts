@@ -256,6 +256,31 @@ export function workerFromName(
   return match ? Number(match[1]) : undefined;
 }
 
+export interface Registration {
+  /** The runner's id in GitHub (`repos/<repo>/actions/runners/<id>`). */
+  readonly id: number;
+  readonly name: string;
+}
+
+/**
+ * The registration saved in a worker's volume: the runner's `.runner` file (JSON, sometimes
+ * with a byte-order mark). It names the runner as registered, even if the hostname changed.
+ */
+export function parseRegistration(text: string): Registration | undefined {
+  try {
+    const data = JSON.parse(text.replace(/^﻿/, "")) as {
+      agentId?: unknown;
+      agentName?: unknown;
+    };
+    return typeof data.agentId === "number" &&
+      typeof data.agentName === "string"
+      ? { id: data.agentId, name: data.agentName }
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** `bun@1.3.14` → `1.3.14`. */
 export function bunVersion(packageManager: string): string | undefined {
   return /^bun@(\d+\.\d+\.\d+)$/.exec(packageManager.trim())?.[1];

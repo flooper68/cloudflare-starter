@@ -32,8 +32,10 @@ import {
   imageName,
   type Options,
   parseOptions,
+  parseRegistration,
   planUp,
   projectName,
+  type Registration,
   removeTargets,
   repoFromRemote,
   runnerName,
@@ -104,6 +106,9 @@ function compose(
   secretEnv: Record<string, string> = {}
 ): void {
   const env = composeEnv(repo, host, worker, labels);
+  // A registered worker keeps the name it was registered with, even if the hostname changed.
+  const registered = registration(repo, worker);
+  if (registered) env.RUNNER_NAME = registered.name;
   step(
     "docker",
     [
@@ -116,6 +121,29 @@ function compose(
     ],
     { env: { ...process.env, ...env, ...secretEnv } }
   );
+}
+
+const registrations = new Map<number, Registration | undefined>();
+
+/** The registration in a worker's volume (needs the image; read once per worker). */
+function registration(repo: string, worker: number): Registration | undefined {
+  if (!registrations.has(worker)) {
+    const read = capture("docker", [
+      "run",
+      "--rm",
+      "--entrypoint",
+      "cat",
+      "-v",
+      `${projectName(repo, worker)}-state:/runner-state`,
+      imageName(repo),
+      "/runner-state/.runner",
+    ]);
+    registrations.set(
+      worker,
+      read.ok ? parseRegistration(read.stdout) : undefined
+    );
+  }
+  return registrations.get(worker);
 }
 
 function resolveRepo(): string {
@@ -421,24 +449,38 @@ function remove(): void {
   const labels = defaultLabels(repo);
 
   for (const worker of targets) {
-    const name = runnerName(host, repo, worker);
+    // The registration in the volume names the runner as registered; without one (never
+    // registered, or volume gone) fall back to the name this machine would give it.
+    const registered = registration(repo, worker);
+    const name = registered?.name ?? runnerName(host, repo, worker);
     console.log(`\nWorker ${worker} (${name})`);
     // Stop first: GitHub refuses to delete a runner that is running a job.
     compose(repo, labels, worker, ["stop"]);
 
-    const lookup = `repos/${repo}/actions/runners`;
+    const runners = `repos/${repo}/actions/runners`;
     const jq = `.runners[] | select(.name == "${name}") | .id`;
+    let id = registered ? String(registered.id) : undefined;
     if (dryRun) {
-      console.log(`  (dry run) gh api --paginate ${lookup} --jq '${jq}'`);
-      console.log(`  (dry run) gh api -X DELETE ${lookup}/<id>`);
+      if (!id)
+        console.log(`  (dry run) gh api --paginate ${runners} --jq '${jq}'`);
+      console.log(`  (dry run) gh api -X DELETE ${runners}/${id ?? "<id>"}`);
     } else {
-      const found = capture("gh", ["api", "--paginate", lookup, "--jq", jq]);
-      if (!found.ok)
-        fail(`Cannot list the runners of ${repo}: ${found.stderr}`);
-      if (found.stdout) {
-        step("gh", ["api", "-X", "DELETE", `${lookup}/${found.stdout}`]);
-      } else {
+      if (!id) {
+        const found = capture("gh", ["api", "--paginate", runners, "--jq", jq]);
+        if (!found.ok)
+          fail(`Cannot list the runners of ${repo}: ${found.stderr}`);
+        id = found.stdout || undefined;
+      }
+      const deleted = id
+        ? capture("gh", ["api", "-X", "DELETE", `${runners}/${id}`])
+        : undefined;
+      if (deleted?.ok) {
+        console.log(`  Deleted runner ${id} in GitHub.`);
+      } else if (!deleted || /HTTP 404/.test(deleted.stderr)) {
         console.log(`  ${name} is not registered in GitHub (already removed).`);
+      } else {
+        // Keep the volume: it holds the registration needed to retry.
+        fail(`Could not delete ${name} in GitHub: ${deleted.stderr}`);
       }
     }
     compose(repo, labels, worker, ["down", "--volumes"]);
