@@ -58,7 +58,7 @@
       }
     ]
   },
-  "triggers": { "crons": ["*/5 * * * *"] },
+  "triggers": { "crons": ["*/5 * * * *", "17 3 * * *"] },
 
   "env": {
     "staging": {
@@ -104,7 +104,7 @@
           }
         ]
       },
-      "triggers": { "crons": ["*/5 * * * *"] }
+      "triggers": { "crons": ["*/5 * * * *", "17 3 * * *"] }
     },
     "production": {
       "observability": {
@@ -149,7 +149,7 @@
           }
         ]
       },
-      "triggers": { "crons": ["*/5 * * * *"] }
+      "triggers": { "crons": ["*/5 * * * *", "17 3 * * *"] }
     }
   }
 }

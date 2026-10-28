@@ -8,6 +8,11 @@ import { jwt } from "better-auth/plugins";
 import type { AppConfig } from "@/lib/config";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
 import {
+  auditAuthEndpoint,
+  auditDatabaseHooks,
+  auditPasswordReset,
+} from "@/server/auth-audit";
+import {
   deliverAuthLinkWithoutEmail,
   EMAIL_LINK_PATHS,
   emailNotConfiguredError,
@@ -116,6 +121,9 @@ export function createAuthOptions(env: AppEnv) {
       enabled: methods.emailPassword,
       requireEmailVerification: methods.requireEmailVerification,
       revokeSessionsOnPasswordReset: true,
+      // Audit log: a completed reset (server/auth-audit.ts).
+      onPasswordReset: ({ user }, request) =>
+        auditPasswordReset(env, user.id, request),
       async sendResetPassword({ user, url }) {
         await sendAuthMail({
           to: user,
@@ -186,7 +194,11 @@ export function createAuthOptions(env: AppEnv) {
       }),
     ],
     telemetry: { enabled: false },
+    // Audit log: sign-in and sign-up (server/auth-audit.ts).
+    databaseHooks: auditDatabaseHooks(env),
     hooks: {
+      // Audit log: failed sign-in and password reset requests (server/auth-audit.ts).
+      after: createAuthMiddleware((ctx) => auditAuthEndpoint(env, ctx)),
       // Deployed without email, refuse link-sending endpoints up front, for every address:
       // failing only inside sendResetPassword would answer differently for registered
       // emails (account enumeration).

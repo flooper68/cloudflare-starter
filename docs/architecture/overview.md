@@ -77,7 +77,9 @@ flowchart LR
 
 **Queue message.** A use case sends a message (validated by the feature's zod schema) to `APP_QUEUE`. The `queue` handler parses each message, calls the use case for its `type`, acks it. Malformed messages are logged and acked; failures retry with backoff and land in the dead-letter queue after `max_retries`.
 
-**Cron.** `triggers.crons` in `wrangler.jsonc` fires `scheduled`; the handler branches on `controller.cron` and calls one use case per schedule, passing `controller.scheduledTime` as the time.
+**Cron.** `triggers.crons` in `wrangler.jsonc` fires `scheduled`; the handler branches on `controller.cron` and calls one use case per schedule, passing `controller.scheduledTime` as the time. Schedules: `*/5 * * * *` (the greeting demo) and `17 3 * * *` (the daily audit purge).
+
+**Audit event.** A use case that changes state records an audit event with `recordAuditEvent` after the change, passing its request context; Better Auth's sign-in, failed sign-in, sign-up, password reset request and password change are recorded from hooks in `apps/web/src/server/auth-audit.ts`. See [Audit log](#audit-log).
 
 ## Environments and bindings
 
@@ -107,6 +109,7 @@ Each principle is the rule that holds now; a project records why it changes one 
 11. **One Worker** for HTTP, queue consumer and cron; split only for separate scaling, limits or deploys.
 12. **UI is token-only.** Components use theme tokens, never raw palette classes or hex values; brand lives in `packages/ui/src/brand/`. `lint/rules/tokens-only.grit` (enforced in CI). [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md)
 13. **Outside services only through a port.** Logging, error reporting and every later outside service (rate limiting, analytics, feature flags, billing) are reached through an interface in `packages/features/src/platform/ports/`; vendor code lives only in `platform/adapters/<vendor>/`, and only the Cloudflare adapters write to the console. See [Ports and adapters](#ports-and-adapters). Dependency-cruiser `vendor-sdks-only-in-adapters` (packages/features outside an adapter folder imports only zod, drizzle-orm and aws4fetch) and `vendor-sdks-not-in-app-server` (a denylist of vendor SDKs in `apps/web/src/server`), GritQL `lint/rules/no-console.grit` (packages/features and `apps/web/src/server`, tests and the Cloudflare adapters aside), and `test/architecture/test-presence.test.ts` (every adapter runs its port's contract suite) (enforced in CI).
+14. **Dependencies are explicit; no ambient request state.** Code receives the `RequestContext`, clock, ids and bindings as arguments; nothing reads them from a global or from `AsyncLocalStorage`. One exception, at the adapter edge: Better Auth calls its hooks itself and gives them no way to receive our context, so `apps/web/src/server/request-scope.ts` keeps the current request's context in an `AsyncLocalStorage` that `withRequestContext` (`server/http.ts`) sets and only `server/auth-audit.ts` reads, to give audit events the request's trace id. A new library callback that needs the context goes through the same bridge only with a reason in the PR. GritQL `lint/rules/request-scope-at-auth-edge.grit` (no `AsyncLocalStorage`, `node:async_hooks` or `request-scope` import in packages/features or apps/web outside those three files) (enforced in CI).
 
 ## Feature layout
 
@@ -140,6 +143,7 @@ packages/features/src/
 │   ├── clock.ts                 systemClock
 │   └── ids.ts                   randomIds
 ├── accounts/                    Better Auth tables (generated), findUserById
+├── audit/                       the append-only audit log: catalog, record, list, purge
 ├── greetings/                   the queue and cron demo
 └── files/                       a full feature
     ├── index.ts                 public API: use cases, types, errors
@@ -188,18 +192,29 @@ Ports today: **Logger** (`debug|info|warn|error(event, attributes)`, `child(attr
 
 Prefer an open standard over a format of our own: tools, vendors and people already understand it, and swapping an adapter does not change the wire format. A new wire, log or event format follows the standard listed here, or the PR states why not ([code-review.md](../processes/code-review.md#1-server-side-architecture)).
 
-| Concern                              | Standard                                                                                                                                        | In this repository                                                                                                                                                                            |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Logs, traces, metrics                | [OpenTelemetry](https://opentelemetry.io/docs/specs/otel/) data models and [semantic conventions](https://opentelemetry.io/docs/specs/semconv/) | Log records in the Logs Data Model (`platform/log-record.ts`), semantic-convention attributes, `app.*` for our own; resource `service.name`, `service.version`, `deployment.environment.name` |
-| Trace propagation                    | [W3C Trace Context](https://www.w3.org/TR/trace-context/), [W3C Baggage](https://www.w3.org/TR/baggage/)                                        | `traceparent` in and out of HTTP and on queue messages (`platform/trace-context.ts`); Baggage when it is needed                                                                               |
-| Metric names                         | [OpenMetrics](https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md) naming, OpenTelemetry metric conventions        | Not used yet                                                                                                                                                                                  |
-| Error bodies of non-tRPC HTTP routes | [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457)                                                                              | 500s from the HTTP edge and file routes (`application/problem+json`, extension `reference`); other statuses of `/api/files` still use `{ error }`                                             |
-| Rate limit responses                 | [IETF RateLimit header fields](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)                                          | Not used yet                                                                                                                                                                                  |
-| Event envelopes                      | [CloudEvents](https://cloudevents.io/)                                                                                                          | Not used yet (queue messages are internal; see the queue checklist)                                                                                                                           |
-| Outgoing webhooks                    | [Standard Webhooks](https://www.standardwebhooks.com/)                                                                                          | Not used yet                                                                                                                                                                                  |
-| Feature flags                        | [OpenFeature](https://openfeature.dev/)                                                                                                         | Not used yet                                                                                                                                                                                  |
-| Product analytics                    | [Segment spec](https://segment.com/docs/connections/spec/) (identify, track, page, group)                                                       | Not used yet                                                                                                                                                                                  |
-| Audit records                        | [OCSF](https://schema.ocsf.io/)-aligned fields (actor, action, target, time, outcome)                                                           | Not used yet                                                                                                                                                                                  |
+| Concern                              | Standard                                                                                                                                        | In this repository                                                                                                                                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Logs, traces, metrics                | [OpenTelemetry](https://opentelemetry.io/docs/specs/otel/) data models and [semantic conventions](https://opentelemetry.io/docs/specs/semconv/) | Log records in the Logs Data Model (`platform/log-record.ts`), semantic-convention attributes, `app.*` for our own; resource `service.name`, `service.version`, `deployment.environment.name`                               |
+| Trace propagation                    | [W3C Trace Context](https://www.w3.org/TR/trace-context/), [W3C Baggage](https://www.w3.org/TR/baggage/)                                        | `traceparent` in and out of HTTP and on queue messages (`platform/trace-context.ts`); Baggage when it is needed                                                                                                             |
+| Metric names                         | [OpenMetrics](https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md) naming, OpenTelemetry metric conventions        | Not used yet                                                                                                                                                                                                                |
+| Error bodies of non-tRPC HTTP routes | [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457)                                                                              | 500s from the HTTP edge and file routes (`application/problem+json`, extension `reference`); other statuses of `/api/files` still use `{ error }`                                                                           |
+| Rate limit responses                 | [IETF RateLimit header fields](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/)                                          | Not used yet                                                                                                                                                                                                                |
+| Event envelopes                      | [CloudEvents](https://cloudevents.io/)                                                                                                          | Not used yet (queue messages are internal; see the queue checklist)                                                                                                                                                         |
+| Outgoing webhooks                    | [Standard Webhooks](https://www.standardwebhooks.com/)                                                                                          | Not used yet                                                                                                                                                                                                                |
+| Feature flags                        | [OpenFeature](https://openfeature.dev/)                                                                                                         | Not used yet                                                                                                                                                                                                                |
+| Product analytics                    | [Segment spec](https://segment.com/docs/connections/spec/) (identify, track, page, group)                                                       | Not used yet                                                                                                                                                                                                                |
+| Audit records                        | [OCSF](https://schema.ocsf.io/)-aligned fields (actor, action, target, time, outcome)                                                           | `audit_events` (`packages/features/src/audit/`): OCSF field names in a compact shape; the class and attribute mapping for an export is in [how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md#ocsf-mapping) |
+
+## Audit log
+
+Security-relevant actions are recorded in `audit_events`, a D1 table owned by the `audit` feature ([how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md)).
+
+- **Append-only.** Only `recordAuditEvent` inserts and only `purgeAuditEvents` deletes; nothing updates a row or touches the table from outside `audit/` (`test/architecture/audit-coverage.test.ts`, enforced in CI).
+- **Every state change is audited.** Each state-changing use case of a feature in `AUDITED_FEATURES` calls `recordAuditEvent`, or is in `AUDIT_EXEMPT` with a reason (same test). Better Auth's endpoints are recorded from its hooks.
+- **A typed catalog.** Actions, their targets and their metadata are a zod discriminated union with `.strict()` metadata (`audit/domain/audit-event.ts`); credential-like keys (`token`, `password`, `secret`, `code`) are refused.
+- **Origin from the request context.** Each event carries the `trace_id`, `source` and `ip` of the work that caused it, so the logs of that work are one search away.
+- **Retention.** `AUDIT_RETENTION_DAYS` (400) in `audit/domain/retention.ts`; a daily cron (`17 3 * * *`) purges older events.
+- **OCSF-aligned.** Field names follow OCSF (actor, action, target, outcome, time, origin); an export is a mapping, documented in the guide. Full OCSF, an R2 archive and a hash chain for tamper evidence are options, not built.
 
 ## Current state vs target
 
@@ -214,6 +229,7 @@ Do not cite these as precedent until they are closed. None today. When the code 
 | File storage                                | [how-to-setup-r2.md](../guides/how-to-setup-r2.md)                                                                                                                                             |
 | Email                                       | [how-to-setup-email.md](../guides/how-to-setup-email.md)                                                                                                                                       |
 | MCP tools                                   | [how-to-setup-mcp.md](../guides/how-to-setup-mcp.md), `apps/web/src/server/mcp/tools.ts`                                                                                                       |
+| Audit log, retention                        | [how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md), [Audit log](#audit-log)                                                                                                  |
 | Logging, error reports, tracing             | [how-to-setup-logging.md](../guides/how-to-setup-logging.md), [how-to-setup-error-reporting.md](../guides/how-to-setup-error-reporting.md), [Ports and adapters](#ports-and-adapters)          |
 | Deploy, environments, queues, cron          | [how-to-setup-web-app.md](../guides/how-to-setup-web-app.md)                                                                                                                                   |
 | CI or the deploy workflow                   | [how-to-setup-ci.md](../guides/how-to-setup-ci.md)                                                                                                                                             |
@@ -231,6 +247,7 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 
 - [ ] `packages/features/src/<feature>/` with `index.ts`, `domain/` (with its own `index.ts`), use-case files, `<feature>.schema.ts` if it has tables.
 - [ ] Re-exported from `packages/features/src/index.ts`.
+- [ ] Added to `AUDITED_FEATURES` in `test/architecture/audit-coverage.test.ts` if it changes state users or admins would need to account for.
 - [ ] No imports from another feature except through its barrel; none from `packages/ui`.
 - [ ] An ADR if it introduces a pattern others will copy ([adrs.md](../processes/adrs.md)).
 
@@ -238,6 +255,7 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 
 - [ ] One file, one exported function, deps (`db`, `bucket`, `clock`, `ids`, `email`, `queue`) as arguments.
 - [ ] Rules it applies live in `domain/` with unit tests; it throws typed domain errors.
+- [ ] If it changes state, it records an audit event (`recordAuditEvent`, an action from the catalog) or is in `AUDIT_EXEMPT` with a reason ([how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md)).
 - [ ] Exported from the feature barrel; integration test if it touches D1, R2 or a queue.
 
 **A D1 table or column**

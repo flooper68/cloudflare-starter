@@ -15,6 +15,7 @@ src/
 ├── platform/           shared infrastructure: Drizzle client, email service, queue send, clock, ids,
 │                       request context; ports/ (Logger, ErrorReporter) and adapters/<vendor>/
 ├── accounts/           Better Auth tables (generated) and user lookups
+├── audit/              the append-only audit log: event catalog, record, list, purge
 ├── files/              file records and R2 storage (binding and presigned URLs)
 └── greetings/          the queue and cron demo
 ```

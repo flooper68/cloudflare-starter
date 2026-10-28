@@ -40,9 +40,11 @@ If CI is green, these hold; reviewers do not check them manually:
 - Import cycles (Biome `noImportCycles`)
 - `drizzle-orm` in `apps/web` (Biome `noRestrictedImports`)
 - `export *` outside the package roots (Biome `noReExportAll`)
-- Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters (GritQL rules in `lint/rules/*.grit`)
+- Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters, no `AsyncLocalStorage` or `request-scope` import outside the Better Auth hook bridge (GritQL rules in `lint/rules/*.grit`)
 - Vendor SDKs only in `platform/adapters/<vendor>/`: packages/features imports only zod, drizzle-orm and aws4fetch elsewhere, `apps/web/src/server` imports none of the listed vendor SDKs (dependency-cruiser `vendor-sdks-only-in-adapters`, `vendor-sdks-not-in-app-server`)
 - Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
+- `audit_events` append-only (only `recordAuditEvent` inserts, only `purgeAuditEvents` deletes) and every state-changing use case of an audited feature records an event or is exempt (`test/architecture/audit-coverage.test.ts`)
+- Every var and secret of `.dev.vars.example` and the top-level `vars` pinned for the API tests (`test/architecture/api-test-bindings.test.ts`)
 - One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, a contract test per platform adapter, every UI component has stories, exact pins, bindings in all environments, the same `observability` and `version_metadata` in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 - No AI agent credited in a PR's commits (`scripts/check-attribution.ts` in the CI `lint` job)
@@ -69,6 +71,7 @@ Automation proves a test exists, not that it is good: reviewers still check that
 - [ ] Every procedure is `protectedProcedure` unless deliberately public, and checks ownership of the records it touches.
 - [ ] Every HTTP route checks the session; state-changing routes check `Origin` (Astro `checkOrigin` is off); tRPC POSTs require `x-trpc-source`.
 - [ ] Secrets never appear in code, config, command arguments, logs, errors or tool results.
+- [ ] A state change records an audit event (`recordAuditEvent` with an action from the catalog, after the change succeeded), or the use case is in `AUDIT_EXEMPT` with a reason; audit metadata holds identifiers and the values a reviewer needs, never credentials or whole request bodies ([how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md)).
 - [ ] Untrusted input (request bodies, query strings, queue messages, tool arguments) is validated with zod at the boundary.
 - [ ] User data in MCP results is inside `<untrusted-data>`; tools that send something outside the app are `outward: true` and say "confirm with the user".
 - [ ] A new dependency has the justification [dependencies.md](dependencies.md#adding-a-dependency) asks for; updated ones have their changelogs read, derived files regenerated and `bun audit` findings triaged; every `overrides` entry and accepted advisory has a row in [Overrides and accepted advisories](dependencies.md#overrides-and-accepted-advisories); every `trustedDependencies` addition has a reason.

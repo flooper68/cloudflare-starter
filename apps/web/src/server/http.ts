@@ -17,6 +17,7 @@ import { ConfigError } from "@/lib/config";
 import { redactUrlPath } from "@/lib/redact-url";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
+import { runInRequestScope } from "@/server/request-scope";
 
 /** The trace id, for people: quote it to find the request's logs. */
 export const REQUEST_ID_HEADER = "x-request-id";
@@ -169,7 +170,8 @@ export async function withRequestContext(
 
   let response: Response;
   try {
-    response = await handle(scope);
+    // In scope for code that cannot take the context as an argument (Better Auth hooks).
+    response = await runInRequestScope(scope, () => handle(scope));
   } catch (error) {
     response = internalErrorResponse(env, error, context, {
       ...httpAttributes(request),

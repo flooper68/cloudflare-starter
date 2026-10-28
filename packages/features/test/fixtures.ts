@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 
-import { createDatabase, type Database } from "../src";
+import { createDatabase, type Database, type RequestContext } from "../src";
 
 /** The real Drizzle client over the test D1. */
 export function testDb(): Database {
@@ -30,4 +30,23 @@ export async function seedUser(
     .bind(id, name, email, Date.now(), Date.now())
     .run();
   return { id, name, email };
+}
+
+/** A request context as the HTTP edge builds it, for use cases that record their origin. */
+export function testRequestContext(
+  overrides: Partial<RequestContext> = {}
+): RequestContext {
+  return {
+    traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+    spanId: "00f067aa0ba902b7",
+    parentSpanId: null,
+    traceFlags: "01",
+    source: "http",
+    userId: null,
+    workspaceId: null,
+    ip: "203.0.113.7",
+    release: "local",
+    environment: "local",
+    ...overrides,
+  };
 }
