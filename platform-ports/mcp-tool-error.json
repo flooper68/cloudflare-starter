@@ -1,0 +1,21 @@
+{
+  "request": "tools/call enqueue_hello",
+  "requestId": "4f4c1eef-8d26-433a-b96f-0072edb10dbd",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"code\":\"INTERNAL_SERVER_ERROR\",\"httpStatus\":500,\"message\":\"Internal error\",\"reference\":\"4f4c1eef-8d26-433a-b96f-0072edb10dbd\"}}"
+      }
+    ],
+    "structuredContent": {
+      "error": {
+        "code": "INTERNAL_SERVER_ERROR",
+        "httpStatus": 500,
+        "message": "Internal error",
+        "reference": "4f4c1eef-8d26-433a-b96f-0072edb10dbd"
+      }
+    },
+    "isError": true
+  }
+}

@@ -1,0 +1,74 @@
+# Structured lines from `astro dev` (apps/web, LOG_SINK=workers-logs, ERROR_REPORTER=workers-logs).
+# Locally workerd prints each logged object; deployed, Workers Logs indexes the same fields.
+
+{
+  level: 'info',
+  event: 'queue.hello',
+  requestId: '2db0c6c8-9b58-4849-8205-bb8fda8f01c9',
+  source: 'queue',
+  userId: 'EOO5KpXKR3pPeBJFpUnD3JZJK0N1TOQg',
+  workspaceId: null,
+  release: '9034879f-e8f5-4b2e-8ae0-db7db2563cfa',
+  environment: 'develop',
+  messageId: '434fed3276b80cce8f59d51de4d8b545',
+  attempts: 1,
+  tag: 'queue-hello',
+  message: 'Hello, Barbara',
+  queuedAt: '2026-10-28T13:21:03.443Z'
+}
+
+{
+  level: 'error',
+  event: 'error.captured',
+  procedure: 'queue.enqueueHello',
+  type: 'mutation',
+  requestId: '952bec74-a342-4d5c-a814-173ad7b8b4d9',
+  source: 'http',
+  userId: 'EOO5KpXKR3pPeBJFpUnD3JZJK0N1TOQg',
+  workspaceId: null,
+  release: '9034879f-e8f5-4b2e-8ae0-db7db2563cfa',
+  environment: 'develop',
+  error: {
+    name: 'Error',
+    message: 'EVIDENCE-ONLY: queue broker unreachable',
+    stack: 'Error: EVIDENCE-ONLY: queue broker unreachable\n' +
+      '    at <repo>/apps/web/src/server/trpc/router.ts:69:15\n' +
+      '    at resolveMiddleware (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:203:23)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:16)\n' +
+      '    at Object.next (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:244:12)\n' +
+      '    at inputValidatorMiddleware (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:48:15)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at <repo>/apps/web/src/server/trpc/init.ts:71:18\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at <repo>/apps/web/src/server/trpc/init.ts:59:18'
+  }
+}
+
+{
+  level: 'error',
+  event: 'error.captured',
+  procedure: 'queue.enqueueHello',
+  type: 'mutation',
+  requestId: 'c900a9bd-5671-4bcf-96ae-517d5c7a9a8a',
+  source: 'http',
+  userId: 'EOO5KpXKR3pPeBJFpUnD3JZJK0N1TOQg',
+  workspaceId: null,
+  release: '9034879f-e8f5-4b2e-8ae0-db7db2563cfa',
+  environment: 'develop',
+  error: {
+    name: 'Error',
+    message: 'EVIDENCE-ONLY: queue broker unreachable',
+    stack: 'Error: EVIDENCE-ONLY: queue broker unreachable\n' +
+      '    at <repo>/apps/web/src/server/trpc/router.ts:69:15\n' +
+      '    at resolveMiddleware (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:203:23)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:16)\n' +
+      '    at Object.next (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:244:12)\n' +
+      '    at inputValidatorMiddleware (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:48:15)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at <repo>/apps/web/src/server/trpc/init.ts:74:18\n' +
+      '    at callRecursive (<repo>/node_modules/.bun/@trpc+server@11.19.0+7524df1edfed9f02/node_modules/@trpc/server/dist/initTRPC-B259os3T.mjs:238:10)\n' +
+      '    at <repo>/apps/web/src/server/trpc/init.ts:62:18'
+  }
+}

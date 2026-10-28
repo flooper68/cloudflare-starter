@@ -1,0 +1,12 @@
+# queue.enqueueHello made to throw for this capture only (uncommitted edit in router.ts)
+$ curl -si -b <session> -X POST http://localhost:4321/api/trpc/queue.enqueueHello -H "x-trpc-source: app" -d {"name":"Barbara"}
+HTTP/1.1 500 Internal Server Error
+vary: trpc-accept, accept
+content-length: 188
+content-type: application/json
+x-request-id: c900a9bd-5671-4bcf-96ae-517d5c7a9a8a
+Date: Wed, 28 Oct 2026 13:23:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"error":{"message":"Internal error","code":-32603,"data":{"code":"INTERNAL_SERVER_ERROR","httpStatus":500,"path":"queue.enqueueHello","reference":"c900a9bd-5671-4bcf-96ae-517d5c7a9a8a"}}}

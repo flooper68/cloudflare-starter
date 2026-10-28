@@ -1,0 +1,35 @@
+$ curl -si http://localhost:4321/api/hello -H "x-request-id: client-chosen"
+HTTP/1.1 200 OK
+Vary: Origin
+content-length: 25
+content-type: application/json
+x-request-id: ee07ccf5-6253-4ac1-b9f9-91edaf8b298e
+Date: Wed, 28 Oct 2026 13:21:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"message":"hello world"}
+
+$ curl -si http://localhost:4321/app
+HTTP/1.1 302 Found
+Vary: Origin
+content-length: 0
+location: /sign-in
+x-request-id: d1e3b4b1-95a9-457a-9965-52c19f3d9986
+Date: Wed, 28 Oct 2026 13:21:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+$ curl -si -X POST http://localhost:4321/mcp -d {}
+HTTP/1.1 401 Unauthorized
+Vary: Origin
+content-length: 76
+content-type: application/json
+www-authenticate: Bearer resource_metadata="http://localhost:4321/.well-known/oauth-protected-resource/mcp"
+x-request-id: 1527776d-baf7-4a06-9137-6bd91e6388fd
+Date: Wed, 28 Oct 2026 13:21:03 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"jsonrpc":"2.0","error":{"code":-32001,"message":"Unauthorized"},"id":null}
