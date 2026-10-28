@@ -4,23 +4,16 @@ import {
   createDownloadUrl,
   createPresignedUpload,
   evaluateClientFlags,
-  flagRulesSchema,
-  flagUpdateSchema,
-  listFlags,
   listWorkspaceFiles,
   resolveEntitlements,
   sendHello,
-  setFlagRules,
   trackClientEvents,
-  updateFlag,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
 import { z } from "zod";
 
 import { displayName } from "@/lib/user";
-
-import { localAdminProcedure } from "./admin";
-import { adminBillingRouter } from "./admin-billing-router";
+import { adminRouter } from "./admin-router";
 import {
   protectedProcedure,
   publicProcedure,
@@ -46,6 +39,8 @@ export const appRouter = router({
   }),
 
   workspace: workspaceRouter,
+
+  admin: adminRouter,
 
   storage: router({
     listFiles: workspaceProcedure
@@ -136,29 +131,6 @@ export const appRouter = router({
           batch: { events: input.events },
         })
       ),
-  }),
-
-  // TODO(admin-portal): move under the admin portal's router and adminProcedure.
-  admin: router({
-    billing: adminBillingRouter,
-
-    flags: router({
-      list: localAdminProcedure.query(async ({ ctx }) => ({
-        flags: await listFlags(ctx),
-      })),
-
-      update: localAdminProcedure
-        .input(flagUpdateSchema)
-        .mutation(({ ctx, input }) =>
-          updateFlag(ctx, { ...input, actorUserId: ctx.user.id })
-        ),
-
-      setRules: localAdminProcedure
-        .input(flagRulesSchema)
-        .mutation(({ ctx, input }) =>
-          setFlagRules(ctx, { ...input, actorUserId: ctx.user.id })
-        ),
-    }),
   }),
 });
 

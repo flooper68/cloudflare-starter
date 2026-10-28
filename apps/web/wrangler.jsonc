@@ -26,7 +26,10 @@
   // - WORKSPACE_MODE: personal | single | multi (required)
   // - SIGN_UP: open | invite (required)
   // - SIGN_UP_DOMAINS: comma list of email domains that may sign up without an invitation
-  // - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
+  // - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode; becomes a
+  //   platform admin once verified
+  // - ADMIN_PORTAL: on | off (required): the admin portal for role=admin users
+  //   (docs/guides/how-to-use-admin-portal.md)
   // - BILLING: off | manual | provider (required; docs/guides/how-to-configure-plans-and-billing.md)
   // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
   // FEATURE_FLAGS is required (no default): d1 (flags in the DB, managed by admins) | none

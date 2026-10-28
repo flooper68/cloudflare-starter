@@ -13,6 +13,7 @@ import { filesUnder, read } from "./repo";
 /** Features whose state changes are audited. Add a feature here when it is created. */
 const AUDITED_FEATURES = [
   "accounts",
+  "admin",
   "billing",
   "workspaces",
   "feature-flags",
@@ -26,9 +27,13 @@ const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
     "only moves the user's default workspace (last_active_at); grants or removes nothing",
 };
 
-/** A Drizzle write or raw SQL that inserts, updates or deletes. */
+/**
+ * A Drizzle write or raw SQL that inserts, updates or deletes, or a change made through the
+ * admin portal's auth gateway (packages/features/src/admin/ports) or by deleting a user's
+ * workspaces.
+ */
 const STATE_CHANGE =
-  /\.(insert|update|delete)\(|\b(INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b/i;
+  /\.(insert|update|delete)\(|\b(INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b|\bgateway\.(setRole|ban|unban|revokeSessions|deleteUser|sendPasswordReset|startImpersonation|stopImpersonation)\(|\bprepareUserDeletion\(/i;
 
 const notTest = /(?<!\.test)\.tsx?$/;
 

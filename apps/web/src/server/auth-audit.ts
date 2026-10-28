@@ -111,6 +111,9 @@ export function auditDatabaseHooks(
         async after(session, ctx) {
           // A password change re-issues the session: recorded as auth.password_changed.
           if (ctx?.path === "/change-password") return;
+          // An admin's impersonation session: recorded as impersonation.started.
+          if ((session as { impersonatedBy?: string | null }).impersonatedBy)
+            return;
           await record(env, ctx, {
             action: "auth.sign_in",
             actor: { kind: "user", userId: session.userId },
@@ -218,6 +221,27 @@ export async function auditHumanCheckFailed(
     actor: { kind: "user", userId: null },
     target: { type: "email", id: email },
     metadata: { form, reason },
+  });
+}
+
+/**
+ * An impersonation session tried to authorize an OAuth (MCP) client as the user; refused
+ * in server/auth.ts. Recorded with the impersonating admin as actor.
+ */
+export async function auditImpersonationConsentRefused(
+  env: AppEnv,
+  ctx: { readonly request?: Request },
+  input: {
+    readonly userId: string;
+    readonly impersonatedBy: string;
+    readonly clientId: string | null;
+  }
+): Promise<void> {
+  await record(env, ctx, {
+    action: "impersonation.oauth_refused",
+    actor: { kind: "admin", userId: input.impersonatedBy },
+    target: { type: "user", id: input.userId },
+    metadata: input.clientId ? { clientId: input.clientId.slice(0, 200) } : {},
   });
 }
 

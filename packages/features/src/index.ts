@@ -3,6 +3,7 @@
 // only from here.
 export * from "./abuse";
 export * from "./accounts";
+export * from "./admin";
 export { analyticsEvents } from "./analytics-events";
 export * from "./audit";
 export * from "./billing";

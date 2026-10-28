@@ -1,5 +1,7 @@
 import {
   type Actor,
+  type AdminActor,
+  type AdminAuthGateway,
   type BillingGate,
   type BillingProvider,
   type Clock,
@@ -10,7 +12,9 @@ import {
   enforceRateLimit,
   type FeatureFlagStore,
   type FeatureFlags,
+  findAdminAccess,
   type Ids,
+  isRecentSignIn,
   type JobQueue,
   type Logger,
   type Metrics,
@@ -18,6 +22,7 @@ import {
   type ProductAnalytics,
   type R2Config,
   type RateLimiter,
+  ReauthRequiredError,
   type RequestContext,
   resolveActor,
   type Tracer,
@@ -26,6 +31,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import type { FeatureConfig, RequiredAppConfig } from "@/lib/config";
+import type { BrowserExchange } from "@/server/admin-auth-gateway";
 import { secondsSince } from "@/server/instrumentation";
 
 import { toTrpcError } from "./domain-errors";
@@ -64,12 +70,21 @@ export interface Context {
     readonly id: string;
     readonly email: string;
     readonly name: string;
-    /**
-     * Platform role. TODO(admin-portal): no user column holds it yet, so it is never set
-     * outside tests and admin procedures answer NOT_FOUND (see trpc/admin.ts).
-     */
-    readonly role?: string | null;
   } | null;
+  /** The cookie session of a web request; null for MCP calls and anonymous requests. */
+  readonly session: SessionInfo | null;
+  /** The web request's headers in and response headers out; null for MCP calls. */
+  readonly browser: BrowserExchange | null;
+  /** The admin portal's way into Better Auth (server/admin-auth-gateway.ts). */
+  readonly adminAuth: AdminAuthGateway;
+}
+
+/** What procedures read from the Better Auth session. */
+export interface SessionInfo {
+  /** When this session was created: the sign-in time, for recent-sign-in checks. */
+  readonly createdAt: Date;
+  /** The admin impersonating the user in this session, if it is an impersonation. */
+  readonly impersonatedBy: string | null;
 }
 
 /**
@@ -248,3 +263,71 @@ export const workspaceProcedure = protectedProcedure
       },
     });
   });
+
+/** The answer for anyone who is not an admin, or when the portal is off: nothing here. */
+function notFound(): TRPCError {
+  return new TRPCError({ code: "NOT_FOUND", message: "Not found" });
+}
+
+/**
+ * The gate of every `admin.*` procedure: ADMIN_PORTAL=on and the user is a platform admin
+ * (role admin, not suspended), read from D1 on every call so a demotion or suspension takes
+ * effect at once. Anything else, anonymous included, is NOT_FOUND: the portal does not
+ * reveal that it exists. Exported as the marker test/architecture/admin-procedures.test.ts
+ * looks for.
+ */
+export const requireAdmin = t.middleware(async ({ ctx, next }) => {
+  if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user) throw notFound();
+  const access = await findAdminAccess(ctx, { userId: ctx.user.id });
+  if (!access.isAdmin) throw notFound();
+  const admin: AdminActor = { userId: ctx.user.id };
+  return next({
+    ctx: { ...ctx, user: ctx.user, admin, lastSignInAt: access.lastSignInAt },
+  });
+});
+
+/** Procedures of the admin portal (`admin.*`): see requireAdmin. */
+export const adminProcedure = publicProcedure.use(requireAdmin);
+
+/**
+ * Hook for a second factor on destructive admin actions (a later change adds 2FA). Today
+ * it accepts every call.
+ */
+export function requireAdminSecondFactor(_ctx: {
+  readonly admin: AdminActor;
+}): void {}
+
+/**
+ * Admin procedures that remove access or data (suspend, delete, sign out, change roles,
+ * delete or re-own a workspace) also need a sign-in from the last 15 minutes, else
+ * FORBIDDEN with `appCode` REAUTH_REQUIRED. In the browser that is this session's sign-in;
+ * over MCP (no browser session) the admin's newest own sign-in (owner decision).
+ */
+export const adminDestructiveProcedure = adminProcedure.use(({ ctx, next }) => {
+  const signedInAt = ctx.session ? ctx.session.createdAt : ctx.lastSignInAt;
+  if (!isRecentSignIn(signedInAt, ctx.clock.now())) {
+    // Thrown as the domain error so the formatter adds its code (data.appCode).
+    throw new ReauthRequiredError();
+  }
+  requireAdminSecondFactor(ctx);
+  return next();
+});
+
+/**
+ * The one admin procedure an impersonated session calls: stopping the impersonation. The
+ * session must be an impersonation by an active admin, with the portal on; anything else
+ * is NOT_FOUND, like every other `admin.*` procedure. Exported as a marker for the
+ * architecture test.
+ */
+export const requireImpersonator = t.middleware(async ({ ctx, next }) => {
+  const impersonatedBy = ctx.session?.impersonatedBy;
+  if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user || !impersonatedBy) {
+    throw notFound();
+  }
+  const access = await findAdminAccess(ctx, { userId: impersonatedBy });
+  if (!access.isAdmin) throw notFound();
+  return next({ ctx: { ...ctx, user: ctx.user, impersonatedBy } });
+});
+
+/** See requireImpersonator. */
+export const impersonatorProcedure = publicProcedure.use(requireImpersonator);

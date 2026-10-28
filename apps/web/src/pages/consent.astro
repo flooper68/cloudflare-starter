@@ -13,15 +13,40 @@ if (!clientId) {
 if (!Astro.locals.user) {
   return Astro.redirect(`/sign-in${Astro.url.search}`);
 }
+// An admin impersonating this user may not connect an app as them; the consent endpoint
+// refuses too (IMPERSONATION_OAUTH_REFUSED in server/auth.ts).
+const impersonating = Boolean(Astro.locals.session?.impersonatedBy);
+if (impersonating) {
+  Astro.response.status = 403;
+}
 ---
 
-<Layout title="Allow access">
+<Layout title={impersonating ? "Not allowed while impersonating" : "Allow access"}>
   <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
-    <ConsentForm
-      client:load
-      clientId={clientId}
-      redirectUri={params.get("redirect_uri")}
-      scope={params.get("scope") ?? ""}
-    />
+    {
+      impersonating ? (
+        <section
+          role="alert"
+          class="flex max-w-md flex-col gap-3 rounded-lg border border-line bg-surface-raised p-6 text-fg"
+        >
+          <h1 class="text-lg font-semibold">Not allowed while impersonating</h1>
+          <p class="text-sm text-fg-muted">
+            You are signed in as {Astro.locals.user.name} through impersonation.
+            Connecting an app as them would outlast the impersonation, so it is
+            refused. Stop impersonating from the banner in the app first.
+          </p>
+          <a class="text-sm text-accent-text underline" href="/app/dashboard">
+            Back to the app
+          </a>
+        </section>
+      ) : (
+        <ConsentForm
+          client:load
+          clientId={clientId}
+          redirectUri={params.get("redirect_uri")}
+          scope={params.get("scope") ?? ""}
+        />
+      )
+    }
   </main>
 </Layout>

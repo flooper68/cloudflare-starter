@@ -67,6 +67,8 @@ const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
   "billing/assign-plan.ts": "platform admin, not a member of the workspace",
   "billing/set-addons.ts": "platform admin, not a member of the workspace",
   "billing/set-override.ts": "platform admin, not a member of the workspace",
+  "billing/get-billing-overview.ts":
+    "platform admin overview across all workspaces; no actor",
   "billing/get-workspace-billing.ts":
     "platform admin, not a member of the workspace",
   "files/measure-workspace-storage.ts":

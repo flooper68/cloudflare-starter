@@ -176,6 +176,13 @@ export const auditEventSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     ...common,
+    /** An admin sent the user a password reset link. */
+    action: z.literal("user.password_reset_sent"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
     action: z.literal("user.deleted"),
     target: target("user"),
     metadata: noMetadata,
@@ -191,6 +198,14 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     action: z.literal("impersonation.stopped"),
     target: target("user"),
     metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
+    outcome: z.literal("failure").default("failure"),
+    /** An impersonation session tried to authorize an OAuth (MCP) client as the user. */
+    action: z.literal("impersonation.oauth_refused"),
+    target: target("user"),
+    metadata: z.object({ clientId: text.optional() }).strict().default({}),
   }),
 
   // Workspaces (recorded by the workspace use cases).
@@ -249,6 +264,13 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     action: z.literal("workspace.ownership_transferred"),
     target: target("workspace"),
     metadata: z.object({ previousOwnerUserId: id, ownerUserId: id }).strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    /** An admin gave a workspace without an owner a new one (the target). */
+    action: z.literal("workspace.owner_assigned"),
+    target: target("user"),
+    metadata: z.object({ previousRole: role.nullable() }).strict(),
   }),
   z.object({
     ...inWorkspace,

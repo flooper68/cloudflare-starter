@@ -7,6 +7,7 @@ import {
   LastOwnerError,
   LimitReachedError,
   prepareUserDeletion,
+  promoteBootstrapAdmin,
   provisionUser,
   RATE_LIMIT_POLICIES,
   randomIds,
@@ -17,15 +18,22 @@ import {
 } from "@cloudflare-starter/features";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
-import { jwt } from "better-auth/plugins";
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from "better-auth/api";
+import { admin, jwt } from "better-auth/plugins";
+
 import { SIGN_UP_SEATS_FULL_MESSAGE } from "@/lib/auth-links";
 import type { AppConfig } from "@/lib/config";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
+import { createAdminAuthGateway } from "@/server/admin-auth-gateway";
 import {
   auditAuthEndpoint,
   auditDatabaseHooks,
   auditHumanCheckFailed,
+  auditImpersonationConsentRefused,
   auditPasswordReset,
   contextFor,
 } from "@/server/auth-audit";
@@ -61,6 +69,72 @@ export const HUMAN_CHECKED_PATHS: Readonly<
   "/request-password-reset": "password-reset",
 };
 
+/** OAuth endpoints that grant an (MCP) client access as the signed-in user. */
+const OAUTH_GRANT_PATHS: readonly string[] = [
+  "/oauth2/authorize",
+  "/oauth2/consent",
+];
+
+/** The code a refused OAuth grant from an impersonation session answers with. */
+export const IMPERSONATION_OAUTH_REFUSED = "IMPERSONATION_OAUTH_REFUSED";
+
+/**
+ * An admin impersonating a user must not authorize an OAuth client as them: its tokens
+ * would outlast the one-hour impersonation and act as the user with no admin in sight.
+ * Refuses authorize and consent from an impersonation session (403, recorded); the consent
+ * page shows the same refusal.
+ */
+async function refuseOAuthWhileImpersonating(
+  env: AppEnv,
+  ctx: Parameters<typeof getSessionFromCtx>[0] & {
+    readonly path: string;
+    readonly query?: unknown;
+    readonly body?: unknown;
+  }
+): Promise<void> {
+  if (!OAUTH_GRANT_PATHS.includes(ctx.path)) return;
+  const session = await getSessionFromCtx(ctx);
+  const impersonatedBy = (
+    session?.session as { impersonatedBy?: string | null } | undefined
+  )?.impersonatedBy;
+  if (!session || !impersonatedBy) return;
+  const clientId =
+    (ctx.query as { client_id?: unknown } | undefined)?.client_id ??
+    (ctx.body as { client_id?: unknown } | undefined)?.client_id;
+  await auditImpersonationConsentRefused(env, ctx, {
+    userId: session.user.id,
+    impersonatedBy,
+    clientId: typeof clientId === "string" ? clientId : null,
+  });
+  throw new APIError("FORBIDDEN", {
+    code: IMPERSONATION_OAUTH_REFUSED,
+    message:
+      "You are impersonating this user: connecting an app as them is not allowed. Stop impersonating first.",
+  });
+}
+
+/**
+ * Human-checked endpoints our own server code calls in-process through `auth.api`, where
+ * there is no visitor to check: an admin sending a reset link (server/admin-auth-gateway.ts,
+ * already authorized by adminProcedure). Sign-up and sign-in are never exempt.
+ */
+const IN_PROCESS_EXEMPT_PATHS: readonly string[] = ["/request-password-reset"];
+
+/**
+ * Whether the endpoint runs for an in-process `auth.api` call rather than an HTTP request.
+ * Better Auth puts the incoming Request on the context of every call through its router
+ * (`auth.handler`, which serves /api/auth/*); only `auth.api.*` from server code has none.
+ * Nothing a client sends (headers, query, path spelling) can remove it.
+ */
+function isInProcessCall(ctx: {
+  readonly path: string;
+  readonly request?: Request;
+}): boolean {
+  return (
+    ctx.request === undefined && IN_PROCESS_EXEMPT_PATHS.includes(ctx.path)
+  );
+}
+
 /**
  * The human check for `hooks.before` (TURNSTILE=on): refuses the human-checked endpoints
  * unless the verifier accepts the token, and records the refusal in the audit log. Fails
@@ -77,6 +151,7 @@ async function enforceHumanCheck(
 ): Promise<void> {
   const form = HUMAN_CHECKED_PATHS[ctx.path];
   if (!form) return;
+  if (isInProcessCall(ctx)) return;
   const headers = ctx.headers ?? new Headers();
   const platform = buildPlatform(env);
   const requestContext = contextFor(env, ctx);
@@ -187,6 +262,44 @@ async function provisionNewUser(
 }
 
 /**
+ * Makes the BOOTSTRAP_ADMIN_EMAIL account a platform admin once its address is verified
+ * (promoteBootstrapAdmin). Runs after a user is created (Google verifies the address) and
+ * after one is updated (email verification). Fails open like the other hooks: the
+ * failure is reported and `bun run setup:admin` promotes by hand.
+ */
+async function promoteBootstrapIfVerified(
+  env: AppEnv,
+  user: {
+    readonly id: string;
+    readonly email: string;
+    readonly emailVerified: boolean;
+    readonly role?: string | null;
+  },
+  ctx: { readonly request?: Request } | null,
+  hook: string
+): Promise<void> {
+  const { bootstrapAdminEmail } = buildRequiredConfig(env).workspaces;
+  if (!bootstrapAdminEmail || !user.emailVerified) return;
+  const requestContext = contextFor(env, ctx);
+  try {
+    await promoteBootstrapAdmin(
+      {
+        db: getDb(env),
+        clock: systemClock,
+        ids: randomIds,
+        requestContext,
+        gateway: createAdminAuthGateway(() => getAuth(env), null),
+      },
+      { user, bootstrapAdminEmail }
+    );
+  } catch (error) {
+    buildPlatform(env).errors.capture(error, requestContext, {
+      "app.auth.hook": hook,
+    });
+  }
+}
+
+/**
  * Before a user is deleted: their own workspaces go with their files (R2 objects
  * included), they leave shared ones; refused while they are a workspace's last owner.
  * Runs from `user.deleteUser.beforeDelete` (the deletion endpoint, before anything is
@@ -239,7 +352,8 @@ export function getAuthMethods(env: AppEnv): AuthMethods {
   return authMethodsOf(config);
 }
 
-function authMethodsOf(
+/** The sign-in methods a parsed config turns on. */
+export function authMethodsOf(
   config: Pick<
     AppConfig,
     | "AUTH_EMAIL_PASSWORD"
@@ -255,6 +369,27 @@ function authMethodsOf(
       config.AUTH_EMAIL_PASSWORD && config.AUTH_REQUIRE_EMAIL_VERIFICATION,
   };
 }
+
+/**
+ * Better Auth's admin plugin, used for its data model and enforcement only: the `role`,
+ * `banned`, `banReason`, `banExpires` columns on `user`, `impersonatedBy` on `session`, the
+ * refusal of banned users at sign-in, and impersonation sessions. Its HTTP endpoints are
+ * closed (`ADMIN_HTTP_PATHS` in `disabledPaths`): the admin portal acts through our own
+ * `admin.*` procedures and use cases (server/admin-auth-gateway.ts).
+ */
+export const adminPlugin = admin({
+  defaultRole: "user",
+  adminRoles: ["admin"],
+  impersonationSessionDuration: 60 * 60,
+  allowImpersonatingAdmins: false,
+  bannedUserMessage:
+    "This account is suspended. Contact the app's administrators if you think this is a mistake.",
+});
+
+/** Every HTTP path of the admin plugin (`/admin/set-role`, …), closed with `disabledPaths`. */
+export const ADMIN_HTTP_PATHS: readonly string[] = Object.values(
+  adminPlugin.endpoints
+).map((endpoint) => endpoint.path);
 
 /** The canonical MCP resource; access tokens are audience-bound to it. */
 export function mcpResource(appUrl: string): string {
@@ -403,6 +538,25 @@ export function createAuthOptions(env: AppEnv) {
             await provisionNewUser(env, user, ctx);
             // Audit log: sign-ups (server/auth-audit.ts).
             await audit.user?.create?.after?.(user, ctx);
+            await promoteBootstrapIfVerified(
+              env,
+              user,
+              ctx,
+              "user.create.after"
+            );
+          },
+        },
+        update: {
+          after: async (user, ctx) => {
+            // Only the verification itself promotes: any other update (an admin's
+            // demotion, a ban, a profile change) must not turn the role back to admin.
+            if (ctx?.path !== "/verify-email") return;
+            await promoteBootstrapIfVerified(
+              env,
+              user,
+              ctx,
+              "user.update.after"
+            );
           },
         },
         delete: {
@@ -442,8 +596,12 @@ export function createAuthOptions(env: AppEnv) {
         allowDynamicClientRegistration: true,
         allowUnauthenticatedClientRegistration: true,
       }),
+      adminPlugin,
     ],
     telemetry: { enabled: false },
+    // The admin plugin's endpoints answer 404 over HTTP; server code still calls them
+    // through auth.api (impersonation) and auth.$context (server/admin-auth-gateway.ts).
+    disabledPaths: [...ADMIN_HTTP_PATHS],
     // Audit log: sign-in and sign-up (server/auth-audit.ts).
     hooks: {
       // Audit log: failed sign-in and password reset requests (server/auth-audit.ts).
@@ -452,6 +610,8 @@ export function createAuthOptions(env: AppEnv) {
         // Turnstile on sign-up, sign-in and password reset (TURNSTILE=on), first: a bot
         // learns nothing else about the request.
         await enforceHumanCheck(env, ctx);
+        // No OAuth (MCP) grants from an admin's impersonation session.
+        await refuseOAuthWhileImpersonating(env, ctx);
         // Deployed without email, refuse link-sending endpoints up front, for every address:
         // failing only inside sendResetPassword would answer differently for registered
         // emails (account enumeration).

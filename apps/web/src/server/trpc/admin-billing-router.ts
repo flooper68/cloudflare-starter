@@ -10,13 +10,7 @@ import {
 } from "@cloudflare-starter/features";
 import { z } from "zod";
 
-import { localAdminProcedure } from "./admin";
-import { router } from "./init";
-
-/** TODO(admin-portal): the admin portal's `adminProcedure` replaces localAdminProcedure. */
-const platformAdminProcedure = localAdminProcedure.use(({ ctx, next }) =>
-  next({ ctx: { ...ctx, admin: { userId: ctx.user.id } } })
-);
+import { adminProcedure, router } from "./init";
 
 const workspaceId = z
   .string()
@@ -25,17 +19,17 @@ const workspaceId = z
   .describe("The workspace to inspect or change.");
 
 /**
- * Platform admin: a workspace's plan, add-ons, entitlement overrides and usage (any
+ * Platform admin (`adminProcedure`, mounted at `admin.billing`): a workspace's plan, add-ons, entitlement overrides and usage (any
  * workspace, not only the admin's own). Every change is audited (`billing.*`).
  */
 export const adminBillingRouter = router({
-  get: platformAdminProcedure
+  get: adminProcedure
     .input(z.object({ workspaceId }))
     .query(({ ctx, input }) =>
       getWorkspaceBilling({ ...ctx, settings: ctx.config.billing }, input)
     ),
 
-  usage: platformAdminProcedure
+  usage: adminProcedure
     .input(z.object({ workspaceId }))
     .query(({ ctx, input }) =>
       getUsageSummary(
@@ -44,15 +38,15 @@ export const adminBillingRouter = router({
       )
     ),
 
-  assignPlan: platformAdminProcedure
+  assignPlan: adminProcedure
     .input(assignPlanInputSchema)
     .mutation(({ ctx, input }) => assignPlan(ctx, ctx.admin, input)),
 
-  setAddons: platformAdminProcedure
+  setAddons: adminProcedure
     .input(setAddonsInputSchema)
     .mutation(({ ctx, input }) => setAddons(ctx, ctx.admin, input)),
 
-  setOverride: platformAdminProcedure
+  setOverride: adminProcedure
     .input(setOverrideInputSchema)
     .mutation(({ ctx, input }) => setOverride(ctx, ctx.admin, input)),
 });

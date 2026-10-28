@@ -33,7 +33,7 @@ export default defineConfig({
   projects: [
     // Signs up the shared user once and saves its session for the journeys that only
     // need someone signed in.
-    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    { name: "setup", testMatch: /\.setup\.ts$/ },
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },

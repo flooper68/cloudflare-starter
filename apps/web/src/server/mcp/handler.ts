@@ -2,6 +2,7 @@ import {
   findUserById,
   type RateLimitedError,
   type RequestContext,
+  systemClock,
 } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { createLocalJWKSet, type JWTPayload, jwtVerify } from "jose";
@@ -123,8 +124,12 @@ export async function handleMcp(
     return unauthorized(appUrl, "invalid_token");
   }
 
-  // The user is read from D1 on every request, so a deleted user loses access at once.
-  const user = await findUserById({ db: getDb(env) }, String(claims.sub));
+  // The user is read from D1 on every request, so a deleted or suspended user loses
+  // access at once (a refreshed token is refused here too).
+  const user = await findUserById(
+    { db: getDb(env), clock: systemClock },
+    String(claims.sub)
+  );
   if (!user) return unauthorized(appUrl, "invalid_token");
 
   const byUser = await refuseOverLimit(
