@@ -1,0 +1,92 @@
+{
+  "1. flags.client before any configuration (ws-umbrella)": {
+    "flags": {
+      "upload-demo-presigned": true
+    }
+  },
+  "2. MCP update_feature_flag (admin)": {
+    "key": "upload-demo-presigned",
+    "enabled": true,
+    "fallthrough": false,
+    "rules": [],
+    "updatedAt": "2026-10-28T15:04:40.528Z",
+    "updatedBy": "YEyAocA5Z8mqGLbRPJ8kpQmSpnCYBFPD"
+  },
+  "3. MCP set_feature_flag_rules: 50 % (admin)": {
+    "key": "upload-demo-presigned",
+    "enabled": true,
+    "fallthrough": false,
+    "rules": [
+      {
+        "kind": "percentage",
+        "percentageBp": 5000,
+        "value": true
+      }
+    ],
+    "updatedAt": "2026-10-28T15:04:40.534Z",
+    "updatedBy": "YEyAocA5Z8mqGLbRPJ8kpQmSpnCYBFPD"
+  },
+  "4. flags.client, workspace ws-umbrella (bucket 871 < 5000)": {
+    "flags": {
+      "upload-demo-presigned": true
+    }
+  },
+  "5. flags.client, workspace ws-acme (bucket 5173 >= 5000)": {
+    "flags": {
+      "upload-demo-presigned": false
+    }
+  },
+  "6. flags.client, anonymous, no workspace (no targeting key)": {
+    "flags": {
+      "upload-demo-presigned": false
+    }
+  },
+  "7. MCP list_feature_flags (admin)": {
+    "flags": [
+      {
+        "key": "upload-demo-presigned",
+        "type": "boolean",
+        "default": true,
+        "owner": "platform",
+        "removeWhen": "the upload demo keeps a single upload path, or both paths are kept for good",
+        "rolloutBy": "workspace",
+        "client": true,
+        "description": "Shows the presigned (browser to R2) upload card next to the Worker upload on the upload demo page.",
+        "stored": {
+          "enabled": true,
+          "fallthrough": false,
+          "rules": [
+            {
+              "kind": "percentage",
+              "percentageBp": 5000,
+              "value": true
+            }
+          ],
+          "updatedAt": "2026-10-28T15:04:40.534Z",
+          "updatedBy": "YEyAocA5Z8mqGLbRPJ8kpQmSpnCYBFPD"
+        }
+      }
+    ]
+  },
+  "8. MCP get_client_flags, member of ws-umbrella": {
+    "flags": {
+      "upload-demo-presigned": true
+    }
+  },
+  "9. MCP list_feature_flags as a non-admin member": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"error\":{\"code\":\"NOT_FOUND\",\"httpStatus\":404,\"message\":\"Not found\"}}"
+      }
+    ],
+    "structuredContent": {
+      "error": {
+        "code": "NOT_FOUND",
+        "httpStatus": 404,
+        "message": "Not found"
+      }
+    },
+    "isError": true
+  }
+}
