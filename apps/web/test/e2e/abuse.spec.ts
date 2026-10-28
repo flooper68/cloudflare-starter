@@ -29,13 +29,16 @@ test("the sign-in and forgot-password forms show the human check", async ({
   }
 });
 
-test("too many reset requests show the rate-limit notice", async ({ page }) => {
+test("too many reset requests show the rate-limit notice", async ({
+  page,
+  baseURL,
+}) => {
   // Its own client IP, so this test's counters never touch the other journeys'. Only on
   // the app's own requests: Cloudflare's Turnstile script refuses unexpected headers.
   const octet = () => Math.floor(Math.random() * 250) + 1;
   const ip = `10.${octet()}.${octet()}.${octet()}`;
   await page.route(
-    (url) => url.host === "localhost:4321",
+    (url) => url.origin === baseURL,
     (route) =>
       route.continue({
         headers: { ...route.request().headers(), "cf-connecting-ip": ip },

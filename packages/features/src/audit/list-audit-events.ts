@@ -1,4 +1,14 @@
-import { and, desc, eq, gte, lt, or, type SQL } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  getTableColumns,
+  gte,
+  lt,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import { z } from "zod";
 
 import type { Database } from "../database";
@@ -20,8 +30,16 @@ export interface AuditEventPage {
 }
 
 /**
- * Audit events matching the filters, newest first, one page at a time (keyset pagination
- * on occurred_at and id, so pages stay stable while new events arrive).
+ * SQLite's rowid: audit_events is a rowid table that is only appended to (and purged from
+ * the oldest end), so it is the insertion order. Every index includes it.
+ */
+const insertionSeq = sql<number>`${auditEvents}.rowid`;
+
+/**
+ * Audit events matching the filters, newest first, one page at a time. Events recorded in
+ * the same millisecond come in reverse insertion order (the rowid), so "newest first" holds
+ * within a request too. Keyset pagination on (occurred_at, rowid) keeps pages stable while
+ * new events arrive.
  */
 export async function listAuditEvents(
   deps: { readonly db: Database },
@@ -54,27 +72,27 @@ export async function listAuditEvents(
     conditions.push(
       or(
         lt(auditEvents.occurredAt, at),
-        and(eq(auditEvents.occurredAt, at), lt(auditEvents.id, cursor.id))
+        and(eq(auditEvents.occurredAt, at), lt(insertionSeq, cursor.seq))
       )
     );
   }
 
   const rows = await deps.db
-    .select()
+    .select({ ...getTableColumns(auditEvents), seq: insertionSeq })
     .from(auditEvents)
     .where(and(...conditions))
-    .orderBy(desc(auditEvents.occurredAt), desc(auditEvents.id))
+    .orderBy(desc(auditEvents.occurredAt), desc(insertionSeq))
     .limit(query.limit + 1);
 
   const page = rows.slice(0, query.limit);
   const last = page.at(-1);
   return {
-    events: page.map(toAuditEvent),
+    events: page.map(({ seq: _seq, ...row }) => toAuditEvent(row)),
     nextCursor:
       rows.length > query.limit && last
         ? encodeAuditCursor({
             occurredAtMs: last.occurredAt.getTime(),
-            id: last.id,
+            seq: last.seq,
           })
         : null,
   };

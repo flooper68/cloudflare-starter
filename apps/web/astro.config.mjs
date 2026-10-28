@@ -3,6 +3,8 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, sessionDrivers } from "astro/config";
 
+import { devPort } from "./dev-port.mjs";
+
 export default defineConfig({
   output: "server",
   devToolbar: { enabled: false },
@@ -17,7 +19,8 @@ export default defineConfig({
   // cross-site form POSTs to /api/auth/oauth2/token. Better Auth checks origins
   // itself, tRPC requires the x-trpc-source header, and /api/files checks Origin.
   security: { checkOrigin: false },
-  server: { port: 4321 },
+  // The port of APP_URL in .dev.vars (4321 by default): Better Auth trusts only that origin.
+  server: { port: devPort() },
   vite: {
     plugins: [tailwindcss()],
     resolve: {

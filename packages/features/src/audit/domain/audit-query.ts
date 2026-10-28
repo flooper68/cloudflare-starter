@@ -43,22 +43,26 @@ export type AuditQueryInput = z.input<typeof auditQuerySchema>;
 export type AuditQuery = z.output<typeof auditQuerySchema>;
 
 /** Position after the last event of a page: events are ordered by (occurredAt, id) descending. */
+/**
+ * Where a page ended: the last event's time and its insertion sequence (the row's position
+ * in the table), which orders events recorded in the same millisecond.
+ */
 export interface AuditCursor {
   readonly occurredAtMs: number;
-  readonly id: string;
+  readonly seq: number;
 }
 
-/** Opaque to clients: `<epoch ms>:<id>`. */
+/** Opaque to clients: `<epoch ms>:<sequence>`. */
 export function encodeAuditCursor(cursor: AuditCursor): string {
-  return `${cursor.occurredAtMs}:${cursor.id}`;
+  return `${cursor.occurredAtMs}:${cursor.seq}`;
 }
 
 export function decodeAuditCursor(value: string): AuditCursor {
   const separator = value.indexOf(":");
   const ms = value.slice(0, separator);
-  const id = value.slice(separator + 1);
-  if (separator < 1 || !/^\d+$/.test(ms) || id.length === 0) {
+  const seq = value.slice(separator + 1);
+  if (separator < 1 || !/^\d+$/.test(ms) || !/^\d+$/.test(seq)) {
     throw new InvalidAuditInputError("Invalid audit log cursor");
   }
-  return { occurredAtMs: Number(ms), id };
+  return { occurredAtMs: Number(ms), seq: Number(seq) };
 }

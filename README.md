@@ -101,7 +101,7 @@ bun run doctor
 bun run dev:web
 ```
 
-Open `http://localhost:4321` and create an account at `/sign-up`. D1, R2 (binding), email, the queue and cron all run locally inside Wrangler; nothing else to start. Mail is logged by the dev server instead of sent. Trigger a cron schedule with `curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"`.
+Open `APP_URL` from `apps/web/.dev.vars` (`http://localhost:4321` by default; the dev server listens on its port) and create an account at `/sign-up`. D1, R2 (binding), email, the queue and cron all run locally inside Wrangler; nothing else to start. Mail is logged by the dev server instead of sent. Trigger a cron schedule with `curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"`.
 
 ## Environment
 

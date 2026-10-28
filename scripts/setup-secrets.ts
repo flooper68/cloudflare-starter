@@ -8,7 +8,7 @@
  * Press Enter to skip a value (keep what is there). BETTER_AUTH_SECRET is generated
  * when left empty, and an existing local one is never rotated.
  */
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { parseArgs } from "node:util";
 
 import {
@@ -17,6 +17,7 @@ import {
   envFlag,
   fail,
   parseEnvironments,
+  ROOT,
   readDevVars,
   wrangler,
   writeDevVars,
@@ -36,6 +37,12 @@ const existing = local ? readDevVars() : new Map<string, string>();
 /** Cloudflare's published always-pass test secret; accepts only the test widget's token. */
 const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
 
+/** A stable port for this checkout, 4400–4899, from a hash of its path. */
+function checkoutPort(): number {
+  const hash = createHash("sha256").update(ROOT).digest();
+  return 4400 + (hash.readUInt16BE(0) % 500);
+}
+
 interface Secret {
   readonly name: string;
   readonly prompt: string;
@@ -47,7 +54,12 @@ const SECRETS: readonly Secret[] = [
   {
     name: "APP_URL",
     prompt: "Public URL of the app, no trailing slash",
-    fallback: () => (local ? "http://localhost:4321" : undefined),
+    // Locally a port per checkout, so several checkouts (worktrees) can run dev servers
+    // and E2E side by side; apps/web/dev-port.mjs reads it back.
+    fallback: () =>
+      local && !existing.get("APP_URL")
+        ? `http://localhost:${checkoutPort()}`
+        : undefined,
   },
   {
     name: "BETTER_AUTH_SECRET",
