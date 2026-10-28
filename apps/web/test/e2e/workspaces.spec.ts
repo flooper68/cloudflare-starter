@@ -5,7 +5,8 @@ import { expect, test } from "@playwright/test";
 import { newAccount, open, sharedSession } from "./helpers";
 
 // Multi mode (wrangler.jsonc): the shared user creates a team workspace, uploads a file,
-// invites a new account; the invitee signs up from the link, accepts and opens the file.
+// invites a new account; the invitee signs up from the link, accepts and opens the file;
+// the owner then sees the notification badge, opens the inbox and marks it read.
 // One sign-up here (see helpers.ts on the rate limit). Personal mode and invite-only
 // sign-up need a server with other vars; the API tests cover them
 // (docs/architecture/testing.md#known-gaps).
@@ -125,4 +126,35 @@ test("the invitee signs up from the link, joins and opens the shared file", asyn
   expect(await response.text()).toBe(content);
 
   await context.close();
+});
+
+test.describe("the owner hears that the invitee joined", () => {
+  test.use({ storageState: sharedSession });
+
+  test("the bell shows the unread notification; opening the inbox and marking it read clears it", async ({
+    page,
+  }) => {
+    // The notification is written by a queued job: reload until the badge shows it.
+    const unread = page.getByRole("button", {
+      name: /^Notifications, \d+ unread$/,
+    });
+    await expect(async () => {
+      await open(page, "/app/dashboard");
+      await expect(unread).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
+
+    await unread.click();
+    const panel = page.getByRole("dialog", { name: "Notifications" });
+    const title = `${invitee.name} joined ${team}`;
+    await expect(panel.getByRole("link", { name: title })).toBeVisible();
+    await panel.getByRole("radio", { name: "Unread" }).click();
+    await panel.getByRole("button", { name: `Mark read: ${title}` }).click();
+    await expect(panel.getByRole("link", { name: title })).toBeHidden();
+    await page.keyboard.press("Escape");
+
+    await open(page, "/app/notifications");
+    await expect(
+      page.getByRole("list", { name: "Notifications" })
+    ).toContainText(title);
+  });
 });

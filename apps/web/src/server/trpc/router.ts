@@ -7,6 +7,7 @@ import {
   listWorkspaceFiles,
   resolveEntitlements,
   sendHello,
+  testEmail,
   trackClientEvents,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
@@ -20,6 +21,7 @@ import {
   router,
   workspaceProcedure,
 } from "./init";
+import { notificationsRouter } from "./notifications-router";
 import { requireFeature } from "./require-feature";
 import { workspaceRouter } from "./workspace-router";
 
@@ -40,6 +42,7 @@ export const appRouter = router({
 
   workspace: workspaceRouter,
 
+  notifications: notificationsRouter,
   admin: adminRouter,
 
   storage: router({
@@ -84,10 +87,12 @@ export const appRouter = router({
   email: router({
     sendTest: protectedProcedure.mutation(async ({ ctx }) => {
       const email = requireFeature(ctx.email);
-      await email.sendTestEmail({
-        to: { email: ctx.user.email, name: displayName(ctx.user) },
-        environment: ctx.config.APP_ENV,
-      });
+      await email.send(
+        testEmail({
+          to: { email: ctx.user.email, name: displayName(ctx.user) },
+          environment: ctx.config.APP_ENV,
+        })
+      );
       return { sent: true };
     }),
   }),

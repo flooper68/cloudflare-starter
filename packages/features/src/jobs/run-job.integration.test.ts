@@ -2,9 +2,19 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { fixedClock, sequentialIds, testDb } from "../../test/fixtures";
+import {
+  fixedClock,
+  sequentialIds,
+  testApp,
+  testDb,
+} from "../../test/fixtures";
 import { defineJob, type JobEnvelope, type RequestContext } from "../kernel";
-import { createMemoryJobQueue, createMemoryLogger } from "../platform";
+import {
+  createMemoryJobQueue,
+  createMemoryLogger,
+  noopEmail,
+  noopMetrics,
+} from "../platform";
 import { JobLockedError, registerJob } from "./domain";
 import { type JobDeps, runJob } from "./run-job";
 
@@ -22,6 +32,9 @@ function deps(iso = "2026-10-28T12:00:00.000Z"): JobDeps {
     ids: sequentialIds(),
     logger: createMemoryLogger(),
     jobQueue: createMemoryJobQueue(),
+    email: noopEmail,
+    metrics: noopMetrics,
+    app: testApp,
   };
 }
 

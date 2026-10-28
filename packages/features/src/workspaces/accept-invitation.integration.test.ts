@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addMember,
   auditTrail,
   invite,
+  notificationsSent,
   rows,
   seedUser,
   seedWorkspace,
@@ -17,6 +19,8 @@ describe("acceptInvitation", () => {
     const owner = await seedUser("Ada Lovelace");
     const grace = await seedUser("Grace Hopper", "grace@example.test");
     const actor = await seedWorkspace(owner.id, { id: "ws-acme" });
+    const plain = await seedUser("Alan Turing");
+    await addMember("ws-acme", plain.id, "member");
     const { token } = await invite(actor, "Grace@Example.test", "owner");
 
     const accepting = deps();
@@ -27,6 +31,20 @@ describe("acceptInvitation", () => {
         user: grace,
       })
     ).toEqual({ workspaceId: "ws-acme" });
+    // The members who manage members hear about it; plain members do not.
+    expect(notificationsSent(accepting.jobQueue)).toEqual([
+      {
+        type: "workspaces.member-joined",
+        recipients: [owner.id],
+        workspaceId: "ws-acme",
+        data: {
+          workspaceId: "ws-acme",
+          workspaceName: "Acme Robotics",
+          memberName: "Grace Hopper",
+          role: "owner",
+        },
+      },
+    ]);
     // Product analytics: the join, then the member's traits (two members now).
     expect(
       accepting.analytics.recorded.map((call) => [
@@ -63,10 +81,12 @@ describe("acceptInvitation", () => {
       "workspace.invitation_accepted",
     ]);
 
-    // The same member again: a no-op success, not a second membership.
+    // The same member again: a no-op success, not a second membership or notice.
+    const again = deps();
     expect(
-      await acceptInvitation(deps(), { mode: "multi", token, user: grace })
+      await acceptInvitation(again, { mode: "multi", token, user: grace })
     ).toEqual({ workspaceId: "ws-acme" });
+    expect(notificationsSent(again.jobQueue)).toEqual([]);
   });
 
   it("refuses another account, an expired, a revoked, a used or an unknown link", async () => {

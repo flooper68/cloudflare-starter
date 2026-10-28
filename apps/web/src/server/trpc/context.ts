@@ -1,6 +1,8 @@
 import { env as workerEnv } from "cloudflare:workers";
 import {
   type BillingProvider,
+  type Notify,
+  notify,
   type RequestContext,
   randomIds,
   systemClock,
@@ -54,6 +56,17 @@ export function createAppContext(
     // During an impersonation, events the user's actions record name the admin too.
     impersonatorUserId: browser.session?.impersonatedBy ?? null,
   };
+  const notifier: Notify = (definition, input) =>
+    notify(
+      {
+        jobQueue: platform.jobQueue,
+        clock: systemClock,
+        ids: randomIds,
+        errors: platform.errors,
+      },
+      definition,
+      input
+    );
   return {
     db: getDb(env),
     clock: systemClock,
@@ -73,6 +86,8 @@ export function createAppContext(
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
+    notify: notifier,
+    emailOut: platform.email,
     analytics: platform.productAnalytics(),
     user,
     session: browser.session,

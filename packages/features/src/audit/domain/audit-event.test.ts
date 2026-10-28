@@ -77,6 +77,16 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     actor: { kind: "admin", userId: "user-grace" },
     target: user,
   },
+  "notifications.preferences_changed": {
+    action: "notifications.preferences_changed",
+    target: user,
+    metadata: { changes: 2, emailCadence: "daily" },
+  },
+  "notifications.unsubscribed": {
+    action: "notifications.unsubscribed",
+    target: user,
+    metadata: { type: "workspaces.member-joined", channel: "email" },
+  },
   "impersonation.oauth_refused": {
     action: "impersonation.oauth_refused",
     actor: { kind: "admin", userId: "user-grace" },

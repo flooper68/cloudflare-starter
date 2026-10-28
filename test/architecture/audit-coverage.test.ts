@@ -17,6 +17,7 @@ const AUDITED_FEATURES = [
   "billing",
   "workspaces",
   "feature-flags",
+  "notifications",
 ] as const;
 
 /** Use cases that change state without an audit event: path → reason. */
@@ -25,6 +26,18 @@ const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
     "usage metering (one counter increment per upload); grants or removes nothing, and the action it counts is the record",
   "packages/features/src/workspaces/switch-workspace.ts":
     "only moves the user's default workspace (last_active_at); grants or removes nothing",
+  "packages/features/src/notifications/dispatch-notification.ts":
+    "delivery: writes the recipient's own inbox rows for an event the producing use case records",
+  "packages/features/src/notifications/send-notification-email.ts":
+    "delivery: marks the recipient's own inbox row's email sent or skipped",
+  "packages/features/src/notifications/send-digest.ts":
+    "delivery: marks the recipient's own inbox rows' email sent in the daily digest",
+  "packages/features/src/notifications/purge-notifications.ts":
+    "retention: deletes inbox rows past their fixed retention (retention.ts), like the audit purge",
+  "packages/features/src/notifications/mark-notifications-read.ts":
+    "recipient's own inbox state: read markers grant or remove nothing",
+  "packages/features/src/notifications/archive-notifications.ts":
+    "recipient's own inbox state: archiving grants or removes nothing",
 };
 
 /**

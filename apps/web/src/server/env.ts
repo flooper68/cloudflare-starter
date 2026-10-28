@@ -21,6 +21,7 @@ export interface AppEnv {
   readonly RL_BILLING_WEBHOOK?: RateLimit;
   readonly RL_INVITE?: RateLimit;
   readonly RL_TOKEN_LOOKUP?: RateLimit;
+  readonly RL_UNSUBSCRIBE?: RateLimit;
   readonly RL_ANALYTICS?: RateLimit;
   /** Workers Analytics Engine dataset of product events (ANALYTICS=analytics-engine). */
   readonly ANALYTICS_EVENTS?: AnalyticsEngineDataset;

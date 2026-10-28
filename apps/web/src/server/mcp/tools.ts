@@ -211,6 +211,53 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Accept invitation",
     "Accepts an invitation by the token from its link (the part after /invite/) and joins the workspace, making it current. The invitation must be pending and sent to the user's email."
   ),
+  {
+    name: "list_notifications",
+    title: "List notifications",
+    description:
+      "Lists the user's notifications, newest first (id, type, title, body, link, workspace, created, read and archived times), and the unread count. view: inbox (not archived), unread, or archived. Page with limit and nextCursor.",
+    kind: "read",
+    procedures: ["notifications.list", "notifications.unreadCount"],
+    input: procedureInput("notifications.list"),
+    run: async (caller, args) => {
+      const [page, unread] = await Promise.all([
+        invoke(caller, "notifications.list", args),
+        invoke(caller, "notifications.unreadCount"),
+      ]);
+      return {
+        ...(page as object),
+        unread: (unread as { count: number }).count,
+      };
+    },
+  },
+  direct(
+    "mark_notifications_read",
+    "write",
+    "notifications.markRead",
+    "Mark notifications read",
+    "Marks the user's notifications read: the given ids, or all: true for every unread one (optionally only those about one workspaceId). Returns how many changed."
+  ),
+  direct(
+    "archive_notifications",
+    "write",
+    "notifications.archive",
+    "Archive notifications",
+    "Archives the user's notifications by id: they leave the inbox (still listed with view archived) and count as read."
+  ),
+  direct(
+    "get_notification_preferences",
+    "read",
+    "notifications.preferences.get",
+    "Get notification preferences",
+    "Returns the user's notification preferences: per notification type its in-app and email switches (security notifications are locked on), the email cadence (instant or daily digest), and whether this deployment sends email."
+  ),
+  direct(
+    "update_notification_preferences",
+    "write",
+    "notifications.preferences.update",
+    "Update notification preferences",
+    "Turns notification channels on or off per type (changes: [{ type, channel: inApp|email, enabled }]) and sets the email cadence (instant or daily). Security notifications cannot be turned off. Confirm with the user before turning email off."
+  ),
   direct(
     "get_billing_summary",
     "read",
@@ -476,6 +523,8 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
     "binary download through the Worker; MCP clients use list_files and get_download_url",
   ".well-known/[...path].ts": "OAuth discovery documents for MCP clients",
   "mcp.ts": "the MCP endpoint itself",
+  "api/notifications/unsubscribe.ts":
+    "one-click unsubscribe from a mail link (RFC 8058), authorized by its signed token, not a user; MCP clients use update_notification_preferences",
   "api/billing/webhook.ts":
     "the billing provider's webhook (signed server-to-server events); people and agents use get_billing_summary",
 };

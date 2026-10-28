@@ -6,12 +6,24 @@ import {
   createBillingGate,
   createDatabase,
   createInvitation,
+  createMemoryErrorReporter,
+  createMemoryJobQueue,
   createMemoryProductAnalytics,
   type Database,
+  type MemoryJobQueue,
+  type Notify,
+  notify,
   type RequestContext,
   type Role,
   type WorkspaceSettings,
 } from "../src";
+
+/** The app as mail sees it, for job handlers (JobDeps.app). The secret is a test value. */
+export const testApp = {
+  name: "Cloudflare Starter",
+  url: "https://app.example.test",
+  secret: "test-secret-for-unsubscribe-links-0123456789",
+} as const;
 
 /** The real Drizzle client over the test D1. */
 export function testDb(): Database {
@@ -169,11 +181,24 @@ let depsRun = 0;
  */
 export function useCaseDeps(at?: string) {
   depsRun += 1;
+  const clock = fixedClock(at);
+  const ids = sequentialIds(
+    `${String(depsRun).padStart(8, "0")}-1111-4000-8000-`
+  );
+  const jobQueue = createMemoryJobQueue();
+  const errors = createMemoryErrorReporter();
+  const bound: Notify = (definition, input) =>
+    notify({ jobQueue, clock, ids, errors }, definition, input);
   return {
     db: testDb(),
-    clock: fixedClock(at),
-    ids: sequentialIds(`${String(depsRun).padStart(8, "0")}-1111-4000-8000-`),
+    clock,
+    ids,
     requestContext: testRequestContext(),
+    /** Where `notify` enqueues: assert with notificationsSent(deps.jobQueue). */
+    jobQueue,
+    /** Notification failures notify reported instead of throwing. */
+    errors,
+    notify: bound,
     analytics: createMemoryProductAnalytics(),
     billing: testBilling("off", at),
   };
@@ -182,6 +207,24 @@ export function useCaseDeps(at?: string) {
 /** Dependencies of a billing use case: useCaseDeps plus the BILLING mode (manual unless stated). */
 export function billingDeps(mode: BillingMode = "manual", at?: string) {
   return { ...useCaseDeps(at), settings: { mode } };
+}
+
+/** The notification events a use case sent through `useCaseDeps().notify`. */
+export function notificationsSent(jobQueue: MemoryJobQueue) {
+  return jobQueue.sent
+    .filter((sent) => sent.envelope.type === "notifications.dispatch")
+    .map((sent) => {
+      const payload = sent.envelope.data as {
+        event: { type: string; data: unknown; workspaceid?: string };
+        recipients: string[];
+      };
+      return {
+        type: payload.event.type,
+        recipients: payload.recipients,
+        data: payload.event.data,
+        workspaceId: payload.event.workspaceid ?? null,
+      };
+    });
 }
 
 /** Audit events recorded for a workspace, oldest first: action, target and metadata. */
@@ -196,5 +239,58 @@ export async function auditTrail(workspaceId: string) {
       target: string;
       metadata: string;
     }>();
+  return results.map((row) => ({ ...row, metadata: JSON.parse(row.metadata) }));
+}
+
+/** Inserts an inbox row for `userId`; defaults to an unread in-app member-joined notice. */
+export async function seedNotification(
+  userId: string,
+  options: {
+    readonly id: string;
+    readonly type?: string;
+    readonly data?: unknown;
+    readonly workspaceId?: string | null;
+    readonly inApp?: boolean;
+    readonly emailState?: string;
+    readonly eventId?: string;
+    readonly createdAt?: string;
+    readonly readAt?: string | null;
+    readonly archivedAt?: string | null;
+  }
+) {
+  const ms = (iso: string | null | undefined) => (iso ? Date.parse(iso) : null);
+  await env.DB.prepare(
+    "INSERT INTO notifications (id, user_id, workspace_id, type, data, in_app, email_state, event_id, read_at, archived_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  )
+    .bind(
+      options.id,
+      userId,
+      options.workspaceId ?? null,
+      options.type ?? "workspaces.member-joined",
+      JSON.stringify(
+        options.data ?? {
+          workspaceId: "ws-acme",
+          workspaceName: "Acme Robotics",
+          memberName: "Grace Hopper",
+          role: "member",
+        }
+      ),
+      options.inApp === false ? 0 : 1,
+      options.emailState ?? "none",
+      options.eventId ?? `event-${options.id}`,
+      ms(options.readAt),
+      ms(options.archivedAt),
+      ms(options.createdAt ?? "2026-10-28T11:00:00.000Z")
+    )
+    .run();
+}
+
+/** Audit events recorded about a user (target user), oldest first. */
+export async function userAuditTrail(userId: string) {
+  const { results } = await env.DB.prepare(
+    "SELECT action, actor_user_id AS actor, metadata FROM audit_events WHERE target_type = 'user' AND target_id = ? ORDER BY occurred_at, rowid"
+  )
+    .bind(userId)
+    .all<{ action: string; actor: string | null; metadata: string }>();
   return results.map((row) => ({ ...row, metadata: JSON.parse(row.metadata) }));
 }

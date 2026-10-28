@@ -279,6 +279,34 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     metadata: noMetadata,
   }),
 
+  // Notifications (recorded by the notifications use cases). Reads, archiving and delivery
+  // are the recipient's own inbox state and are not recorded.
+  z.object({
+    ...common,
+    action: z.literal("notifications.preferences_changed"),
+    target: target("user"),
+    metadata: z
+      .object({
+        /** How many channel switches the request set. */
+        changes: z.number().int().min(0).max(100),
+        emailCadence: z.enum(["instant", "daily"]).optional(),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...common,
+    /** One-click unsubscribe from a mail's link (RFC 8058); the token names the user. */
+    action: z.literal("notifications.unsubscribed"),
+    target: target("user"),
+    metadata: z
+      .object({
+        /** The notification type, or "*" for every type (a digest's link). */
+        type: text,
+        channel: z.literal("email"),
+      })
+      .strict(),
+  }),
+
   // Feature flags (platform configuration, recorded by the flag admin use cases). The
   // target id is the flag key; values are flag values (boolean, short string, number).
   z.object({

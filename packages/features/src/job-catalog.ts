@@ -11,6 +11,19 @@ import {
   purgeIdempotencyKeysJob,
   registerJob,
 } from "./jobs";
+import { notificationCatalog } from "./notification-catalog";
+import {
+  dispatchNotification,
+  dispatchNotificationJob,
+  planDigests,
+  planDigestsJob,
+  purgeNotifications,
+  purgeNotificationsJob,
+  sendDigest,
+  sendDigestJob,
+  sendNotificationEmail,
+  sendNotificationEmailJob,
+} from "./notifications";
 
 export const jobCatalog = createJobCatalog<JobDeps>([
   registerJob(helloJob, sayHello),
@@ -23,6 +36,31 @@ export const jobCatalog = createJobCatalog<JobDeps>([
   ),
   registerJob(purgeIdempotencyKeysJob, (deps: JobDeps) =>
     purgeIdempotencyKeys(deps)
+  ),
+  registerJob(dispatchNotificationJob, (deps: JobDeps, payload, job) =>
+    dispatchNotification(
+      { ...deps, catalog: notificationCatalog },
+      { ...payload, context: job.context }
+    )
+  ),
+  registerJob(sendNotificationEmailJob, (deps: JobDeps, payload) =>
+    sendNotificationEmail({ ...deps, catalog: notificationCatalog }, payload)
+  ),
+  // `asOf` is the cron run's time: a retried plan or digest covers the same rows.
+  registerJob(planDigestsJob, (deps: JobDeps, payload, job) =>
+    planDigests(deps, { asOf: new Date(payload.asOf), context: job.context })
+  ),
+  registerJob(sendDigestJob, (deps: JobDeps, payload) =>
+    sendDigest(
+      { ...deps, catalog: notificationCatalog },
+      { userId: payload.userId, asOf: new Date(payload.asOf) }
+    )
+  ),
+  registerJob(purgeNotificationsJob, (deps: JobDeps, payload) =>
+    purgeNotifications({
+      db: deps.db,
+      clock: { now: () => new Date(payload.asOf) },
+    })
   ),
   // Judged as of the cron run's time; audited with the delivery's trace.
   registerJob(expireTrialsJob, (deps: JobDeps, payload, job) =>

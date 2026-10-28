@@ -18,6 +18,8 @@ import {
   systemClock,
 } from "@cloudflare-starter/features";
 
+import { buildRequiredConfig } from "@/lib/env";
+import { APP_NAME } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { errorTypeOf, secondsSince } from "@/server/instrumentation";
@@ -30,11 +32,19 @@ export interface QueueDeps {
   readonly random: Random;
   /** `max_retries` of the consumer in wrangler.jsonc. */
   readonly maxRetries: number;
+  /** The app as mail sees it: name, APP_URL and BETTER_AUTH_SECRET (unsubscribe keys). */
+  readonly app: JobDeps["app"];
 }
 
 /** The consumer's dependencies in the Worker: the real database, job catalog and settings. */
 export function queueDeps(env: AppEnv): QueueDeps {
+  const config = buildRequiredConfig(env);
   return {
+    app: {
+      name: APP_NAME,
+      url: config.APP_URL.replace(/\/+$/, ""),
+      secret: config.BETTER_AUTH_SECRET,
+    },
     db: getDb(env),
     catalog: jobCatalog,
     random: mathRandom,
@@ -163,6 +173,9 @@ async function handleMessage(
           ids: randomIds,
           logger,
           jobQueue: platform.jobQueue,
+          email: platform.email,
+          metrics: platform.metrics,
+          app: deps.app,
         },
         job,
         parsed.envelope,

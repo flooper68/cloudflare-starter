@@ -7,8 +7,10 @@ export {
   ANALYTICS_ENGINE_LAYOUT,
   type AnalyticsEngineMetricsOptions,
   type AnalyticsEngineProductAnalyticsOptions,
+  type CloudflareEmailConfig,
   createAnalyticsEngineMetrics,
   createAnalyticsEngineProductAnalytics,
+  createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
@@ -34,6 +36,7 @@ export {
 export {
   type CapturedError,
   createMemoryBillingProvider,
+  createMemoryEmail,
   createMemoryErrorReporter,
   createMemoryFeatureFlags,
   createMemoryHumanVerifier,
@@ -44,6 +47,7 @@ export {
   createMemoryRateLimiter,
   createMemoryTracer,
   type MemoryBillingProvider,
+  type MemoryEmail,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
@@ -56,6 +60,7 @@ export {
 } from "./memory";
 export {
   noopBillingProvider,
+  noopEmail,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,

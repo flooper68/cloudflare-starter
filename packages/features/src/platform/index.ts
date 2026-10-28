@@ -4,12 +4,15 @@ export {
   type AnalyticsEngineMetricsOptions,
   type AnalyticsEngineProductAnalyticsOptions,
   type CapturedError,
+  type CloudflareEmailConfig,
   createAnalyticsEngineMetrics,
   createAnalyticsEngineProductAnalytics,
+  createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
   createMemoryBillingProvider,
+  createMemoryEmail,
   createMemoryErrorReporter,
   createMemoryFeatureFlags,
   createMemoryHumanVerifier,
@@ -31,6 +34,7 @@ export {
   fromDataPoint,
   MAX_POINTS_PER_FLUSH,
   type MemoryBillingProvider,
+  type MemoryEmail,
   type MemoryErrorReporter,
   type MemoryFeatureFlags,
   type MemoryJobQueue,
@@ -39,6 +43,7 @@ export {
   type MemoryProductAnalytics,
   type MemoryTracer,
   noopBillingProvider,
+  noopEmail,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,
@@ -63,14 +68,7 @@ export {
 } from "./analytics-delivery";
 export { systemClock } from "./clock";
 export { createDb, type Db } from "./db";
-export {
-  type CloudflareEmailConfig,
-  createCloudflareEmailService,
-  type EmailRecipient,
-  type EmailService,
-  type SendEmailInput,
-  type SendTestEmailInput,
-} from "./email";
+export { assertEmailMessage } from "./email-message";
 export { FLAG_BUCKETS, flagBucket } from "./flag-evaluation";
 export { sha256Hex } from "./hash";
 export { randomIds } from "./ids";
@@ -99,6 +97,8 @@ export type {
   BillingProvider,
   CheckoutInput,
   Counter,
+  EmailRecipient,
+  EmailService,
   ErrorReporter,
   FeatureFlagStore,
   FeatureFlags,
@@ -127,6 +127,7 @@ export type {
   RateLimiter,
   RateLimitResult,
   RateLimitRule,
+  SendEmailInput,
   Span,
   SpanAttributes,
   SpanAttributeValue,
@@ -145,6 +146,7 @@ export {
   requestContextAttributes,
 } from "./request-context";
 export { SPAN_EVENT, type SpanKind, type SpanRecord } from "./span-record";
+export { testEmail } from "./test-email";
 export {
   formatTraceparent,
   newSpanId,

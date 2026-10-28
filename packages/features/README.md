@@ -12,11 +12,13 @@ src/
 ├── database.ts         composition root: every feature's tables in one schema, createDatabase()
 ├── job-catalog.ts      composition root: every background job type and its handler
 ├── cron-catalog.ts     composition root: every cron entry (name, schedule, run)
+├── notification-catalog.ts  composition root: every notification type
 ├── kernel/             pure shared building blocks: DomainError, Clock, Ids, Random, RequestContext,
-│                       BillingGate, defineJob and the job envelope type
-├── platform/           shared infrastructure: Drizzle client, email service, clock, ids, random,
+│                       BillingGate, defineJob and the job envelope type, defineNotification
+│                       and Notify, html
+├── platform/           shared infrastructure: Drizzle client, clock, ids, random,
 │                       request context; ports/ (Logger, ErrorReporter, JobQueue, FeatureFlags,
-│                       RateLimiter, HumanVerifier, Metrics, Tracer, BillingProvider), adapters/<vendor>/
+│                       RateLimiter, HumanVerifier, Metrics, Tracer, BillingProvider, Email), adapters/<vendor>/
 │                       and the metric catalog
 ├── abuse/              the rate-limit catalog (RATE_LIMIT_POLICIES), limitKey, enforceRateLimit, verifyHuman
 ├── jobs/               background jobs: envelope, backoff, retry policy, idempotency keys, enqueueJob, runJob
@@ -26,6 +28,7 @@ src/
 ├── billing/            plans, add-ons, features and limits: catalog, entitlements, usage, trials
 ├── files/              file records and R2 storage (binding and presigned URLs), per workspace
 ├── greetings/          the job demo (greetings.hello)
+├── notifications/      notify, dispatch, inbox, preferences, digest, unsubscribe, retention
 └── workspaces/         tenancy: workspaces, members, invitations, roles, sign-up policy
 ```
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addMember,
+  notificationsSent,
   rows,
   seedUser,
   seedWorkspace,
@@ -38,6 +39,19 @@ describe("transferOwnership", () => {
     ).toEqual([
       { user_id: owner.id, role: "member" },
       { user_id: colleague.id, role: "owner" },
+    ]);
+    expect(notificationsSent(deps.jobQueue)).toEqual([
+      {
+        type: "workspaces.role-changed",
+        recipients: [colleague.id],
+        workspaceId: "ws-acme",
+        data: {
+          workspaceId: "ws-acme",
+          workspaceName: "Acme Robotics",
+          role: "owner",
+          previousRole: "member",
+        },
+      },
     ]);
   });
 });

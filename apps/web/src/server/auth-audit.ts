@@ -2,12 +2,20 @@
  * Audit events for Better Auth's own endpoints, which are not our use cases: sign-in,
  * failed sign-in, sign-up, password reset requests and password changes (docs/guides/how-to-use-the-audit-log.md).
  * Sign-ups are also tracked as the product event `auth.signed_up`.
- * Wired into the auth options in server/auth.ts. A failure to record is reported and does
- * not fail the sign-in: losing an audit row is better than locking every user out.
+ * Next to each record(), the security notifications of the same events: `auth.new-sign-in`
+ * (password and social sign-ins from a browser with no other live session; not sign-up or
+ * email verification) and `auth.password-changed`
+ * (docs/guides/how-to-send-notifications.md). Wired into the auth options in
+ * server/auth.ts. A failure to record or notify is reported and does not fail the sign-in:
+ * losing an audit row is better than locking every user out.
  */
 import {
   type AuditEventInput,
   createRequestContext,
+  type Notify,
+  notify,
+  notifyNewSignIn,
+  passwordChangedNotification,
   type RequestContext,
   randomIds,
   recordAuditEvent,
@@ -101,6 +109,58 @@ async function record(
   }
 }
 
+/** The notifications use case on this Worker's job queue. */
+function notifierFor(env: AppEnv): Notify {
+  const platform = buildPlatform(env);
+  return (definition, input) =>
+    notify(
+      {
+        jobQueue: platform.jobQueue,
+        clock: systemClock,
+        ids: randomIds,
+        errors: platform.errors,
+      },
+      definition,
+      input
+    );
+}
+
+/**
+ * Runs a security notification's use case (notifyNewSignIn reads D1 first); a failure is
+ * reported and never fails the request. `notify` itself never throws.
+ */
+async function notifySafely(
+  env: AppEnv,
+  context: RequestContext,
+  notification: string,
+  send: () => Promise<unknown>
+): Promise<void> {
+  try {
+    await send();
+  } catch (error) {
+    buildPlatform(env).errors.capture(error, context, {
+      "app.notification.type": notification,
+    });
+  }
+}
+
+/** `auth.password-changed` to the user, after a change or a completed reset. */
+async function notifyPasswordChanged(
+  env: AppEnv,
+  ctx: { readonly request?: Request } | null,
+  userId: string,
+  method: "change" | "reset"
+): Promise<void> {
+  const context = { ...contextFor(env, ctx), userId };
+  await notifySafely(env, context, passwordChangedNotification.type, () =>
+    notifierFor(env)(passwordChangedNotification, {
+      recipients: [userId],
+      data: { method, changedAt: systemClock.now().toISOString() },
+      context: { workspaceId: null, requestContext: context },
+    })
+  );
+}
+
 /** Better Auth database hooks: a session or a user was created. */
 export function auditDatabaseHooks(
   env: AppEnv
@@ -114,12 +174,29 @@ export function auditDatabaseHooks(
           // An admin's impersonation session: recorded as impersonation.started.
           if ((session as { impersonatedBy?: string | null }).impersonatedBy)
             return;
+          const signIn = signInMethodOf(ctx);
           await record(env, ctx, {
             action: "auth.sign_in",
             actor: { kind: "user", userId: session.userId },
             target: { type: "user", id: session.userId },
-            metadata: signInMethodOf(ctx),
+            metadata: signIn,
           });
+          // A brand-new account or a just-verified address is not a sign-in to warn about.
+          if (signIn.method !== "password" && signIn.method !== "social")
+            return;
+          const context = { ...contextFor(env, ctx), userId: session.userId };
+          await notifySafely(env, context, "auth.new-sign-in", () =>
+            notifyNewSignIn(
+              { db: getDb(env), clock: systemClock, notify: notifierFor(env) },
+              {
+                userId: session.userId,
+                sessionId: session.id,
+                userAgent: session.userAgent ?? null,
+                ip: session.ipAddress ?? null,
+                requestContext: context,
+              }
+            )
+          );
         },
       },
     },
@@ -179,6 +256,9 @@ export async function auditAuthEndpoint(
         ? { method: "change", reason: errorCodeOf(returned) }
         : { method: "change" },
     });
+    if (!isAPIError(returned)) {
+      await notifyPasswordChanged(env, ctx, userId, "change");
+    }
     return;
   }
 
@@ -264,4 +344,5 @@ export async function auditPasswordReset(
       metadata: { method: "reset" },
     }
   );
+  await notifyPasswordChanged(env, { request }, userId, "reset");
 }

@@ -16,6 +16,7 @@ import {
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
   createWorkersTracer,
+  type EmailService,
   type ErrorReporter,
   type FeatureFlagStore,
   type FeatureFlags,
@@ -24,6 +25,7 @@ import {
   type Logger,
   type LogResource,
   type Metrics,
+  noopEmail,
   noopErrorReporter,
   noopFeatureFlags,
   noopHumanVerifier,
@@ -50,7 +52,7 @@ import {
   parseAnalyticsConfig,
   parsePlatformConfig,
 } from "@/lib/config";
-import { buildRawEnv } from "@/lib/env";
+import { buildEmailFeature, buildRawEnv } from "@/lib/env";
 import type { AppEnv } from "@/server/env";
 
 /**
@@ -71,6 +73,11 @@ export interface Platform {
   /** Flushed once at the end of each unit of work (HTTP request, queue batch, cron run). */
   readonly metrics: Metrics;
   readonly tracer: Tracer;
+  /**
+   * Outgoing mail (the EMAIL binding with EMAIL_FROM), or the noop adapter when either is
+   * missing: `email.enabled` says which.
+   */
+  readonly email: EmailService;
   /** The deployed version id from CF_VERSION_METADATA, "local" without the binding. */
   readonly release: string;
   /** APP_ENV: required, no default (local, develop, staging, production). */
@@ -136,6 +143,12 @@ function buildMetrics(
     dataset: env.METRICS_DATASET,
     resource,
   });
+}
+
+/** The Email adapter: Cloudflare Email Service when the binding and EMAIL_FROM are set. */
+function emailOf(env: AppEnv): EmailService {
+  const email = buildEmailFeature(env);
+  return email.enabled && email.value ? email.value : noopEmail;
 }
 
 /** ANALYTICS=analytics-engine needs the ANALYTICS_EVENTS dataset binding. */
@@ -216,6 +229,7 @@ export function buildPlatform(env: AppEnv): Platform {
         ? createWorkersLogsErrorReporter({ resource })
         : noopErrorReporter,
     jobQueue: createCloudflareJobQueue(env.APP_QUEUE),
+    email: emailOf(env),
     flags: d1Flags ?? noopFeatureFlags,
     flagStore: d1Flags,
     metrics: buildMetrics(env, config.METRICS, resource),

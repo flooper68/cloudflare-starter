@@ -17,6 +17,10 @@ export {
   pseudonymousId,
   toAnalyticsEngineDataPoint,
 } from "./analytics-engine-product-analytics";
+export {
+  type CloudflareEmailConfig,
+  createCloudflareEmail,
+} from "./cloudflare-email";
 export { createCloudflareJobQueue } from "./cloudflare-job-queue";
 export {
   createD1FeatureFlags,

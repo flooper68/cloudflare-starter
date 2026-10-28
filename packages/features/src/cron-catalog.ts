@@ -8,6 +8,11 @@ import { purgeAuditEventsJob } from "./audit";
 import { expireTrialsJob } from "./billing";
 import { createCronCatalog, enqueueJob, purgeIdempotencyKeysJob } from "./jobs";
 import type { Clock, Ids } from "./kernel";
+import {
+  DIGEST_SCHEDULE,
+  planDigestsJob,
+  purgeNotificationsJob,
+} from "./notifications";
 import type { JobQueue, Logger } from "./platform";
 
 /** What a cron entry may use. */
@@ -46,6 +51,29 @@ export const cronCatalog = createCronCatalog<CronDeps>([
       enqueueJob(
         deps,
         expireTrialsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
+  },
+  {
+    name: "notifications.purge",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeNotificationsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
+  },
+  {
+    // Daily at DIGEST_HOUR_UTC: users on the daily email cadence get their summary.
+    name: "notifications.plan-digests",
+    schedule: DIGEST_SCHEDULE,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        planDigestsJob,
         { asOf: new Date(scheduledTime).toISOString() },
         { context }
       ),

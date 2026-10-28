@@ -1,5 +1,5 @@
 import {
-  createCloudflareEmailService,
+  createCloudflareEmail,
   type EmailService,
   type R2Config,
 } from "@cloudflare-starter/features";
@@ -75,7 +75,7 @@ export function buildEmailFeature(
       throw new Error("Needs the EMAIL send_email binding and EMAIL_FROM");
     }
 
-    return createCloudflareEmailService({
+    return createCloudflareEmail({
       binding,
       from: { email: config.EMAIL_FROM, name: config.EMAIL_FROM_NAME },
     });

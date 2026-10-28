@@ -163,10 +163,15 @@
       "name": "RL_ANALYTICS",
       "namespace_id": "1009",
       "simple": { "limit": 120, "period": 60 }
+    },
+    {
+      "name": "RL_UNSUBSCRIBE",
+      "namespace_id": "1010",
+      "simple": { "limit": 20, "period": 60 }
     }
   ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
-  "triggers": { "crons": ["17 3 * * *"] },
+  "triggers": { "crons": ["0 8 * * *", "17 3 * * *"] },
 
   "env": {
     "staging": {
@@ -276,9 +281,14 @@
           "name": "RL_ANALYTICS",
           "namespace_id": "2009",
           "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_UNSUBSCRIBE",
+          "namespace_id": "2010",
+          "simple": { "limit": 20, "period": 60 }
         }
       ],
-      "triggers": { "crons": ["17 3 * * *"] }
+      "triggers": { "crons": ["0 8 * * *", "17 3 * * *"] }
     },
     "production": {
       "observability": {
@@ -387,9 +397,14 @@
           "name": "RL_ANALYTICS",
           "namespace_id": "3009",
           "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_UNSUBSCRIBE",
+          "namespace_id": "3010",
+          "simple": { "limit": 20, "period": 60 }
         }
       ],
-      "triggers": { "crons": ["17 3 * * *"] }
+      "triggers": { "crons": ["0 8 * * *", "17 3 * * *"] }
     }
   }
 }

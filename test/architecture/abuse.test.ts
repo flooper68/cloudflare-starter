@@ -35,7 +35,7 @@ const PAGES = "apps/web/src/pages/";
  * An .astro page that reads a route param or a `token` query parameter on the server: it
  * can be used to guess tokens, so it needs a policy or an exemption like an endpoint.
  */
-const READS_URL_TOKEN = /Astro\.params|searchParams\.get\(\s*["']token["']/;
+const READS_URL_TOKEN = /Astro\.params|searchParams\.get\(\s*["'](token|t)["']/;
 
 /** Endpoint files under src/pages (dot folders such as .well-known included), and the
  * .astro pages that read tokens from the URL. */

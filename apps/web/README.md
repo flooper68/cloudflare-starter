@@ -17,6 +17,7 @@ Related guides:
 - [docs/guides/how-to-setup-error-reporting.md](../../docs/guides/how-to-setup-error-reporting.md) — error reports and references, `ERROR_REPORTER`
 - [docs/guides/how-to-use-feature-flags.md](../../docs/guides/how-to-use-feature-flags.md) — the flag catalog, `useFlag`/`FlagGate` (`src/lib/feature-flags.tsx`), `FEATURE_FLAGS`
 - [docs/guides/how-to-setup-metrics-and-tracing.md](../../docs/guides/how-to-setup-metrics-and-tracing.md) — metric catalog, spans, Analytics Engine, `METRICS`, `TRACING`
+- [docs/guides/how-to-send-notifications.md](../../docs/guides/how-to-send-notifications.md) — the inbox, bell, notification mail and one-click unsubscribe
 
 Every on-demand request gets a request context in [src/middleware.ts](src/middleware.ts) (`traceparent` and `x-request-id` on each response); the logger, error reporter, metrics and tracer are picked in [src/server/platform.ts](src/server/platform.ts).
 
@@ -32,11 +33,13 @@ Public, SSR:
 - `/mcp` (MCP server, OAuth bearer tokens)
 - `/api/files`, `/api/files/:id` (R2 binding upload and download)
 - `/api/billing/webhook` (the billing provider's events; 404 unless `BILLING=provider`)
+- `/api/notifications/unsubscribe` (RFC 8058 one-click unsubscribe from notification mail) and `/unsubscribe` (its confirmation page)
 
 Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
 
 - `/app/dashboard`, `/app/profile`, `/app/members` (single and multi mode)
 - `/app/upload-demo`, `/app/queue-demo`, `/app/email-demo`
+- `/app/notifications`, `/app/notifications/preferences` (inbox and notification settings; the bell in the top bar opens the inbox)
 
 Direct loads to `/app/*` hit Astro and middleware first; subsequent navigation stays inside the SPA.
 

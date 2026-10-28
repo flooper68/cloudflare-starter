@@ -1,0 +1,57 @@
+---
+import { env } from "cloudflare:workers";
+import {
+  deriveUnsubscribeKey,
+  notificationCatalog,
+  UNSUBSCRIBE_ALL,
+  verifyUnsubscribeToken,
+} from "@cloudflare-starter/features";
+
+import { Unsubscribe } from "@/components/notifications/Unsubscribe";
+import Layout from "@/layouts/Layout.astro";
+import { buildRequiredConfig } from "@/lib/env";
+import { buildPlatform } from "@/server/platform";
+import {
+  rateLimitedResponse,
+  refuseOverLimit,
+} from "@/server/rate-limited-response";
+
+// Where a notification mail's unsubscribe link leads (GET /api/notifications/unsubscribe
+// redirects here). Showing it changes nothing: link scanners open links. The button POSTs
+// the RFC 8058 body to the API route.
+const token = Astro.url.searchParams.get("t") ?? "";
+const { requestContext } = Astro.locals;
+
+// Per IP before the token is checked, like the invitation page.
+const refused = await refuseOverLimit(
+  buildPlatform(env),
+  "token.lookup",
+  { userId: null, ip: requestContext.ip },
+  (error) => rateLimitedResponse(error, requestContext, Astro.url.pathname)
+);
+if (refused) return refused;
+
+const target = token
+  ? await verifyUnsubscribeToken(
+      await deriveUnsubscribeKey(buildRequiredConfig(env).BETTER_AUTH_SECRET),
+      token
+    )
+  : null;
+const topic =
+  target && target.type !== UNSUBSCRIBE_ALL
+    ? (notificationCatalog.get(target.type)?.label ?? null)
+    : null;
+Astro.response.headers.set("cache-control", "no-store");
+Astro.response.headers.set("referrer-policy", "no-referrer");
+---
+
+<Layout title="Unsubscribe">
+  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+    <Unsubscribe
+      client:load
+      token={token}
+      state={target ? "confirm" : "invalid"}
+      topic={topic}
+    />
+  </main>
+</Layout>

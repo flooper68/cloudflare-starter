@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addMember,
   auditTrail,
+  notificationsSent,
   rows,
   seedUser,
   seedWorkspace,
@@ -72,5 +73,45 @@ describe("changeMemberRole", () => {
       { user_id: owner.id, role: "member" },
       { user_id: colleague.id, role: "owner" },
     ]);
+    // Each changed member hears about it (the test context has no actor to drop).
+    expect(notificationsSent(deps.jobQueue)).toEqual([
+      expect.objectContaining({
+        type: "workspaces.role-changed",
+        recipients: [colleague.id],
+        data: {
+          workspaceId: "ws-acme",
+          workspaceName: "Acme Robotics",
+          role: "owner",
+          previousRole: "member",
+        },
+      }),
+      expect.objectContaining({
+        type: "workspaces.role-changed",
+        recipients: [owner.id],
+      }),
+    ]);
+  });
+
+  it("sends nothing when the role stays the same, and never to the actor", async () => {
+    const owner = await seedUser("Edsger Dijkstra");
+    const colleague = await seedUser("Frances Allen");
+    const actor = await seedWorkspace(owner.id, { id: "ws-same" });
+    await addMember("ws-same", colleague.id, "owner");
+    const deps = useCaseDeps();
+    const asOwner = {
+      ...deps,
+      requestContext: { ...deps.requestContext, userId: owner.id },
+    };
+    await changeMemberRole(asOwner, actor, {
+      mode: "multi",
+      userId: colleague.id,
+      role: "owner",
+    });
+    await changeMemberRole(asOwner, actor, {
+      mode: "multi",
+      userId: owner.id,
+      role: "member",
+    });
+    expect(notificationsSent(deps.jobQueue)).toEqual([]);
   });
 });
