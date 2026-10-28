@@ -15,12 +15,14 @@ import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { trpc } from "@/lib/trpc/client";
 
+import { TrialBanner } from "../billing/TrialBanner";
 import { AppSidebar } from "./AppSidebar";
 
 const titles: Record<string, string> = {
   "/app/dashboard": "Dashboard",
   "/app/profile": "Profile",
   "/app/members": "Members",
+  "/app/billing": "Billing",
   "/app/upload-demo": "Upload demo",
   "/app/queue-demo": "Queue demo",
   "/app/email-demo": "Email demo",
@@ -82,6 +84,7 @@ export function AppLayout() {
   return (
     <AppShell sidebar={<AppSidebar />}>
       <Impersonation />
+      <TrialBanner />
       <AppTopBar
         title={
           <span className="truncate text-sm font-medium text-fg">

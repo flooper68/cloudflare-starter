@@ -15,6 +15,7 @@ import {
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   BookOpen,
+  CreditCard,
   LayoutDashboard,
   ListTodo,
   LogOut,
@@ -47,7 +48,7 @@ async function signOut() {
 export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, admin } = useAuth();
+  const { user, admin, billing } = useAuth();
   const { mode, list, active, switchTo, create } = useWorkspace();
   const multi = mode === "multi";
 
@@ -103,6 +104,15 @@ export function AppSidebar() {
               active={pathname === "/app/members"}
             >
               <Link to="/app/members">Members</Link>
+            </SidebarItem>
+          ) : null}
+          {billing.mode !== "off" ? (
+            <SidebarItem
+              asChild
+              icon={<CreditCard />}
+              active={pathname === "/app/billing"}
+            >
+              <Link to="/app/billing">Billing</Link>
             </SidebarItem>
           ) : null}
           <SidebarItem

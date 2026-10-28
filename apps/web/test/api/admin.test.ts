@@ -526,6 +526,16 @@ describe("/admin and /app pages (spaBootstrap)", () => {
     expect((await spaBootstrap(env, locals(sam))).admin).toBe(false);
   });
 
+  it("tells the app the billing mode (billing page and upgrade prompts)", async () => {
+    expect((await spaBootstrap(env, locals(member))).billing).toEqual({
+      mode: env.BILLING,
+    });
+    const off = envWith({ WORKSPACE_MODE: "multi", BILLING: "off" });
+    expect((await spaBootstrap(off, locals(member))).billing).toEqual({
+      mode: "off",
+    });
+  });
+
   it("tells the app about an impersonation (the banner)", async () => {
     const bootstrap = await spaBootstrap(env, locals(member, admin.id));
     expect(bootstrap).toMatchObject({ admin: false, impersonatedBy: admin.id });

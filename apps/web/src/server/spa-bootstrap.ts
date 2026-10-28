@@ -1,7 +1,8 @@
 /**
  * The JSON the `/app` and `/admin` pages hand the SPA (`__APP_AUTH__`, read by
  * components/shared/spa/auth-context.tsx): the user, sign-in methods, workspace mode,
- * whether they may open the admin portal, and whether this session is an impersonation.
+ * the billing mode, whether they may open the admin portal, and whether this session is
+ * an impersonation.
  */
 import { findAdminAccess, systemClock } from "@cloudflare-starter/features";
 
@@ -19,6 +20,8 @@ export interface SpaBootstrap {
   } | null;
   readonly methods: { readonly emailPassword: boolean };
   readonly workspace: { readonly mode: "personal" | "single" | "multi" };
+  /** BILLING: off hides the billing page and every upgrade prompt. */
+  readonly billing: { readonly mode: "off" | "manual" | "provider" };
   /** Role admin, not suspended, and ADMIN_PORTAL=on (read from D1, not the cookie cache). */
   readonly admin: boolean;
   /** Set while an admin impersonates this user: the admin's user id. */
@@ -63,6 +66,7 @@ export async function spaBootstrap(
       : null,
     methods: { emailPassword: getAuthMethods(env).emailPassword },
     workspace: { mode: config.workspaces.mode },
+    billing: { mode: config.billing.mode },
     admin,
     impersonatedBy: session?.impersonatedBy ?? null,
   };

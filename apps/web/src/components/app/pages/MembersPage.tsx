@@ -8,9 +8,13 @@ import {
   toast,
 } from "@cloudflare-starter/ui";
 import { Users } from "lucide-react";
+import { useState } from "react";
+
+import { BillingLimitPrompt } from "@/components/app/billing/BillingLimitPrompt";
 
 import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
+import { type LimitRefusal, limitRefusalOf } from "@/lib/billing-prompts";
 import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 
@@ -30,6 +34,8 @@ export function MembersPage() {
   const { active } = useWorkspace();
   const workspaceId = active?.id ?? "";
   const canManage = active?.role === "owner";
+  // No free seat: the invite dialog closes and the upgrade dialog opens.
+  const [seatRefusal, setSeatRefusal] = useState<LimitRefusal | null>(null);
 
   const data = useAsync(async () => {
     const [members, invitations] = await Promise.all([
@@ -70,11 +76,21 @@ export function MembersPage() {
             defaultRole="member"
             workspaceName={active?.name}
             onInvite={async ({ email, role }) => {
-              const sent = await trpc.workspace.invitations.create.mutate({
-                workspaceId,
-                email,
-                role: role as "owner" | "member",
-              });
+              let sent: Awaited<
+                ReturnType<typeof trpc.workspace.invitations.create.mutate>
+              >;
+              try {
+                sent = await trpc.workspace.invitations.create.mutate({
+                  workspaceId,
+                  email,
+                  role: role as "owner" | "member",
+                });
+              } catch (error) {
+                const refusal = limitRefusalOf(error);
+                if (!refusal) throw error;
+                setSeatRefusal(refusal);
+                return;
+              }
               toast.success(
                 sent.delivered
                   ? `Invitation sent to ${sent.email}`
@@ -85,6 +101,16 @@ export function MembersPage() {
           />
         ) : null}
       </div>
+      {seatRefusal ? (
+        <BillingLimitPrompt
+          variant="dialog"
+          refusal={seatRefusal}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSeatRefusal(null);
+          }}
+        />
+      ) : null}
 
       <Card className="p-0">
         <DataState

@@ -12,8 +12,12 @@ import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 
 import { useAdminAction } from "../use-admin-action";
+import { WorkspaceBilling } from "../WorkspaceBilling";
 
-/** `/admin/workspaces/$workspaceId`: members, owner rescue, deletion (not in personal mode). */
+/**
+ * `/admin/workspaces/$workspaceId`: members, owner rescue, deletion, and billing (plan,
+ * add-ons, overrides, usage) when BILLING is not off. Not in personal mode.
+ */
 export function AdminWorkspacePage() {
   const { workspace } = useAuth();
   if (workspace.mode === "personal") {
@@ -30,6 +34,7 @@ export function AdminWorkspacePage() {
 
 function WorkspaceDetailPage() {
   const { workspaceId = "" } = useParams({ strict: false });
+  const { billing } = useAuth();
   const navigate = useNavigate();
   const { run, dialog } = useAdminAction();
   const data = useAsync(
@@ -87,6 +92,9 @@ function WorkspaceDetailPage() {
           />
         )}
       </DataState>
+      {billing.mode !== "off" && data.status === "success" ? (
+        <WorkspaceBilling workspaceId={workspaceId} />
+      ) : null}
       {dialog}
     </section>
   );

@@ -147,3 +147,10 @@ export {
   type SkeletonTextProps,
 } from "../components/skeleton";
 export { Toaster, type ToasterProps, toast } from "../components/toast";
+export {
+  type UpgradeBillingMode,
+  type UpgradeOption,
+  UpgradePrompt,
+  type UpgradePromptProps,
+  type UpgradeReason,
+} from "../components/upgrade-prompt";

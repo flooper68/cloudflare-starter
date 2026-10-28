@@ -8,7 +8,9 @@ import {
   Label,
 } from "@cloudflare-starter/ui";
 import { useState } from "react";
+import { BillingLimitPrompt } from "@/components/app/billing/BillingLimitPrompt";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
+import { type LimitRefusal, limitRefusalOf } from "@/lib/billing-prompts";
 import { UNEXPECTED_ERROR_MESSAGE } from "@/lib/error-reference";
 
 interface UploadResponse {
@@ -36,6 +38,8 @@ export function BindingUploadDemo({
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [status, setStatus] = useState("No file uploaded yet.");
   const [failure, setFailure] = useState<UploadFailure | null>(null);
+  // A plan limit (403 Problem Details, kind limit_reached): the upgrade prompt instead.
+  const [refusal, setRefusal] = useState<LimitRefusal | null>(null);
   const [uploading, setUploading] = useState(false);
 
   async function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -45,6 +49,7 @@ export function BindingUploadDemo({
     setUploading(true);
     setFileUrl(null);
     setFailure(null);
+    setRefusal(null);
     setStatus("Uploading through the Worker...");
 
     try {
@@ -58,6 +63,12 @@ export function BindingUploadDemo({
       const result = (await response.json()) as UploadResponse;
 
       if (!response.ok || !result.url) {
+        const limit = limitRefusalOf(result);
+        if (limit) {
+          setRefusal(limit);
+          setStatus("Not uploaded.");
+          return;
+        }
         setFailure({
           message: result.reference
             ? UNEXPECTED_ERROR_MESSAGE
@@ -104,7 +115,9 @@ export function BindingUploadDemo({
         />
       </div>
 
-      {failure ? (
+      {refusal ? (
+        <BillingLimitPrompt refusal={refusal} />
+      ) : failure ? (
         <ErrorState
           variant="inline"
           description={failure.message}
