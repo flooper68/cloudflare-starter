@@ -36,12 +36,16 @@ const statusColour: Record<AvatarStatus, string> = {
   offline: "bg-fg-subtle",
 };
 
+/**
+ * Opaque fills with white initials: the contrast holds on every surface the avatar sits on
+ * (a tinted fill over a highlighted menu row would not reach 4.5:1).
+ */
 const fallbackTone: Record<Exclude<Tone, "neutral">, string> = {
-  accent: "bg-accent-subtle text-accent",
-  success: "bg-success-subtle text-success",
-  warning: "bg-warning-subtle text-warning",
-  danger: "bg-danger-subtle text-danger",
-  info: "bg-info-subtle text-info",
+  accent: "bg-accent text-accent-fg",
+  success: "bg-success-solid text-on-solid",
+  warning: "bg-warning-solid text-on-solid",
+  danger: "bg-danger-solid text-on-solid",
+  info: "bg-info-solid text-on-solid",
 };
 const fallbackTones = Object.keys(fallbackTone) as Array<
   keyof typeof fallbackTone

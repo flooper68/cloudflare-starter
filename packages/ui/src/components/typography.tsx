@@ -32,7 +32,7 @@ const textVariants = cva("", {
       default: "text-fg",
       muted: "text-fg-muted",
       subtle: "text-fg-subtle",
-      accent: "text-accent",
+      accent: "text-accent-text",
       danger: "text-danger",
       success: "text-success",
     },
