@@ -1,0 +1,347 @@
+[
+  {
+    "tools/list (admin_*)": [
+      {
+        "name": "admin_get_overview",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_get_settings",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_list_users",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_get_user",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_ban_user",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_unban_user",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_revoke_user_sessions",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_set_user_role",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_remove_user",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_send_password_reset",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        }
+      },
+      {
+        "name": "admin_list_workspaces",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_get_workspace",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_assign_workspace_owner",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_delete_workspace",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        }
+      },
+      {
+        "name": "admin_list_audit_events",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        }
+      }
+    ]
+  },
+  {
+    "call": "admin_list_users",
+    "arguments": {
+      "search": "acme"
+    },
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<untrusted-data>\n{\"items\":[{\"id\":\"Czqa31SBeJQykTXmv7IPizA2FvO3yQai\",\"name\":\"Mia Member\",\"email\":\"mia@acme.test\",\"emailVerified\":false,\"role\":\"user\",\"banned\":false,\"banExpires\":null,\"createdAt\":\"2026-10-28T17:26:58.724Z\",\"lastSeenAt\":\"2026-10-28T17:26:58.728Z\"},{\"id\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\",\"name\":\"Grace Hopper\",\"email\":\"grace@acme.test\",\"emailVerified\":false,\"role\":\"user\",\"banned\":false,\"banExpires\":null,\"createdAt\":\"2026-10-28T17:26:58.658Z\",\"lastSeenAt\":\"2026-10-28T17:26:58.663Z\"}],\"nextCursor\":null}\n</untrusted-data>"
+        }
+      ],
+      "structuredContent": {
+        "items": [
+          {
+            "id": "Czqa31SBeJQykTXmv7IPizA2FvO3yQai",
+            "name": "Mia Member",
+            "email": "mia@acme.test",
+            "emailVerified": false,
+            "role": "user",
+            "banned": false,
+            "banExpires": null,
+            "createdAt": "2026-10-28T17:26:58.724Z",
+            "lastSeenAt": "2026-10-28T17:26:58.728Z"
+          },
+          {
+            "id": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6",
+            "name": "Grace Hopper",
+            "email": "grace@acme.test",
+            "emailVerified": false,
+            "role": "user",
+            "banned": false,
+            "banExpires": null,
+            "createdAt": "2026-10-28T17:26:58.658Z",
+            "lastSeenAt": "2026-10-28T17:26:58.663Z"
+          }
+        ],
+        "nextCursor": null
+      }
+    }
+  },
+  {
+    "call": "admin_ban_user",
+    "arguments": {
+      "userId": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6",
+      "reason": "Spam invitations"
+    },
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<untrusted-data>\n{\"userId\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\",\"expiresAt\":null}\n</untrusted-data>"
+        }
+      ],
+      "structuredContent": {
+        "userId": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6",
+        "expiresAt": null
+      }
+    }
+  },
+  {
+    "call": "admin_list_audit_events",
+    "arguments": {
+      "targetType": "user",
+      "targetId": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6"
+    },
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "<untrusted-data>\n{\"events\":[{\"id\":\"2819fb9e-f35f-4bc8-8a13-28fb4d08114e\",\"occurredAt\":\"2026-10-28T17:26:58.756Z\",\"action\":\"user.sessions_revoked\",\"outcome\":\"success\",\"actor\":{\"kind\":\"admin\",\"userId\":\"lYDGBcKKuvqJP12YgB8su1rSWPgUd344\",\"impersonatorUserId\":null},\"target\":{\"type\":\"user\",\"id\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\"},\"workspaceId\":null,\"traceId\":\"119b08ff6ad94e999be24c921ac45ed5\",\"source\":\"http\",\"ip\":null,\"metadata\":{\"sessionCount\":1}},{\"id\":\"1b5a71a4-1c91-4db0-96ed-b104ce605573\",\"occurredAt\":\"2026-10-28T17:26:58.755Z\",\"action\":\"user.banned\",\"outcome\":\"success\",\"actor\":{\"kind\":\"admin\",\"userId\":\"lYDGBcKKuvqJP12YgB8su1rSWPgUd344\",\"impersonatorUserId\":null},\"target\":{\"type\":\"user\",\"id\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\"},\"workspaceId\":null,\"traceId\":\"119b08ff6ad94e999be24c921ac45ed5\",\"source\":\"http\",\"ip\":null,\"metadata\":{\"reason\":\"Spam invitations\"}},{\"id\":\"ec43a09b-7266-40f6-b489-a041c47035e8\",\"occurredAt\":\"2026-10-28T17:26:58.667Z\",\"action\":\"auth.sign_in\",\"outcome\":\"success\",\"actor\":{\"kind\":\"user\",\"userId\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\",\"impersonatorUserId\":null},\"target\":{\"type\":\"user\",\"id\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\"},\"workspaceId\":null,\"traceId\":\"7f7bf5a5f6bc43c1a1822c2e5d8a3486\",\"source\":\"http\",\"ip\":\"203.0.113.2\",\"metadata\":{\"method\":\"sign_up\"}},{\"id\":\"23b782c8-aaf2-4846-836d-f1b33faa5a65\",\"occurredAt\":\"2026-10-28T17:26:58.666Z\",\"action\":\"auth.sign_up\",\"outcome\":\"success\",\"actor\":{\"kind\":\"user\",\"userId\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\",\"impersonatorUserId\":null},\"target\":{\"type\":\"user\",\"id\":\"gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6\"},\"workspaceId\":null,\"traceId\":\"044caa6384264673a9bc30242a178400\",\"source\":\"http\",\"ip\":\"203.0.113.2\",\"metadata\":{\"method\":\"password\"}}],\"nextCursor\":null}\n</untrusted-data>"
+        }
+      ],
+      "structuredContent": {
+        "events": [
+          {
+            "id": "2819fb9e-f35f-4bc8-8a13-28fb4d08114e",
+            "occurredAt": "2026-10-28T17:26:58.756Z",
+            "action": "user.sessions_revoked",
+            "outcome": "success",
+            "actor": {
+              "kind": "admin",
+              "userId": "lYDGBcKKuvqJP12YgB8su1rSWPgUd344",
+              "impersonatorUserId": null
+            },
+            "target": {
+              "type": "user",
+              "id": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6"
+            },
+            "workspaceId": null,
+            "traceId": "119b08ff6ad94e999be24c921ac45ed5",
+            "source": "http",
+            "ip": null,
+            "metadata": {
+              "sessionCount": 1
+            }
+          },
+          {
+            "id": "1b5a71a4-1c91-4db0-96ed-b104ce605573",
+            "occurredAt": "2026-10-28T17:26:58.755Z",
+            "action": "user.banned",
+            "outcome": "success",
+            "actor": {
+              "kind": "admin",
+              "userId": "lYDGBcKKuvqJP12YgB8su1rSWPgUd344",
+              "impersonatorUserId": null
+            },
+            "target": {
+              "type": "user",
+              "id": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6"
+            },
+            "workspaceId": null,
+            "traceId": "119b08ff6ad94e999be24c921ac45ed5",
+            "source": "http",
+            "ip": null,
+            "metadata": {
+              "reason": "Spam invitations"
+            }
+          },
+          {
+            "id": "ec43a09b-7266-40f6-b489-a041c47035e8",
+            "occurredAt": "2026-10-28T17:26:58.667Z",
+            "action": "auth.sign_in",
+            "outcome": "success",
+            "actor": {
+              "kind": "user",
+              "userId": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6",
+              "impersonatorUserId": null
+            },
+            "target": {
+              "type": "user",
+              "id": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6"
+            },
+            "workspaceId": null,
+            "traceId": "7f7bf5a5f6bc43c1a1822c2e5d8a3486",
+            "source": "http",
+            "ip": "203.0.113.2",
+            "metadata": {
+              "method": "sign_up"
+            }
+          },
+          {
+            "id": "23b782c8-aaf2-4846-836d-f1b33faa5a65",
+            "occurredAt": "2026-10-28T17:26:58.666Z",
+            "action": "auth.sign_up",
+            "outcome": "success",
+            "actor": {
+              "kind": "user",
+              "userId": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6",
+              "impersonatorUserId": null
+            },
+            "target": {
+              "type": "user",
+              "id": "gc4pEpPp2XuiLdVRtvjfOUrwrGI0b5q6"
+            },
+            "workspaceId": null,
+            "traceId": "044caa6384264673a9bc30242a178400",
+            "source": "http",
+            "ip": "203.0.113.2",
+            "metadata": {
+              "method": "password"
+            }
+          }
+        ],
+        "nextCursor": null
+      }
+    }
+  },
+  {
+    "call": "admin_list_users (as a non-admin)",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"error\":{\"code\":\"NOT_FOUND\",\"httpStatus\":404,\"message\":\"Not found\"}}"
+        }
+      ],
+      "structuredContent": {
+        "error": {
+          "code": "NOT_FOUND",
+          "httpStatus": 404,
+          "message": "Not found"
+        }
+      },
+      "isError": true
+    }
+  },
+  {
+    "call": "admin_remove_user (admin's sign-in 1 hour old)",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"error\":{\"code\":\"FORBIDDEN\",\"httpStatus\":403,\"message\":\"Sign in again to confirm it's you: this action needs a sign-in from the last 15 minutes\"}}"
+        }
+      ],
+      "structuredContent": {
+        "error": {
+          "code": "FORBIDDEN",
+          "httpStatus": 403,
+          "message": "Sign in again to confirm it's you: this action needs a sign-in from the last 15 minutes"
+        }
+      },
+      "isError": true
+    }
+  }
+]
