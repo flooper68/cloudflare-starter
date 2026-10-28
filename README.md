@@ -16,7 +16,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Component library in Linear's visual language (dark-first, dense, keyboard-first): 60+ components from buttons to data tables, command palette, kanban and app shell, themed by tokens, re-branded in two files
 - Storybook built into the web app at `/_storybook/` in every environment
 - Cloudflare Container demo, deployed as its own Worker
-- Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:email`, `doctor`), agent skills in `.claude/skills/`, and CI
+- Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:email`, `doctor`), agent skills in `.claude/skills/`, and CI that can run on self-hosted runners in Docker (`runner:up`)
 - Every dependency pinned to an exact version
 
 ## Starting a new project from this starter
@@ -103,25 +103,28 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 
 ## Scripts
 
-| Command                                  | What it does                                                                                                              |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`                            | Starts web + container in parallel                                                                                        |
-| `bun run dev:web`                        | Starts the web Worker (Astro dev, with D1, R2, queue and cron simulated)                                                  |
-| `bun run dev:container`                  | Starts the Container pi demo                                                                                              |
-| `bun run storybook`                      | Starts Storybook on port `6006`                                                                                           |
-| `bun run build-storybook`                | Builds Storybook into `apps/web/public/_storybook`                                                                        |
-| `bun run build`                          | Builds every deployable app workspace                                                                                     |
-| `bun run verify`                         | Typecheck + Biome lint + Vitest                                                                                           |
-| `bun run test`                           | All tests: unit (Node) and integration/API on real local D1 in workerd                                                    |
-| `bun run test:unit` / `test:integration` | One layer only                                                                                                            |
-| `bun run test:components`                | Every Storybook story in Chromium, dark and light theme: renders, passes axe, runs its `play` interaction test            |
-| `bun run test:e2e`                       | Playwright journeys (sign up, profile, sign out/in, upload) against `astro dev`; needs `.dev.vars` and `db:migrate:local` |
-| `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                         |
-| `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                       |
-| `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                     |
-| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id into the config                                               |
-| `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                               |
-| `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                  |
+| Command                                  | What it does                                                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                            | Starts web + container in parallel                                                                                              |
+| `bun run dev:web`                        | Starts the web Worker (Astro dev, with D1, R2, queue and cron simulated)                                                        |
+| `bun run dev:container`                  | Starts the Container pi demo                                                                                                    |
+| `bun run storybook`                      | Starts Storybook on port `6006`                                                                                                 |
+| `bun run build-storybook`                | Builds Storybook into `apps/web/public/_storybook`                                                                              |
+| `bun run build`                          | Builds every deployable app workspace                                                                                           |
+| `bun run verify`                         | Typecheck + Biome lint + Vitest                                                                                                 |
+| `bun run test`                           | All tests: unit (Node) and integration/API on real local D1 in workerd                                                          |
+| `bun run test:unit` / `test:integration` | One layer only                                                                                                                  |
+| `bun run test:components`                | Every Storybook story in Chromium, dark and light theme: renders, passes axe, runs its `play` interaction test                  |
+| `bun run test:e2e`                       | Playwright journeys (sign up, profile, sign out/in, upload) against `astro dev`; needs `.dev.vars` and `db:migrate:local`       |
+| `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                               |
+| `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                             |
+| `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                           |
+| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id into the config                                                     |
+| `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                     |
+| `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                        |
+| `bun run runner:up -- --workers <n>`     | Builds and starts n self-hosted CI runners in Docker ([how-to-setup-ci.md](docs/guides/how-to-setup-ci.md#self-hosted-runners)) |
+| `bun run runner:down` / `runner:logs`    | Stops the runners / follows their logs                                                                                          |
+| `bun run runner:remove -- --all`         | Unregisters the runners and deletes their containers and volumes                                                                |
 
 In `apps/web`: `deploy`, `deploy:staging`, `deploy:production`, `deploy:dry-run` (build + `wrangler deploy --dry-run`, also run per environment by CI), `db:migrate:remote`.
 
