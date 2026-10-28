@@ -1,20 +1,25 @@
 export type { Database, FileBucket } from "./db";
 export {
+  account,
   and,
   createDb,
   desc,
   eq,
   FILE_BUCKETS,
   files,
-  users,
+  schema,
+  session,
+  user,
+  verification,
 } from "./db";
 export type {
+  CloudflareEmailConfig,
   EmailRecipient,
   EmailService,
-  MailjetConfig,
+  SendEmailInput,
   SendTestEmailInput,
 } from "./email";
-export { createMailjetEmailService } from "./email";
+export { createCloudflareEmailService } from "./email";
 export type { AppQueueMessage } from "./queue";
 export {
   appQueueMessageSchema,
@@ -27,7 +32,10 @@ export {
   buildFileKey,
   createFileRecord,
   findOwnedFile,
+  getOwnedFileObject,
+  listOwnedFiles,
   presignDownload,
   presignUpload,
+  storeFile,
   uploadInputSchema,
 } from "./storage";

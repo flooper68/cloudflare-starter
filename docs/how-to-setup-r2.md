@@ -1,58 +1,57 @@
-# How To Setup R2 For The Upload Demo
+# How To Setup R2 Storage
 
-This guide explains how to provision Cloudflare R2 so that the `/app/upload-demo` route works in local dev and in deployed environments.
+The web app can reach R2 two ways. Both are wired up and share the same `files` table, key layout (`uploads/{yyyy}/{mm}/{fileId}`), 10 MB limit and ownership rule, so a feature picks the one that fits and the other can be deleted.
 
-The upload flow lives in [packages/features/src/storage](../packages/features/src/storage/index.ts) and is consumed by the web app. It uses the S3-compatible R2 endpoint via `aws4fetch` — **not** an R2 Worker binding — so you provision an R2 access key, not a `[[r2_buckets]]` binding.
+|             | Binding (`env.FILES`)                                                             | Presigned URL (S3 API)                                                   |
+| ----------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Bytes flow  | Browser → Worker → R2                                                             | Browser → R2 directly                                                    |
+| Credentials | None, the binding is the permission                                               | R2 access key pair as secrets                                            |
+| Auth check  | On every read, in the Worker                                                      | Once, when the URL is signed; the URL is a bearer token until it expires |
+| Local dev   | Simulated, no setup                                                               | Talks to the real bucket                                                 |
+| CORS        | Not needed                                                                        | Needed on the bucket                                                     |
+| Good for    | Server-written files, small uploads, anything behind auth                         | Large uploads, links handed to someone outside the app                   |
+| Code        | `storeFile`, `getOwnedFileObject`; routes `POST /api/files`, `GET /api/files/:id` | `createFileRecord`, `presignUpload`, `presignDownload`; tRPC `storage.*` |
 
-## What You Need
-
-Before you start:
-
-1. A Cloudflare account with R2 enabled (free tier is fine for the demo).
-2. Wrangler authenticated locally (`bunx wrangler login`).
-3. A bucket name you want to use for uploaded files.
+Both live in [packages/features/src/storage](../packages/features/src/storage/index.ts). `/app/upload-demo` shows them side by side.
 
 Official references:
 
-- [R2 getting started](https://developers.cloudflare.com/r2/get-started/)
+- [R2 Workers API (binding)](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/)
+- [R2 presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/)
 - [R2 S3-compatible API tokens](https://developers.cloudflare.com/r2/api/tokens/)
-- [R2 S3 API reference](https://developers.cloudflare.com/r2/api/s3/api/)
 
-## How The App Uses R2
+## Binding: Local Dev
 
-- Uploads are PUT directly from the browser to a presigned URL.
-- Downloads are served via a short-lived presigned GET URL.
-- Object keys follow the canonical format `uploads/{yyyy}/{mm}/{fileId}`.
-- Ownership is enforced by the local `files` table — signed URLs are only issued to the uploading user.
-- The hard limit on upload size is 10 MB (enforced in [`uploadInputSchema`](../packages/features/src/storage/index.ts)).
+Nothing to do. `bun run dev:web` simulates `FILES` under `apps/web/.wrangler/state`.
 
-## Step 1: Create The Bucket
+## Binding: Deployed
 
-Pick a name that matches the environment. This repo defaults to `cloudflare-starter-files` in [.env.example](../.env.example). You can use a single bucket across environments or per-environment buckets — the code does not care as long as `R2_FILES_BUCKET_NAME` points at a real bucket.
+Create one bucket per environment, matching `r2_buckets` in [apps/web/wrangler.jsonc](../apps/web/wrangler.jsonc):
 
 ```bash
-bunx wrangler r2 bucket create cloudflare-starter-files
+bunx wrangler r2 bucket create cloudflare-starter-files-develop
+bunx wrangler r2 bucket create cloudflare-starter-files-staging
+bunx wrangler r2 bucket create cloudflare-starter-files-production
 ```
 
-Verify:
+Add `--jurisdiction eu` if the data must stay in the EU, and set the same `jurisdiction` on the binding.
 
-```bash
-bunx wrangler r2 bucket list
-```
+## Presigned URLs
 
-Important:
+Only needed if a feature uses the direct path. Use the same bucket as the binding of that environment, so files written either way are readable either way. In local dev the binding is simulated but presigned URLs hit the real bucket, so the two do not see each other's files locally.
 
-- R2 bucket names are account-scoped. Two accounts can each have a bucket with the same name.
-- If you want separate buckets for `develop`, `staging`, and `production`, create three buckets and configure each environment's `R2_FILES_BUCKET_NAME` independently.
+### Step 1: Pick The Bucket
 
-## Step 2: Find Your Account ID
+Use the environment's binding bucket (above), e.g. `cloudflare-starter-files-develop`. For local dev of the presigned path that is a real remote bucket.
+
+### Step 2: Find Your Account ID
 
 You need this for `R2_ACCOUNT_ID`.
 
 - Dashboard: open any R2 bucket page. The account ID is shown in the sidebar and in the S3 endpoint `https://<account-id>.r2.cloudflarestorage.com`.
 - CLI: `bunx wrangler whoami` lists the account ID.
 
-## Step 3: Create An R2 API Token
+### Step 3: Create An R2 API Token
 
 The app signs S3 requests with an access key pair — **not** a Cloudflare API token.
 
@@ -69,15 +68,15 @@ Important:
 - The secret is shown **once**. Copy it immediately. If you lose it, revoke the token and create a new one.
 - Scope the token to the specific bucket. A broad account-wide token increases blast radius if the secret leaks.
 
-## Step 4: Fill In Local Environment Values
+### Step 4: Fill In Local Environment Values
 
-Edit `.env` at the repo root:
+Edit `apps/web/.dev.vars`:
 
 ```env
 R2_ACCOUNT_ID=your-account-id
 R2_ACCESS_KEY_ID=your-access-key-id
 R2_SECRET_ACCESS_KEY=your-secret-access-key
-R2_FILES_BUCKET_NAME=cloudflare-starter-files
+R2_FILES_BUCKET_NAME=cloudflare-starter-files-develop
 ```
 
 Start the app:
@@ -86,9 +85,9 @@ Start the app:
 bun run dev:web
 ```
 
-Open `http://localhost:4321/app/upload-demo`, select a file, and confirm the page shows progress, a `fileId`, and a working signed download URL.
+Open `http://localhost:4321/app/upload-demo` and use the right-hand card. Confirm it shows progress, a `fileId`, and a working signed download URL.
 
-## Step 5: Set Secrets For Deployed Environments
+### Step 5: Set Secrets For Deployed Environments
 
 From [apps/web](../apps/web/README.md):
 
@@ -102,9 +101,9 @@ bunx wrangler secret put R2_FILES_BUCKET_NAME
 
 Repeat for `--env staging` and `--env production` as needed.
 
-If you use per-environment buckets, set a different `R2_FILES_BUCKET_NAME` per environment.
+Set `R2_FILES_BUCKET_NAME` to that environment's bucket.
 
-## Step 6: (Optional) Configure CORS On The Bucket
+### Step 6: Configure CORS On The Bucket
 
 Direct browser PUT to the presigned URL requires CORS on the R2 bucket.
 
@@ -148,11 +147,11 @@ Fix:
 
 - Add a CORS policy on the R2 bucket that allows your web origin and the `PUT`/`GET` methods. See Step 6.
 
-### Upload Demo Returns A Configuration Error
+### Presigned Card Returns A Configuration Error
 
 Symptom:
 
-- `/app/upload-demo` returns a precondition error from the API before any upload starts.
+- The presigned card on `/app/upload-demo` returns a precondition error before any upload starts. The binding card does not need these values.
 
 Fix:
 
@@ -172,9 +171,12 @@ Fix:
 
 ## Quick Setup Checklist
 
-1. `bunx wrangler r2 bucket create cloudflare-starter-files`
-2. Note your Cloudflare account ID
-3. Create an R2 API token scoped to the bucket (Object Read & Write)
-4. Fill `R2_*` in `.env` and run `bun run dev:web`
-5. For deploys: `bunx wrangler secret put R2_*` in `apps/web`
-6. Add a CORS policy on the bucket for your web origin(s)
+Binding only:
+
+1. `bunx wrangler r2 bucket create cloudflare-starter-files-<env>` per environment
+
+Adding presigned URLs:
+
+2. Create an R2 API token scoped to the bucket (Object Read & Write)
+3. Fill `R2_*` in `apps/web/.dev.vars`; `bunx wrangler secret put R2_* --env <env>` for deploys
+4. Add a CORS policy on the bucket for your web origin(s)

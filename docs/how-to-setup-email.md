@@ -1,0 +1,61 @@
+# How To Setup Email (Cloudflare Email Service)
+
+The web Worker sends mail through [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) with the `EMAIL` `send_email` binding. There is no API key: the binding is the permission. Callers use the `EmailService` interface from [packages/features/src/email](../packages/features/src/email/index.ts), so another provider can be plugged in without touching them.
+
+What sends mail:
+
+- `/app/email-demo` (tRPC `email.sendTest`, MCP tool `send_test_email`)
+- Better Auth: password reset links and, when enabled, email verification
+
+Email is on when the environment has the `EMAIL` binding and an `EMAIL_FROM` var. Without them the demo reports "not configured" and auth links are printed to the log.
+
+## Local Development
+
+Nothing to set up. `apps/web/.dev.vars.example` sets `EMAIL_FROM=noreply@example.test`, and `wrangler dev` simulates the binding: each message is logged by the dev server, with its text and HTML saved under `apps/web/.wrangler/tmp/email/`.
+
+```
+send_email binding called with MessageBuilder:
+From: "Cloudflare Starter" <noreply@example.test>
+To: "Test User" <test@example.test>
+Subject: Verify your email
+```
+
+To send real mail from local dev, Cloudflare supports `"remote": true` on the binding. Use addresses you control.
+
+## Deployed Environments
+
+Requirements (Email Sending is in beta, check the docs for current terms):
+
+- Workers Paid plan. It includes 3,000 mails a month, then $0.35 per 1,000.
+- A sender domain whose DNS is on Cloudflare.
+
+Set up a domain and an environment:
+
+```bash
+bun run setup:email --domain example.com --from noreply@example.com --env production --dry-run
+bun run setup:email --domain example.com --from noreply@example.com --env production
+```
+
+The script runs `wrangler email sending enable`, prints the DNS records (SPF, DKIM, bounce), and writes into `apps/web/wrangler.jsonc` for that environment:
+
+- `vars.EMAIL_FROM` (and `EMAIL_FROM_NAME` with `--name`)
+- `send_email: [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@example.com"] }]`
+
+Then deploy the environment (`cd apps/web && bun run deploy:production`) and send a test from `/app/email-demo`. Test with addresses you control; bounces from made-up addresses hurt the domain's reputation.
+
+## Email Verification
+
+Once mail works in an environment, set `"AUTH_REQUIRE_EMAIL_VERIFICATION": "true"` in its `vars`. New users then get a verification link and cannot sign in until they open it; the link signs them in. The app refuses to start with the flag on and no email configured.
+
+## Swapping The Provider
+
+Implement `EmailService` (`send` and `sendTestEmail`) for the other provider, return it from `buildEmailFeature` in [apps/web/src/lib/env.ts](../apps/web/src/lib/env.ts), and keep its keys as Worker secrets.
+
+## Common Problems
+
+| Symptom                     | Fix                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| "Email is not configured"   | The environment has no `EMAIL_FROM` var or no `send_email` binding               |
+| Send rejected               | The sender is not on an onboarded domain or not in `allowed_sender_addresses`    |
+| Mail lands in spam          | Check the records from `bunx wrangler email sending dns get <domain>`; add DMARC |
+| Reset link only in the logs | Email is off for that environment; see above                                     |

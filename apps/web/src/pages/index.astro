@@ -2,13 +2,13 @@
 import { HomePage } from "@/components/HomePage";
 import Layout from "@/layouts/Layout.astro";
 
-const auth = Astro.locals.auth();
+const signedIn = Boolean(Astro.locals.user);
 
-if (auth.userId) {
+if (signedIn) {
   return Astro.redirect("/app/dashboard");
 }
 ---
 
 <Layout title="Cloudflare Starter">
-  <HomePage client:load signedIn={Boolean(auth.userId)} />
+  <HomePage client:load signedIn={signedIn} />
 </Layout>

@@ -1,31 +1,16 @@
 /// <reference types="astro/client" />
 /// <reference types="@cloudflare/workers-types" />
 
+type AppEnvBindings = import("./server/env").AppEnv;
+
+declare namespace Cloudflare {
+  // `import { env } from "cloudflare:workers"` is typed with the app bindings.
+  interface Env extends AppEnvBindings {}
+}
+
 declare namespace App {
   interface Locals {
-    auth: () => {
-      userId: string | null;
-      redirectToSignIn: () => Response;
-    };
-    currentUser: () => Promise<{
-      id: string;
-      firstName?: string | null;
-      lastName?: string | null;
-      primaryEmailAddress?: {
-        emailAddress: string;
-      } | null;
-    } | null>;
-    runtime:
-      | {
-          env: {
-            APP_QUEUE: Queue<
-              import("@cloudflare-starter/features").AppQueueMessage
-            >;
-            HYPERDRIVE?: Hyperdrive;
-            [key: string]: unknown;
-          };
-          cf?: IncomingRequestCfProperties;
-        }
-      | undefined;
+    user: import("./server/auth").AuthSession["user"] | null;
+    session: import("./server/auth").AuthSession["session"] | null;
   }
 }

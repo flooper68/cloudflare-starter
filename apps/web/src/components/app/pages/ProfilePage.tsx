@@ -11,8 +11,8 @@ export function ProfilePage() {
           Account settings
         </h2>
         <p className="max-w-3xl text-sm leading-6 text-zinc-600">
-          Clerk owns authentication. This page surfaces the signed-in identity
-          and keeps password management inside the app shell.
+          Better Auth owns authentication. This page surfaces the signed-in
+          identity and keeps password management inside the app shell.
         </p>
       </div>
 

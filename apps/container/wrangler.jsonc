@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Kept as its own Worker: the Docker image is built on every deploy of this Worker.
+  "name": "cloudflare-starter-container",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-04-20",
+  "containers": [
+    { "class_name": "PiContainer", "image": "./Dockerfile", "max_instances": 2 }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "PI_CONTAINER", "class_name": "PiContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PiContainer"] }]
+}

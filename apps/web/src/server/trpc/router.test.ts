@@ -9,17 +9,18 @@ function createContext(overrides: Partial<Context> = {}): Context {
     db: {} as Context["db"],
     config: {
       APP_URL: "http://localhost:4321",
-      DATABASE_URL:
-        "postgresql://postgres:postgres@127.0.0.1:54329/cloudflare_starter",
-      PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test",
-      CLERK_SECRET_KEY: "sk_test",
-      MAILJET_SANDBOX: true,
+      BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret",
+      AUTH_EMAIL_PASSWORD: true,
+      AUTH_REQUIRE_EMAIL_VERIFICATION: false,
       APP_ENV: "local",
     },
     email: {
       enabled: true,
       reason: null,
-      value: { sendTestEmail: vi.fn().mockResolvedValue(undefined) },
+      value: {
+        send: vi.fn().mockResolvedValue(undefined),
+        sendTestEmail: vi.fn().mockResolvedValue(undefined),
+      },
     },
     r2: {
       enabled: true,
@@ -36,14 +37,8 @@ function createContext(overrides: Partial<Context> = {}): Context {
     } as unknown as Queue<
       import("@cloudflare-starter/features").AppQueueMessage
     >,
-    clerkUser: {
-      id: "user_123",
-      firstName: "Nicole",
-      lastName: "Example",
-      primaryEmailAddress: { emailAddress: "nicole@example.com" },
-    } as never,
-    appUser: {
-      id: "9f4c17b6-e154-4db2-b97b-08e09ec90f4e",
+    user: {
+      id: "Xk3pQ8sJ2mN7vR4tW9yL1aB6cD5eF0gH",
       email: "nicole@example.com",
       name: "Nicole Example",
     },
@@ -55,8 +50,7 @@ describe("appRouter", () => {
   it("requires auth for protected procedures", async () => {
     const api = caller(
       createContext({
-        clerkUser: null,
-        appUser: null,
+        user: null,
       })
     );
 

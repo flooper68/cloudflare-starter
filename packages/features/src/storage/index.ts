@@ -1,7 +1,7 @@
 import { AwsClient } from "aws4fetch";
 import { z } from "zod";
 
-import { type Database, type FileBucket, files } from "../db";
+import { type Database, desc, eq, type FileBucket, files } from "../db";
 
 export const uploadInputSchema = z.object({
   filename: z
@@ -128,6 +128,17 @@ export async function presignDownload(
   return signed.url;
 }
 
+export async function listOwnedFiles(
+  db: Database,
+  input: { readonly ownerUserId: string; readonly limit?: number }
+) {
+  return db.query.files.findMany({
+    where: eq(files.ownerUserId, input.ownerUserId),
+    orderBy: desc(files.createdAt),
+    limit: input.limit ?? 50,
+  });
+}
+
 export async function findOwnedFile(
   db: Database,
   input: { readonly fileId: string; readonly ownerUserId: string }
@@ -139,4 +150,47 @@ export async function findOwnedFile(
         operators.eq(current.ownerUserId, input.ownerUserId)
       ),
   });
+}
+
+/*
+ * Binding path: the bytes go through the Worker and `env.FILES`. No S3 keys, the
+ * Worker checks ownership on every read, and it runs simulated in local dev.
+ * Use it for server-written files and anything that must stay behind auth.
+ * The presigned path above sends bytes browser ↔ R2 directly; use it for large
+ * uploads or links handed to someone outside the app.
+ */
+
+export async function storeFile(
+  db: Database,
+  bucket: R2Bucket,
+  input: UploadInput & {
+    readonly ownerUserId: string;
+    readonly body: ArrayBuffer;
+  }
+): Promise<CreatedFileRecord> {
+  const file = await createFileRecord(db, input);
+
+  try {
+    await bucket.put(file.r2Key, input.body, {
+      httpMetadata: { contentType: input.mimeType },
+    });
+  } catch (error) {
+    // No object, no record: keep the table and the bucket in step.
+    await db.delete(files).where(eq(files.id, file.fileId));
+    throw error;
+  }
+
+  return file;
+}
+
+export async function getOwnedFileObject(
+  db: Database,
+  bucket: R2Bucket,
+  input: { readonly fileId: string; readonly ownerUserId: string }
+) {
+  const file = await findOwnedFile(db, input);
+  if (!file) return null;
+
+  const object = await bucket.get(file.r2Key);
+  return object ? { file, object } : null;
 }

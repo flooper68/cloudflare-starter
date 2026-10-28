@@ -1,33 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createMailjetEmailService } from "./index";
+import { createCloudflareEmailService } from "./index";
 
 describe("email", () => {
-  it("builds a mailjet request", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () => "",
+  it("sends through the binding with sender and recipient names", async () => {
+    const binding = { send: vi.fn().mockResolvedValue({ messageId: "m1" }) };
+    const service = createCloudflareEmailService({
+      binding: binding as unknown as SendEmail,
+      from: { email: "noreply@example.com", name: "Cloudflare Starter" },
     });
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = fetchMock as typeof fetch;
 
-    try {
-      const service = createMailjetEmailService({
-        apiKey: "key",
-        secretKey: "secret",
-        fromEmail: "noreply@example.com",
-        fromName: "Cloudflare Starter",
-        sandbox: true,
-      });
+    await service.sendTestEmail({
+      to: { email: "test@example.com", name: "Nicole" },
+      environment: "local",
+    });
 
-      await service.sendTestEmail({
+    expect(binding.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: { email: "noreply@example.com", name: "Cloudflare Starter" },
         to: { email: "test@example.com", name: "Nicole" },
-        environment: "local",
-      });
-
-      expect(fetchMock).toHaveBeenCalledOnce();
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
+        subject: "[local] Starter kit test email",
+      })
+    );
   });
 });

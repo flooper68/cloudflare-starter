@@ -1,21 +1,27 @@
 # @cloudflare-starter/web
 
-Astro 6 + React 19 web app deployed to Cloudflare Workers. Serves the public SSR surface and hosts the Clerk-protected React SPA under `/app/*`.
+The main Worker: Astro 7 + React 19 serving the public SSR surface and the Better Auth–protected React SPA under `/app/*`, plus the queue consumer and Cron Triggers ([src/worker.ts](src/worker.ts)). Data, users and sessions live in D1; files in R2.
 
 See [docs/how-to-setup-web-app.md](../../docs/how-to-setup-web-app.md) for setup and deployment.
 
-Optional integrations have their own guides:
+Related guides:
 
-- [docs/how-to-setup-r2.md](../../docs/how-to-setup-r2.md) — R2 for `/app/upload-demo`
-- [docs/how-to-setup-mailjet.md](../../docs/how-to-setup-mailjet.md) — Mailjet for `/app/email-demo`
+- [docs/how-to-setup-auth.md](../../docs/how-to-setup-auth.md) — Better Auth, optional Google sign-in
+- [docs/how-to-setup-d1.md](../../docs/how-to-setup-d1.md) — D1 database and migrations
+- [docs/how-to-setup-r2.md](../../docs/how-to-setup-r2.md) — R2 binding and presigned URLs
+- [docs/how-to-setup-email.md](../../docs/how-to-setup-email.md) — Cloudflare Email Service
+- [docs/how-to-setup-mcp.md](../../docs/how-to-setup-mcp.md) — the MCP server and its parity rule
 
 ## Route layout
 
 Public, SSR:
 
-- `/`, `/sign-in`, `/sign-up`, `/forgot-password`
+- `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/consent`
 - `/api/hello` (REST example)
 - `/api/trpc/*` (typed API)
+- `/api/auth/*` (Better Auth) and `/.well-known/*` (OAuth discovery)
+- `/mcp` (MCP server, OAuth bearer tokens)
+- `/api/files`, `/api/files/:id` (R2 binding upload and download)
 
 Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
 
@@ -27,6 +33,8 @@ Direct loads to `/app/*` hit Astro and middleware first; subsequent navigation s
 ## Develop
 
 ```bash
+cp .dev.vars.example .dev.vars   # first time
+bun run db:migrate:local
 bun run dev:web
 ```
 
@@ -34,8 +42,8 @@ bun run dev:web
 
 ```bash
 cd apps/web
-bun run build
-bunx wrangler deploy --env staging
+bunx wrangler d1 migrations apply DB --remote --env staging
+bun run deploy:staging
 ```
 
-Expected bindings: `APP_ENV`, `APP_QUEUE` (producer), optional `HYPERDRIVE`, plus secrets and vars matching [`.env.example`](../../.env.example).
+The environment is chosen at build time (`CLOUDFLARE_ENV`), which the `deploy:*` scripts set. Bindings: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer and consumer), Cron Triggers, plus plain vars. Secrets match [`.dev.vars.example`](.dev.vars.example).

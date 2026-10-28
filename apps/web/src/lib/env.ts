@@ -1,5 +1,5 @@
 import {
-  createMailjetEmailService,
+  createCloudflareEmailService,
   type EmailService,
   type R2Config,
 } from "@cloudflare-starter/features";
@@ -17,9 +17,10 @@ interface RuntimeEnv {
 function asStrings(
   env: RuntimeEnv | undefined
 ): Record<string, string | undefined> {
+  // Blank lines in .dev.vars (`R2_ACCOUNT_ID=`) count as unset.
   const entries = Object.entries(env ?? {}).map(([key, value]) => [
     key,
-    typeof value === "string" ? value : undefined,
+    typeof value === "string" && value !== "" ? value : undefined,
   ]);
   return Object.fromEntries(entries);
 }
@@ -67,23 +68,16 @@ export function buildEmailFeature(
   runtimeEnv?: RuntimeEnv
 ): FeatureConfig<EmailService> {
   const env = buildRawEnv(runtimeEnv);
-  return parseOptionalFeature("Mailjet", () => {
+  return parseOptionalFeature("Email", () => {
     const config = parseAppConfig(env);
-    if (
-      !config.MAILJET_API_KEY ||
-      !config.MAILJET_SECRET_KEY ||
-      !config.MAILJET_FROM_EMAIL ||
-      !config.MAILJET_FROM_NAME
-    ) {
-      throw new Error("Missing one or more Mailjet environment variables");
+    const binding = runtimeEnv?.EMAIL as SendEmail | undefined;
+    if (!binding || !config.EMAIL_FROM) {
+      throw new Error("Needs the EMAIL send_email binding and EMAIL_FROM");
     }
 
-    return createMailjetEmailService({
-      apiKey: config.MAILJET_API_KEY,
-      secretKey: config.MAILJET_SECRET_KEY,
-      fromEmail: config.MAILJET_FROM_EMAIL,
-      fromName: config.MAILJET_FROM_NAME,
-      sandbox: config.MAILJET_SANDBOX,
+    return createCloudflareEmailService({
+      binding,
+      from: { email: config.EMAIL_FROM, name: config.EMAIL_FROM_NAME },
     });
   });
 }

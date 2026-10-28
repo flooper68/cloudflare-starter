@@ -13,12 +13,12 @@ export function EmailDemoClient() {
 
   async function sendEmail() {
     setSending(true);
-    setStatus("Sending Mailjet test email to your signed-in Clerk address...");
+    setStatus("Sending a test email to your signed-in address...");
 
     try {
       await trpc.email.sendTest.mutate();
       setStatus(
-        "Email sent. If sandbox mode is enabled, Mailjet validated it without delivery."
+        "Email sent. In local dev the binding is simulated: see the dev server log."
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Email failed";
@@ -31,9 +31,9 @@ export function EmailDemoClient() {
   return (
     <Card className="space-y-5">
       <div className="space-y-2">
-        <CardTitle>Mailjet Test Email</CardTitle>
+        <CardTitle>Cloudflare Email Service</CardTitle>
         <CardDescription>
-          Send a test email to the current Clerk user. The provider integration
+          Send a test email to the signed-in user. The provider integration
           stays behind a small email service interface.
         </CardDescription>
       </div>

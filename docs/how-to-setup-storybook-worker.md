@@ -65,7 +65,7 @@ bun run build
 
 The Storybook worker configuration lives here:
 
-- [apps/storybook/wrangler.toml](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/storybook/wrangler.toml)
+- [apps/storybook/wrangler.jsonc](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/storybook/wrangler.jsonc)
 - [apps/storybook/package.json](/Users/premylsciompa/dev_personal/cloudflare-starter/apps/storybook/package.json)
 
 Important behavior:
