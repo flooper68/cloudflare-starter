@@ -1,0 +1,14 @@
+// Adapters (tRPC procedures, MCP tools, HTTP routes, queue and cron handlers) call use
+// cases from packages/features; they never query the database themselves.
+// Applied to apps/web/src (biome.json overrides).
+or {
+  `$db.query.$table.$method($args)` as $call where {
+    $db <: r"(.*\.)?(db|getDb\(.*\))"
+  },
+  `$db.$method($args)` as $call where {
+    $db <: r"(.*\.)?(db|getDb\(.*\))",
+    $method <: r"(select|insert|update|delete|run|all|batch|transaction)"
+  }
+} where {
+  register_diagnostic(span=$call, message="No database access in adapters: call a use case from packages/features instead. See docs/architecture/overview.md#principles.")
+}

@@ -92,7 +92,7 @@ The environment is picked when building: `deploy:production` runs `CLOUDFLARE_EN
 
 ## Queues and Cron
 
-- Producer: tRPC `queue.enqueueHello` sends a typed message (schema in `packages/features/src/queue`).
+- Producer: tRPC `queue.enqueueHello` sends a typed message (the greetings feature's `sendHello`; message types in `packages/features/src/queue-messages.ts`).
 - Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). A malformed message is logged and dropped; a failing handler is retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
 - Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC). With several schedules, branch on `controller.cron`.
 - Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard (observability is on).

@@ -1,25 +1,25 @@
 import { describe, expect, it } from "vitest";
 
-import { parseQueueMessage } from "./index";
+import { helloMessageSchema } from "./hello-message";
 
-describe("queue", () => {
-  it("parses valid hello queue message", () => {
+describe("helloMessageSchema", () => {
+  it("accepts a hello message", () => {
     expect(
-      parseQueueMessage({
+      helloMessageSchema.parse({
         type: "hello",
         name: "Nicole",
-        userId: "9f4c17b6-e154-4db2-b97b-08e09ec90f4e",
+        userId: "user-1",
         queuedAt: "2026-04-19T18:00:00.000Z",
       })
     ).toMatchObject({ type: "hello", name: "Nicole" });
   });
 
-  it("rejects invalid hello queue message", () => {
+  it("rejects an empty name and a malformed time", () => {
     expect(() =>
-      parseQueueMessage({
+      helloMessageSchema.parse({
         type: "hello",
         name: "",
-        userId: "not-a-uuid",
+        userId: "u",
         queuedAt: "bad",
       })
     ).toThrow();

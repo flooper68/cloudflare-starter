@@ -61,7 +61,7 @@ export function Slider({
           aria-label={thumbLabels?.[index]}
           aria-valuetext={formatValue(thumbValue)}
           className={cn(
-            "block size-3.5 rounded-full border border-line-strong bg-white shadow-raised",
+            "block size-3.5 rounded-full border border-line-strong bg-thumb shadow-raised",
             "transition-transform duration-100 hover:scale-110 active:scale-110",
             focusRing
           )}

@@ -1,18 +1,25 @@
 import type {
-  AppQueueMessage,
+  Clock,
   Database,
   EmailService,
+  Ids,
+  QueueMessage,
   R2Config,
 } from "@cloudflare-starter/features";
 import { initTRPC, TRPCError } from "@trpc/server";
+
 import type { FeatureConfig, RequiredAppConfig } from "@/lib/config";
+
+import { toTrpcError } from "./domain-errors";
 
 export interface Context {
   readonly db: Database;
+  readonly clock: Clock;
+  readonly ids: Ids;
   readonly config: RequiredAppConfig;
   readonly email: FeatureConfig<EmailService>;
   readonly r2: FeatureConfig<R2Config>;
-  readonly queue: Queue<AppQueueMessage> | undefined;
+  readonly queue: Queue<QueueMessage> | undefined;
   readonly user: {
     readonly id: string;
     readonly email: string;
@@ -22,10 +29,17 @@ export interface Context {
 
 const t = initTRPC.context<Context>().create();
 
-export const router = t.router;
-export const publicProcedure = t.procedure;
+/** Turns DomainErrors thrown by use cases into tRPC errors (see domain-errors.ts). */
+const mapDomainErrors = t.middleware(async ({ next }) => {
+  const result = await next();
+  if (!result.ok) throw toTrpcError(result.error);
+  return result;
+});
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+export const router = t.router;
+export const publicProcedure = t.procedure.use(mapDomainErrors);
+
+export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -33,10 +47,5 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     });
   }
 
-  return next({
-    ctx: {
-      ...ctx,
-      user: ctx.user,
-    },
-  });
+  return next({ ctx: { ...ctx, user: ctx.user } });
 });

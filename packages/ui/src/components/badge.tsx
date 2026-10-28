@@ -66,10 +66,22 @@ export const badgeVariants = cva(
         tone: "accent",
         className: "bg-accent text-accent-fg",
       },
-      { variant: "solid", tone: "success", className: "bg-success text-white" },
-      { variant: "solid", tone: "warning", className: "bg-warning text-white" },
-      { variant: "solid", tone: "danger", className: "bg-danger text-white" },
-      { variant: "solid", tone: "info", className: "bg-info text-white" },
+      {
+        variant: "solid",
+        tone: "success",
+        className: "bg-success text-on-solid",
+      },
+      {
+        variant: "solid",
+        tone: "warning",
+        className: "bg-warning text-on-solid",
+      },
+      {
+        variant: "solid",
+        tone: "danger",
+        className: "bg-danger text-on-solid",
+      },
+      { variant: "solid", tone: "info", className: "bg-info text-on-solid" },
       {
         variant: "subtle",
         tone: "neutral",

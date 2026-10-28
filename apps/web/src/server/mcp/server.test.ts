@@ -10,6 +10,8 @@ import { MCP_TOOLS } from "./tools";
 function context(overrides: Partial<Context> = {}): Context {
   return {
     db: {} as Context["db"],
+    clock: { now: () => new Date("2026-10-28T12:00:00.000Z") },
+    ids: { uuid: () => "9f4c17b6-e154-4db2-b97b-08e09ec90f4e" },
     config: {
       APP_URL: "http://localhost:4321",
       BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret",

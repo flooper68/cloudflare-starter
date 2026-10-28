@@ -59,7 +59,7 @@ export function Switch({
     >
       <SwitchPrimitive.Thumb
         className={cn(
-          "pointer-events-none block rounded-full bg-white shadow-raised transition-transform duration-150",
+          "pointer-events-none block rounded-full bg-thumb shadow-raised transition-transform duration-150",
           "translate-x-0",
           thumb[size]
         )}

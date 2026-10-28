@@ -2,8 +2,8 @@
  * Used only by the Better Auth CLI to regenerate the auth tables after adding or
  * upgrading Better Auth plugins (see docs/guides/how-to-setup-auth.md):
  *   bunx auth@<better-auth version> generate --config scripts/auth-schema.config.ts \
- *     --output ../../packages/features/src/db/schema/auth.generated.ts
- * then merge the result into packages/features/src/db/schema/auth.ts.
+ *     --output ../../packages/features/src/accounts/accounts.schema.generated.ts
+ * then replace packages/features/src/accounts/accounts.schema.ts with the result.
  */
 import { betterAuth } from "better-auth";
 

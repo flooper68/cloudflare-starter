@@ -5,6 +5,7 @@
  *   text-fg | text-fg-muted | text-fg-subtle
  *   bg-accent | text-accent | bg-accent-hover | bg-accent-subtle | text-accent-fg
  *   {bg,text,border}-{success,warning,danger,info}[-subtle]
+ *   text-on-solid (on solid status colours) | bg-thumb (switch and slider knobs)
  *   shadow-overlay | shadow-raised, rounded-{sm,md,lg,xl}, font-sans | font-mono
  */
 @theme inline {
@@ -33,6 +34,8 @@
   --color-info: var(--ui-info);
   --color-info-subtle: var(--ui-info-subtle);
   --color-focus: var(--ui-focus);
+  --color-on-solid: var(--ui-on-solid);
+  --color-thumb: var(--ui-thumb);
   --color-backdrop: var(--ui-backdrop);
 
   --font-sans: var(--brand-font-sans);

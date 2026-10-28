@@ -4,7 +4,7 @@ The web app stores its data, including Better Auth's users and sessions, in [Clo
 
 | What       | Where                                                                                                                                      |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Schema     | [packages/features/src/db/schema/](../../packages/features/src/db/schema/)                                                                 |
+| Schema     | `<feature>/<feature>.schema.ts` in [packages/features/src/](../../packages/features/src/), composed in `database.ts`                       |
 | Migrations | [packages/features/migrations/](../../packages/features/migrations/)                                                                       |
 | Binding    | `DB` in [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), one database per environment                                             |
 | Client     | `createDb(env.DB)` from `@cloudflare-starter/features`, cached per isolate in [apps/web/src/server/db.ts](../../apps/web/src/server/db.ts) |
@@ -29,7 +29,7 @@ bunx wrangler d1 execute DB --local --command "select id, email from user"
 
 ## Changing The Schema
 
-1. Edit the Drizzle schema in `packages/features/src/db/schema/`.
+1. Edit the feature's Drizzle schema (`packages/features/src/<feature>/<feature>.schema.ts`; a new feature's file is picked up by its name).
 2. Generate the migration: `bun run db:generate`. Commit the `.sql` file and the `meta/` snapshot together.
 3. Apply locally: `bun run db:migrate:local`.
 
