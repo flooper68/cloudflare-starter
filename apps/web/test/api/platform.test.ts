@@ -379,7 +379,9 @@ describe("platform edge (trace context and error references)", () => {
     const handle = vi.fn(async () => new Response("never"));
     const misconfigured = { ...env, LOG_SINK: undefined } as AppEnv;
     const response = await withRequestContext(
-      new Request(`${APP_URL}/api/hello`),
+      new Request(`${APP_URL}/api/hello`, {
+        headers: { [TRACEPARENT_HEADER]: INCOMING },
+      }),
       misconfigured,
       handle
     );
@@ -389,6 +391,47 @@ describe("platform edge (trace context and error references)", () => {
     expect(body.detail).toMatch(
       /^LOG_SINK is not set: set LOG_SINK to one of workers-logs, none/
     );
-    expect(body.reference).toBe(response.headers.get(REQUEST_ID_HEADER));
+    // Even without a platform the trace continues and both headers are set.
+    expect(body.reference).toBe("4bf92f3577b34da6a3ce929d0e0e4736");
+    expect(response.headers.get(REQUEST_ID_HEADER)).toBe(body.reference);
+    const [, traceId, spanId] =
+      TRACEPARENT.exec(response.headers.get(TRACEPARENT_HEADER) ?? "") ?? [];
+    expect(traceId).toBe(body.reference);
+    expect(spanId).not.toBe("00f067aa0ba902b7");
+  });
+
+  it("fails with an error naming APP_ENV when the environment is not set (no default)", async () => {
+    const misconfigured = { ...env, APP_ENV: undefined } as AppEnv;
+    const response = await withRequestContext(
+      new Request(`${APP_URL}/api/hello`),
+      misconfigured,
+      async () => new Response("never")
+    );
+    expect(response.status).toBe(500);
+    const body = (await response.json()) as Record<string, string>;
+    expect(body.detail).toMatch(/^APP_ENV is not set/);
+    expect(response.headers.get(TRACEPARENT_HEADER)).toMatch(TRACEPARENT);
+  });
+
+  it("never logs the token in a reset, verification or invitation path", async () => {
+    const reports = captureReports();
+    for (const path of [
+      "/api/auth/reset-password/tok_secret123?callbackURL=%2Freset-password",
+      "/invite/inv_secret456",
+    ]) {
+      await withRequestContext(
+        new Request(`${APP_URL}${path}`),
+        env,
+        async () => {
+          throw new Error("render failed");
+        }
+      );
+    }
+    const paths = reports().map((report) => report.attributes["url.path"]);
+    expect(paths).toEqual([
+      "/api/auth/reset-password/[redacted]",
+      "/invite/[redacted]",
+    ]);
+    expect(JSON.stringify(reports())).not.toMatch(/tok_secret|inv_secret/);
   });
 });

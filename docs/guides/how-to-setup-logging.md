@@ -16,7 +16,7 @@ loggerFor(platform, context).warn("queue.invalid", {
 - The first argument is the event name: the record's `body`, a stable dotted name to filter on (`queue.hello`, `queue.invalid`, `cron.hello`, `error.captured`, `mcp.error`, `auth.mail_not_sent`).
 - The fields are the record's `attributes`. Use [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) where one exists (`http.request.method`, `url.path`, `http.route`, `http.response.status_code`, `user.id`, `messaging.message.id`, `rpc.method`) and a namespaced `app.*` key otherwise (`app.queue.attempts`, `app.workspace.id`). An Error under the key `error` becomes `exception.type`, `exception.message` and `exception.stacktrace`.
 - `withContext(context)` binds the unit of work (`loggerFor` and `ctx.logger` do it for you); `child(fields)` adds attributes to every record. Neither changes its parent.
-- Every adapter builds records with `toLogRecord` (`platform/log-record.ts`): values under secret-looking keys (`password`, `secret`, `token`, `authorization`, `cookie`, `apiKey`, …) become `[redacted]`, circular references `[circular]`, long strings are cut, and logging never throws. The IP address is never logged.
+- Every adapter builds records with `toLogRecord` (`platform/log-record.ts`): values under secret-looking keys (`password`, `secret`, `token`, `authorization`, `cookie`, `apiKey`, …) become `[redacted]`, circular references `[circular]`, long strings are cut, and logging never throws. The IP address is never logged, and the `url.path` of HTTP records has token segments (reset-password, verify-email, invite and invitation links) and secret query values replaced by `[redacted]` (`apps/web/src/lib/redact-url.ts`).
 
 ## The record
 
@@ -47,13 +47,13 @@ One JSON object per record, the [OpenTelemetry Logs Data Model](https://opentele
 }
 ```
 
-Severity numbers: DEBUG 5, INFO 9, WARN 13, ERROR 17. `service.version` is the deployed version id from the `CF_VERSION_METADATA` binding (`local` without it); `deployment.environment.name` is `APP_ENV`; `service.name` is `SERVICE_NAME` in `apps/web/src/server/platform.ts` (keep it equal to `name` in `wrangler.jsonc`).
+Severity numbers: DEBUG 5, INFO 9, WARN 13, ERROR 17. `service.version` is the deployed version id from the `CF_VERSION_METADATA` binding (`local` without it); `deployment.environment.name` is `APP_ENV` (required, no default: `local` in `.dev.vars`, `develop`, `staging`, `production` in `wrangler.jsonc`); `service.name` is `SERVICE_NAME` in `apps/web/src/server/platform.ts` (keep it equal to `name` in `wrangler.jsonc`).
 
 ## Trace context
 
 Every unit of work is a span of a [W3C Trace Context](https://www.w3.org/TR/trace-context/) trace (`apps/web/src/server/http.ts`, `packages/features/src/platform/trace-context.ts`):
 
-- **HTTP.** `apps/web/src/middleware.ts` builds the context for every on-demand request. A valid incoming `traceparent` header is continued (same `trace_id`, its span as parent); otherwise a new trace starts. The request always gets its own span id. The incoming trace id is for correlation only and is never trusted for anything else: any client can send one. `x-request-id` from the client is ignored.
+- **HTTP.** `apps/web/src/middleware.ts` builds the context for every on-demand request. A valid incoming `traceparent` header is continued (same `trace_id`, its span as parent, and only the sampled bit of its flags); otherwise a new trace starts. This holds even when a setting is missing and the request fails with the configuration error. The request always gets its own span id. The incoming trace id is for correlation only and is never trusted for anything else: any client can send one. `x-request-id` from the client is ignored.
 - **Responses** carry `traceparent` (our span) and `x-request-id` (the trace id, for people). The trace id is the **reference** users quote; there is no separate request id.
 - **Queue messages** carry the producer's `traceparent`; the consumer continues that trace with a new span per message.
 - **Cron** runs start a new trace each.
@@ -106,7 +106,7 @@ Workers can export logs and traces over OTLP to any OpenTelemetry backend (Grafa
 }
 ```
 
-Because each record already uses OpenTelemetry field names and semantic-convention attributes, the backend can group by `trace_id`, `service.name` and `deployment.environment.name` and query `exception.*` without mapping. Destinations are account resources: creating one is a change to the owner's Cloudflare account (ask first); keep `observability` identical across environments (`test/architecture/wrangler.test.ts`).
+Our fields (`trace_id`, `span_id`, `severity_text`, `attributes`, `resource`) are in the logged object, which the export carries as the log record's body and attributes. How they map onto the exported OTLP record (for example whether `trace_id` becomes the record's trace id, or `resource` its resource) depends on Cloudflare's export format and on the backend, and it has not been verified against a real destination yet: check it on the first one you set up, and add a mapping step in the backend (or a collector) if it does not group by trace and service on its own. Destinations are account resources: creating one is a change to the owner's Cloudflare account (ask first); keep `observability` identical across environments (`test/architecture/wrangler.test.ts`).
 
 ## Another log backend (adapter sketch, not shipped)
 

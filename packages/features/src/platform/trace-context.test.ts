@@ -20,6 +20,17 @@ describe("parseTraceparent (W3C Trace Context)", () => {
     });
   });
 
+  it("keeps only the sampled bit of the trace flags", () => {
+    const flags = (value: string) =>
+      parseTraceparent(
+        `00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-${value}`
+      )?.traceFlags;
+    expect(flags("ff")).toBe("01");
+    expect(flags("03")).toBe("01");
+    expect(flags("02")).toBe("00");
+    expect(flags("00")).toBe("00");
+  });
+
   it("accepts a later version with extra fields", () => {
     expect(
       parseTraceparent(

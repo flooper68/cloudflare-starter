@@ -9,12 +9,12 @@ import {
   createRequestContext,
   formatTraceparent,
   type LogFields,
-  newTraceId,
   type RequestContext,
   randomIds,
 } from "@cloudflare-starter/features";
 
 import { ConfigError } from "@/lib/config";
+import { redactUrlPath } from "@/lib/redact-url";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
 
@@ -107,7 +107,8 @@ export function internalErrorResponse(
 export function httpAttributes(request: Request): LogFields {
   return {
     "http.request.method": request.method,
-    "url.path": new URL(request.url).pathname,
+    // Reset, verification and invitation paths carry tokens: never log them as they are.
+    "url.path": redactUrlPath(new URL(request.url).pathname),
     // Cloudflare's own id for the request; links our trace id to Cloudflare's logs.
     "app.cloudflare.ray_id": request.headers.get("cf-ray") ?? undefined,
   };
@@ -122,17 +123,26 @@ export async function withRequestContext(
   try {
     platform = buildPlatform(env);
   } catch (error) {
-    // No logger without config: the response names the setting to fix.
-    const traceId = newTraceId(randomIds);
+    // No logger without config: the response names the setting to fix. The trace still
+    // continues an incoming traceparent, so callers can correlate the failure.
+    const context = createRequestContext(
+      { ids: randomIds },
+      {
+        source: "http",
+        release: "unknown",
+        environment: "unknown",
+        traceparent: request.headers.get(TRACEPARENT_HEADER),
+      }
+    );
     const message =
       error instanceof ConfigError
         ? error.message
         : "Server configuration is invalid";
-    return withHeaders(
+    return withTraceHeaders(
       problemResponse(500, "Server Misconfigured", message, {
-        reference: traceId,
+        reference: context.traceId,
       }),
-      { [REQUEST_ID_HEADER]: traceId }
+      context
     );
   }
 

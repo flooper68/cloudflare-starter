@@ -25,7 +25,7 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV`, `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
+Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`. Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
 
 Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config.ts):
 
@@ -112,9 +112,9 @@ The environment is picked when building: `deploy:production` runs `CLOUDFLARE_EN
 
 A required secret is missing or too short. Check `APP_URL` and `BETTER_AUTH_SECRET` (32+ characters) in `.dev.vars` or the Worker secrets.
 
-### Every request returns 500 "LOG_SINK is not set" (or ERROR_REPORTER)
+### Every request returns 500 "LOG_SINK is not set" (or ERROR_REPORTER, APP_ENV)
 
-The var is missing from this environment's `vars` in `wrangler.jsonc`, or `.dev.vars` has a blank `LOG_SINK=` line that unsets it. Set it to `workers-logs` or `none` ([how-to-setup-logging.md](how-to-setup-logging.md)); `bun run doctor` points at the environment.
+The var is missing from this environment's `vars` in `wrangler.jsonc`, or `.dev.vars` has a blank `LOG_SINK=` line that unsets it. Set it to `workers-logs` or `none`, or `APP_ENV` to the environment's name ([how-to-setup-logging.md](how-to-setup-logging.md)); `bun run doctor` points at the environment.
 
 ### A user reports an error with a reference
 

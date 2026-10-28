@@ -17,7 +17,12 @@ const TRACEPARENT =
 const ZERO_TRACE = "0".repeat(32);
 const ZERO_SPAN = "0".repeat(16);
 
-/** The parsed header, or null when it is missing or invalid. */
+/** Trace flags reduced to the sampled bit: "01" or "00". */
+function sampledFlag(flags: string): string {
+  return (Number.parseInt(flags, 16) & 1) === 1 ? "01" : "00";
+}
+
+/** The parsed header (trace flags reduced to the sampled bit), or null when invalid. */
 export function parseTraceparent(
   header: string | null | undefined
 ): TraceParent | null {
@@ -36,7 +41,8 @@ export function parseTraceparent(
   // Version ff is invalid; version 00 has exactly four fields; later versions may add more.
   if (version === "ff" || (version === "00" && rest)) return null;
   if (traceId === ZERO_TRACE || parentSpanId === ZERO_SPAN) return null;
-  return { traceId, parentSpanId, traceFlags };
+  // Only the sampled bit is defined for version 00; other bits are not propagated.
+  return { traceId, parentSpanId, traceFlags: sampledFlag(traceFlags) };
 }
 
 /** The `traceparent` that continues from this context (its span becomes the parent). */

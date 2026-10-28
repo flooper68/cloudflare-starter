@@ -123,6 +123,12 @@ for (const env of ENVIRONMENTS) {
       error(`${env}: ${name} is "${value}" (${allowed.join(" | ")})`);
     else ok(`${env}: ${name}=${value}`);
   }
+  // APP_ENV is required too (no default) and names the environment it is set in.
+  if (vars.APP_ENV === env) ok(`${env}: APP_ENV=${env}`);
+  else
+    error(
+      `${env}: APP_ENV must be "${env}" in vars (it is ${vars.APP_ENV ? `"${vars.APP_ENV}"` : "missing"})`
+    );
   const notes = [
     d1?.database_id === PLACEHOLDER_ID
       ? "placeholder D1 id (bun run setup:cloudflare)"

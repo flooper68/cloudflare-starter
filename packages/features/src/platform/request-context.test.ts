@@ -61,6 +61,19 @@ describe("createRequestContext", () => {
     expect(context.spanId).not.toBe("00f067aa0ba902b7");
   });
 
+  it("propagates only the sampled bit of incoming trace flags", () => {
+    const context = createRequestContext(
+      { ids: counting() },
+      {
+        source: "http",
+        release: "local",
+        environment: "local",
+        traceparent: "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-ff",
+      }
+    );
+    expect(context.traceFlags).toBe("01");
+  });
+
   it("starts a new trace when the traceparent is invalid", () => {
     const context = createRequestContext(
       { ids: counting() },

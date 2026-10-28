@@ -30,7 +30,7 @@ export interface Platform {
   readonly errors: ErrorReporter;
   /** The deployed version id from CF_VERSION_METADATA, "local" without the binding. */
   readonly release: string;
-  /** APP_ENV, "local" when unset. */
+  /** APP_ENV: required, no default (local, develop, staging, production). */
   readonly environment: string;
 }
 
@@ -45,7 +45,7 @@ export function buildPlatform(env: AppEnv): Platform {
   if (cache?.env === env) return cache.platform;
   const config = parsePlatformConfig(buildRawEnv(env));
   const release = env.CF_VERSION_METADATA?.id || "local";
-  const environment = env.APP_ENV || "local";
+  const environment = config.APP_ENV;
   // OpenTelemetry resource attributes on every record.
   const resource: LogResource = {
     "service.name": SERVICE_NAME,
