@@ -5,6 +5,7 @@ import {
   seedUser,
   seedWorkspace,
   testDb,
+  useCaseDeps,
 } from "../../test/fixtures";
 import { resolveActor } from "./resolve-actor";
 import { switchWorkspace } from "./switch-workspace";
@@ -15,7 +16,7 @@ describe("switchWorkspace", () => {
     const first = await seedWorkspace(ada.id, { id: "ws-a" });
     await new Promise((resolve) => setTimeout(resolve, 5));
     await seedWorkspace(ada.id, { id: "ws-b" });
-    const deps = { db: testDb(), clock: fixedClock() };
+    const deps = useCaseDeps();
 
     expect(
       (await resolveActor(deps, { userId: ada.id, mode: "multi" })).workspaceId

@@ -18,6 +18,7 @@ export {
   LastOwnerError,
   MemberNotFoundError,
   modeAllows,
+  NotWorkspaceMemberError,
   normalizeEmail,
   PersonalWorkspaceError,
   ROLES,

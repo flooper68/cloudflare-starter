@@ -6,6 +6,7 @@ import {
   DEFAULT_MEMBER_ROLE,
   decideSignUp,
   PERSONAL_WORKSPACE_NAME,
+  personalWorkspaceId,
   type Role,
   SINGLE_WORKSPACE_ID,
   type WorkspaceSettings,
@@ -14,7 +15,8 @@ import { workspaceMembers, workspaces } from "./workspaces.schema";
 
 /**
  * Gives a new user their workspace, right after Better Auth creates them.
- * - personal and multi: a personal workspace they own.
+ * - personal and multi: a personal workspace they own (idempotent; resolveActor calls it
+ *   again for a user whose sign-up provisioning failed).
  * - single: membership in the app's one workspace (created by the first sign-up) for
  *   those the settings let in on their own: the bootstrap admin as owner, everyone with
  *   SIGN_UP=open and the SIGN_UP_DOMAINS as members. Someone let in only by a pending
@@ -41,21 +43,31 @@ export async function provisionUser(
   const now = deps.clock.now();
 
   if (input.settings.mode !== "single") {
-    const workspaceId = deps.ids.uuid();
-    await deps.db.batch([
-      deps.db.insert(workspaces).values({
-        id: workspaceId,
-        name: PERSONAL_WORKSPACE_NAME,
-        kind: "personal",
-        createdBy: input.user.id,
-      }),
-      deps.db.insert(workspaceMembers).values({
-        workspaceId,
-        userId: input.user.id,
-        role: CREATOR_ROLE,
-        lastActiveAt: now,
-      }),
+    // Idempotent: the id is derived from the user, so a second run (resolveActor healing a
+    // failed sign-up provisioning, or two at once) creates and audits nothing new.
+    const workspaceId = personalWorkspaceId(input.user.id);
+    const [created] = await deps.db.batch([
+      deps.db
+        .insert(workspaces)
+        .values({
+          id: workspaceId,
+          name: PERSONAL_WORKSPACE_NAME,
+          kind: "personal",
+          createdBy: input.user.id,
+        })
+        .onConflictDoNothing()
+        .returning({ id: workspaces.id }),
+      deps.db
+        .insert(workspaceMembers)
+        .values({
+          workspaceId,
+          userId: input.user.id,
+          role: CREATOR_ROLE,
+          lastActiveAt: now,
+        })
+        .onConflictDoNothing(),
     ]);
+    if (created.length === 0) return { workspaceId, role: CREATOR_ROLE };
     await recordAuditEvent(deps, deps.requestContext, {
       action: "workspace.created",
       actor: { kind: "user", userId: input.user.id },

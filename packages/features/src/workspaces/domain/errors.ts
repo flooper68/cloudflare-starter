@@ -7,6 +7,19 @@ export class WorkspaceNotFoundError extends DomainError {
   }
 }
 
+/** Single mode: the user has an account but no membership in the app's workspace. */
+export class NotWorkspaceMemberError extends DomainError {
+  static readonly CODE = "NOT_A_WORKSPACE_MEMBER";
+
+  constructor() {
+    super(
+      "forbidden",
+      "You are not a member of this workspace yet: ask an owner for an invitation",
+      NotWorkspaceMemberError.CODE
+    );
+  }
+}
+
 /** The member's role does not allow the action (permissions.ts). */
 export class ActionNotAllowedError extends DomainError {
   constructor(action: string) {

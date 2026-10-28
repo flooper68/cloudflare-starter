@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import {
   type Actor,
+  NotWorkspaceMemberError,
   randomIds,
   resolveActor,
   storeFile,
@@ -54,7 +55,12 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   let actor: Actor;
   try {
     actor = await resolveActor(
-      { db },
+      {
+        db,
+        clock: systemClock,
+        ids: randomIds,
+        requestContext: locals.requestContext,
+      },
       {
         userId: locals.user.id,
         mode: buildRequiredConfig(env).workspaces.mode,
@@ -62,6 +68,11 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       }
     );
   } catch (error) {
+    if (error instanceof NotWorkspaceMemberError) {
+      return problemResponse(403, "Forbidden", error.message, {
+        code: NotWorkspaceMemberError.CODE,
+      });
+    }
     if (error instanceof WorkspaceNotFoundError) {
       return problemResponse(
         404,

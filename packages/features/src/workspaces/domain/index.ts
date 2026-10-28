@@ -8,6 +8,7 @@ export {
   InvitationWrongAccountError,
   LastOwnerError,
   MemberNotFoundError,
+  NotWorkspaceMemberError,
   PersonalWorkspaceError,
   SignUpNotAllowedError,
   TransferToSelfError,
@@ -56,5 +57,6 @@ export {
 } from "./sign-up-policy";
 export {
   PERSONAL_WORKSPACE_NAME,
+  personalWorkspaceId,
   workspaceNameSchema,
 } from "./workspace-name";
