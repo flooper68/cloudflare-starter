@@ -8,3 +8,4 @@ export * from "./greetings";
 export * from "./kernel";
 export * from "./platform";
 export { type QueueMessage, queueMessageSchema } from "./queue-messages";
+export * from "./workspaces";

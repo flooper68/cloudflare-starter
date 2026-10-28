@@ -9,6 +9,7 @@ import { AppLayout } from "./components/AppLayout";
 import { AppNotFoundPage } from "./pages/AppNotFoundPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EmailDemoPage } from "./pages/EmailDemoPage";
+import { MembersPage } from "./pages/MembersPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { QueueDemoPage } from "./pages/QueueDemoPage";
 import { UploadDemoPage } from "./pages/UploadDemoPage";
@@ -38,6 +39,12 @@ const profileRoute = createRoute({
   component: ProfilePage,
 });
 
+const membersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/app/members",
+  component: MembersPage,
+});
+
 const uploadDemoRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/app/upload-demo",
@@ -60,6 +67,7 @@ const routeTree = rootRoute.addChildren([
   appIndexRoute,
   dashboardRoute,
   profileRoute,
+  membersRoute,
   uploadDemoRoute,
   queueDemoRoute,
   emailDemoRoute,

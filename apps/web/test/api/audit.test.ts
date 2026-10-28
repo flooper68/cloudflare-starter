@@ -75,6 +75,12 @@ describe("audit log of Better Auth endpoints", () => {
         source: "http",
         ip: CLIENT_IP,
       }),
+      // The personal workspace the sign-up provisions (multi mode in the API tests).
+      expect.objectContaining({
+        action: "workspace.created",
+        metadata: { kind: "personal" },
+        traceId,
+      }),
     ]);
   });
 

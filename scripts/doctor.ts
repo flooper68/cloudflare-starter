@@ -4,6 +4,8 @@
  */
 import { existsSync } from "node:fs";
 
+import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
+
 import {
   DEV_VARS,
   ENVIRONMENTS,
@@ -27,6 +29,52 @@ const error = (message: string) => {
   errors += 1;
   console.log(`✗ ${message}`);
 };
+
+/**
+ * The workspace and sign-up vars of one environment, checked like the app does at
+ * startup (workspaceSettingsSchema and the auth checks in apps/web/src/server/auth.ts).
+ */
+function checkWorkspaceVars(
+  label: string,
+  vars: Readonly<Record<string, string | undefined>>
+) {
+  const workspaces = workspaceSettingsSchema.safeParse(
+    Object.fromEntries(
+      Object.entries(vars).map(([key, value]) => [key, value || undefined])
+    )
+  );
+  if (!workspaces.success) {
+    error(
+      `${label}: ${workspaces.error.issues.map((issue) => issue.message).join("; ")} (bun run setup:auth)`
+    );
+    return;
+  }
+  ok(
+    `${label}: WORKSPACE_MODE=${workspaces.data.mode}, SIGN_UP=${workspaces.data.signUp}`
+  );
+  const unverified =
+    vars.AUTH_EMAIL_PASSWORD !== "false" &&
+    vars.AUTH_REQUIRE_EMAIL_VERIFICATION !== "true";
+  if (unverified && workspaces.data.bootstrapAdminEmail) {
+    error(
+      `${label}: BOOTSTRAP_ADMIN_EMAIL needs AUTH_REQUIRE_EMAIL_VERIFICATION=true (the app refuses to start)`
+    );
+  }
+  if (
+    unverified &&
+    workspaces.data.mode === "single" &&
+    workspaces.data.signUpDomains.length > 0
+  ) {
+    error(
+      `${label}: SIGN_UP_DOMAINS in single mode needs AUTH_REQUIRE_EMAIL_VERIFICATION=true (the app refuses to start)`
+    );
+  }
+  if (workspaces.data.signUp === "invite" && !vars.EMAIL_FROM) {
+    warn(
+      `${label}: SIGN_UP=invite without EMAIL_FROM: invitation links do not reach anyone`
+    );
+  }
+}
 
 console.log("Local dev");
 if (!existsSync(DEV_VARS)) {
@@ -100,6 +148,9 @@ if (!existsSync(DEV_VARS)) {
         `${name} in .dev.vars is "${local}": use one of ${allowed.join(", ")} or delete the line`
       );
   }
+
+  // Local dev reads them from .dev.vars (wrangler.jsonc ships none).
+  checkWorkspaceVars("local", Object.fromEntries(vars));
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -139,6 +190,15 @@ for (const env of ENVIRONMENTS) {
   ].filter(Boolean);
   if (notes.length) warn(`${env}: ${notes.join("; ")}`);
   else ok(`${env}: D1 id and email sender set`);
+
+  // Workspace and sign-up vars: no defaults are shipped, setup:auth writes them.
+  if (!vars.WORKSPACE_MODE && !vars.SIGN_UP) {
+    warn(
+      `${env}: no WORKSPACE_MODE/SIGN_UP yet: bun run setup:auth --env ${env} before deploying (the Worker refuses to start)`
+    );
+  } else {
+    checkWorkspaceVars(env, vars);
+  }
 }
 
 const who = wrangler(["whoami"]);

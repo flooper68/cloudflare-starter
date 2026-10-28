@@ -48,11 +48,19 @@ describe("audit log failures in Better Auth hooks", () => {
     });
     expect(signIn.status).toBe(200);
 
+    // Workspace provisioning records workspace.created; it fails open the same way.
     expect(
-      reports().map((report) => [
-        report.attributes["app.audit.action"],
-        report.trace_id,
-      ])
+      reports()
+        .filter((report) => report.attributes["app.auth.hook"])
+        .map((report) => [report.attributes["app.auth.hook"], report.trace_id])
+    ).toEqual([["user.create.after", signUp.headers.get(REQUEST_ID_HEADER)]]);
+    expect(
+      reports()
+        .filter((report) => report.attributes["app.audit.action"])
+        .map((report) => [
+          report.attributes["app.audit.action"],
+          report.trace_id,
+        ])
     ).toEqual([
       ["auth.sign_up", signUp.headers.get(REQUEST_ID_HEADER)],
       ["auth.sign_in", signUp.headers.get(REQUEST_ID_HEADER)],

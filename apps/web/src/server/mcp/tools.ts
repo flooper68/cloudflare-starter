@@ -26,6 +26,8 @@ export interface ToolDefinition {
   readonly input: z.ZodObject;
   /** Sends something outside the app (mail, money, a message): ask the user first. */
   readonly outward?: boolean;
+  /** Removes access or data that cannot be restored by calling it again: ask first. */
+  readonly destructive?: boolean;
   readonly run: (
     caller: Caller,
     args: Record<string, unknown>
@@ -54,16 +56,26 @@ export function invoke(
   return (fn as (input: unknown) => Promise<unknown>)(input);
 }
 
-/** The Zod input object of a procedure (`{}` when it takes no input). */
+/**
+ * The Zod input object of a procedure (`{}` when it takes no input). Chained inputs
+ * (`workspaceProcedure.input(...)` adds to `workspaceInput`) are merged like tRPC merges
+ * them; a later input's key wins (`workspace.switch` makes `workspaceId` required).
+ */
 export function procedureInput(path: string): z.ZodObject {
   const procedure = procedures[path];
   if (!procedure) throw new Error(`Unknown procedure ${path}`);
   const inputs = (procedure._def as unknown as { inputs: unknown[] }).inputs;
-  let schema = inputs[0] as z.ZodType | undefined;
-  while (schema instanceof z.ZodOptional) schema = schema.unwrap() as z.ZodType;
-  if (!schema) return z.object({});
-  if (schema instanceof z.ZodObject) return schema;
-  throw new Error(`Procedure ${path} has no object input`);
+  let shape: z.ZodRawShape = {};
+  for (const input of inputs) {
+    let schema = input as z.ZodType;
+    while (schema instanceof z.ZodOptional)
+      schema = schema.unwrap() as z.ZodType;
+    if (!(schema instanceof z.ZodObject)) {
+      throw new Error(`Procedure ${path} has no object input`);
+    }
+    shape = { ...shape, ...schema.shape };
+  }
+  return z.object(shape);
 }
 
 /** A tool that calls exactly one procedure with its arguments as the input. */
@@ -73,7 +85,7 @@ function direct(
   path: string,
   title: string,
   description: string,
-  extra: Pick<ToolDefinition, "outward"> = {}
+  extra: Pick<ToolDefinition, "outward" | "destructive"> = {}
 ): ToolDefinition {
   return {
     name,
@@ -105,25 +117,120 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Returns the signed-in user's email and the app environment (develop, staging, production)."
   ),
   direct(
+    "list_workspaces",
+    "read",
+    "workspace.list",
+    "List workspaces",
+    "Lists the workspaces the user belongs to (id, name, kind, the user's role), the app's workspace mode (personal, single, multi) and which workspace is current. Workspace tools act in the current workspace unless given a workspaceId."
+  ),
+  direct(
+    "create_workspace",
+    "write",
+    "workspace.create",
+    "Create workspace",
+    "Creates a shared workspace with the user as owner and makes it current. Only in multi mode; otherwise FORBIDDEN."
+  ),
+  direct(
+    "switch_workspace",
+    "write",
+    "workspace.switch",
+    "Switch workspace",
+    "Makes a workspace the user's current one, for the web app and for tools called without workspaceId. Only in multi mode."
+  ),
+  direct(
+    "leave_workspace",
+    "write",
+    "workspace.leave",
+    "Leave workspace",
+    "The user leaves a workspace and loses access to its data. The last owner cannot leave (transfer ownership first); a personal workspace cannot be left. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "transfer_ownership",
+    "write",
+    "workspace.transferOwnership",
+    "Transfer ownership",
+    "Makes another member (by userId, see list_members) the owner of the workspace; the user becomes a member. Owners only. Confirm with the user before calling."
+  ),
+  direct(
+    "list_members",
+    "read",
+    "workspace.members.list",
+    "List members",
+    "Lists the members of a workspace: userId, name, email, role, when they joined. Not available in personal mode."
+  ),
+  direct(
+    "change_member_role",
+    "write",
+    "workspace.members.changeRole",
+    "Change member role",
+    "Gives a member (by userId) another role. Owners only; the last owner cannot be demoted."
+  ),
+  direct(
+    "remove_member",
+    "write",
+    "workspace.members.remove",
+    "Remove member",
+    "Removes a member (by userId) from the workspace; they lose access to its data. Owners only; the last owner cannot be removed. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "list_invitations",
+    "read",
+    "workspace.invitations.list",
+    "List invitations",
+    "Lists open invitations of the workspace: id, email, role, status (pending or expired), expiry. Owners only."
+  ),
+  direct(
+    "invite_member",
+    "write",
+    "workspace.invitations.create",
+    "Invite member",
+    "Emails an invitation link (valid 7 days) to join the workspace with a role. A pending invitation for the same email is replaced. Owners only. Confirm the email address and role with the user before calling.",
+    { outward: true }
+  ),
+  direct(
+    "revoke_invitation",
+    "write",
+    "workspace.invitations.revoke",
+    "Revoke invitation",
+    "Revokes an open invitation by id (see list_invitations); its link stops working. Confirm with the user before calling.",
+    { destructive: true }
+  ),
+  direct(
+    "preview_invitation",
+    "read",
+    "workspace.invitations.preview",
+    "Preview invitation",
+    "Shows what an invitation link's token is for: workspace name, who invited, the invited email, role and status (pending, accepted, revoked, expired)."
+  ),
+  direct(
+    "accept_invitation",
+    "write",
+    "workspace.invitations.accept",
+    "Accept invitation",
+    "Accepts an invitation by the token from its link (the part after /invite/) and joins the workspace, making it current. The invitation must be pending and sent to the user's email."
+  ),
+  direct(
     "list_files",
     "read",
     "storage.listFiles",
     "List files",
-    "Lists the user's uploaded files, newest first: id, filename, content type, size, upload time."
+    "Lists the files of the workspace, newest first: id, filename, content type, size, upload time."
   ),
   direct(
     "get_download_url",
     "read",
     "storage.getDownloadUrl",
     "Get download URL",
-    "Returns a presigned URL (valid 1 hour) to download one of the user's files by id. Needs R2 presigned URLs configured; otherwise it fails with PRECONDITION_FAILED."
+    "Returns a presigned URL (valid 1 hour) to download a file of the workspace by id. Needs R2 presigned URLs configured; otherwise it fails with PRECONDITION_FAILED."
   ),
   direct(
     "create_upload_url",
     "write",
     "storage.createUpload",
     "Create upload URL",
-    "Creates a file record and returns a presigned PUT URL for uploading up to 10 MB. Upload with an HTTP PUT and the same Content-Type."
+    "Creates a file record in the workspace and returns a presigned PUT URL for uploading up to 10 MB. Upload with an HTTP PUT and the same Content-Type."
   ),
   direct(
     "enqueue_hello",
@@ -173,7 +280,7 @@ export function annotationsOf(tool: ToolDefinition) {
       }
     : {
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: tool.destructive ?? false,
         idempotentHint: false,
         openWorldHint: tool.outward ?? false,
       };

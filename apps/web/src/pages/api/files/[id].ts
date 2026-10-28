@@ -1,20 +1,39 @@
 import { env } from "cloudflare:workers";
-import { FileNotFoundError, readOwnedFile } from "@cloudflare-starter/features";
+import {
+  FileNotFoundError,
+  readWorkspaceFile,
+  resolveActor,
+  WorkspaceNotFoundError,
+} from "@cloudflare-starter/features";
 import type { APIRoute } from "astro";
 
+import { buildRequiredConfig } from "@/lib/env";
 import { getDb } from "@/server/db";
 import { httpAttributes, internalErrorResponse } from "@/server/http";
 
-/** Streams a file from the `FILES` binding to its owner. Anyone else gets 404. */
-export const GET: APIRoute = async ({ locals, params, request }) => {
+/**
+ * Streams a file from the `FILES` binding to members of its workspace
+ * (`?workspaceId=`, else the user's current one). Anyone else gets 404.
+ */
+export const GET: APIRoute = async ({ locals, params, request, url }) => {
   if (!locals.user || !params.id) {
     return new Response("Not found", { status: 404 });
   }
 
   try {
-    const { file, object } = await readOwnedFile(
-      { db: getDb(env), bucket: env.FILES },
-      { fileId: params.id, ownerUserId: locals.user.id }
+    const db = getDb(env);
+    const actor = await resolveActor(
+      { db },
+      {
+        userId: locals.user.id,
+        mode: buildRequiredConfig(env).workspaces.mode,
+        workspaceId: url.searchParams.get("workspaceId") ?? undefined,
+      }
+    );
+    const { file, object } = await readWorkspaceFile(
+      { db, bucket: env.FILES },
+      actor,
+      { fileId: params.id }
     );
     return new Response(object.body, {
       headers: {
@@ -25,7 +44,10 @@ export const GET: APIRoute = async ({ locals, params, request }) => {
       },
     });
   } catch (error) {
-    if (error instanceof FileNotFoundError) {
+    if (
+      error instanceof FileNotFoundError ||
+      error instanceof WorkspaceNotFoundError
+    ) {
       return new Response("Not found", { status: 404 });
     }
     return internalErrorResponse(env, error, locals.requestContext, {

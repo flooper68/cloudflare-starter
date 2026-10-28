@@ -1,5 +1,6 @@
 import type { Database } from "../database";
 import type { Clock, Ids } from "../kernel";
+import type { Actor } from "../workspaces";
 import { createFileRecord } from "./create-file-record";
 import { PresignedUrlsUnavailableError, type UploadInput } from "./domain";
 import { presignR2Url, type R2Config } from "./r2-presign";
@@ -12,7 +13,8 @@ export async function createPresignedUpload(
     readonly ids: Ids;
     readonly r2: R2Config | null;
   },
-  input: UploadInput & { readonly ownerUserId: string }
+  actor: Actor,
+  input: UploadInput
 ): Promise<{
   readonly fileId: string;
   readonly r2Key: string;
@@ -24,7 +26,7 @@ export async function createPresignedUpload(
       "R2 presigned URLs are not configured"
     );
 
-  const file = await createFileRecord(deps, input);
+  const file = await createFileRecord(deps, actor, input);
   const uploadUrl = await presignR2Url(r2, file.r2Key, {
     method: "PUT",
     headers: {

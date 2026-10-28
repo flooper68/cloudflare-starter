@@ -1,16 +1,16 @@
 # How To Setup R2 Storage
 
-The web app can reach R2 two ways. Both are wired up and share the same `files` table, key layout (`uploads/{yyyy}/{mm}/{fileId}`), 10 MB limit and ownership rule, so a feature picks the one that fits and the other can be deleted.
+The web app can reach R2 two ways. Both are wired up and share the same `files` table, key layout (`workspaces/{workspaceId}/uploads/{yyyy}/{mm}/{fileId}`), 10 MB limit and access rule (a file belongs to a workspace; its members may read and upload, everyone else gets 404), so a feature picks the one that fits and the other can be deleted. The routes take `?workspaceId=` (else the user's current workspace); a presigned URL is signed only after the file was found in the caller's workspace. Deleting a workspace's data removes its objects with `deleteWorkspaceFiles`.
 
-|             | Binding (`env.FILES`)                                                        | Presigned URL (S3 API)                                                   |
-| ----------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Bytes flow  | Browser → Worker → R2                                                        | Browser → R2 directly                                                    |
-| Credentials | None, the binding is the permission                                          | R2 access key pair as secrets                                            |
-| Auth check  | On every read, in the Worker                                                 | Once, when the URL is signed; the URL is a bearer token until it expires |
-| Local dev   | Simulated, no setup                                                          | Talks to the real bucket                                                 |
-| CORS        | Not needed                                                                   | Needed on the bucket                                                     |
-| Good for    | Server-written files, small uploads, anything behind auth                    | Large uploads, links handed to someone outside the app                   |
-| Code        | `storeFile`, `readOwnedFile`; routes `POST /api/files`, `GET /api/files/:id` | `createPresignedUpload`, `createDownloadUrl`; tRPC `storage.*`           |
+|             | Binding (`env.FILES`)                                                            | Presigned URL (S3 API)                                                   |
+| ----------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Bytes flow  | Browser → Worker → R2                                                            | Browser → R2 directly                                                    |
+| Credentials | None, the binding is the permission                                              | R2 access key pair as secrets                                            |
+| Auth check  | On every read, in the Worker                                                     | Once, when the URL is signed; the URL is a bearer token until it expires |
+| Local dev   | Simulated, no setup                                                              | Talks to the real bucket                                                 |
+| CORS        | Not needed                                                                       | Needed on the bucket                                                     |
+| Good for    | Server-written files, small uploads, anything behind auth                        | Large uploads, links handed to someone outside the app                   |
+| Code        | `storeFile`, `readWorkspaceFile`; routes `POST /api/files`, `GET /api/files/:id` | `createPresignedUpload`, `createDownloadUrl`; tRPC `storage.*`           |
 
 Both live in the [files feature](../../packages/features/src/files/index.ts). `/app/upload-demo` shows them side by side.
 

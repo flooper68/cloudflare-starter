@@ -24,15 +24,18 @@ export function SignInForm({
   emailPassword,
   google,
   search,
+  initialError = null,
 }: {
   readonly emailPassword: boolean;
   readonly google: boolean;
   /** The page query, kept on links so an OAuth authorization survives sign-up. */
   readonly search: string;
+  /** A message for the page's `?error=` code (a refused Google sign-up). */
+  readonly initialError?: string | null;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
@@ -76,7 +79,7 @@ export function SignInForm({
       return;
     }
 
-    window.location.href = afterSignIn(data);
+    window.location.href = afterSignIn(data, search);
   }
 
   return (
@@ -135,7 +138,11 @@ export function SignInForm({
               <FieldError message={fieldErrors.password} />
             </div>
 
-            {error ? <p className="text-sm text-danger">{error}</p> : null}
+            {error ? (
+              <p role="alert" className="text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
 
             <Button
               className="w-full"
@@ -147,10 +154,14 @@ export function SignInForm({
             </Button>
           </form>
         ) : error ? (
-          <p className="text-sm text-danger">{error}</p>
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
         ) : null}
 
-        {google ? <GoogleSignInButton onError={setError} /> : null}
+        {google ? (
+          <GoogleSignInButton onError={setError} search={search} />
+        ) : null}
       </CardContent>
 
       <CardFooter className="justify-center">

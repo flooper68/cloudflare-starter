@@ -1,6 +1,6 @@
 import { DomainError } from "../../kernel";
 
-/** The file does not exist or belongs to someone else (indistinguishable on purpose). */
+/** The file does not exist or belongs to another workspace (indistinguishable on purpose). */
 export class FileNotFoundError extends DomainError {
   constructor() {
     super("not_found", "File not found");

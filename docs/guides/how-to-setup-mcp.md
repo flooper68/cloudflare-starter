@@ -38,7 +38,7 @@ Tokens are bound to `/mcp`, and the user is reloaded from D1 on every request, s
 ## Adding A Tool
 
 1. Write the tRPC procedure first (logic, input schema, auth).
-2. Add a tool in `tools.ts` with `direct(name, "read" | "write", "router.procedure", title, description)`. Describe it for the model: what it returns, when to use it, preconditions. Mark tools that send something outside the app with `{ outward: true }` and say "confirm with the user" in the description.
+2. Add a tool in `tools.ts` with `direct(name, "read" | "write", "router.procedure", title, description)`. Describe it for the model: what it returns, when to use it, preconditions. Mark tools that send something outside the app with `{ outward: true }` and tools that remove access or data with `{ destructive: true }`, and say "confirm with the user" in the description. Tools on workspace data take an optional `workspaceId` (from `workspaceProcedure`); without it they act in the user's current workspace (`list_workspaces`, `switch_workspace`).
 3. `bun run test`.
 
 A tool may compose several procedures with a custom `run`; list them all in `procedures`.

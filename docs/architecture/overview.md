@@ -17,7 +17,7 @@ How the starter is built and the rules every change follows: the parts, how a re
 | UI library      | [packages/ui](../../packages/ui/README.md)       | Components on Radix + Tailwind tokens, brand in `src/brand/`; stories next to components                                                                                                                                            |
 | Storybook       | [apps/storybook](../../apps/storybook/README.md) | Storybook config; the build is served by the web Worker at `/_storybook/`                                                                                                                                                           |
 | Container demo  | [apps/container](../../apps/container/README.md) | A separate Worker with a Cloudflare Container, deployed on its own                                                                                                                                                                  |
-| Setup scripts   | `scripts/`                                       | `setup:cloudflare`, `setup:secrets`, `setup:email`, `doctor`; `runner:*` for the self-hosted CI runners; `ci-*` helpers used by CI                                                                                                  |
+| Setup scripts   | `scripts/`                                       | `setup:cloudflare`, `setup:secrets`, `setup:auth`, `setup:email`, `doctor`; `runner:*` for the self-hosted CI runners; `ci-*` helpers used by CI                                                                                    |
 | CI runner image | `ops/runner/`                                    | Dockerfile, entrypoint and Compose file of the self-hosted GitHub Actions runners (`runner:up`)                                                                                                                                     |
 | CI and deploy   | `.github/workflows/`                             | `ci.yml` (lint, typecheck, test, components, e2e, migrations, build, deploy dry-run) and `deploy.yml` (manual, per environment)                                                                                                     |
 | Agent skills    | `.claude/skills/`                                | `setup-auth`, `setup-d1`, `setup-email`                                                                                                                                                                                             |
@@ -71,7 +71,7 @@ flowchart LR
 
 **Request context.** Every unit of work gets a `RequestContext` at its edge (`packages/features/src/kernel/request-context.ts`): `middleware.ts` builds it for every on-demand HTTP request (`apps/web/src/server/app-middleware.ts`, `http.ts`), the queue consumer for each message, the scheduled handler for each run. Its identity is a [W3C Trace Context](https://www.w3.org/TR/trace-context/): a `traceId` (continued from a valid incoming `traceparent`, else new; correlation only, never trusted) and its own `spanId`. There is no separate request id: the trace id is the reference, returned on every HTTP response as `x-request-id` next to `traceparent`, carried as `traceparent` by queue messages so the consumer continues the trace, and on every log record and error report (`trace_id`, `span_id`). An incoming `x-request-id` is ignored. An unexpected failure answers 500 with `reference` (the trace id) instead of the error; tRPC puts it in `error.data.reference`, MCP tool errors and the file routes in `reference`, and `ErrorState` shows it.
 
-**Web request with a session.** `middleware.ts` resolves the Better Auth cookie into `Astro.locals.user`; anonymous `/app/*` requests redirect to `/sign-in`. The SPA calls `/api/trpc/*` with the `x-trpc-source: app` header (POSTs without it get 403). The tRPC context carries the user and the platform deps; a `protectedProcedure` refuses requests without a user. The procedure calls a use case.
+**Web request with a session.** `middleware.ts` resolves the Better Auth cookie into `Astro.locals.user`; anonymous `/app/*` requests redirect to `/sign-in`. The SPA calls `/api/trpc/*` with the `x-trpc-source: app` header (POSTs without it get 403). The tRPC context carries the user and the platform deps; a `protectedProcedure` refuses requests without a user, and a `workspaceProcedure` also resolves the actor (user, workspace, role) for the request's workspace and adds the workspace to the request context. The procedure calls a use case.
 
 **MCP request.** The client discovers the OAuth server through `/.well-known/*`, registers, sends the user through `/sign-in` and `/consent`, and gets a JWT bound to `<APP_URL>/mcp`. `/mcp` verifies the token with the in-process JWKS, reloads the user from D1, builds `appRouter.createCaller(context)` for that user and serves the tools. Each tool calls procedures in-process: same input schema, auth check and errors as the web app. Results wrap user data in `<untrusted-data>`.
 
@@ -90,7 +90,7 @@ flowchart LR
 | staging     | `env.staging`                          | `CLOUDFLARE_ENV=staging` at build      | Worker secrets                   |
 | production  | `env.production`                       | `CLOUDFLARE_ENV=production` at build   | Worker secrets                   |
 
-Bindings of the web Worker, declared in every environment: `DB` (D1), `FILES` (R2), `EMAIL` (`send_email`), `APP_QUEUE` (queue producer) plus the queue consumer and its dead-letter queue, `CF_VERSION_METADATA` (`version_metadata`, the `release` in logs), and `triggers.crons`; `observability` (Workers Logs with invocation logs, and traces) is also declared in each. Vars: `APP_ENV`, `LOG_SINK` and `ERROR_REPORTER` (all three required, no defaults; `APP_ENV` is `local` only in `.dev.vars`: [how-to-setup-logging.md](../guides/how-to-setup-logging.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM_NAME`, `EMAIL_FROM` (written by `setup:email`). Secrets: `APP_URL`, `BETTER_AUTH_SECRET`, optional `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` and `R2_*`; the list with comments is in `apps/web/.dev.vars.example`. Setup steps: [how-to-setup-web-app.md](../guides/how-to-setup-web-app.md).
+Bindings of the web Worker, declared in every environment: `DB` (D1), `FILES` (R2), `EMAIL` (`send_email`), `APP_QUEUE` (queue producer) plus the queue consumer and its dead-letter queue, `CF_VERSION_METADATA` (`version_metadata`, the `release` in logs), and `triggers.crons`; `observability` (Workers Logs with invocation logs, and traces) is also declared in each. Vars: `APP_ENV`, `LOG_SINK` and `ERROR_REPORTER` (all three required, no defaults; `APP_ENV` is `local` only in `.dev.vars`: [how-to-setup-logging.md](../guides/how-to-setup-logging.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM_NAME`, `EMAIL_FROM` (written by `setup:email`), and the workspace settings `WORKSPACE_MODE`, `SIGN_UP` (required, no defaults), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL`: not shipped, written per environment by `setup:auth` and exempt with `EMAIL_FROM` from the same-vars-everywhere test ([how-to-configure-workspaces.md](../guides/how-to-configure-workspaces.md)). Secrets: `APP_URL`, `BETTER_AUTH_SECRET`, optional `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` and `R2_*`; the list with comments is in `apps/web/.dev.vars.example`. Setup steps: [how-to-setup-web-app.md](../guides/how-to-setup-web-app.md).
 
 ## Principles
 
@@ -104,12 +104,13 @@ Each principle is the rule that holds now; a project records why it changes one 
 6. **Every API is reachable through MCP.** Every tRPC procedure has an MCP tool or an exemption with a reason; every non-tRPC endpoint under `apps/web/src/pages` is listed in `NON_TRPC_ROUTES` with a reason. `apps/web/src/server/mcp/parity.test.ts` (enforced in CI). [how-to-setup-mcp.md](../guides/how-to-setup-mcp.md)
 7. **Bindings over keys.** Use Worker bindings (D1, R2, `send_email`, queues) where they exist; secrets live in `.dev.vars` and Worker secrets, never in code, config or command arguments.
 8. **`wrangler.jsonc` per environment.** Bindings and vars are not inherited by `env.*`; each environment declares all of them. The environment is chosen at build time with `CLOUDFLARE_ENV`. Architecture test: every binding exists in all environments, and `observability` and `version_metadata` are the same in each (enforced in CI).
-9. **Migrations are additive.** Add columns and tables; drop or rename only in a later change once no deployed code uses them. Generated by `bun run db:generate`, applied by Wrangler, never `drizzle-kit push` to a remote database. CI checks migrations are in sync with the schema and apply to an empty D1; an architecture test requires a `-- contract: <reason>` line in any migration with `DROP` or `RENAME` (enforced in CI).
+9. **Migrations are additive.** Add columns and tables; drop or rename only in a later change once no deployed code uses them. Generated by `bun run db:generate`, applied by Wrangler, never `drizzle-kit push` to a remote database. CI checks migrations are in sync with the schema and apply to an empty D1; an architecture test requires a `-- contract: <reason>` line in any migration with `DROP` or `RENAME` (enforced in CI). The starter itself has no deployed data: it keeps one `0000_init` migration and regenerates it from the schema; a project built from it switches to additive migrations from its first deploy and never edits an applied migration.
 10. **Exact dependency pins.** `bunfig.toml` sets `exact = true`; architecture test rejects `^`/`~` ranges (enforced in CI). Updating and auditing: [dependencies.md](../processes/dependencies.md).
 11. **One Worker** for HTTP, queue consumer and cron; split only for separate scaling, limits or deploys.
 12. **UI is token-only.** Components use theme tokens, never raw palette classes or hex values; brand lives in `packages/ui/src/brand/`. `lint/rules/tokens-only.grit` (enforced in CI). [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md)
 13. **Outside services only through a port.** Logging, error reporting and every later outside service (rate limiting, analytics, feature flags, billing) are reached through an interface in `packages/features/src/platform/ports/`; vendor code lives only in `platform/adapters/<vendor>/`, and only the Cloudflare adapters write to the console. See [Ports and adapters](#ports-and-adapters). Dependency-cruiser `vendor-sdks-only-in-adapters` (packages/features outside an adapter folder imports only zod, drizzle-orm and aws4fetch) and `vendor-sdks-not-in-app-server` (a denylist of vendor SDKs in `apps/web/src/server`), GritQL `lint/rules/no-console.grit` (packages/features and `apps/web/src/server`, tests and the Cloudflare adapters aside), and `test/architecture/test-presence.test.ts` (every adapter runs its port's contract suite) (enforced in CI).
 14. **Dependencies are explicit; no ambient request state.** Code receives the `RequestContext`, clock, ids and bindings as arguments; nothing reads them from a global or from `AsyncLocalStorage`. One exception, at the adapter edge: Better Auth calls its hooks itself and gives them no way to receive our context, so `apps/web/src/server/request-scope.ts` keeps the current request's context in an `AsyncLocalStorage` that `withRequestContext` (`server/http.ts`) sets and only `server/auth-audit.ts` reads, to give audit events the request's trace id. A new library callback that needs the context goes through the same bridge only with a reason in the PR. GritQL `lint/rules/request-scope-at-auth-edge.grit` (no `AsyncLocalStorage`, `node:async_hooks` or `request-scope` import in packages/features or apps/web outside those three files) (enforced in CI).
+15. **Data belongs to a workspace.** Every table has a non-null `workspace_id` (auth tables and the `workspaces` table excepted), every procedure on data is a `workspaceProcedure`, and use cases take the actor and check `can()`. See [Tenancy and authorization](#tenancy-and-authorization). `test/architecture/workspace-scope.test.ts` (enforced in CI).
 
 ## Feature layout
 
@@ -145,33 +146,49 @@ packages/features/src/
 ├── accounts/                    Better Auth tables (generated), findUserById
 ├── audit/                       the append-only audit log: catalog, record, list, purge
 ├── greetings/                   the queue and cron demo
+├── workspaces/                  tenancy: workspaces, members, invitations, sign-up policy
+│   ├── domain/                  permissions.ts (roles, ACTIONS, can), membership-rules.ts,
+│   │                            sign-up-policy.ts, invitation.ts, mode.ts, actor.ts, config.ts
+│   └── resolve-actor.ts, provision-user.ts, accept-invitation.ts, …
 └── files/                       a full feature
     ├── index.ts                 public API: use cases, types, errors
     ├── files.schema.ts          its Drizzle tables
     ├── domain/                  pure, each rule with a .test.ts
-    │   ├── file-key.ts          buildFileKey(fileId, uploadedAt)
+    │   ├── file-key.ts          buildFileKey(workspaceId, fileId, uploadedAt)
     │   ├── upload-input.ts      zod schema + type
     │   └── errors.ts            FileNotFoundError, PresignedUrlsUnavailableError
     ├── create-file-record.ts    one use case per file
     ├── store-file.ts            (binding upload)
-    ├── read-owned-file.ts       (binding download)
+    ├── read-workspace-file.ts   (binding download)
     ├── create-presigned-upload.ts
     ├── create-download-url.ts
-    ├── find-owned-file.ts
-    ├── list-owned-files.ts
+    ├── find-workspace-file.ts
+    ├── list-workspace-files.ts
+    ├── delete-workspace-files.ts
     └── r2-presign.ts            presignR2Url (S3 API signing)
 ```
 
-A use case is one exported function whose dependencies are explicit arguments:
+A use case is one exported function whose dependencies are explicit arguments; in a workspace-scoped feature the actor comes second:
 
 ```ts
 export async function createFileRecord(
   deps: { readonly db: Database; readonly clock: Clock; readonly ids: Ids },
-  input: UploadInput & { readonly ownerUserId: string }
+  actor: Actor,
+  input: UploadInput
 ): Promise<CreatedFile>;
 ```
 
 Domain errors are typed classes in `domain/errors.ts`. Adapters map them to transport errors in one place (tRPC: `TRPCError` codes; HTTP routes: status codes); MCP gets the tRPC mapping for free because tools call procedures.
+
+## Tenancy and authorization
+
+Data belongs to a **workspace**, never to a user: every data table has a required `workspace_id`, and `created_by` (nullable, `ON DELETE SET NULL`) only records who made a row. A user reaches data through a **membership** (`workspace_members`: workspace, user, role) and the role's **permissions**, defined in one map, `ACTIONS` in `packages/features/src/workspaces/domain/permissions.ts`. The roles there are placeholders a project replaces ([how-to-configure-workspaces.md](../guides/how-to-configure-workspaces.md#replace-the-roles)).
+
+- **Actor.** A `workspaceProcedure` (`apps/web/src/server/trpc/init.ts`) takes an optional `workspaceId`, resolves the membership with `resolveActor` and puts `ctx.actor` (`{ userId, workspaceId, role }`) on the context; a workspace the user is not a member of is NOT_FOUND. Without `workspaceId` the user's default applies (the only workspace in personal and single mode, the one switched to last in multi mode), the same for the web app and MCP. HTTP routes resolve the actor the same way (`?workspaceId=`).
+- **Use cases** of workspace-scoped features take `(deps, actor, input)`, filter every query by `actor.workspaceId`, and check the action first with `requirePermission(actor, "<action>")`. Use cases that act for a user across workspaces (listing, creating, accepting an invitation, sign-up, account deletion) take the user in `input` and are listed with a reason in `test/architecture/workspace-scope.test.ts`.
+- **Invariant.** A workspace always keeps a member who can manage members (`membership-rules.ts`); the last owner cannot leave, be removed, be demoted or delete their account.
+- **Modes and sign-up** (`WORKSPACE_MODE`, `SIGN_UP`, …) are environment settings validated at startup; sign-up is checked in Better Auth's `user.create.before` hook for every method.
+- **Why our own tables, not Better Auth's organization plugin:** roles and permissions stay in the domain (and can be replaced), every operation is a use case with an MCP tool, and multi-row changes are atomic `db.batch` writes on D1. Patterns borrowed from the plugin: hashed invitation tokens, expiry, the last-owner rule.
 
 ## Ports and adapters
 
@@ -225,6 +242,7 @@ Do not cite these as precedent until they are closed. None today. When the code 
 | To change                                   | Read                                                                                                                                                                                           |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Sign-in methods, auth tables, OAuth for MCP | [how-to-setup-auth.md](../guides/how-to-setup-auth.md), `apps/web/src/server/auth.ts`                                                                                                          |
+| Workspaces, sign-up policy, roles           | [how-to-configure-workspaces.md](../guides/how-to-configure-workspaces.md), [Tenancy and authorization](#tenancy-and-authorization)                                                            |
 | Database schema or migrations               | [how-to-setup-d1.md](../guides/how-to-setup-d1.md)                                                                                                                                             |
 | File storage                                | [how-to-setup-r2.md](../guides/how-to-setup-r2.md)                                                                                                                                             |
 | Email                                       | [how-to-setup-email.md](../guides/how-to-setup-email.md)                                                                                                                                       |
@@ -265,10 +283,17 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 - [ ] `bun run db:migrate:local`; integration test for the queries that use it.
 - [ ] Deploy order: migrations before code ([how-to-setup-d1.md](../guides/how-to-setup-d1.md)).
 
+**A workspace-scoped table or procedure**
+
+- [ ] The table has `workspace_id` NOT NULL referencing `workspaces` (`ON DELETE CASCADE`) and an index that starts with it; `created_by` only for attribution.
+- [ ] The procedure is a `workspaceProcedure`; its use case takes `(deps, actor, input)`, filters by `actor.workspaceId` and calls `requirePermission(actor, "<action>")`.
+- [ ] A new action is added to `ACTIONS` in `workspaces/domain/permissions.ts` with a domain test.
+- [ ] The API test calls `expectCrossWorkspaceDenied("<path>", input)`; `workspace-scope.test.ts` passes.
+
 **A tRPC procedure and its MCP tool**
 
-- [ ] Procedure in `apps/web/src/server/trpc/` with a zod input, `protectedProcedure` unless it is deliberately public, calling one use case and mapping its errors.
-- [ ] MCP tool in `apps/web/src/server/mcp/tools.ts` (`direct(...)`), description written for the model; `outward: true` if it sends something outside the app.
+- [ ] Procedure in `apps/web/src/server/trpc/` with a zod input, `workspaceProcedure` for anything on workspace data, else `protectedProcedure` unless it is deliberately public, calling one use case and mapping its errors.
+- [ ] MCP tool in `apps/web/src/server/mcp/tools.ts` (`direct(...)`), description written for the model; `outward: true` if it sends something outside the app, `destructive: true` if it removes access or data.
 - [ ] API test for the procedure, including the MCP call. `parity.test.ts` passes.
 
 **An HTTP route (non-tRPC endpoint)**
@@ -314,7 +339,7 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 
 **An env var or secret**
 
-- [ ] Vars: in every environment of `wrangler.jsonc`, with a comment there or in `apps/web/.dev.vars.example` if a local override is useful. A required var has no default (`LOG_SINK`, `ERROR_REPORTER`): a missing one fails with an error naming it. Secrets: in `apps/web/.dev.vars.example` with a comment, and in `scripts/setup-secrets.ts`.
+- [ ] Vars: in every environment of `wrangler.jsonc`, with a comment there or in `apps/web/.dev.vars.example` if a local override is useful. A required var has no default (`LOG_SINK`, `ERROR_REPORTER`): a missing one fails with an error naming it. Exception: vars a setup script writes per environment (`SETUP_WRITTEN_VARS` with a reason in `test/architecture/wrangler.test.ts`; then in `.dev.vars.example` for local dev and in the test configs). Secrets: in `apps/web/.dev.vars.example` with a comment, and in `scripts/setup-secrets.ts`.
 - [ ] Parsed and validated in `apps/web/src/lib/config.ts`; `doctor` checks it if the app cannot boot without it.
 - [ ] GitHub environment secret added to [how-to-setup-ci.md](../guides/how-to-setup-ci.md) if the deploy workflow needs it.
 - [ ] Documented in the guide for the feature that uses it.

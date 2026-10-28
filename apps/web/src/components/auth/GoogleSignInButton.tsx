@@ -1,12 +1,15 @@
 import { Button } from "@cloudflare-starter/ui";
 import { useState } from "react";
 
-import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { authClient, authErrorMessage, nextPath } from "@/lib/auth-client";
 
 export function GoogleSignInButton({
   onError,
+  search = "",
 }: {
   readonly onError: (message: string) => void;
+  /** The page query: `?next=` is where to land after signing in. */
+  readonly search?: string;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -14,7 +17,8 @@ export function GoogleSignInButton({
     setLoading(true);
     const { error } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/app/dashboard",
+      callbackURL: nextPath(search) ?? "/app/dashboard",
+      // A refused sign-up (invite-only) comes back as /sign-in?error=SIGN_UP_INVITE_ONLY.
       errorCallbackURL: "/sign-in",
     });
     // On success the browser is already navigating to Google.

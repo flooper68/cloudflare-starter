@@ -1,6 +1,12 @@
 // Patterns: app-level components (shell, issue list, board, filters, comments, settings).
 // Re-exported from ../index.ts. StatusIcon, PriorityIcon, IssueStatus and IssuePriority come from
 // the data group (components/issue-icons); the patterns use identical private copies for now.
+
+export {
+  AcceptInvitationCard,
+  type AcceptInvitationCardProps,
+  type AcceptInvitationState,
+} from "../components/patterns/accept-invitation-card";
 export {
   AppBreadcrumb,
   AppShell,
@@ -49,6 +55,10 @@ export {
   matchesFilters,
 } from "../components/patterns/filter-bar";
 export {
+  InviteDialog,
+  type InviteDialogProps,
+} from "../components/patterns/invite-dialog";
+export {
   ISSUE_PRIORITIES,
   ISSUE_STATUSES,
   type Issue,
@@ -89,6 +99,14 @@ export {
   moveKanbanItem,
 } from "../components/patterns/kanban-board";
 export {
+  type InvitationRow,
+  type MemberRow,
+  MembersTable,
+  type MembersTableProps,
+  MembersTableSkeleton,
+  type RoleOption,
+} from "../components/patterns/members-table";
+export {
   SettingsHeader,
   SettingsLayout,
   type SettingsLayoutProps,
@@ -103,3 +121,8 @@ export {
   SettingsSection,
   type SettingsSectionProps,
 } from "../components/patterns/settings-page";
+export {
+  type WorkspaceOption,
+  WorkspaceSwitcher,
+  type WorkspaceSwitcherProps,
+} from "../components/patterns/workspace-switcher";

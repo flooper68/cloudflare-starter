@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   fixedClock,
   seedUser,
+  seedWorkspace,
   sequentialIds,
   testDb,
 } from "../../test/fixtures";
@@ -19,6 +20,7 @@ const input = {
 describe("storeFile", () => {
   it("writes the object to the bucket and records the file", async () => {
     const owner = await seedUser();
+    const actor = await seedWorkspace(owner.id);
     const file = await storeFile(
       {
         db: testDb(),
@@ -26,7 +28,8 @@ describe("storeFile", () => {
         clock: fixedClock(),
         ids: sequentialIds("aaaaaaaa-0000-4000-8000-"),
       },
-      { ...input, ownerUserId: owner.id, body }
+      actor,
+      { ...input, body }
     );
 
     const object = await env.FILES.get(file.r2Key);
@@ -40,6 +43,7 @@ describe("storeFile", () => {
 
   it("removes the record when the upload fails, keeping table and bucket in step", async () => {
     const owner = await seedUser("Grace Hopper");
+    const actor = await seedWorkspace(owner.id);
     const failingBucket = {
       put: () => Promise.reject(new Error("bucket unavailable")),
     } as unknown as R2Bucket;
@@ -52,14 +56,31 @@ describe("storeFile", () => {
           clock: fixedClock(),
           ids: sequentialIds("bbbbbbbb-0000-4000-8000-"),
         },
-        { ...input, ownerUserId: owner.id, body }
+        actor,
+        { ...input, body }
       )
     ).rejects.toThrow("bucket unavailable");
     const count = await env.DB.prepare(
-      "SELECT count(*) AS n FROM files WHERE owner_user_id = ?"
+      "SELECT count(*) AS n FROM files WHERE workspace_id = ?"
     )
-      .bind(owner.id)
+      .bind(actor.workspaceId)
       .first<{ n: number }>();
     expect(count?.n).toBe(0);
+  });
+
+  it("refuses a role without files.write", async () => {
+    await expect(
+      storeFile(
+        {
+          db: testDb(),
+          bucket: env.FILES,
+          clock: fixedClock(),
+          ids: sequentialIds("ffffffff-0000-4000-8000-"),
+        },
+        // A role outside the map, as stored by an older version of the roles.
+        { userId: "u", workspaceId: "w", role: "guest" as never },
+        { ...input, body }
+      )
+    ).rejects.toMatchObject({ kind: "forbidden" });
   });
 });

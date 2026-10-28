@@ -11,10 +11,13 @@ import { describe, expect, it } from "vitest";
 import { filesUnder, read } from "./repo";
 
 /** Features whose state changes are audited. Add a feature here when it is created. */
-const AUDITED_FEATURES = ["accounts"] as const;
+const AUDITED_FEATURES = ["accounts", "workspaces"] as const;
 
 /** Use cases that change state without an audit event: path → reason. */
-const AUDIT_EXEMPT: Readonly<Record<string, string>> = {};
+const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
+  "packages/features/src/workspaces/switch-workspace.ts":
+    "only moves the user's default workspace (last_active_at); grants or removes nothing",
+};
 
 /** A Drizzle write or raw SQL that inserts, updates or deletes. */
 const STATE_CHANGE =
@@ -79,8 +82,13 @@ describe("audit coverage", () => {
     expect(read("apps/web/src/server/auth.ts")).toContain(
       "auditPasswordReset(env, user.id, request)"
     );
-    expect(read("apps/web/src/server/auth.ts")).toMatch(
-      /databaseHooks: auditDatabaseHooks\(env\)[\s\S]*after: createAuthMiddleware\(\(ctx\) => auditAuthEndpoint\(env, ctx\)\)/
+    // The audit hooks are composed with the workspace hooks on the same events.
+    const auth = read("apps/web/src/server/auth.ts");
+    expect(auth).toContain("const audit = auditDatabaseHooks(env);");
+    expect(auth).toContain("session: audit.session,");
+    expect(auth).toContain("await audit.user?.create?.after?.(user, ctx);");
+    expect(auth).toMatch(
+      /after: createAuthMiddleware\(\(ctx\) => auditAuthEndpoint\(env, ctx\)\)/
     );
   });
 });

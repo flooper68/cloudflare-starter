@@ -21,6 +21,7 @@ export {
   type SendEmailInput,
   type SendTestEmailInput,
 } from "./email";
+export { sha256Hex } from "./hash";
 export { randomIds } from "./ids";
 export type { LogRecord, LogResource, SeverityText } from "./log-record";
 export type { ErrorReporter, LogFields, Logger, LogLevel } from "./ports";

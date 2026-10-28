@@ -9,7 +9,8 @@ import {
   SidebarMenuLabel,
   SidebarMenuSeparator,
   SidebarSection,
-  SidebarWorkspaceSwitcher,
+  toast,
+  WorkspaceSwitcher,
 } from "@cloudflare-starter/ui";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -20,9 +21,11 @@ import {
   Mail,
   Upload,
   UserRound,
+  Users,
 } from "lucide-react";
 
 import { useAuth } from "@/components/shared/spa/auth-context";
+import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { authClient } from "@/lib/auth-client";
 
 const demos = [
@@ -36,16 +39,34 @@ async function signOut() {
   window.location.href = "/";
 }
 
-/** The app's navigation: workspace menu, pages, demos, and the signed-in user. */
+/**
+ * The app's navigation: workspace menu (switch and create in multi mode), pages, demos,
+ * and the signed-in user. "Members" shows in modes with shared workspaces.
+ */
 export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { mode, list, active, switchTo, create } = useWorkspace();
+  const multi = mode === "multi";
+
+  async function onSwitch(workspaceId: string) {
+    try {
+      await switchTo(workspaceId);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Switch failed");
+    }
+  }
 
   return (
     <Sidebar>
       <SidebarHeader>
-        <SidebarWorkspaceSwitcher>
+        <WorkspaceSwitcher
+          workspaces={list.data?.items ?? []}
+          activeId={active?.id ?? ""}
+          onSwitch={multi ? (id) => void onSwitch(id) : undefined}
+          onCreate={multi ? create : undefined}
+        >
           <SidebarMenuLabel>{user?.email}</SidebarMenuLabel>
           <SidebarMenuItem
             icon={<UserRound />}
@@ -63,7 +84,7 @@ export function AppSidebar() {
           <SidebarMenuItem icon={<LogOut />} onSelect={() => void signOut()}>
             Sign out
           </SidebarMenuItem>
-        </SidebarWorkspaceSwitcher>
+        </WorkspaceSwitcher>
       </SidebarHeader>
       <SidebarContent>
         <SidebarSection>
@@ -74,6 +95,15 @@ export function AppSidebar() {
           >
             <Link to="/app/dashboard">Dashboard</Link>
           </SidebarItem>
+          {mode !== "personal" && active?.kind === "shared" ? (
+            <SidebarItem
+              asChild
+              icon={<Users />}
+              active={pathname === "/app/members"}
+            >
+              <Link to="/app/members">Members</Link>
+            </SidebarItem>
+          ) : null}
           <SidebarItem
             asChild
             icon={<UserRound />}

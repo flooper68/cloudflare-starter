@@ -16,8 +16,9 @@ src/
 │                       request context; ports/ (Logger, ErrorReporter) and adapters/<vendor>/
 ├── accounts/           Better Auth tables (generated) and user lookups
 ├── audit/              the append-only audit log: event catalog, record, list, purge
-├── files/              file records and R2 storage (binding and presigned URLs)
-└── greetings/          the queue and cron demo
+├── files/              file records and R2 storage (binding and presigned URLs), per workspace
+├── greetings/          the queue and cron demo
+└── workspaces/         tenancy: workspaces, members, invitations, roles, sign-up policy
 ```
 
 A feature folder:
@@ -33,7 +34,7 @@ files/
 
 ## Rules in short
 
-- One use case per file; its dependencies (`db`, `clock`, `ids`, `bucket`, ...) are its first argument.
+- One use case per file; its dependencies (`db`, `clock`, `ids`, `bucket`, ...) are its first argument; in workspace-scoped features the `actor` is the second.
 - `domain/` is pure: no I/O, no `Date.now()`, no random ids. It may import only its own domain, `kernel/` and zod.
 - Folders import each other only through `index.ts`; `platform/` never imports a feature.
 - Use cases throw `DomainError` subclasses; apps map them to tRPC codes or HTTP statuses in one place.

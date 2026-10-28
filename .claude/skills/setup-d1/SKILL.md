@@ -33,6 +33,8 @@ In the starter itself (before a project's first real deploy): regenerate the sin
 
 Rules: additive first (new tables, nullable or defaulted columns); renames and type changes go through a new column, a backfill and a later drop; never `drizzle-kit push` against a remote database. Migrate before deploying the code that needs it.
 
+Data tables carry a required `workspace_id` (see `docs/guides/how-to-configure-workspaces.md`); `test/architecture/workspace-scope.test.ts` fails otherwise.
+
 ## Verify
 
 `bun run verify`, `bun run doctor`, and for remote: `bunx wrangler d1 migrations list DB --remote --env <env>` shows nothing pending.

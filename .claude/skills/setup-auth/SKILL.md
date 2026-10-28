@@ -1,7 +1,7 @@
 ---
 
 name: setup-auth
-description: Configure sign-in for this starter (Better Auth) — required secrets, turning email + password or Google on and off, email verification, the MCP OAuth server, and regenerating the auth tables after a Better Auth upgrade or new plugin. Use when the user asks to set up auth, add Google sign-in, change sign-in methods, or connect Claude via MCP.
+description: Configure sign-in for this starter (Better Auth) — required secrets, turning email + password or Google on and off, email verification, who may sign up (open or invite-only, workspace mode), the MCP OAuth server, and regenerating the auth tables after a Better Auth upgrade or new plugin. Use when the user asks to set up auth, add Google sign-in, change sign-in methods, make sign-up invite-only, choose workspace mode, or connect Claude via MCP.
 ---
 
 # Authentication
@@ -26,6 +26,10 @@ Plain vars in `wrangler.jsonc` (`vars`, per environment) or `.dev.vars` locally:
 
 At least one method must be on, or the app refuses to start. For Google, the user creates a "Web application" OAuth client and adds `<APP_URL>/api/auth/callback/google` per environment; you cannot do that for them.
 
+## Workspaces and sign-up
+
+Required vars per environment, no defaults and none shipped in `wrangler.jsonc` (a deploy refuses to start until they are set; `.dev.vars.example` has values for local dev): `WORKSPACE_MODE` (personal | single | multi), `SIGN_UP` (open | invite), optional `SIGN_UP_DOMAINS` and `BOOTSTRAP_ADMIN_EMAIL` (required in single mode; with invite, one of the two is required). Ask the user which mode and policy they want, then `bun run setup:auth --env <env> --dry-run`, then without `--dry-run`; it writes `wrangler.jsonc` and needs a deploy. `BOOTSTRAP_ADMIN_EMAIL` (and `SIGN_UP_DOMAINS` in single mode) refuses to start unless `AUTH_REQUIRE_EMAIL_VERIFICATION=true` or `AUTH_EMAIL_PASSWORD=false`; verification needs email (setup-email skill). Changing the mode on an environment with users is a data migration. Full guide: `docs/guides/how-to-configure-workspaces.md`.
+
 ## MCP (Claude as a client)
 
 On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with that URL; Claude registers itself, the user signs in and approves on `/consent`. Tools live in `apps/web/src/server/mcp/tools.ts`. Rule: every tRPC procedure gets a tool or a reasoned exemption; `parity.test.ts` enforces it.
@@ -38,4 +42,4 @@ On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with
 
 ## Verify
 
-`bun run doctor`, then in the dev server: sign up, sign out, sign in; with email/password off, `/forgot-password` must redirect to `/sign-in`. `bun run test` covers MCP parity and the MCP server.
+`bun run doctor` (also checks the workspace vars), then in the dev server: sign up, sign out, sign in; with email/password off, `/forgot-password` must redirect to `/sign-in`; with `SIGN_UP=invite`, a stranger's sign-up shows the invite-only message. `bun run test` covers MCP parity, the MCP server and sign-up in every mode.

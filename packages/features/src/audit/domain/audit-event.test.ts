@@ -106,6 +106,24 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     workspaceId: workspace,
     target: { type: "workspace", id: workspace },
   },
+  "workspace.created": {
+    action: "workspace.created",
+    workspaceId: workspace,
+    target: { type: "workspace", id: workspace },
+    metadata: { kind: "shared" },
+  },
+  "workspace.member_joined": {
+    action: "workspace.member_joined",
+    workspaceId: workspace,
+    target: user,
+    metadata: { role: "member" },
+  },
+  "workspace.member_left": {
+    action: "workspace.member_left",
+    workspaceId: workspace,
+    target: user,
+    metadata: { role: "member" },
+  },
 };
 
 describe("auditEventSchema", () => {

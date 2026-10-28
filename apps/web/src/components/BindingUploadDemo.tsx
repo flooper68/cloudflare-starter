@@ -8,6 +8,7 @@ import {
   Label,
 } from "@cloudflare-starter/ui";
 import { useState } from "react";
+import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { UNEXPECTED_ERROR_MESSAGE } from "@/lib/error-reference";
 
 interface UploadResponse {
@@ -23,7 +24,13 @@ interface UploadFailure {
   readonly reference?: string;
 }
 
-export function BindingUploadDemo() {
+export function BindingUploadDemo({
+  onUploaded,
+}: {
+  /** Called after a successful upload (the page refreshes its file list). */
+  readonly onUploaded?: () => void;
+}) {
+  const { active } = useWorkspace();
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [status, setStatus] = useState("No file uploaded yet.");
   const [failure, setFailure] = useState<UploadFailure | null>(null);
@@ -41,7 +48,11 @@ export function BindingUploadDemo() {
     try {
       const body = new FormData();
       body.set("file", file);
-      const response = await fetch("/api/files", { method: "POST", body });
+      const query = new URLSearchParams({ workspaceId: active?.id ?? "" });
+      const response = await fetch(`/api/files?${query}`, {
+        method: "POST",
+        body,
+      });
       const result = (await response.json()) as UploadResponse;
 
       if (!response.ok || !result.url) {
@@ -57,6 +68,7 @@ export function BindingUploadDemo() {
 
       setFileUrl(result.url);
       setStatus(`Stored as ${result.fileId}.`);
+      onUploaded?.();
     } catch (error) {
       setFailure({
         message: error instanceof Error ? error.message : "Upload failed",
@@ -73,7 +85,8 @@ export function BindingUploadDemo() {
         <CardTitle>Through the Worker (binding)</CardTitle>
         <CardDescription>
           POST to `/api/files`; the Worker writes to the `FILES` binding and
-          serves it back only to you. Works locally with no R2 credentials.
+          serves it back only to members of this workspace. Works locally with
+          no R2 credentials.
         </CardDescription>
       </div>
 

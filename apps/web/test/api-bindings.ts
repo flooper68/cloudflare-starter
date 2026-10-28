@@ -21,4 +21,10 @@ export const API_TEST_BINDINGS = {
   R2_ACCESS_KEY_ID: "",
   R2_SECRET_ACCESS_KEY: "",
   R2_FILES_BUCKET_NAME: "",
+  // Not in wrangler.jsonc (setup:auth writes them per environment); tests of other modes
+  // override them (test/api/helpers.ts envWith).
+  WORKSPACE_MODE: "multi",
+  SIGN_UP: "open",
+  SIGN_UP_DOMAINS: "",
+  BOOTSTRAP_ADMIN_EMAIL: "",
 } as const satisfies Readonly<Record<string, string>>;

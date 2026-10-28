@@ -1,0 +1,127 @@
+/**
+ * `bun run setup:auth [--env develop|staging|production|all] [--dry-run]`
+ *
+ * Asks for the workspace and sign-up settings and writes them as vars into
+ * apps/web/wrangler.jsonc for the chosen environments (none of them is a secret):
+ *  - WORKSPACE_MODE: personal | single | multi
+ *  - SIGN_UP: open | invite
+ *  - SIGN_UP_DOMAINS: email domains that may sign up without an invitation
+ *  - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
+ * Press Enter to keep the current value. The answers are checked with the same rules the
+ * app applies at startup. Deploy afterwards for the change to take effect.
+ * docs/guides/how-to-configure-workspaces.md
+ */
+import { parseArgs } from "node:util";
+
+import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
+import {
+  ask,
+  envBlock,
+  envPath,
+  fail,
+  parseEnvironments,
+  readWranglerConfig,
+  setWranglerValue,
+} from "./lib";
+
+const { values } = parseArgs({
+  options: {
+    env: { type: "string" },
+    "dry-run": { type: "boolean", default: false },
+  },
+});
+const dryRun = values["dry-run"] ?? false;
+const environments = parseEnvironments(values.env);
+
+interface Setting {
+  readonly name: string;
+  readonly prompt: string;
+}
+
+const SETTINGS: readonly Setting[] = [
+  {
+    name: "WORKSPACE_MODE",
+    prompt:
+      "How users are grouped: personal (own workspace each), single (one workspace for the app), multi (create and join workspaces)",
+  },
+  {
+    name: "SIGN_UP",
+    prompt:
+      "Who may create an account: open (anyone) or invite (invitees and the rules below)",
+  },
+  {
+    name: "SIGN_UP_DOMAINS",
+    prompt:
+      "Email domains that may sign up without an invitation, comma separated (blank for none)",
+  },
+  {
+    name: "BOOTSTRAP_ADMIN_EMAIL",
+    prompt:
+      "Email that may always sign up; owns the workspace in single mode (blank for none)",
+  },
+];
+
+const config = readWranglerConfig();
+for (const env of environments) {
+  const vars = (envBlock(config, env).vars ?? {}) as Record<string, string>;
+  console.log(`\nWorkspaces and sign-up for ${env}:`);
+  const next: Record<string, string> = {};
+  for (const setting of SETTINGS) {
+    const current = vars[setting.name] ?? "";
+    const answer = dryRun
+      ? ""
+      : await ask(`${setting.name}: ${setting.prompt} [${current}]\n> `);
+    // "-" clears an optional value; Enter keeps the current one.
+    next[setting.name] = answer === "-" ? "" : answer || current;
+  }
+
+  if (dryRun && !next.WORKSPACE_MODE && !next.SIGN_UP) {
+    // wrangler.jsonc ships no choice; the real run asks for it.
+    console.log(
+      `  (dry run) ${env}: WORKSPACE_MODE and SIGN_UP are not set yet; the real run asks for them`
+    );
+    continue;
+  }
+
+  const parsed = workspaceSettingsSchema.safeParse(
+    Object.fromEntries(
+      Object.entries(next).map(([key, value]) => [key, value || undefined])
+    )
+  );
+  if (!parsed.success) {
+    fail(
+      `${env}: ${parsed.error.issues.map((issue) => issue.message).join("; ")}`
+    );
+  }
+  // The same refusals as apps/web/src/server/auth.ts at startup.
+  const unverified =
+    vars.AUTH_EMAIL_PASSWORD !== "false" &&
+    vars.AUTH_REQUIRE_EMAIL_VERIFICATION !== "true";
+  if (unverified && parsed.data.bootstrapAdminEmail) {
+    fail(
+      `${env}: BOOTSTRAP_ADMIN_EMAIL needs AUTH_REQUIRE_EMAIL_VERIFICATION=true in wrangler.jsonc (or email + password off)`
+    );
+  }
+  if (
+    unverified &&
+    parsed.data.mode === "single" &&
+    parsed.data.signUpDomains.length > 0
+  ) {
+    fail(
+      `${env}: SIGN_UP_DOMAINS in single mode needs AUTH_REQUIRE_EMAIL_VERIFICATION=true in wrangler.jsonc`
+    );
+  }
+
+  for (const [name, value] of Object.entries(next)) {
+    setWranglerValue(envPath(env, "vars", name), value, dryRun);
+  }
+  console.log(
+    `✓ ${env}: WORKSPACE_MODE=${next.WORKSPACE_MODE}, SIGN_UP=${next.SIGN_UP}`
+  );
+}
+
+console.log(
+  dryRun
+    ? "\nDry run: nothing was changed."
+    : "\nNext: deploy each environment for the settings to take effect. Changing WORKSPACE_MODE on an environment with users is a data migration: read docs/guides/how-to-configure-workspaces.md first."
+);

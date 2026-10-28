@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 
 import type { Database } from "../database";
+import { type Actor, requirePermission } from "../workspaces";
 import { files } from "./files.schema";
 
 export interface FileSummary {
@@ -11,13 +12,15 @@ export interface FileSummary {
   readonly createdAt: string;
 }
 
-/** The user's files, newest first. */
-export async function listOwnedFiles(
+/** The files of the actor's workspace, newest first. */
+export async function listWorkspaceFiles(
   deps: { readonly db: Database },
-  input: { readonly ownerUserId: string; readonly limit?: number }
+  actor: Actor,
+  input: { readonly limit?: number }
 ): Promise<readonly FileSummary[]> {
+  requirePermission(actor, "files.read");
   const rows = await deps.db.query.files.findMany({
-    where: eq(files.ownerUserId, input.ownerUserId),
+    where: eq(files.workspaceId, actor.workspaceId),
     orderBy: desc(files.createdAt),
     limit: input.limit ?? 50,
   });

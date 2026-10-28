@@ -1,0 +1,58 @@
+---
+import { env } from "cloudflare:workers";
+import {
+  InvitationNotFoundError,
+  type InvitationPreview,
+  modeAllows,
+  normalizeEmail,
+  previewInvitation,
+  systemClock,
+} from "@cloudflare-starter/features";
+import type { AcceptInvitationState } from "@cloudflare-starter/ui";
+
+import { AcceptInvitation } from "@/components/auth/AcceptInvitation";
+import Layout from "@/layouts/Layout.astro";
+import { buildRequiredConfig } from "@/lib/env";
+import { getDb } from "@/server/db";
+
+// The link from an invitation email. Anyone holding it sees what it is for; accepting
+// needs the invited account (workspace.invitations.accept checks it again).
+const token = Astro.params.token ?? "";
+const { user } = Astro.locals;
+const { mode } = buildRequiredConfig(env).workspaces;
+
+let preview: InvitationPreview | null = null;
+try {
+  preview = modeAllows(mode, "members")
+    ? await previewInvitation({ db: getDb(env), clock: systemClock }, { token })
+    : null;
+} catch (error) {
+  if (!(error instanceof InvitationNotFoundError)) throw error;
+}
+
+function stateOf(): AcceptInvitationState {
+  if (!preview || preview.status === "revoked") return "invalid";
+  if (preview.status === "expired") return "expired";
+  const sameAccount =
+    user !== null && normalizeEmail(user.email) === preview.email;
+  if (preview.status === "accepted")
+    return sameAccount ? "accepted" : "invalid";
+  if (!user) return "signed-out";
+  return sameAccount ? "valid" : "wrong-account";
+}
+---
+
+<Layout title="Invitation">
+  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+    <AcceptInvitation
+      client:load
+      token={token}
+      state={stateOf()}
+      workspaceName={preview?.workspaceName}
+      inviterName={preview?.inviterName}
+      invitedEmail={preview?.email}
+      role={preview?.role}
+      currentEmail={user?.email}
+    />
+  </main>
+</Layout>

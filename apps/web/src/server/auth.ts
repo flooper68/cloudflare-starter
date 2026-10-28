@@ -1,8 +1,18 @@
 import { mcp } from "@better-auth/mcp";
-import { schema } from "@cloudflare-starter/features";
+import {
+  checkSignUpAllowed,
+  deleteWorkspaceFiles,
+  LastOwnerError,
+  prepareUserDeletion,
+  provisionUser,
+  randomIds,
+  SignUpNotAllowedError,
+  schema,
+  systemClock,
+} from "@cloudflare-starter/features";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { jwt } from "better-auth/plugins";
 
 import type { AppConfig } from "@/lib/config";
@@ -11,6 +21,7 @@ import {
   auditAuthEndpoint,
   auditDatabaseHooks,
   auditPasswordReset,
+  contextFor,
 } from "@/server/auth-audit";
 import {
   deliverAuthLinkWithoutEmail,
@@ -26,6 +37,103 @@ export const AUTH_BASE_PATH = "/api/auth";
 export const MCP_PATH = "/mcp";
 export const SIGN_IN_PAGE = "/sign-in";
 export const CONSENT_PAGE = "/consent";
+export const APP_NAME = "Cloudflare Starter";
+
+/**
+ * Refuses a sign-up the environment's policy does not allow (SIGN_UP, SIGN_UP_DOMAINS,
+ * BOOTSTRAP_ADMIN_EMAIL, pending invitations). Runs in `user.create.before`, so it covers
+ * every method, Google included; a refused Google sign-up redirects to
+ * `/sign-in?error=SIGN_UP_INVITE_ONLY`. A named function so other checks on the same hook
+ * (abuse protection) compose with it.
+ */
+export async function enforceSignUpPolicy(
+  env: AppEnv,
+  user: { readonly email: string }
+): Promise<void> {
+  try {
+    await checkSignUpAllowed(
+      { db: getDb(env), clock: systemClock },
+      { email: user.email, settings: buildRequiredConfig(env).workspaces }
+    );
+  } catch (error) {
+    if (error instanceof SignUpNotAllowedError) {
+      throw new APIError("FORBIDDEN", {
+        code: SignUpNotAllowedError.CODE,
+        message: error.message,
+      });
+    }
+    throw error;
+  }
+}
+
+/**
+ * Gives a new user their workspace (provisionUser), right after Better Auth creates them.
+ * Fails open like the audit hooks: the account already exists, so a failure (the audit
+ * insert included) is reported with the request's trace id and the sign-up succeeds; the
+ * app then shows "You are not in a workspace" until it is fixed.
+ */
+async function provisionNewUser(
+  env: AppEnv,
+  user: { readonly id: string; readonly email: string },
+  ctx: { readonly request?: Request } | null
+): Promise<void> {
+  const requestContext = { ...contextFor(env, ctx), userId: user.id };
+  try {
+    await provisionUser(
+      { db: getDb(env), clock: systemClock, ids: randomIds, requestContext },
+      {
+        user,
+        settings: buildRequiredConfig(env).workspaces,
+        sharedWorkspaceName: APP_NAME,
+      }
+    );
+  } catch (error) {
+    buildPlatform(env).errors.capture(error, requestContext, {
+      "app.auth.hook": "user.create.after",
+    });
+  }
+}
+
+/**
+ * Before a user is deleted: their own workspaces go with their files (R2 objects
+ * included), they leave shared ones; refused while they are a workspace's last owner.
+ * Runs from `user.deleteUser.beforeDelete` (the deletion endpoint, before anything is
+ * deleted) and from `user.delete.before` (every deletion; Better Auth's internal
+ * `deleteUser` has removed sessions and accounts by then, so a refusal there signs the
+ * user out). Running twice is harmless: the second run finds nothing left to do.
+ */
+async function prepareAccountDeletion(
+  env: AppEnv,
+  userId: string,
+  ctx: { readonly request?: Request } | null
+) {
+  const db = getDb(env);
+  try {
+    await prepareUserDeletion(
+      {
+        db,
+        clock: systemClock,
+        ids: randomIds,
+        requestContext: contextFor(env, ctx),
+        purgeWorkspaceFiles: async (workspaceIds) => {
+          await deleteWorkspaceFiles(
+            { db, bucket: env.FILES },
+            { workspaceIds }
+          );
+        },
+      },
+      { userId }
+    );
+  } catch (error) {
+    if (error instanceof LastOwnerError) {
+      throw new APIError("BAD_REQUEST", {
+        code: "LAST_OWNER",
+        message: error.message,
+      });
+    }
+    throw error;
+  }
+}
 
 export interface AuthMethods {
   readonly emailPassword: boolean;
@@ -71,6 +179,28 @@ export function createAuthOptions(env: AppEnv) {
       "No sign-in method is enabled: set AUTH_EMAIL_PASSWORD=true or both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET"
     );
   }
+  const { workspaces } = config;
+  if (
+    workspaces.mode === "single" &&
+    workspaces.signUpDomains.length > 0 &&
+    methods.emailPassword &&
+    !methods.requireEmailVerification
+  ) {
+    // Anyone could claim an address on the domain and join the app's workspace.
+    throw new Error(
+      "SIGN_UP_DOMAINS in single mode trusts the email domain: set AUTH_REQUIRE_EMAIL_VERIFICATION=true (or turn off AUTH_EMAIL_PASSWORD and use Google)"
+    );
+  }
+  if (
+    workspaces.bootstrapAdminEmail &&
+    methods.emailPassword &&
+    !methods.requireEmailVerification
+  ) {
+    // Whoever signs up first with that address would get its rights.
+    throw new Error(
+      "BOOTSTRAP_ADMIN_EMAIL needs AUTH_REQUIRE_EMAIL_VERIFICATION=true (or AUTH_EMAIL_PASSWORD=false and Google sign-in)"
+    );
+  }
   if (methods.requireEmailVerification && !email.enabled) {
     throw new Error(
       "AUTH_REQUIRE_EMAIL_VERIFICATION needs email: the EMAIL binding and EMAIL_FROM"
@@ -105,8 +235,10 @@ export function createAuthOptions(env: AppEnv) {
     });
   }
 
+  const audit = auditDatabaseHooks(env);
+
   return {
-    appName: "Cloudflare Starter",
+    appName: APP_NAME,
     baseURL: config.APP_URL,
     basePath: AUTH_BASE_PATH,
     secret: config.BETTER_AUTH_SECRET,
@@ -156,6 +288,38 @@ export function createAuthOptions(env: AppEnv) {
             },
           }
         : {},
+    user: {
+      deleteUser: {
+        // Off: no account-deletion UI yet. When a project turns it on, this check runs
+        // before Better Auth deletes sessions and accounts, so a refused deletion (last
+        // owner) leaves the user able to sign in and hand over first.
+        enabled: false,
+        beforeDelete: async (user, request) => {
+          await prepareAccountDeletion(env, user.id, { request });
+        },
+      },
+    },
+    databaseHooks: {
+      // Audit log: sign-ins (server/auth-audit.ts).
+      session: audit.session,
+      user: {
+        create: {
+          before: async (user) => {
+            await enforceSignUpPolicy(env, user);
+          },
+          after: async (user, ctx) => {
+            await provisionNewUser(env, user, ctx);
+            // Audit log: sign-ups (server/auth-audit.ts).
+            await audit.user?.create?.after?.(user, ctx);
+          },
+        },
+        delete: {
+          before: async (user, ctx) => {
+            await prepareAccountDeletion(env, user.id, ctx);
+          },
+        },
+      },
+    },
     session: {
       // Short cookie cache keeps get-session cheap without long-lived stale data.
       cookieCache: { enabled: true, maxAge: 60 },
@@ -195,7 +359,6 @@ export function createAuthOptions(env: AppEnv) {
     ],
     telemetry: { enabled: false },
     // Audit log: sign-in and sign-up (server/auth-audit.ts).
-    databaseHooks: auditDatabaseHooks(env),
     hooks: {
       // Audit log: failed sign-in and password reset requests (server/auth-audit.ts).
       after: createAuthMiddleware((ctx) => auditAuthEndpoint(env, ctx)),
