@@ -1,10 +1,9 @@
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-import { user } from "./auth";
+import { user } from "../accounts";
 
-export const FILE_BUCKETS = ["files"] as const;
-export type FileBucket = (typeof FILE_BUCKETS)[number];
+import { FILE_BUCKETS } from "./domain";
 
 export const files = sqliteTable("files", {
   id: text("id").primaryKey(),

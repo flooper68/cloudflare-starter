@@ -38,14 +38,14 @@ Only the owner accepts a Medium or Low finding; the author does not. A fix that 
 If CI is green, these hold; reviewers do not check them manually:
 
 - Import cycles (Biome `noImportCycles`)
-- Deep feature imports, `drizzle-orm` in tRPC/MCP adapters (Biome `noRestrictedImports`)
-- `export *` outside barrels (Biome `noReExportAll`)
+- `drizzle-orm` in `apps/web` (Biome `noRestrictedImports`)
+- `export *` outside the package roots (Biome `noReExportAll`)
 - Domain purity, tokens-only UI classes, no DB calls in adapters (GritQL rules in `lint/rules/*.grit`)
-- Layer direction, barrel-only cross-feature imports, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
-- One exported runtime function per use-case file, tests next to code, every tRPC procedure called by an API test, every UI component has stories, exact pins, bindings in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
+- Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
+- One exported runtime function per use-case file, every UI component has stories, exact pins, bindings in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 
-Until these tools land ([testing.md known gaps](../architecture/testing.md#known-gaps)), the reviewer checks the rules that are not yet enforced by hand.
+Not automated yet, so checked by hand: that each domain rule and use case has its test and each tRPC procedure an API test ([testing.md known gaps](../architecture/testing.md#known-gaps)).
 
 ## Checklists
 

@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { randomIds, systemClock } from "@cloudflare-starter/features";
 
 import {
   buildEmailFeature,
@@ -17,6 +18,8 @@ import type { Context } from "./init";
 export function createAppContext(user: Context["user"]): Context {
   return {
     db: getDb(env),
+    clock: systemClock,
+    ids: randomIds,
     config: buildRequiredConfig(env),
     email: buildEmailFeature(env),
     r2: buildR2Feature(env),

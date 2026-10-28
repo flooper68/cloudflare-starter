@@ -4,7 +4,7 @@
  * together with the code that produces their work.
  */
 import { handle } from "@astrojs/cloudflare/handler";
-import type { AppQueueMessage } from "@cloudflare-starter/features";
+import type { QueueMessage } from "@cloudflare-starter/features";
 
 import { runScheduled } from "@/server/cron";
 import type { AppEnv } from "@/server/env";
@@ -20,4 +20,4 @@ export default {
   async scheduled(controller, env) {
     await runScheduled(controller, env);
   },
-} satisfies ExportedHandler<AppEnv, AppQueueMessage>;
+} satisfies ExportedHandler<AppEnv, QueueMessage>;

@@ -1,5 +1,10 @@
 import { env } from "cloudflare:workers";
-import { storeFile, uploadInputSchema } from "@cloudflare-starter/features";
+import {
+  randomIds,
+  storeFile,
+  systemClock,
+  uploadInputSchema,
+} from "@cloudflare-starter/features";
 import type { APIRoute } from "astro";
 
 import { getDb } from "@/server/db";
@@ -35,11 +40,14 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
     );
   }
 
-  const stored = await storeFile(getDb(env), env.FILES, {
-    ...input.data,
-    ownerUserId: locals.user.id,
-    body: await file.arrayBuffer(),
-  });
+  const stored = await storeFile(
+    { db: getDb(env), bucket: env.FILES, clock: systemClock, ids: randomIds },
+    {
+      ...input.data,
+      ownerUserId: locals.user.id,
+      body: await file.arrayBuffer(),
+    }
+  );
 
   return Response.json(
     { fileId: stored.fileId, url: `/api/files/${stored.fileId}` },

@@ -1,0 +1,15 @@
+// Composition root for the database: every feature's tables in one Drizzle schema.
+// The only module allowed to import feature internals (their *.schema.ts files).
+// Use cases import the Database type from here with `import type`.
+import * as accountsSchema from "./accounts/accounts.schema";
+import * as filesSchema from "./files/files.schema";
+import { createDb, type Db } from "./platform";
+
+export const schema = { ...accountsSchema, ...filesSchema };
+
+export type Database = Db<typeof schema>;
+
+/** The app's Drizzle client over the D1 binding (`env.DB`). */
+export function createDatabase(d1: D1Database): Database {
+  return createDb(d1, schema);
+}

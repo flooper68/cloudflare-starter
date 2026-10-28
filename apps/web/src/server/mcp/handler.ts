@@ -1,4 +1,4 @@
-import { eq, user as userTable } from "@cloudflare-starter/features";
+import { findUserById } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { createLocalJWKSet, type JWTPayload, jwtVerify } from "jose";
 
@@ -70,14 +70,10 @@ export async function handleMcp(
   }
 
   // The user is read from D1 on every request, so a deleted user loses access at once.
-  const row = await getDb(env).query.user.findFirst({
-    where: eq(userTable.id, String(claims.sub)),
-  });
-  if (!row) return unauthorized(appUrl, "invalid_token");
+  const user = await findUserById({ db: getDb(env) }, String(claims.sub));
+  if (!user) return unauthorized(appUrl, "invalid_token");
 
-  const caller = appRouter.createCaller(
-    createAppContext({ id: row.id, email: row.email, name: row.name })
-  );
+  const caller = appRouter.createCaller(createAppContext(user));
   const handler = createMcpHandler(() => buildMcpServer(caller), {
     onerror: (error) => console.error("MCP error", error),
   });

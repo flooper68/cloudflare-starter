@@ -1,0 +1,13 @@
+// Domain code is pure: time, ids, I/O and environment come in as arguments.
+// Applied to packages/features/src/**/domain/** (biome.json overrides).
+or {
+  `Date.now()` as $call,
+  `new Date()` as $call,
+  `crypto.randomUUID()` as $call,
+  `Math.random()` as $call,
+  `fetch($_)` as $call,
+  `console.$_($_)` as $call,
+  `process.env` as $call
+} where {
+  register_diagnostic(span=$call, message="Domain code must be pure: take time (Clock), ids (Ids) and I/O as use-case dependencies instead. See docs/architecture/overview.md#principles.")
+}

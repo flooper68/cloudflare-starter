@@ -32,8 +32,8 @@ On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with
 
 ## After upgrading Better Auth or adding a plugin
 
-1. `cd apps/web && bunx auth@<better-auth version> generate --config scripts/auth-schema.config.ts --output ../../packages/features/src/db/schema/auth.generated.ts --yes`
-2. Replace `schema/auth.ts` with the generated content (keep its header comment), delete the `.generated.ts` file.
+1. `cd apps/web && bunx auth@<better-auth version> generate --config scripts/auth-schema.config.ts --output ../../packages/features/src/accounts/accounts.schema.generated.ts --yes`
+2. Replace `packages/features/src/accounts/accounts.schema.ts` with the generated content (keep its header comment), delete the `.generated.ts` file.
 3. `bun run db:generate`, review the SQL, `bun run db:migrate:local`.
 
 ## Verify

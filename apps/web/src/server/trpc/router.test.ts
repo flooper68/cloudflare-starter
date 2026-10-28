@@ -7,6 +7,8 @@ const caller = appRouter.createCaller;
 function createContext(overrides: Partial<Context> = {}): Context {
   return {
     db: {} as Context["db"],
+    clock: { now: () => new Date("2026-10-28T12:00:00.000Z") },
+    ids: { uuid: () => "9f4c17b6-e154-4db2-b97b-08e09ec90f4e" },
     config: {
       APP_URL: "http://localhost:4321",
       BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret",
@@ -34,9 +36,7 @@ function createContext(overrides: Partial<Context> = {}): Context {
     },
     queue: {
       send: vi.fn().mockResolvedValue(undefined),
-    } as unknown as Queue<
-      import("@cloudflare-starter/features").AppQueueMessage
-    >,
+    } as unknown as Queue<import("@cloudflare-starter/features").QueueMessage>,
     user: {
       id: "Xk3pQ8sJ2mN7vR4tW9yL1aB6cD5eF0gH",
       email: "nicole@example.com",

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createCloudflareEmailService } from "./index";
+import { createCloudflareEmailService } from "./email";
 
 describe("email", () => {
   it("sends through the binding with sender and recipient names", async () => {

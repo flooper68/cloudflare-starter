@@ -1,0 +1,13 @@
+// UI uses theme tokens, never raw palette colours, hex values or dark: variants.
+// Applied to packages/ui/src and apps/web/src (biome.json overrides).
+or {
+  JsStringLiteralExpression(),
+  JsTemplateExpression()
+} as $text where {
+  $text <: or {
+    r".*\b(bg|text|border|ring|fill|stroke|from|via|to|outline|divide|decoration|caret|placeholder|accent)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|white|black)(-\d{2,3})?(/\d+)?\b.*",
+    r".*-\[#[0-9a-fA-F]{3,8}\].*",
+    r".*\bdark:[a-z].*"
+  },
+  register_diagnostic(span=$text, message="Use theme tokens (bg-surface, text-fg-muted, border-line, ...) instead of raw palette colours, hex values or dark: variants. See packages/ui/CONVENTIONS.md.")
+}

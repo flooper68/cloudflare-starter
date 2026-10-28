@@ -98,6 +98,10 @@
 
 /* Derived from the brand: hover, pressed and tinted variants of the accent. */
 :root {
+  /* Text and icons on solid status colours (danger button, solid badges). */
+  --ui-on-solid: #ffffff;
+  /* Knobs of switches and sliders. */
+  --ui-thumb: #ffffff;
   --ui-accent: var(--brand-accent);
   --ui-accent-fg: var(--brand-accent-fg);
   --ui-accent-hover: color-mix(in oklab, var(--brand-accent) 86%, white);

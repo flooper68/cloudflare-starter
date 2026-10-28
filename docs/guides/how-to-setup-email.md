@@ -1,6 +1,6 @@
 # How To Setup Email (Cloudflare Email Service)
 
-The web Worker sends mail through [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) with the `EMAIL` `send_email` binding. There is no API key: the binding is the permission. Callers use the `EmailService` interface from [packages/features/src/email](../../packages/features/src/email/index.ts), so another provider can be plugged in without touching them.
+The web Worker sends mail through [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) with the `EMAIL` `send_email` binding. There is no API key: the binding is the permission. Callers use the `EmailService` interface from [packages/features/src/platform/email.ts](../../packages/features/src/platform/email.ts), so another provider can be plugged in without touching them.
 
 What sends mail:
 

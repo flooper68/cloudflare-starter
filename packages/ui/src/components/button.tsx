@@ -28,7 +28,7 @@ export const buttonVariants = cva(
         /** Toolbars, menus, low-emphasis actions. */
         ghost: "text-fg-muted hover:bg-hover hover:text-fg",
         /** Destructive confirmations. */
-        danger: "bg-danger text-white shadow-raised hover:bg-danger/90",
+        danger: "bg-danger text-on-solid shadow-raised hover:bg-danger/90",
         /** Inline, looks like a link. */
         link: "h-auto px-0 text-accent underline-offset-4 hover:underline",
       },

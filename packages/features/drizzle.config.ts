@@ -4,6 +4,7 @@ import { defineConfig } from "drizzle-kit";
 // (`wrangler d1 migrations apply`), never with `drizzle-kit push`.
 export default defineConfig({
   dialect: "sqlite",
-  schema: "./src/db/schema/index.ts",
+  // Every feature keeps its tables in <feature>/<feature>.schema.ts.
+  schema: "./src/*/*.schema.ts",
   out: "./migrations",
 });

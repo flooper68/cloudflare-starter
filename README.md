@@ -34,15 +34,15 @@ This repository is a template, not a framework. When you start a project from it
 
 2. **Strip what the product does not use.** Every feature here is a demo of a pattern; keeping unused ones costs bindings, secrets, provisioning and review surface. Typical cuts:
 
-   | Not needed      | Remove                                                                                                                                  |
-   | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-   | Containers      | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script                                                       |
-   | Storybook       | `apps/storybook`, the root `storybook`/`build-storybook` scripts, the Storybook step in `apps/web`'s `build`                            |
-   | Background jobs | `queue` in `apps/web/src/worker.ts`, `src/server/queue.ts`, `queues` in `wrangler.jsonc`, `packages/features/src/queue`, the queue demo |
-   | Scheduled work  | `scheduled` in `src/worker.ts`, `src/server/cron.ts`, `triggers` in `wrangler.jsonc`                                                    |
-   | File storage    | `packages/features/src/storage`, `files` table, `r2_buckets`, `/api/files`, the upload demo; or keep only one of the two R2 paths       |
-   | Email           | `packages/features/src/email`, `send_email` and `EMAIL_FROM*` in `wrangler.jsonc`, the email demo; auth links then go to the log        |
-   | Google sign-in  | `GOOGLE_*` values and `GoogleSignInButton`                                                                                              |
+   | Not needed      | Remove                                                                                                                                                              |
+   | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Containers      | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script                                                                                   |
+   | Storybook       | `apps/storybook`, the root `storybook`/`build-storybook` scripts, the Storybook step in `apps/web`'s `build`                                                        |
+   | Background jobs | `queue` in `apps/web/src/worker.ts`, `src/server/queue.ts`, `queues` in `wrangler.jsonc`, `packages/features/src/greetings` and `queue-messages.ts`, the queue demo |
+   | Scheduled work  | `scheduled` in `src/worker.ts`, `src/server/cron.ts`, `triggers` in `wrangler.jsonc`                                                                                |
+   | File storage    | `packages/features/src/files` (feature, table), `r2_buckets`, `/api/files`, the upload demo; or keep only one of the two R2 paths                                   |
+   | Email           | `packages/features/src/platform/email.ts`, `send_email` and `EMAIL_FROM*` in `wrangler.jsonc`, the email demo; auth links then go to the log                        |
+   | Google sign-in  | `GOOGLE_*` values and `GoogleSignInButton`                                                                                                                          |
 
    Keep MCP: it is how agents use the product. When you delete an API, delete its tool; the parity test tells you.
 
