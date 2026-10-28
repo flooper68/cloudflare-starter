@@ -9,8 +9,11 @@ import { createMessageBatch } from "cloudflare:test";
 import { env as workerEnv } from "cloudflare:workers";
 import {
   createMemoryEmail,
+  createMemoryErrorReporter,
   createMemoryJobQueue,
   deriveUnsubscribeKey,
+  type ErrorReporter,
+  type JobQueue,
   type MemoryJobQueue,
   type Notify,
   notify,
@@ -51,7 +54,11 @@ import {
 const email = createMemoryEmail();
 
 /** The tRPC caller of `user` whose jobs go to `queue` instead of APP_QUEUE. */
-function callerWithQueue(user: TestUser, queue: MemoryJobQueue) {
+function callerWithQueue(
+  user: TestUser,
+  queue: JobQueue,
+  errors: ErrorReporter = buildPlatform(env).errors
+) {
   const base = createAppContext(
     { id: user.id, email: user.email, name: user.name },
     { ...testRequestContext(), userId: user.id },
@@ -59,7 +66,7 @@ function callerWithQueue(user: TestUser, queue: MemoryJobQueue) {
   );
   const bound: Notify = (definition, input) =>
     notify(
-      { jobQueue: queue, clock: systemClock, ids: randomIds },
+      { jobQueue: queue, clock: systemClock, ids: randomIds, errors },
       definition,
       input
     );
@@ -141,6 +148,43 @@ beforeAll(async () => {
     "notifications.dispatch",
   ]);
   await drain(queue);
+});
+
+describe("a failing notification", () => {
+  it("leaves the producer's request successful and is reported once", async () => {
+    const owner2 = await signUp("Edsger Dijkstra", "edsger@notifications.test");
+    const invitee2 = await signUp(
+      "Frances Allen",
+      "frances@notifications.test"
+    );
+    const workspace = await callerFor(owner2).workspace.create({
+      name: "Structured Programming",
+    });
+    const token = await inviteByMail(owner2, workspace.id, invitee2.email);
+    const errors = createMemoryErrorReporter();
+    const brokenQueue: JobQueue = {
+      send: async () => {
+        throw new Error("queue unavailable");
+      },
+    };
+    expect(
+      await callerWithQueue(
+        invitee2,
+        brokenQueue,
+        errors
+      ).workspace.invitations.accept({ token })
+    ).toEqual({ workspaceId: workspace.id });
+    expect(errors.captured).toEqual([
+      expect.objectContaining({
+        error: expect.objectContaining({ message: "queue unavailable" }),
+        extra: { "app.notification.type": "workspaces.member-joined" },
+      }),
+    ]);
+    // The membership was saved.
+    expect(
+      (await callerFor(invitee2).workspace.list()).items.map((w) => w.id)
+    ).toContain(workspace.id);
+  });
 });
 
 describe("notifications", () => {

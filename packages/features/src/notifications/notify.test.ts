@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { newSignInNotification } from "../accounts";
 import type { RequestContext } from "../kernel";
-import { createMemoryJobQueue } from "../platform";
+import { createMemoryErrorReporter, createMemoryJobQueue } from "../platform";
 import { memberJoinedNotification } from "../workspaces";
 import { notify } from "./notify";
 
@@ -22,6 +22,7 @@ function deps() {
   let next = 0;
   return {
     jobQueue: createMemoryJobQueue(),
+    errors: createMemoryErrorReporter(),
     clock: { now: () => new Date("2026-10-28T12:00:00.000Z") },
     ids: { uuid: () => `00000000-0000-4000-8000-00000000000${++next}` },
   };
@@ -43,19 +44,21 @@ describe("notify", () => {
       context: { workspaceId: "ws-acme", requestContext },
     });
     expect(result).toEqual({
+      status: "enqueued",
       eventId: "00000000-0000-4000-8000-000000000001",
       recipients: 2,
     });
     expect(d.jobQueue.sent).toHaveLength(1);
     const envelope = d.jobQueue.sent[0]?.envelope;
+    const eventId = result.status === "enqueued" ? result.eventId : "";
     expect(envelope).toMatchObject({
       type: "notifications.dispatch",
-      idempotencykey: `notifications.dispatch:${result.eventId}`,
+      idempotencykey: `notifications.dispatch:${eventId}`,
       userid: "user-grace",
       data: {
         event: {
           specversion: "1.0",
-          id: result.eventId,
+          id: eventId,
           source: "/develop/http",
           type: "workspaces.member-joined",
           time: "2026-10-28T12:00:00.000Z",
@@ -79,7 +82,7 @@ describe("notify", () => {
       },
       context: { workspaceId: null, requestContext },
     });
-    expect(result.recipients).toBe(1);
+    expect(result).toMatchObject({ status: "enqueued", recipients: 1 });
     expect(d.jobQueue.sent[0]?.envelope.data).toMatchObject({
       recipients: ["user-grace"],
     });
@@ -93,32 +96,61 @@ describe("notify", () => {
         data,
         context: { workspaceId: "ws-acme", requestContext },
       })
-    ).toMatchObject({ recipients: 0 });
+    ).toEqual({ status: "nobody" });
     expect(d.jobQueue.sent).toEqual([]);
   });
 
-  it("refuses data the definition does not accept, before enqueueing", async () => {
+  it("reports data the definition does not accept instead of throwing, and enqueues nothing", async () => {
     const d = deps();
-    await expect(
-      notify(d, memberJoinedNotification, {
+    expect(
+      await notify(d, memberJoinedNotification, {
         recipients: ["user-ada"],
         data: { ...data, memberName: "" },
         context: { workspaceId: "ws-acme", requestContext },
       })
-    ).rejects.toMatchObject({
-      name: "InvalidNotificationDataError",
-      kind: "invalid_input",
-    });
+    ).toEqual({ status: "failed", reference: requestContext.traceId });
     expect(d.jobQueue.sent).toEqual([]);
+    expect(d.errors.captured).toEqual([
+      expect.objectContaining({
+        error: expect.objectContaining({
+          name: "InvalidNotificationDataError",
+        }),
+        context: requestContext,
+        extra: { "app.notification.type": "workspaces.member-joined" },
+      }),
+    ]);
   });
 
-  it("refuses more than 500 recipients", async () => {
-    await expect(
-      notify(deps(), memberJoinedNotification, {
+  it("reports more than 500 recipients", async () => {
+    const d = deps();
+    expect(
+      await notify(d, memberJoinedNotification, {
         recipients: Array.from({ length: 501 }, (_, i) => `user-${i}`),
         data,
         context: { workspaceId: "ws-acme", requestContext },
       })
-    ).rejects.toMatchObject({ name: "TooManyRecipientsError" });
+    ).toMatchObject({ status: "failed" });
+    expect(d.errors.captured[0]?.error).toMatchObject({
+      name: "TooManyRecipientsError",
+    });
+  });
+
+  it("reports a failed queue send once and resolves", async () => {
+    const d = {
+      ...deps(),
+      jobQueue: {
+        send: async () => {
+          throw new Error("queue unavailable");
+        },
+      },
+    };
+    expect(
+      await notify(d, memberJoinedNotification, {
+        recipients: ["user-ada"],
+        data,
+        context: { workspaceId: "ws-acme", requestContext },
+      })
+    ).toMatchObject({ status: "failed" });
+    expect(d.errors.captured).toHaveLength(1);
   });
 });

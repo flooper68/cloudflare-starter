@@ -53,6 +53,16 @@ Once mail works in an environment, set `"AUTH_REQUIRE_EMAIL_VERIFICATION": "true
 
 Add an adapter in `packages/features/src/platform/adapters/<vendor>/` that implements `EmailService` and calls `assertEmailMessage` first, with a `<name>.contract.test.ts` running `describeEmailContract` ([overview.md](../architecture/overview.md#ports-and-adapters)). Return it from `buildEmailFeature` in [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts), and keep its keys as Worker secrets. Pass `headers` through: notification mail needs `List-Unsubscribe`.
 
+## Headers through the binding (unverified in production)
+
+Notification mail sets `List-Unsubscribe` and `List-Unsubscribe-Post` through the binding's `headers` field ([how-to-send-notifications.md](how-to-send-notifications.md#email-headers-and-unsubscribe)). The local simulation and the tests accept them; whether Cloudflare Email Service delivers them unchanged has not been checked against a deployed environment yet. After the first deploy with email:
+
+1. Trigger a notification mail to an address you control (invite yourself into a workspace from a second account and accept, so the first account gets "… joined …").
+2. Open the received mail's original source (Gmail: "Show original") and check that both headers are present, `List-Unsubscribe` holding `<https://<your app>/api/notifications/unsubscribe?t=…>`, and that DKIM passes.
+3. Gmail and Apple Mail then show an "Unsubscribe" link next to the sender; using it should turn that type's email off under `/app/notifications/preferences`.
+
+If the headers are missing, the binding drops custom headers: report it, and until then the footer link in every mail is the way to unsubscribe.
+
 ## Common Problems
 
 | Symptom                     | Fix                                                                              |

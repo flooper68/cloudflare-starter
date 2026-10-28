@@ -18,6 +18,7 @@ export {
   type NotificationRenderContext,
   type Notify,
   type NotifyInput,
+  type NotifyResult,
   type RenderedNotification,
 } from "./notification";
 export type { Random } from "./random";

@@ -77,11 +77,26 @@ export interface NotifyInput<TData> {
 }
 
 /**
+ * What sending a notification did. It never throws: `failed` was reported once already
+ * (the `reference` is the trace id), so a producer may ignore the result.
+ */
+export type NotifyResult =
+  | {
+      readonly status: "enqueued";
+      readonly eventId: string;
+      readonly recipients: number;
+    }
+  /** Only the actor would have got it. */
+  | { readonly status: "nobody" }
+  | { readonly status: "failed"; readonly reference: string };
+
+/**
  * Sends a notification: what use cases receive as `deps.notify`. The app binds the
- * notifications feature's `notify` use case to the job queue; features that the
- * notifications feature depends on (workspaces, accounts) cannot import it directly.
+ * notifications feature's `notify` use case to the job queue and the ErrorReporter;
+ * features that the notifications feature depends on (workspaces, accounts) cannot import
+ * it directly. Never throws: call it after the change is saved.
  */
 export type Notify = <TData>(
   definition: NotificationDefinition<TData>,
   input: NotifyInput<TData>
-) => Promise<{ readonly eventId: string; readonly recipients: number }>;
+) => Promise<NotifyResult>;

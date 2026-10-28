@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import type { Database } from "../database";
 import type { Clock, Ids, JobEnvelope } from "../kernel";
-import type { EmailService, JobQueue, Logger } from "../platform";
+import type { EmailService, JobQueue, Logger, Metrics } from "../platform";
 import {
   claimWindow,
   completedExpiry,
@@ -24,6 +24,8 @@ export interface JobDeps {
   readonly logger: Logger;
   /** For jobs that fan out into more jobs. */
   readonly jobQueue: JobQueue;
+  /** Metrics of the batch, flushed by the consumer after it. */
+  readonly metrics: Metrics;
   /** Outgoing mail; `email.enabled` is false when the deployment has none. */
   readonly email: EmailService;
   /** The app as mail sees it: name, public URL (links) and the secret keys derive from. */

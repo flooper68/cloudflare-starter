@@ -11,7 +11,11 @@ import {
   testRequestContext,
 } from "../../test/fixtures";
 import { notificationCatalog } from "../notification-catalog";
-import { createMemoryJobQueue, createMemoryLogger } from "../platform";
+import {
+  createMemoryJobQueue,
+  createMemoryLogger,
+  createMemoryMetrics,
+} from "../platform";
 import { dispatchNotification } from "./dispatch-notification";
 import type { NotificationEvent } from "./domain";
 
@@ -25,6 +29,7 @@ function deps(emailEnabled = true) {
     ids: sequentialIds(`0000000${run}-0000-4000-8000-`),
     logger: createMemoryLogger(),
     jobQueue: createMemoryJobQueue(),
+    metrics: createMemoryMetrics(),
     email: { enabled: emailEnabled },
     catalog: notificationCatalog,
   };
@@ -86,6 +91,17 @@ describe("dispatchNotification", () => {
     });
 
     expect(result).toEqual({ rows: 3, emails: 1 });
+    d.metrics.flush();
+    expect(d.metrics.exported).toEqual([
+      expect.objectContaining({
+        name: "app.notifications.sent",
+        attributes: {
+          "app.notification.type": "workspaces.member-joined",
+          "app.notification.channel": "in_app",
+        },
+        sum: 3,
+      }),
+    ]);
     expect(
       await rows(
         "SELECT user_id, workspace_id, in_app, email_state, created_at FROM notifications WHERE event_id = 'evt-1' ORDER BY user_id"
@@ -127,6 +143,9 @@ describe("dispatchNotification", () => {
         "SELECT count(*) AS n FROM notifications WHERE event_id = 'evt-1'"
       )
     ).toEqual([{ n: 3 }]);
+    // Rows already written are not counted again.
+    again.metrics.flush();
+    expect(again.metrics.exported).toEqual([]);
   });
 
   it("marks email skipped with a warning when the deployment has no email", async () => {

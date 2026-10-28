@@ -35,7 +35,7 @@ Every metric is declared once in `METRIC_CATALOG` (`packages/features/src/platfo
 Rules (checked by `metric-catalog.test.ts` and `test/architecture/metrics.test.ts`):
 
 - **Names** follow the [OpenTelemetry semantic conventions for metrics](https://opentelemetry.io/docs/specs/semconv/general/metrics/) where one exists (`http.server.request.duration`, `rpc.server.call.duration`, `messaging.process.duration`) and `app.<area>.<thing>` otherwise. Lowercase dotted, no unit in the name, no `_total`.
-- **Units** are UCUM as OpenTelemetry writes them: `s` (always seconds, never ms), `By`, `1` (a ratio), `{request}`, `{message}`, `{run}`, `{call}`. Durations are histograms in seconds.
+- **Units** are UCUM as OpenTelemetry writes them: `s` (always seconds, never ms), `By`, `1` (a ratio), `{request}`, `{message}`, `{run}`, `{call}`, `{notification}`. Durations are histograms in seconds.
 - **Attributes** are low-cardinality only: method, route template, status code, error type, outcome, schedule, and names from a catalog in code (job type, cron entry). Never a user, workspace, file or message id, an email, an IP or a raw path; those belong on spans and log records. The catalog test rejects such keys; adapters drop any key the entry does not list; the architecture test fails when code passes one.
 - **Every name used in code is in the catalog, and every catalog metric is recorded somewhere.** Code can only name catalog metrics (the port is typed by the catalog), and the architecture test checks names, kinds and attribute keys of every call.
 
@@ -48,6 +48,7 @@ Rules (checked by `metric-catalog.test.ts` and `test/architecture/metrics.test.t
 | `messaging.process.duration`         | histogram | `messaging_process_duration_seconds_*`                            |
 | `messaging.client.consumed.messages` | counter   | `messaging_client_consumed_messages_total`                        |
 | `app.cron.run.duration`              | histogram | `app_cron_run_duration_seconds_*`                                 |
+| `app.notifications.sent`             | counter   | `app_notifications_sent_total`                                    |
 
 Labels follow the same rule (`http.response.status_code` → `http_response_status_code`).
 

@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, lte } from "drizzle-orm";
 
 import { user } from "../accounts";
 import type { Database } from "../database";
-import type { EmailService, Logger } from "../platform";
+import type { EmailService, Logger, Metrics } from "../platform";
 import {
   type DigestEntry,
   deriveUnsubscribeKey,
@@ -30,6 +30,7 @@ export async function sendDigest(
     readonly db: Database;
     readonly email: EmailService;
     readonly logger: Logger;
+    readonly metrics: Metrics;
     readonly catalog: NotificationCatalog;
     readonly app: MailApp;
   },
@@ -104,5 +105,11 @@ export async function sendDigest(
     });
   }
   await markAs("sent");
+  for (const entry of entries) {
+    deps.metrics.counter("app.notifications.sent").add(1, {
+      "app.notification.type": entry.type,
+      "app.notification.channel": "email_digest",
+    });
+  }
   return { sent: entries.length };
 }

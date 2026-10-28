@@ -111,13 +111,21 @@ function notifierFor(env: AppEnv): Notify {
   const platform = buildPlatform(env);
   return (definition, input) =>
     notify(
-      { jobQueue: platform.jobQueue, clock: systemClock, ids: randomIds },
+      {
+        jobQueue: platform.jobQueue,
+        clock: systemClock,
+        ids: randomIds,
+        errors: platform.errors,
+      },
       definition,
       input
     );
 }
 
-/** Runs a security notification; a failure is reported and never fails the request. */
+/**
+ * Runs a security notification's use case (notifyNewSignIn reads D1 first); a failure is
+ * reported and never fails the request. `notify` itself never throws.
+ */
 async function notifySafely(
   env: AppEnv,
   context: RequestContext,

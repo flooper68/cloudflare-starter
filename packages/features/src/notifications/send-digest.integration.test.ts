@@ -8,7 +8,11 @@ import {
   testDb,
 } from "../../test/fixtures";
 import { notificationCatalog } from "../notification-catalog";
-import { createMemoryEmail, createMemoryLogger } from "../platform";
+import {
+  createMemoryEmail,
+  createMemoryLogger,
+  createMemoryMetrics,
+} from "../platform";
 import { deriveUnsubscribeKey, verifyUnsubscribeToken } from "./domain";
 import { sendDigest } from "./send-digest";
 
@@ -44,12 +48,14 @@ describe("sendDigest", () => {
     });
     await seedNotification(grace.id, { id: "d-4", emailState: "none" });
     const email = createMemoryEmail();
+    const metrics = createMemoryMetrics();
 
     const result = await sendDigest(
       {
         db: testDb(),
         email,
         logger: createMemoryLogger(),
+        metrics,
         catalog: notificationCatalog,
         app: testApp,
       },
@@ -57,6 +63,17 @@ describe("sendDigest", () => {
     );
 
     expect(result).toEqual({ sent: 3 });
+    metrics.flush();
+    expect(
+      metrics.exported.map((series) => [
+        series.attributes["app.notification.type"],
+        series.attributes["app.notification.channel"],
+        series.sum,
+      ])
+    ).toEqual([
+      ["workspaces.member-joined", "email_digest", 2],
+      ["workspaces.role-changed", "email_digest", 1],
+    ]);
     expect(email.sent).toHaveLength(1);
     const [mail] = email.sent;
     expect(mail?.subject).toBe("Your daily summary: 3 notifications");
@@ -90,6 +107,7 @@ describe("sendDigest", () => {
           db: testDb(),
           email,
           logger: createMemoryLogger(),
+          metrics: createMemoryMetrics(),
           catalog: notificationCatalog,
           app: testApp,
         },

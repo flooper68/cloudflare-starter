@@ -4,6 +4,7 @@ import {
   type Actor,
   createDatabase,
   createInvitation,
+  createMemoryErrorReporter,
   createMemoryJobQueue,
   type Database,
   type MemoryJobQueue,
@@ -162,8 +163,9 @@ export function useCaseDeps(at?: string) {
     `${String(depsRun).padStart(8, "0")}-1111-4000-8000-`
   );
   const jobQueue = createMemoryJobQueue();
+  const errors = createMemoryErrorReporter();
   const bound: Notify = (definition, input) =>
-    notify({ jobQueue, clock, ids }, definition, input);
+    notify({ jobQueue, clock, ids, errors }, definition, input);
   return {
     db: testDb(),
     clock,
@@ -171,6 +173,8 @@ export function useCaseDeps(at?: string) {
     requestContext: testRequestContext(),
     /** Where `notify` enqueues: assert with notificationsSent(deps.jobQueue). */
     jobQueue,
+    /** Notification failures notify reported instead of throwing. */
+    errors,
     notify: bound,
   };
 }

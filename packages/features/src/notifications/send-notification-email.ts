@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { user } from "../accounts";
 import type { Database } from "../database";
-import type { EmailService, Logger } from "../platform";
+import type { EmailService, Logger, Metrics } from "../platform";
 import {
   deriveUnsubscribeKey,
   findNotification,
@@ -34,6 +34,7 @@ export async function sendNotificationEmail(
     readonly db: Database;
     readonly email: EmailService;
     readonly logger: Logger;
+    readonly metrics: Metrics;
     readonly catalog: NotificationCatalog;
     readonly app: MailApp;
   },
@@ -102,5 +103,9 @@ export async function sendNotificationEmail(
     headers: mail.headers,
   });
   await markAs("sent");
+  deps.metrics.counter("app.notifications.sent").add(1, {
+    "app.notification.type": row.type,
+    "app.notification.channel": "email",
+  });
   return "sent";
 }

@@ -21,7 +21,7 @@ flowchart LR
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Definition            | the owning feature's `domain/`, `defineNotification` from `kernel/notification.ts`                                      | Type (`<feature>.<name>`), label, zod data, `defaultChannels`, `securityCritical`, `render(data, { appUrl })` → in-app and email wording             |
 | Catalog               | `packages/features/src/notification-catalog.ts`                                                                         | Composition root: every type, in the order of the preferences screen. A type not listed here fails dispatch permanently                              |
-| Send                  | `notify` in `packages/features/src/notifications/notify.ts`, given to use cases as `deps.notify` (kernel type `Notify`) | Validates the data, drops the actor from the recipients (not for security notices), enqueues one `notifications.dispatch` job. Writes nothing itself |
+| Send                  | `notify` in `packages/features/src/notifications/notify.ts`, given to use cases as `deps.notify` (kernel type `Notify`) | Validates the data, drops the actor from the recipients (not for security notices), enqueues one `notifications.dispatch` job. Writes nothing itself and never throws (failures are reported) |
 | Dispatch              | `dispatchNotification` (job `notifications.dispatch`)                                                                   | Per recipient: channels from the type's defaults and the user's overrides, an inbox row, an email job or a digest mark                               |
 | Tables                | `notifications`, `notification_preferences`, `notification_settings` (`notifications.schema.ts`)                        | Inbox rows with their email state; overrides only (a missing row is the default); the email cadence                                                  |
 | Inbox and preferences | tRPC `notifications.*`, MCP tools, `/app/notifications`, `/app/notifications/preferences`                               | List, unread count, mark read, archive, preferences; the bell in the top bar                                                                         |
@@ -66,7 +66,7 @@ flowchart LR
    });
    ```
 
-   Add `readonly notify: Notify` to the use case's deps; tRPC procedures pass `ctx`, which has it. At most 500 recipients per call (`MAX_RECIPIENTS`); split larger fan-outs. Cut free-text values (names) to the data schema's limits before the call: invalid data makes `notify` throw, and a failure to notify (invalid data, the queue unavailable) fails the use case like a failed audit insert does, after its change is written. The Better Auth hooks are the exception: they catch and report. `workspaceId` makes the rows go with the workspace when it is deleted.
+   Add `readonly notify: Notify` to the use case's deps; tRPC procedures pass `ctx`, which has it. At most 500 recipients per call (`MAX_RECIPIENTS`); split larger fan-outs. Cut free-text values (names) to the data schema's limits before the call. `notify` never throws: invalid data, too many recipients or a failed queue send are reported once through the ErrorReporter (with the producer's request context and `app.notification.type`) and answered `{ status: "failed", reference }`, so a saved change never turns into a failed request because of its notification. The result (`enqueued` with the event id, `nobody` when only the actor would get it, or `failed`) may be ignored. A lost notification is therefore visible only as an error report. `workspaceId` makes the rows go with the workspace when it is deleted.
 4. Tests ([testing.md](../architecture/testing.md#change--required-test)): a domain test of `render` (including that user data is escaped in `html`) and of the data schema; in the producer's integration test, assert the event with `notificationsSent(deps.jobQueue)` from `packages/features/test/fixtures.ts`. Dispatch, mail and digest are covered once in `packages/features/src/notifications/`.
 
 The review checklist asks for it: a user-facing event (someone joined, a role changed, an invoice failed) uses `notify`, not a hand-written mail ([code-review.md](../processes/code-review.md#1-server-side-architecture)).
@@ -116,6 +116,10 @@ Run it locally: `curl "http://localhost:<port>/cdn-cgi/handler/scheduled?cron=0+
 ## Retention
 
 The daily cron entry `notifications.purge` (`17 3 * * *`, with the other purges) deletes read or archived rows older than `READ_RETENTION_DAYS` (90) and any row older than `UNREAD_RETENTION_DAYS` (365) (`notifications/domain/retention.ts`). Rows also go with their user (account deletion) and their workspace. Preferences and settings stay until the user is deleted.
+
+## Metrics
+
+`app.notifications.sent` (counter, `{notification}`) counts deliveries by `app.notification.type` and `app.notification.channel`: `in_app` (inbox rows the dispatcher wrote; a redelivered event is not counted again), `email` (one mail sent) and `email_digest` (each entry of a digest sent). Skipped mail (email off) and turned-off channels are not counted. It is recorded by the job handlers through `deps.metrics` and flushed by the queue consumer with the batch ([how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md)).
 
 ## Audit
 

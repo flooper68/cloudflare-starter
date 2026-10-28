@@ -174,6 +174,7 @@ async function handleMessage(
           logger,
           jobQueue: platform.jobQueue,
           email: platform.email,
+          metrics: platform.metrics,
           app: deps.app,
         },
         job,

@@ -8,7 +8,12 @@ import {
   testDb,
 } from "../../test/fixtures";
 import { notificationCatalog } from "../notification-catalog";
-import { createMemoryEmail, createMemoryLogger, noopEmail } from "../platform";
+import {
+  createMemoryEmail,
+  createMemoryLogger,
+  createMemoryMetrics,
+  noopEmail,
+} from "../platform";
 import { deriveUnsubscribeKey, verifyUnsubscribeToken } from "./domain";
 import { sendNotificationEmail } from "./send-notification-email";
 
@@ -17,6 +22,7 @@ function deps(email = createMemoryEmail()) {
     db: testDb(),
     email,
     logger: createMemoryLogger(),
+    metrics: createMemoryMetrics(),
     catalog: notificationCatalog,
     app: testApp,
   };
@@ -28,9 +34,21 @@ describe("sendNotificationEmail", () => {
     await seedNotification(grace.id, { id: "n-mail", emailState: "pending" });
     const email = createMemoryEmail();
 
-    expect(
-      await sendNotificationEmail(deps(email), { notificationId: "n-mail" })
-    ).toBe("sent");
+    const d = deps(email);
+    expect(await sendNotificationEmail(d, { notificationId: "n-mail" })).toBe(
+      "sent"
+    );
+    d.metrics.flush();
+    expect(d.metrics.exported).toEqual([
+      expect.objectContaining({
+        name: "app.notifications.sent",
+        attributes: {
+          "app.notification.type": "workspaces.member-joined",
+          "app.notification.channel": "email",
+        },
+        sum: 1,
+      }),
+    ]);
     const [mail] = email.sent;
     expect(mail).toMatchObject({
       to: { email: "grace.mail@example.test", name: "Grace Hopper" },

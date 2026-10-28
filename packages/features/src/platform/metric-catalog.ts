@@ -22,6 +22,7 @@ export const METRIC_UNITS = [
   "{message}",
   "{run}",
   "{call}",
+  "{notification}",
 ] as const;
 export type MetricUnit = (typeof METRIC_UNITS)[number];
 
@@ -103,6 +104,13 @@ export const METRIC_CATALOG = {
       "Duration of one cron catalog entry's run, by entry, schedule and outcome.",
     attributes: ["app.cron.name", "app.cron.schedule", "error.type"],
     buckets: DURATION_BUCKETS_SECONDS,
+  },
+  "app.notifications.sent": {
+    kind: "counter",
+    unit: "{notification}",
+    description:
+      "Notifications delivered, by type (from the notification catalog) and channel: in_app (an inbox row), email (one mail), email_digest (an entry of a daily digest).",
+    attributes: ["app.notification.type", "app.notification.channel"],
   },
 } as const satisfies Readonly<Record<string, MetricDefinition>>;
 
@@ -197,6 +205,7 @@ const OPENMETRICS_UNIT: Readonly<Record<MetricUnit, string>> = {
   "{message}": "",
   "{run}": "",
   "{call}": "",
+  "{notification}": "",
 };
 
 /**

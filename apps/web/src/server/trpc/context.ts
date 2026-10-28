@@ -33,7 +33,12 @@ export function createAppContext(
   const scoped = { ...requestContext, userId: user?.id ?? null };
   const notifier: Notify = (definition, input) =>
     notify(
-      { jobQueue: platform.jobQueue, clock: systemClock, ids: randomIds },
+      {
+        jobQueue: platform.jobQueue,
+        clock: systemClock,
+        ids: randomIds,
+        errors: platform.errors,
+      },
       definition,
       input
     );

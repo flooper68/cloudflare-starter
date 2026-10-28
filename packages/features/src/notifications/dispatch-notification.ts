@@ -4,7 +4,7 @@ import { user } from "../accounts";
 import type { Database } from "../database";
 import { enqueueJob } from "../jobs";
 import type { Clock, Ids, RequestContext } from "../kernel";
-import type { EmailService, JobQueue, Logger } from "../platform";
+import type { EmailService, JobQueue, Logger, Metrics } from "../platform";
 import {
   DEFAULT_EMAIL_CADENCE,
   findNotification,
@@ -47,6 +47,7 @@ export async function dispatchNotification(
     readonly ids: Ids;
     readonly logger: Logger;
     readonly jobQueue: JobQueue;
+    readonly metrics: Metrics;
     readonly email: Pick<EmailService, "enabled">;
     readonly catalog: NotificationCatalog;
   },
@@ -121,14 +122,26 @@ export async function dispatchNotification(
         },
       ];
     });
-    if (values.length === 0) continue;
     // One statement per row keeps each under D1's parameter limit; a row of a redelivered
     // event already exists and is left as it is.
     const [first, ...rest] = values.map((value) =>
-      deps.db.insert(notifications).values(value).onConflictDoNothing()
+      deps.db
+        .insert(notifications)
+        .values(value)
+        .onConflictDoNothing()
+        .returning({ inApp: notifications.inApp })
     );
-    if (first) await deps.db.batch([first, ...rest]);
-    rows += values.length;
+    if (!first) continue;
+    const written = (await deps.db.batch([first, ...rest])).flat();
+    rows += written.length;
+    // Rows a redelivery finds already written are not counted again.
+    const inApp = written.filter((row) => row.inApp).length;
+    if (inApp > 0) {
+      deps.metrics.counter("app.notifications.sent").add(inApp, {
+        "app.notification.type": event.type,
+        "app.notification.channel": "in_app",
+      });
+    }
   }
 
   if (skipped > 0) {

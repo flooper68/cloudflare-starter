@@ -54,7 +54,7 @@ function context(overrides: Partial<Context> = {}): Context {
     email: { enabled: false, value: null, reason: "Email is not configured" },
     r2: { enabled: false, value: null, reason: "R2 is not configured" },
     jobQueue: createMemoryJobQueue(),
-    notify: async () => ({ eventId: "e-1", recipients: 0 }),
+    notify: async () => ({ status: "nobody" }),
     emailOut: noopEmail,
     requestContext: REQUEST_CONTEXT,
     logger: noopLogger,
