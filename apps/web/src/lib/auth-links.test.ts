@@ -18,6 +18,7 @@ describe("auth links", () => {
 
   it("maps the invite-only code to a message and ignores unknown codes", () => {
     expect(authErrorForCode("SIGN_UP_INVITE_ONLY")).toMatch(/invitation only/);
+    expect(authErrorForCode("LIMIT_REACHED")).toMatch(/no free seats/);
     expect(authErrorForCode("access_denied")).toBeNull();
     expect(authErrorForCode(null)).toBeNull();
   });

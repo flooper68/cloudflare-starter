@@ -1,5 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
 import {
+  type BillingMode,
   createRequestContext,
   type RequestContext,
   randomIds,
@@ -91,6 +92,7 @@ export function envWith(vars: {
   readonly SIGN_UP_DOMAINS?: string;
   readonly BOOTSTRAP_ADMIN_EMAIL?: string;
   readonly AUTH_REQUIRE_EMAIL_VERIFICATION?: "true" | "false";
+  readonly BILLING?: BillingMode;
 }): AppEnv {
   const key = JSON.stringify(vars);
   let value = envs.get(key);

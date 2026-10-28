@@ -107,7 +107,7 @@ A job without a key is not deduplicated: make its handler safe to run twice (ups
 
 ## Add a cron entry
 
-1. Add `{ name, schedule, run }` to `packages/features/src/cron-catalog.ts`. `run(deps, { scheduledTime, context })` should only enqueue jobs (fan out); the queue then retries each piece on its own. `scheduledTime` is the run's "now"; pass it in the payload when the job must compute the same thing on every retry (`audit.purge-events` sends it as `asOf`, so a retry purges against the same cutoff). Today the catalog has `audit.purge-events` and `jobs.purge-idempotency-keys`, both on the daily `17 3 * * *`.
+1. Add `{ name, schedule, run }` to `packages/features/src/cron-catalog.ts`. `run(deps, { scheduledTime, context })` should only enqueue jobs (fan out); the queue then retries each piece on its own. `scheduledTime` is the run's "now"; pass it in the payload when the job must compute the same thing on every retry (`audit.purge-events` sends it as `asOf`, so a retry purges against the same cutoff). Today the catalog has `audit.purge-events`, `jobs.purge-idempotency-keys` and `billing.expire-trials`, all on the daily `17 3 * * *`.
 2. Add the schedule to `triggers.crons` in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc` (UTC). Several entries may share a schedule; `scheduled` runs every entry whose schedule equals `controller.cron` exactly, so write it identically in both places. The architecture test `test/architecture/jobs.test.ts` fails when `triggers.crons` and the catalog differ, or when an entry's name appears in no test.
 3. Test it by name in `apps/web/src/server/cron.test.ts` (what it enqueues).
 

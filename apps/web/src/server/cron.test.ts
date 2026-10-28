@@ -45,11 +45,15 @@ const controller = (cron: string) => ({
 });
 
 describe("cron handler", () => {
-  it("the daily schedule runs audit.purge-events and jobs.purge-idempotency-keys, each in a new trace", async () => {
+  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys and billing.expire-trials, each in a new trace", async () => {
     const { platform, logger, jobQueue } = memoryPlatform();
     expect(
       cronCatalog.filter((e) => e.schedule === "17 3 * * *").map((e) => e.name)
-    ).toEqual(["audit.purge-events", "jobs.purge-idempotency-keys"]);
+    ).toEqual([
+      "audit.purge-events",
+      "jobs.purge-idempotency-keys",
+      "billing.expire-trials",
+    ]);
 
     await runScheduled(controller("17 3 * * *"), platform);
     await runScheduled(controller("17 3 * * *"), platform);
@@ -65,13 +69,19 @@ describe("cron handler", () => {
         source: "/staging/cron",
         data: {},
       }),
+      expect.objectContaining({
+        type: "billing.expire-trials",
+        source: "/staging/cron",
+        data: { asOf: "2026-10-28T03:17:00.000Z" },
+      }),
       expect.objectContaining({ type: "audit.purge-events" }),
       expect.objectContaining({ type: "jobs.purge-idempotency-keys" }),
+      expect.objectContaining({ type: "billing.expire-trials" }),
     ]);
     const traces = jobQueue.sent.map(
       (sent) => sent.envelope.traceparent?.split("-")[1]
     );
-    expect(new Set(traces).size).toBe(4);
+    expect(new Set(traces).size).toBe(6);
     expect(logger.records[1]).toMatchObject({
       body: "cron.completed",
       trace_id: traces[1],
@@ -139,6 +149,7 @@ describe("cron handler", () => {
     expect(tracer.spans.map((span) => span.name)).toEqual([
       "cron audit.purge-events",
       "cron jobs.purge-idempotency-keys",
+      "cron billing.expire-trials",
     ]);
     expect(tracer.spans[0]).toMatchObject({
       kind: "internal",
@@ -162,6 +173,12 @@ describe("cron handler", () => {
       expect.objectContaining({
         attributes: {
           "app.cron.name": "jobs.purge-idempotency-keys",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "billing.expire-trials",
           "app.cron.schedule": "17 3 * * *",
         },
       }),

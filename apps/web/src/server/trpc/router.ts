@@ -6,6 +6,7 @@ import {
   flagUpdateSchema,
   listFlags,
   listWorkspaceFiles,
+  resolveEntitlements,
   sendHello,
   setFlagRules,
   updateFlag,
@@ -16,6 +17,7 @@ import { z } from "zod";
 import { displayName } from "@/lib/user";
 
 import { localAdminProcedure } from "./admin";
+import { adminBillingRouter } from "./admin-billing-router";
 import {
   protectedProcedure,
   publicProcedure,
@@ -105,8 +107,13 @@ export const appRouter = router({
       flags: await evaluateClientFlags(ctx, {
         userId: ctx.actor.userId,
         workspaceId: ctx.actor.workspaceId,
-        // TODO(plans): the workspace's plan once plans exist.
-        plan: null,
+        // Plan-targeted rules see the workspace's plan in effect (billing).
+        plan: (
+          await resolveEntitlements(
+            { ...ctx, settings: ctx.config.billing },
+            ctx.actor.workspaceId
+          )
+        ).planId,
         environment: ctx.config.APP_ENV,
       }),
     })),
@@ -114,6 +121,8 @@ export const appRouter = router({
 
   // TODO(admin-portal): move under the admin portal's router and adminProcedure.
   admin: router({
+    billing: adminBillingRouter,
+
     flags: router({
       list: localAdminProcedure.query(async ({ ctx }) => ({
         flags: await listFlags(ctx),

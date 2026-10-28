@@ -15,6 +15,8 @@ interface UploadResponse {
   readonly fileId?: string;
   readonly url?: string;
   readonly error?: string;
+  /** Problem Details refusals (a plan limit): the reason to show. */
+  readonly detail?: string;
   /** Present on unexpected (500) failures: the trace id to quote. */
   readonly reference?: string;
 }
@@ -59,7 +61,9 @@ export function BindingUploadDemo({
         setFailure({
           message: result.reference
             ? UNEXPECTED_ERROR_MESSAGE
-            : (result.error ?? `Upload failed (${response.status})`),
+            : (result.error ??
+              result.detail ??
+              `Upload failed (${response.status})`),
           reference: result.reference,
         });
         setStatus("Not uploaded.");

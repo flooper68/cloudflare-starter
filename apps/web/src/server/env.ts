@@ -18,6 +18,7 @@ export interface AppEnv {
   readonly RL_MCP_IP?: RateLimit;
   readonly RL_MCP_USER?: RateLimit;
   readonly RL_UPLOAD?: RateLimit;
+  readonly RL_BILLING_WEBHOOK?: RateLimit;
   readonly RL_INVITE?: RateLimit;
   readonly RL_TOKEN_LOOKUP?: RateLimit;
   readonly APP_ENV?: string;
@@ -37,5 +38,7 @@ export interface AppEnv {
   readonly BETTER_AUTH_SECRET?: string;
   readonly GOOGLE_CLIENT_ID?: string;
   readonly GOOGLE_CLIENT_SECRET?: string;
+  /** Setup-written var, validated by `parseAppConfig`: off | manual | provider. */
+  readonly BILLING?: string;
   readonly [key: string]: unknown;
 }

@@ -1,4 +1,6 @@
 import {
+  type BillingSettings,
+  billingSettingsSchema,
   type WorkspaceSettings,
   workspaceSettingsSchema,
 } from "@cloudflare-starter/features";
@@ -33,9 +35,12 @@ const envSchema = z.object({
 /**
  * The environment's config. `workspaces` holds WORKSPACE_MODE, SIGN_UP, SIGN_UP_DOMAINS and
  * BOOTSTRAP_ADMIN_EMAIL, required and without defaults (docs/guides/how-to-configure-workspaces.md).
+ * `billing` holds BILLING (off | manual | provider), required and without a default
+ * (docs/guides/how-to-configure-plans-and-billing.md).
  */
 export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
+  readonly billing: BillingSettings;
 };
 
 export type RequiredAppConfig = Omit<
@@ -60,6 +65,7 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
   return {
     ...envSchema.parse(env),
     workspaces: workspaceSettingsSchema.parse(env),
+    billing: billingSettingsSchema.parse(env),
   };
 }
 

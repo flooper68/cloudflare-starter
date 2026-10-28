@@ -11,10 +11,17 @@ import { describe, expect, it } from "vitest";
 import { filesUnder, read } from "./repo";
 
 /** Features whose state changes are audited. Add a feature here when it is created. */
-const AUDITED_FEATURES = ["accounts", "workspaces", "feature-flags"] as const;
+const AUDITED_FEATURES = [
+  "accounts",
+  "billing",
+  "workspaces",
+  "feature-flags",
+] as const;
 
 /** Use cases that change state without an audit event: path → reason. */
 const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
+  "packages/features/src/billing/record-usage.ts":
+    "usage metering (one counter increment per upload); grants or removes nothing, and the action it counts is the record",
   "packages/features/src/workspaces/switch-workspace.ts":
     "only moves the user's default workspace (last_active_at); grants or removes nothing",
 };

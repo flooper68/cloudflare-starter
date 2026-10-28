@@ -7,6 +7,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
 } from "../../test/fixtures";
 import type { Actor } from "../workspaces";
@@ -21,6 +22,7 @@ async function storedFile(actor: Actor, idPrefix: string) {
       bucket: env.FILES,
       clock: fixedClock(),
       ids: sequentialIds(idPrefix),
+      billing: testBilling(),
     },
     actor,
     {

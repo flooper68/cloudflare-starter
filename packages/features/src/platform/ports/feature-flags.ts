@@ -51,7 +51,8 @@ export interface FlagDetails<T extends FlagValue> {
 /**
  * OpenFeature evaluation context. `targetingKey` is the id percentage rollouts bucket by
  * (a workspace or a user id, per the flag's `rolloutBy`); null when there is none, and then
- * no percentage rule matches. `plan` stays null until plans exist.
+ * no percentage rule matches. `plan` is the workspace's plan id in effect (billing), null
+ * without a workspace.
  */
 export interface FlagContext {
   readonly targetingKey: string | null;

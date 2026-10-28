@@ -1,10 +1,10 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { user } from "../accounts";
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
 import { type EmailService, sha256Hex } from "../platform";
 import {
   type Actor,
@@ -60,6 +60,8 @@ export async function createInvitation(
     readonly ids: Ids;
     readonly email: EmailService | null;
     readonly requestContext: RequestContext;
+    /** The `seats` limit: members plus pending invitations. */
+    readonly billing: BillingGate;
   },
   actor: Actor,
   input: {
@@ -100,6 +102,22 @@ export async function createInvitation(
   if (existing) throw new AlreadyMemberError();
 
   const now = deps.clock.now();
+  // A pending invitation for the same email is replaced, so it needs no new seat.
+  const [pending] = await deps.db
+    .select({ id: workspaceInvitations.id })
+    .from(workspaceInvitations)
+    .where(
+      and(
+        eq(workspaceInvitations.workspaceId, actor.workspaceId),
+        eq(workspaceInvitations.email, email),
+        isNull(workspaceInvitations.acceptedAt),
+        isNull(workspaceInvitations.revokedAt),
+        gt(workspaceInvitations.expiresAt, now)
+      )
+    )
+    .limit(1);
+  await deps.billing.requireLimit(actor.workspaceId, "seats", pending ? 0 : 1);
+
   const id = deps.ids.uuid();
   // Two v4 UUIDs from the platform's CSPRNG: 244 random bits in the link.
   const token = `${deps.ids.uuid()}${deps.ids.uuid()}`.replaceAll("-", "");

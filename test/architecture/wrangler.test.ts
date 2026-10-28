@@ -19,6 +19,8 @@ const SETUP_WRITTEN_VARS: Readonly<Record<string, string>> = {
   SIGN_UP: "written by setup:auth; deliberately absent until the owner chooses",
   SIGN_UP_DOMAINS: "written by setup:auth",
   BOOTSTRAP_ADMIN_EMAIL: "written by setup:auth",
+  BILLING:
+    "written by setup:auth; deliberately absent until the owner chooses off, manual or provider",
 };
 
 type Block = Record<string, unknown>;
