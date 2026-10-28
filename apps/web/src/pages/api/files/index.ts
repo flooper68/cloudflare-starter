@@ -8,6 +8,7 @@ import {
 import type { APIRoute } from "astro";
 
 import { getDb } from "@/server/db";
+import { internalErrorResponse } from "@/server/http";
 
 /**
  * Upload through the Worker into the `FILES` R2 binding (multipart field `file`).
@@ -40,17 +41,25 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
     );
   }
 
-  const stored = await storeFile(
-    { db: getDb(env), bucket: env.FILES, clock: systemClock, ids: randomIds },
-    {
-      ...input.data,
-      ownerUserId: locals.user.id,
-      body: await file.arrayBuffer(),
-    }
-  );
+  try {
+    const stored = await storeFile(
+      { db: getDb(env), bucket: env.FILES, clock: systemClock, ids: randomIds },
+      {
+        ...input.data,
+        ownerUserId: locals.user.id,
+        body: await file.arrayBuffer(),
+      }
+    );
 
-  return Response.json(
-    { fileId: stored.fileId, url: `/api/files/${stored.fileId}` },
-    { status: 201 }
-  );
+    return Response.json(
+      { fileId: stored.fileId, url: `/api/files/${stored.fileId}` },
+      { status: 201 }
+    );
+  } catch (error) {
+    // { error, reference }: the reference is the request id users quote.
+    return internalErrorResponse(env, error, locals.requestContext, {
+      route: "POST /api/files",
+      cfRay: request.headers.get("cf-ray"),
+    });
+  }
 };

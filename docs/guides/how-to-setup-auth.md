@@ -53,7 +53,7 @@ At least one method must be on. If none is, or verification is required without 
 
 ## Auth Mail
 
-Password reset links and verification links go out through Cloudflare Email Service when the environment has email ([how-to-setup-email.md](./how-to-setup-email.md)). Locally the binding is simulated and the dev log shows each message. With email off, the links are printed to the log instead; fine locally, not for a deployed environment.
+Password reset links and verification links go out through Cloudflare Email Service when the environment has email ([how-to-setup-email.md](./how-to-setup-email.md)). Locally the binding is simulated and the dev log shows each message. With email off, the links are logged instead (event `auth.mail_not_sent`, field `link`, through the Logger, so with `LOG_SINK=none` they go nowhere); fine locally, not for a deployed environment.
 
 When email is on, a verification mail is sent on sign-up even if verification is not required, so `emailVerified` becomes true once the user clicks it.
 

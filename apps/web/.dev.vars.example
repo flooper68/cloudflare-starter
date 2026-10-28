@@ -20,6 +20,14 @@ GOOGLE_CLIENT_SECRET=
 EMAIL_FROM=noreply@example.test
 EMAIL_FROM_NAME=Cloudflare Starter
 
+# Logging and error reports. LOG_SINK and ERROR_REPORTER are required vars set in
+# apps/web/wrangler.jsonc for every environment (workers-logs | none); they are not
+# secrets. To override them locally, uncomment a line here. Never leave one blank:
+# a blank value here unsets the wrangler.jsonc var and every request fails with
+# "LOG_SINK is not set". Guide: docs/guides/how-to-setup-logging.md
+# LOG_SINK=none
+# ERROR_REPORTER=none
+
 # R2 presigned URLs (optional). The FILES binding needs nothing here.
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=

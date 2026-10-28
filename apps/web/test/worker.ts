@@ -4,10 +4,11 @@ import type { QueueMessage } from "@cloudflare-starter/features";
 
 import { runScheduled } from "@/server/cron";
 import type { AppEnv } from "@/server/env";
+import { buildPlatform } from "@/server/platform";
 import { handleQueueBatch } from "@/server/queue";
 
 export default {
   fetch: () => new Response("web API tests"),
-  queue: (batch, env) => handleQueueBatch(batch, env),
-  scheduled: (controller, env) => runScheduled(controller, env),
+  queue: (batch, env) => handleQueueBatch(batch, buildPlatform(env)),
+  scheduled: (controller, env) => runScheduled(controller, buildPlatform(env)),
 } satisfies ExportedHandler<AppEnv, QueueMessage>;

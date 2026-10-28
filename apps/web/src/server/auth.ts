@@ -8,6 +8,7 @@ import type { AppConfig } from "@/lib/config";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
+import { buildPlatform } from "@/server/platform";
 
 export const AUTH_BASE_PATH = "/api/auth";
 export const MCP_PATH = "/mcp";
@@ -72,9 +73,13 @@ export function createAuthOptions(env: AppEnv) {
     readonly url: string;
   }) {
     if (!email.enabled || !email.value) {
-      console.log(
-        `[auth] ${input.subject} for ${input.to.email}: ${input.url}`
-      );
+      // Logged as `link`, not under a redacted key: without email this is how the
+      // developer gets the link (in the dev server output, or Workers Logs when deployed).
+      buildPlatform(env).logger.info("auth.mail_not_sent", {
+        subject: input.subject,
+        to: input.to.email,
+        link: input.url,
+      });
       return;
     }
 

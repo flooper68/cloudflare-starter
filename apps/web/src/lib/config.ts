@@ -49,6 +49,54 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
   return envSchema.parse(env);
 }
 
+/** Where logs go: Cloudflare Workers Logs, or nowhere. */
+export const LOG_SINKS = ["workers-logs", "none"] as const;
+/** Where error reports go: Cloudflare Workers Logs, or nowhere (users still get a reference). */
+export const ERROR_REPORTERS = ["workers-logs", "none"] as const;
+
+export interface PlatformConfig {
+  readonly LOG_SINK: (typeof LOG_SINKS)[number];
+  readonly ERROR_REPORTER: (typeof ERROR_REPORTERS)[number];
+}
+
+/** A required setting is missing or invalid; the message names it and the allowed values. */
+export class ConfigError extends Error {
+  readonly setting: string;
+
+  constructor(setting: string, message: string) {
+    super(message);
+    this.name = "ConfigError";
+    this.setting = setting;
+  }
+}
+
+function requiredChoice<T extends string>(
+  env: PartialEnv,
+  name: string,
+  allowed: readonly T[]
+): T {
+  const value = env[name];
+  const hint = `set ${name} to one of ${allowed.join(", ")} in the vars of apps/web/wrangler.jsonc for every environment`;
+  if (value === undefined || value === "") {
+    throw new ConfigError(name, `${name} is not set: ${hint}`);
+  }
+  if (!(allowed as readonly string[]).includes(value)) {
+    throw new ConfigError(name, `${name} is "${value}": ${hint}`);
+  }
+  return value as T;
+}
+
+/**
+ * The platform adapters to use. No defaults: a deployment states where its logs and error
+ * reports go, and a missing setting fails every request with an error that names it.
+ */
+export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
+  return {
+    LOG_SINK: requiredChoice(env, "LOG_SINK", LOG_SINKS),
+    ERROR_REPORTER: requiredChoice(env, "ERROR_REPORTER", ERROR_REPORTERS),
+  };
+}
+
 export function parseOptionalFeature<T>(
   label: string,
   parse: () => T

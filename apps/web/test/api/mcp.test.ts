@@ -4,15 +4,22 @@ import { describe, expect, it } from "vitest";
 
 import { handleMcp } from "@/server/mcp/handler";
 import { buildMcpServer } from "@/server/mcp/server";
+import { buildPlatform } from "@/server/platform";
 
-import { APP_URL, callerFor, signUp } from "./helpers";
+import { APP_URL, callerFor, signUp, testRequestContext } from "./helpers";
 
 async function rpc(
   caller: ReturnType<typeof callerFor>,
   method: string,
-  params: unknown = {}
+  params: unknown = {},
+  requestContext = testRequestContext()
 ) {
-  const handler = createMcpHandler(() => buildMcpServer(caller));
+  const handler = createMcpHandler(() =>
+    buildMcpServer(caller, {
+      errors: buildPlatform(env).errors,
+      requestContext,
+    })
+  );
   const response = await handler.fetch(
     new Request(`${APP_URL}/mcp`, {
       method: "POST",
@@ -36,7 +43,8 @@ describe("/mcp", () => {
   it("challenges requests without a token, pointing at the resource metadata", async () => {
     const response = await handleMcp(
       new Request(`${APP_URL}/mcp`, { method: "POST", body: "{}" }),
-      env
+      env,
+      testRequestContext()
     );
     expect(response.status).toBe(401);
     expect(response.headers.get("www-authenticate")).toContain(
@@ -51,7 +59,8 @@ describe("/mcp", () => {
         headers: { authorization: "Bearer not-a-jwt" },
         body: "{}",
       }),
-      env
+      env,
+      testRequestContext()
     );
     expect(response.status).toBe(401);
     expect(response.headers.get("www-authenticate")).toContain(

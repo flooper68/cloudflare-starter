@@ -1,3 +1,7 @@
+import type {
+  ErrorReporter,
+  RequestContext,
+} from "@cloudflare-starter/features";
 import { McpServer } from "@modelcontextprotocol/server";
 import { TRPCError } from "@trpc/server";
 
@@ -18,22 +22,13 @@ const HTTP_STATUS: Record<string, number> = {
   INTERNAL_SERVER_ERROR: 500,
 };
 
-/** A tRPC error as an MCP tool error the model can explain; anything else stays internal. */
-export function toolError(error: unknown) {
-  const body =
-    error instanceof TRPCError && error.code !== "INTERNAL_SERVER_ERROR"
-      ? {
-          code: error.code,
-          httpStatus: HTTP_STATUS[error.code] ?? 500,
-          message: error.message,
-        }
-      : {
-          code: "INTERNAL_SERVER_ERROR",
-          httpStatus: 500,
-          message: "Internal error",
-        };
-  if (body.httpStatus === 500) console.error("MCP tool failed", error);
+/** Where a tool's unexpected failures are reported, and the reference they get. */
+export interface ToolErrorReporting {
+  readonly errors: ErrorReporter;
+  readonly requestContext: RequestContext;
+}
 
+function toolResult(body: Readonly<Record<string, unknown>>) {
   return {
     isError: true as const,
     content: [{ type: "text" as const, text: JSON.stringify({ error: body }) }],
@@ -41,11 +36,41 @@ export function toolError(error: unknown) {
   };
 }
 
+/**
+ * A tRPC error as an MCP tool error the model can explain; anything else stays internal and
+ * carries a `reference` the user can quote. Internal tRPC errors were already reported by
+ * the procedure (trpc/init.ts); failures outside a procedure are reported here.
+ */
+export function toolError(error: unknown, reporting: ToolErrorReporting) {
+  if (error instanceof TRPCError && error.code !== "INTERNAL_SERVER_ERROR") {
+    return toolResult({
+      code: error.code,
+      httpStatus: HTTP_STATUS[error.code] ?? 500,
+      message: error.message,
+    });
+  }
+  const reference =
+    error instanceof TRPCError
+      ? reporting.requestContext.requestId
+      : reporting.errors.capture(error, reporting.requestContext, {
+          edge: "mcp",
+        });
+  return toolResult({
+    code: "INTERNAL_SERVER_ERROR",
+    httpStatus: 500,
+    message: "Internal error",
+    reference,
+  });
+}
+
 const untrustedData = (value: unknown) =>
   `<untrusted-data>\n${JSON.stringify(value)}\n</untrusted-data>`;
 
 /** One MCP server per request, its tools bound to the caller of the token's user. */
-export function buildMcpServer(caller: Caller): McpServer {
+export function buildMcpServer(
+  caller: Caller,
+  reporting: ToolErrorReporting
+): McpServer {
   const server = new McpServer(
     {
       name: "cloudflare-starter",
@@ -78,7 +103,7 @@ export function buildMcpServer(caller: Caller): McpServer {
             structuredContent: structured,
           };
         } catch (error) {
-          return toolError(error);
+          return toolError(error, reporting);
         }
       }) as never
     );

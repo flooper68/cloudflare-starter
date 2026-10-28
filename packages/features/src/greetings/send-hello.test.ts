@@ -21,6 +21,20 @@ describe("sendHello", () => {
     });
   });
 
+  it("carries the caller's request id for the consumer", async () => {
+    const queue = { send: vi.fn().mockResolvedValue(undefined) };
+    await sendHello(
+      {
+        queue: queue as unknown as Queue<HelloMessage>,
+        clock: { now: () => new Date("2026-10-28T12:00:00.000Z") },
+      },
+      { name: "Nicole", userId: "user-1", requestId: "req-1" }
+    );
+    expect(queue.send).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId: "req-1" })
+    );
+  });
+
   it("refuses an invalid message before it reaches the queue", async () => {
     const queue = { send: vi.fn() };
     await expect(

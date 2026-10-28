@@ -16,7 +16,11 @@ async function handler(context: Parameters<APIRoute>[0]) {
     endpoint: "/api/trpc",
     req: context.request,
     router: appRouter,
-    createContext: () => createAppContext(userOf(context.locals.user)),
+    createContext: () =>
+      createAppContext(
+        userOf(context.locals.user),
+        context.locals.requestContext
+      ),
   });
 }
 

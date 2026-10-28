@@ -68,7 +68,11 @@ export const appRouter = router({
         }
         await sendHello(
           { queue: ctx.queue, clock: ctx.clock },
-          { name: input.name, userId: ctx.user.id }
+          {
+            name: input.name,
+            userId: ctx.user.id,
+            requestId: ctx.requestContext.requestId,
+          }
         );
         return { queued: true };
       }),

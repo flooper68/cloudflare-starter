@@ -1,4 +1,7 @@
-import { findUserById } from "@cloudflare-starter/features";
+import {
+  findUserById,
+  type RequestContext,
+} from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { createLocalJWKSet, type JWTPayload, jwtVerify } from "jose";
 
@@ -54,7 +57,8 @@ async function verifyAccessToken(
 /** `/mcp`: OAuth-protected, stateless Streamable HTTP MCP endpoint. */
 export async function handleMcp(
   request: Request,
-  env: AppEnv
+  env: AppEnv,
+  requestContext: RequestContext
 ): Promise<Response> {
   const appUrl = buildRequiredConfig(env).APP_URL.replace(/\/+$/, "");
   const token = /^Bearer\s+(.+)$/i
@@ -73,9 +77,11 @@ export async function handleMcp(
   const user = await findUserById({ db: getDb(env) }, String(claims.sub));
   if (!user) return unauthorized(appUrl, "invalid_token");
 
-  const caller = appRouter.createCaller(createAppContext(user));
-  const handler = createMcpHandler(() => buildMcpServer(caller), {
-    onerror: (error) => console.error("MCP error", error),
+  const context = createAppContext(user, requestContext);
+  const caller = appRouter.createCaller(context);
+  const handler = createMcpHandler(() => buildMcpServer(caller, context), {
+    // Protocol-level failures (malformed JSON-RPC, transport); tool errors are results.
+    onerror: (error) => context.logger.error("mcp.error", { error }),
   });
 
   return handler.fetch(request, {

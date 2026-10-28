@@ -1,3 +1,7 @@
+import {
+  createMemoryErrorReporter,
+  noopLogger,
+} from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -22,6 +26,17 @@ function context(overrides: Partial<Context> = {}): Context {
     email: { enabled: false, value: null, reason: "Email is not configured" },
     r2: { enabled: false, value: null, reason: "R2 is not configured" },
     queue: { send: vi.fn() } as unknown as Context["queue"],
+    requestContext: {
+      requestId: "req-mcp-1",
+      source: "http",
+      userId: "user-1",
+      workspaceId: null,
+      ip: null,
+      release: "local",
+      environment: "local",
+    },
+    logger: noopLogger,
+    errors: createMemoryErrorReporter(),
     user: { id: "user-1", email: "nicole@example.com", name: "Nicole" },
     ...overrides,
   };
@@ -29,7 +44,7 @@ function context(overrides: Partial<Context> = {}): Context {
 
 async function rpc(ctx: Context, method: string, params: unknown = {}) {
   const handler = createMcpHandler(() =>
-    buildMcpServer(appRouter.createCaller(ctx))
+    buildMcpServer(appRouter.createCaller(ctx), ctx)
   );
   const response = await handler.fetch(
     new Request("http://localhost/mcp", {
@@ -93,6 +108,28 @@ describe("MCP server", () => {
     expect(body.result.structuredContent.error.code).toBe(
       "PRECONDITION_FAILED"
     );
+  });
+
+  it("reports unexpected failures once and returns their reference", async () => {
+    const errors = createMemoryErrorReporter();
+    const send = vi.fn().mockRejectedValue(new Error("queue unavailable"));
+    const { body } = await rpc(
+      context({ errors, queue: { send } as unknown as Context["queue"] }),
+      "tools/call",
+      { name: "enqueue_hello", arguments: { name: "Nicole" } }
+    );
+    expect(body.result.isError).toBe(true);
+    expect(body.result.structuredContent.error).toEqual({
+      code: "INTERNAL_SERVER_ERROR",
+      httpStatus: 500,
+      message: "Internal error",
+      reference: "req-mcp-1",
+    });
+    expect(errors.captured).toHaveLength(1);
+    expect(errors.captured[0]?.extra).toEqual({
+      procedure: "queue.enqueueHello",
+      type: "mutation",
+    });
   });
 
   it("refuses protected tools without a user", async () => {

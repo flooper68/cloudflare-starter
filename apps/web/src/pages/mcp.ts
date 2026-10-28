@@ -4,4 +4,5 @@ import type { APIRoute } from "astro";
 import { handleMcp } from "@/server/mcp/handler";
 
 /** Remote MCP server (Streamable HTTP, stateless, OAuth-protected). */
-export const ALL: APIRoute = ({ request }) => handleMcp(request, env);
+export const ALL: APIRoute = ({ request, locals }) =>
+  handleMcp(request, env, locals.requestContext);

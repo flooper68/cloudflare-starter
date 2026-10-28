@@ -1,6 +1,7 @@
 /**
  * Bindings are not inherited by `env.*` in wrangler.jsonc: every environment must declare
- * the same bindings and vars as the top level (develop).
+ * the same bindings and vars as the top level (develop), and the same observability and
+ * version_metadata settings (logs, traces and the release id behave alike everywhere).
  */
 import { parse } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
@@ -42,6 +43,23 @@ describe("wrangler.jsonc", () => {
       "staging",
     ]);
   });
+
+  it("declares observability (logs, invocation logs, traces) and version_metadata at the top level", () => {
+    expect(config.observability).toMatchObject({
+      enabled: true,
+      logs: { enabled: true, invocation_logs: true },
+      traces: { enabled: true },
+    });
+    expect(config.version_metadata).toEqual({ binding: "CF_VERSION_METADATA" });
+  });
+
+  it.each(environments)(
+    "env.%s declares the same observability and version_metadata as the top level",
+    (_, block) => {
+      expect(block.observability).toEqual(config.observability);
+      expect(block.version_metadata).toEqual(config.version_metadata);
+    }
+  );
 
   it.each(environments)(
     "env.%s declares every binding and var of the top level",

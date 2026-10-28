@@ -11,6 +11,10 @@ Related guides:
 - [docs/guides/how-to-setup-r2.md](../../docs/guides/how-to-setup-r2.md) — R2 binding and presigned URLs
 - [docs/guides/how-to-setup-email.md](../../docs/guides/how-to-setup-email.md) — Cloudflare Email Service
 - [docs/guides/how-to-setup-mcp.md](../../docs/guides/how-to-setup-mcp.md) — the MCP server and its parity rule
+- [docs/guides/how-to-setup-logging.md](../../docs/guides/how-to-setup-logging.md) — structured logs, request ids, `LOG_SINK`
+- [docs/guides/how-to-setup-error-reporting.md](../../docs/guides/how-to-setup-error-reporting.md) — error reports and references, `ERROR_REPORTER`
+
+Every on-demand request gets a request context in [src/middleware.ts](src/middleware.ts) (an `x-request-id` on each response); the logger and error reporter are picked in [src/server/platform.ts](src/server/platform.ts).
 
 ## Route layout
 

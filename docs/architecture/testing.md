@@ -35,19 +35,20 @@ Commands: `bun run test` (all Vitest projects in Node and workerd), `bun run tes
 
 ## Change → required test
 
-| Change                             | Required test                                                                                                              |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| New tRPC procedure                 | API test calling it as a signed-in user (and anonymous, if protected) + an MCP tool covered by the API test through `/mcp` |
-| New domain rule or schema          | Domain test covering accepted and rejected inputs                                                                          |
-| New query, table or column         | Integration test of the use case that reads or writes it                                                                   |
-| New use case                       | Domain test for its rules; integration test if it touches a binding                                                        |
-| New UI component                   | Stories per [CONVENTIONS.md](../../packages/ui/CONVENTIONS.md), all passing axe; a `play` test for each interaction        |
-| New HTTP route                     | API test: unauthenticated, wrong origin, invalid input, success                                                            |
-| New binding                        | Integration test that uses it through the local binding                                                                    |
-| New queue message type or cron job | Integration test of the use case it calls; unit test of message parsing                                                    |
-| Bug fix                            | A test at the lowest layer that reproduces it and fails without the fix                                                    |
-| Change to a UI interaction         | A `play` test in the component's stories that fails without the change                                                     |
-| New critical journey               | E2E test, only if it is one of the journeys listed above or the owner adds it to that list                                 |
+| Change                             | Required test                                                                                                                                                                                                                                                                           |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New tRPC procedure                 | API test calling it as a signed-in user (and anonymous, if protected) + an MCP tool covered by the API test through `/mcp`                                                                                                                                                              |
+| New domain rule or schema          | Domain test covering accepted and rejected inputs                                                                                                                                                                                                                                       |
+| New query, table or column         | Integration test of the use case that reads or writes it                                                                                                                                                                                                                                |
+| New use case                       | Domain test for its rules; integration test if it touches a binding                                                                                                                                                                                                                     |
+| New UI component                   | Stories per [CONVENTIONS.md](../../packages/ui/CONVENTIONS.md), all passing axe; a `play` test for each interaction                                                                                                                                                                     |
+| New HTTP route                     | API test: unauthenticated, wrong origin, invalid input, success                                                                                                                                                                                                                         |
+| New binding                        | Integration test that uses it through the local binding                                                                                                                                                                                                                                 |
+| New queue message type or cron job | Integration test of the use case it calls; unit test of message parsing                                                                                                                                                                                                                 |
+| New port or adapter                | Contract suite: a new port gets `ports/<port>.contract.ts` (`describe<Port>Contract`); each adapter a `<name>.contract.test.ts` calling it (`.contract.integration.test.ts` when it needs workerd). Code that uses a port is tested with the `memory` adapter, not console or SDK spies |
+| Bug fix                            | A test at the lowest layer that reproduces it and fails without the fix                                                                                                                                                                                                                 |
+| Change to a UI interaction         | A `play` test in the component's stories that fails without the change                                                                                                                                                                                                                  |
+| New critical journey               | E2E test, only if it is one of the journeys listed above or the owner adds it to that list                                                                                                                                                                                              |
 
 A required test must fail when the change is reverted. A test that passes either way does not count.
 
@@ -83,7 +84,7 @@ A test that breaks its budget is fixed (smaller data, narrower scope, lower laye
 
 None: every layer above has its tooling, command and CI job. When a layer is missing again, list it here with what exists today; until its enabler lands, a required test at that layer is written at the nearest existing layer and the gap is named in the PR.
 
-What exists: unit tests (domain, helpers), integration tests on real D1/R2, API tests (tRPC, file routes, auth, `/mcp`), component tests (every story with axe, `play` interaction tests), E2E journeys in Playwright, the MCP parity and in-process server tests, and the architecture tests in `test/architecture/`, which also require a test per domain function, use case and tRPC procedure (`test-presence.test.ts`).
+What exists: unit tests (domain, helpers), integration tests on real D1/R2, API tests (tRPC, file routes, auth, `/mcp`), component tests (every story with axe, `play` interaction tests), E2E journeys in Playwright, the MCP parity and in-process server tests, and the architecture tests in `test/architecture/`, which also require a test per domain function, use case and tRPC procedure, and a contract test per platform adapter (`test-presence.test.ts`).
 
 ## Performance checks
 

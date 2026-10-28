@@ -8,11 +8,22 @@
   "main": "./src/worker.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
+  // Workers Logs (console output, including the app's structured JSON logs and error
+  // reports) and traces. Declared in every environment (docs/guides/how-to-setup-logging.md).
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true },
+    "traces": { "enabled": true }
+  },
+  // The deployed version id, logged as `release` with every line and error report.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   // Plain vars. Secrets (APP_URL, BETTER_AUTH_SECRET, ...) are set with `bun run setup:secrets`.
   // EMAIL_FROM is added per environment by `bun run setup:email`.
+  // LOG_SINK and ERROR_REPORTER are required (no defaults): workers-logs | none.
   "vars": {
     "APP_ENV": "develop",
+    "LOG_SINK": "workers-logs",
+    "ERROR_REPORTER": "workers-logs",
     "AUTH_EMAIL_PASSWORD": "true",
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
     "EMAIL_FROM_NAME": "Cloudflare Starter"
@@ -51,8 +62,16 @@
 
   "env": {
     "staging": {
+      "observability": {
+        "enabled": true,
+        "logs": { "enabled": true, "invocation_logs": true },
+        "traces": { "enabled": true }
+      },
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "staging",
+        "LOG_SINK": "workers-logs",
+        "ERROR_REPORTER": "workers-logs",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter"
@@ -88,8 +107,16 @@
       "triggers": { "crons": ["*/5 * * * *"] }
     },
     "production": {
+      "observability": {
+        "enabled": true,
+        "logs": { "enabled": true, "invocation_logs": true },
+        "traces": { "enabled": true }
+      },
+      "version_metadata": { "binding": "CF_VERSION_METADATA" },
       "vars": {
         "APP_ENV": "production",
+        "LOG_SINK": "workers-logs",
+        "ERROR_REPORTER": "workers-logs",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter"

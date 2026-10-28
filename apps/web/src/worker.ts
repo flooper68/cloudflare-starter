@@ -8,16 +8,17 @@ import type { QueueMessage } from "@cloudflare-starter/features";
 
 import { runScheduled } from "@/server/cron";
 import type { AppEnv } from "@/server/env";
+import { buildPlatform } from "@/server/platform";
 import { handleQueueBatch } from "@/server/queue";
 
 export default {
   fetch: handle,
 
   async queue(batch, env) {
-    await handleQueueBatch(batch, env);
+    await handleQueueBatch(batch, buildPlatform(env));
   },
 
   async scheduled(controller, env) {
-    await runScheduled(controller, env);
+    await runScheduled(controller, buildPlatform(env));
   },
 } satisfies ExportedHandler<AppEnv, QueueMessage>;

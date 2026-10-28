@@ -3,28 +3,35 @@ import {
   Card,
   CardDescription,
   CardTitle,
+  ErrorState,
   Input,
   Label,
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
+import {
+  errorReference,
+  UNEXPECTED_ERROR_MESSAGE,
+} from "@/lib/error-reference";
 import { trpc } from "@/lib/trpc/client";
 
 export function QueueDemoClient() {
   const [name, setName] = useState("Nicole");
   const [status, setStatus] = useState("No message queued yet.");
+  const [failure, setFailure] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
+    setFailure(null);
     setStatus("Sending hello message to Cloudflare Queue...");
 
     try {
       await trpc.queue.enqueueHello.mutate({ name });
       setStatus("Queued successfully. Check the queue worker logs for output.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Queue failed";
-      setStatus(message);
+      setFailure(error);
+      setStatus("No message queued.");
     } finally {
       setSubmitting(false);
     }
@@ -55,9 +62,20 @@ export function QueueDemoClient() {
         </Button>
       </form>
 
-      <div className="rounded-xl bg-surface p-4 text-sm text-fg-muted">
-        {status}
-      </div>
+      {failure ? (
+        <ErrorState
+          variant="inline"
+          error={failure}
+          description={
+            errorReference(failure) ? UNEXPECTED_ERROR_MESSAGE : undefined
+          }
+          reference={errorReference(failure)}
+        />
+      ) : (
+        <div className="rounded-xl bg-surface p-4 text-sm text-fg-muted">
+          {status}
+        </div>
+      )}
     </Card>
   );
 }

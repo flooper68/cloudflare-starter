@@ -3,9 +3,10 @@ import { FileNotFoundError, readOwnedFile } from "@cloudflare-starter/features";
 import type { APIRoute } from "astro";
 
 import { getDb } from "@/server/db";
+import { internalErrorResponse } from "@/server/http";
 
 /** Streams a file from the `FILES` binding to its owner. Anyone else gets 404. */
-export const GET: APIRoute = async ({ locals, params }) => {
+export const GET: APIRoute = async ({ locals, params, request }) => {
   if (!locals.user || !params.id) {
     return new Response("Not found", { status: 404 });
   }
@@ -27,6 +28,9 @@ export const GET: APIRoute = async ({ locals, params }) => {
     if (error instanceof FileNotFoundError) {
       return new Response("Not found", { status: 404 });
     }
-    throw error;
+    return internalErrorResponse(env, error, locals.requestContext, {
+      route: "GET /api/files/[id]",
+      cfRay: request.headers.get("cf-ray"),
+    });
   }
 };

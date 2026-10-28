@@ -14,6 +14,12 @@ import {
   wrangler,
 } from "./lib";
 
+/** Required platform settings (apps/web/src/lib/config.ts parsePlatformConfig), no defaults. */
+const PLATFORM_SETTINGS = {
+  LOG_SINK: ["workers-logs", "none"],
+  ERROR_REPORTER: ["workers-logs", "none"],
+} as const;
+
 let errors = 0;
 const ok = (message: string) => console.log(`✓ ${message}`);
 const warn = (message: string) => console.log(`! ${message}`);
@@ -71,6 +77,18 @@ if (!existsSync(DEV_VARS)) {
   else if (r2Set === 0)
     warn("R2 presigned URLs off (the FILES binding works without them)");
   else error(`R2 presigned URLs half configured: set all of ${r2.join(", ")}`);
+
+  // .dev.vars overrides the wrangler.jsonc vars locally; a blank line there unsets them.
+  for (const [name, allowed] of Object.entries(PLATFORM_SETTINGS)) {
+    if (!vars.has(name)) continue;
+    const local = vars.get(name) ?? "";
+    if ((allowed as readonly string[]).includes(local))
+      ok(`${name}=${local} (.dev.vars override)`);
+    else
+      error(
+        `${name} in .dev.vars is "${local}": use one of ${allowed.join(", ")} or delete the line`
+      );
+  }
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -86,6 +104,14 @@ for (const env of ENVIRONMENTS) {
   const block = envBlock(config, env);
   const d1 = (block.d1_databases as { database_id: string }[] | undefined)?.[0];
   const vars = (block.vars as Record<string, string> | undefined) ?? {};
+  for (const [name, allowed] of Object.entries(PLATFORM_SETTINGS)) {
+    const value = vars[name];
+    if (!value)
+      error(`${env}: ${name} missing from vars (${allowed.join(" | ")})`);
+    else if (!(allowed as readonly string[]).includes(value))
+      error(`${env}: ${name} is "${value}" (${allowed.join(" | ")})`);
+    else ok(`${env}: ${name}=${value}`);
+  }
   const notes = [
     d1?.database_id === PLACEHOLDER_ID
       ? "placeholder D1 id (bun run setup:cloudflare)"
