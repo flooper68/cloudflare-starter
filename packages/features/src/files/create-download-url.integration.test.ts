@@ -6,6 +6,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
 } from "../../test/fixtures";
 import { createDownloadUrl } from "./create-download-url";
@@ -28,7 +29,12 @@ describe("createDownloadUrl", () => {
     const member = await addMember("ws-acme", colleague.id);
     const elsewhere = await seedWorkspace(stranger.id, { id: "ws-other" });
     const file = await createFileRecord(
-      { db: testDb(), clock: fixedClock(), ids: sequentialIds() },
+      {
+        db: testDb(),
+        clock: fixedClock(),
+        ids: sequentialIds(),
+        billing: testBilling(),
+      },
       actor,
       { filename: "report.pdf", mimeType: "application/pdf", sizeBytes: 10 }
     );

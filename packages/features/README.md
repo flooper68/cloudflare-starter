@@ -13,16 +13,17 @@ src/
 ├── job-catalog.ts      composition root: every background job type and its handler
 ├── cron-catalog.ts     composition root: every cron entry (name, schedule, run)
 ├── kernel/             pure shared building blocks: DomainError, Clock, Ids, Random, RequestContext,
-│                       defineJob and the job envelope type
+│                       BillingGate, defineJob and the job envelope type
 ├── platform/           shared infrastructure: Drizzle client, email service, clock, ids, random,
 │                       request context; ports/ (Logger, ErrorReporter, JobQueue, FeatureFlags,
-│                       RateLimiter, HumanVerifier, Metrics, Tracer), adapters/<vendor>/
+│                       RateLimiter, HumanVerifier, Metrics, Tracer, BillingProvider), adapters/<vendor>/
 │                       and the metric catalog
 ├── abuse/              the rate-limit catalog (RATE_LIMIT_POLICIES), limitKey, enforceRateLimit, verifyHuman
 ├── jobs/               background jobs: envelope, backoff, retry policy, idempotency keys, enqueueJob, runJob
 ├── accounts/           Better Auth tables (generated) and user lookups
 ├── audit/              the append-only audit log: event catalog, record, list, purge
 ├── feature-flags/      the flag catalog, evaluateFlag, the flag admin use cases
+├── billing/            plans, add-ons, features and limits: catalog, entitlements, usage, trials
 ├── files/              file records and R2 storage (binding and presigned URLs), per workspace
 ├── greetings/          the job demo (greetings.hello)
 └── workspaces/         tenancy: workspaces, members, invitations, roles, sign-up policy

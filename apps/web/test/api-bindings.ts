@@ -36,4 +36,7 @@ export const API_TEST_BINDINGS = {
   SIGN_UP: "open",
   SIGN_UP_DOMAINS: "",
   BOOTSTRAP_ADMIN_EMAIL: "",
+  // Setup-written too: manual billing, so new workspaces start the catalog's trial and
+  // limits apply; billing tests of other modes override it (envWith).
+  BILLING: "manual",
 } as const satisfies Readonly<Record<string, string>>;

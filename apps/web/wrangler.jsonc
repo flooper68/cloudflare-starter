@@ -27,6 +27,7 @@
   // - SIGN_UP: open | invite (required)
   // - SIGN_UP_DOMAINS: comma list of email domains that may sign up without an invitation
   // - BOOTSTRAP_ADMIN_EMAIL: may always sign up; owns the workspace in single mode
+  // - BILLING: off | manual | provider (required; docs/guides/how-to-configure-plans-and-billing.md)
   // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
   // FEATURE_FLAGS is required (no default): d1 (flags in the DB, managed by admins) | none
   // (every flag is its catalog default). Guide: docs/guides/how-to-use-feature-flags.md
@@ -137,6 +138,11 @@
       "name": "RL_TOKEN_LOOKUP",
       "namespace_id": "1007",
       "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "RL_BILLING_WEBHOOK",
+      "namespace_id": "1008",
+      "simple": { "limit": 300, "period": 60 }
     }
   ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
@@ -236,6 +242,11 @@
           "name": "RL_TOKEN_LOOKUP",
           "namespace_id": "2007",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_BILLING_WEBHOOK",
+          "namespace_id": "2008",
+          "simple": { "limit": 300, "period": 60 }
         }
       ],
       "triggers": { "crons": ["17 3 * * *"] }
@@ -333,6 +344,11 @@
           "name": "RL_TOKEN_LOOKUP",
           "namespace_id": "3007",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_BILLING_WEBHOOK",
+          "namespace_id": "3008",
+          "simple": { "limit": 300, "period": 60 }
         }
       ],
       "triggers": { "crons": ["17 3 * * *"] }

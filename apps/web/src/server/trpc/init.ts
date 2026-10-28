@@ -1,5 +1,7 @@
 import {
   type Actor,
+  type BillingGate,
+  type BillingProvider,
   type Clock,
   type Database,
   DomainError,
@@ -51,6 +53,10 @@ export interface Context {
   readonly flagStore: FeatureFlagStore | null;
   /** Edge rate limits; every mutation counts against its policy (limitMutations). */
   readonly rateLimiter: RateLimiter;
+  /** Entitlement checks and usage counting for use cases (BILLING). */
+  readonly billing: BillingGate;
+  /** Checkout, portal and webhooks; noop unless BILLING=provider. */
+  readonly billingProvider: BillingProvider;
   readonly user: {
     readonly id: string;
     readonly email: string;
@@ -95,6 +101,11 @@ const t = initTRPC
           // A use case's stable error code (NOT_A_WORKSPACE_MEMBER), for clients to branch on.
           appCode:
             error.cause instanceof DomainError ? error.cause.code : undefined,
+          // The domain kind and its facts (limit_reached: metric, limit, upgrade options).
+          domain:
+            error.cause instanceof DomainError
+              ? { kind: error.cause.kind, details: error.cause.details }
+              : undefined,
         },
       };
     },

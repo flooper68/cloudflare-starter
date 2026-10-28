@@ -11,6 +11,7 @@ const codes: Record<DomainErrorKind, TRPCError["code"]> = {
   conflict: "CONFLICT",
   unavailable: "PRECONDITION_FAILED",
   rate_limited: "TOO_MANY_REQUESTS",
+  limit_reached: "FORBIDDEN",
 };
 
 /**

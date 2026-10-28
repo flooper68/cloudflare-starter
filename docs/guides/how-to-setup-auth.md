@@ -57,7 +57,7 @@ At least one method must be on. If none is, or verification is required without 
 
 ## Who May Sign Up
 
-`SIGN_UP` (`open` or `invite`), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL` and `WORKSPACE_MODE` are vars per environment (the first two required, none shipped: a deploy refuses to start until they are set), set with `bun run setup:auth` (`--dry-run` first). A bootstrap admin needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` unless email + password is off. With `SIGN_UP=invite` only invitees, the listed domains and the bootstrap admin can create an account, by any method: a refused Google sign-up lands on `/sign-in?error=SIGN_UP_INVITE_ONLY` with a message. Details, modes and invitations: [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
+`SIGN_UP` (`open` or `invite`), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL` and `WORKSPACE_MODE` are vars per environment (the first two required, none shipped: a deploy refuses to start until they are set), set with `bun run setup:auth` (`--dry-run` first), which also asks for the required `BILLING` mode ([how-to-configure-plans-and-billing.md](./how-to-configure-plans-and-billing.md)). A bootstrap admin needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` unless email + password is off. With `SIGN_UP=invite` only invitees, the listed domains and the bootstrap admin can create an account, by any method: a refused Google sign-up lands on `/sign-in?error=SIGN_UP_INVITE_ONLY` with a message. Details, modes and invitations: [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
 
 ## Auth Mail
 

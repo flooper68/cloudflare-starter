@@ -6,6 +6,7 @@ import {
   seedUser,
   sequentialIds,
   settings,
+  testBilling,
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
@@ -17,6 +18,7 @@ const deps = () => ({
   clock: fixedClock(),
   // Storage is per file, not per test: fresh ids for every call.
   ids: sequentialIds(`${String(++run).padStart(8, "0")}-0000-4000-8000-`),
+  billing: testBilling(),
   requestContext: testRequestContext(),
 });
 

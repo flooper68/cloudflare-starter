@@ -31,6 +31,13 @@ SIGN_UP=open
 SIGN_UP_DOMAINS=
 BOOTSTRAP_ADMIN_EMAIL=
 
+# Billing, for local development and tests only. Deployed environments have no default:
+# `bun run setup:auth --env <env>` writes it into wrangler.jsonc, and the Worker refuses
+# to start without it. docs/guides/how-to-configure-plans-and-billing.md
+# BILLING: off (everything unlimited) | manual (an admin sets plans) | provider (needs a
+#   billing provider adapter registered in apps/web/src/server/billing-provider.ts)
+BILLING=manual
+
 # Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
 # is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
 # email off; auth and invitation links are then printed to the dev log (only with

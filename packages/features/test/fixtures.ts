@@ -2,6 +2,8 @@ import { env } from "cloudflare:workers";
 
 import {
   type Actor,
+  type BillingMode,
+  createBillingGate,
   createDatabase,
   createInvitation,
   type Database,
@@ -134,11 +136,28 @@ export async function invite(
       ),
       email: null,
       requestContext: testRequestContext(),
+      billing: testBilling(),
     },
     actor,
     { mode: "multi", email, role, appUrl: "http://localhost:4321" }
   );
   return { ...created, token: created.link.split("/invite/")[1] as string };
+}
+
+/**
+ * The BillingGate for a use case: BILLING=off (unlimited, nothing recorded) unless a test
+ * of billing asks for another mode.
+ */
+export function testBilling(mode: BillingMode = "off", at?: string) {
+  return createBillingGate({
+    db: testDb(),
+    clock: fixedClock(at),
+    ids: sequentialIds(
+      `${Math.random().toString(16).slice(2, 10).padEnd(8, "0")}-2222-4000-8000-`
+    ),
+    requestContext: testRequestContext(),
+    settings: { mode },
+  });
 }
 
 let depsRun = 0;
@@ -151,7 +170,13 @@ export function useCaseDeps(at?: string) {
     clock: fixedClock(at),
     ids: sequentialIds(`${String(depsRun).padStart(8, "0")}-1111-4000-8000-`),
     requestContext: testRequestContext(),
+    billing: testBilling("off", at),
   };
+}
+
+/** Dependencies of a billing use case: useCaseDeps plus the BILLING mode (manual unless stated). */
+export function billingDeps(mode: BillingMode = "manual", at?: string) {
+  return { ...useCaseDeps(at), settings: { mode } };
 }
 
 /** Audit events recorded for a workspace, oldest first: action, target and metadata. */

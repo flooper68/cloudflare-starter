@@ -1,8 +1,12 @@
 import {
   acceptInvitation,
+  addonGrantSchema,
   changeMemberRole,
+  createCheckoutUrl,
   createInvitation,
+  createPortalUrl,
   createWorkspace,
+  getBillingSummary,
   leaveWorkspace,
   listInvitations,
   listMembers,
@@ -107,6 +111,48 @@ export const workspaceRouter = router({
           userId: input.userId,
         })
       ),
+  }),
+
+  billing: router({
+    summary: workspaceProcedure.query(({ ctx }) =>
+      getBillingSummary({ ...ctx, settings: ctx.config.billing }, ctx.actor)
+    ),
+
+    checkoutUrl: workspaceProcedure
+      .input(
+        z.object({
+          planId: z.string().min(1).max(100),
+          addons: z.array(addonGrantSchema).max(50).default([]),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        createCheckoutUrl(
+          {
+            ...ctx,
+            settings: ctx.config.billing,
+            provider: ctx.billingProvider,
+            appUrl: ctx.config.APP_URL,
+          },
+          ctx.actor,
+          {
+            planId: input.planId,
+            addons: input.addons,
+            customerEmail: ctx.user.email,
+          }
+        )
+      ),
+
+    portalUrl: workspaceProcedure.mutation(({ ctx }) =>
+      createPortalUrl(
+        {
+          ...ctx,
+          settings: ctx.config.billing,
+          provider: ctx.billingProvider,
+          appUrl: ctx.config.APP_URL,
+        },
+        ctx.actor
+      )
+    ),
   }),
 
   invitations: router({

@@ -31,6 +31,7 @@ Public, SSR:
 - `/api/auth/*` (Better Auth) and `/.well-known/*` (OAuth discovery)
 - `/mcp` (MCP server, OAuth bearer tokens)
 - `/api/files`, `/api/files/:id` (R2 binding upload and download)
+- `/api/billing/webhook` (the billing provider's events; 404 unless `BILLING=provider`)
 
 Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
 

@@ -6,6 +6,7 @@ import {
   seedUser,
   seedWorkspace,
   sequentialIds,
+  testBilling,
   testDb,
 } from "../../test/fixtures";
 import { createPresignedUpload } from "./create-presigned-upload";
@@ -24,7 +25,13 @@ describe("createPresignedUpload", () => {
     const owner = await seedUser();
     const actor = await seedWorkspace(owner.id);
     const result = await createPresignedUpload(
-      { db: testDb(), clock: fixedClock(), ids: sequentialIds(), r2 },
+      {
+        db: testDb(),
+        clock: fixedClock(),
+        ids: sequentialIds(),
+        billing: testBilling(),
+        r2,
+      },
       actor,
       input
     );
@@ -46,11 +53,46 @@ describe("createPresignedUpload", () => {
     const actor = await seedWorkspace(owner.id);
     await expect(
       createPresignedUpload(
-        { db: testDb(), clock: fixedClock(), ids: sequentialIds(), r2: null },
+        {
+          db: testDb(),
+          clock: fixedClock(),
+          ids: sequentialIds(),
+          billing: testBilling(),
+          r2: null,
+        },
         actor,
         input
       )
     ).rejects.toBeInstanceOf(PresignedUrlsUnavailableError);
+    const count = await env.DB.prepare(
+      "SELECT count(*) AS n FROM files WHERE workspace_id = ?"
+    )
+      .bind(actor.workspaceId)
+      .first<{ n: number }>();
+    expect(count?.n).toBe(0);
+  });
+
+  it("is a gated feature: refused on a plan without files.presigned_upload, before anything is written", async () => {
+    const owner = await seedUser("Grace Hopper");
+    const actor = await seedWorkspace(owner.id, { id: "ws-free-plan" });
+    // Manual billing, no subscription: the free plan, which lacks direct uploads.
+    await expect(
+      createPresignedUpload(
+        {
+          db: testDb(),
+          clock: fixedClock(),
+          ids: sequentialIds(),
+          billing: testBilling("manual"),
+          r2,
+        },
+        actor,
+        input
+      )
+    ).rejects.toMatchObject({
+      kind: "limit_reached",
+      code: "FEATURE_NOT_INCLUDED",
+      details: { feature: "files.presigned_upload", planId: "free" },
+    });
     const count = await env.DB.prepare(
       "SELECT count(*) AS n FROM files WHERE workspace_id = ?"
     )

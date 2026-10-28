@@ -1,6 +1,6 @@
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
-import type { Clock, Ids, RequestContext } from "../kernel";
+import type { BillingGate, Clock, Ids, RequestContext } from "../kernel";
 import {
   CREATOR_ROLE,
   DEFAULT_MEMBER_ROLE,
@@ -29,6 +29,8 @@ export async function provisionUser(
     readonly clock: Clock;
     readonly ids: Ids;
     readonly requestContext: RequestContext;
+    /** Starts a new workspace's plan (billing's trial). */
+    readonly billing: BillingGate;
   },
   input: {
     readonly user: { readonly id: string; readonly email: string };
@@ -75,6 +77,7 @@ export async function provisionUser(
       target: { type: "workspace", id: workspaceId },
       metadata: { kind: "personal" },
     });
+    await deps.billing.workspaceCreated(workspaceId);
     return { workspaceId, role: CREATOR_ROLE };
   }
 
@@ -100,12 +103,15 @@ export async function provisionUser(
       kind: "shared",
       createdBy: input.user.id,
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: workspaces.id });
   if (!role) {
-    await createWorkspace;
+    const created = await createWorkspace;
+    if (created.length > 0)
+      await deps.billing.workspaceCreated(SINGLE_WORKSPACE_ID);
     return { workspaceId: null, role: null };
   }
-  await deps.db.batch([
+  const [created] = await deps.db.batch([
     createWorkspace,
     deps.db
       .insert(workspaceMembers)
@@ -124,5 +130,7 @@ export async function provisionUser(
     target: { type: "user", id: input.user.id },
     metadata: { role },
   });
+  if (created.length > 0)
+    await deps.billing.workspaceCreated(SINGLE_WORKSPACE_ID);
   return { workspaceId: SINGLE_WORKSPACE_ID, role };
 }
