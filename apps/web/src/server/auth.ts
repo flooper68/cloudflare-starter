@@ -2,10 +2,17 @@ import { mcp } from "@better-auth/mcp";
 import { schema } from "@cloudflare-starter/features";
 import { type BetterAuthOptions, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createAuthMiddleware } from "better-auth/api";
 import { jwt } from "better-auth/plugins";
 
 import type { AppConfig } from "@/lib/config";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
+import {
+  deliverAuthLinkWithoutEmail,
+  EMAIL_LINK_PATHS,
+  emailNotConfiguredError,
+  mayLogAuthLinks,
+} from "@/server/auth-mail";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
@@ -65,7 +72,12 @@ export function createAuthOptions(env: AppEnv) {
     );
   }
 
-  /** Mail when configured; otherwise the link goes to the log (local dev without EMAIL_FROM). */
+  // Auth links carry tokens: they may be logged only when APP_ENV is explicitly "local"
+  // (an unset APP_ENV does not count). See server/auth-mail.ts.
+  const linkEnvironment = env.APP_ENV ?? "";
+  const refuseEmailLinks = !email.enabled && !mayLogAuthLinks(linkEnvironment);
+
+  /** Mail when configured; otherwise the link goes to the local dev log, or the request fails. */
   async function sendAuthMail(input: {
     readonly to: { readonly email: string; readonly name: string };
     readonly subject: string;
@@ -73,13 +85,10 @@ export function createAuthOptions(env: AppEnv) {
     readonly url: string;
   }) {
     if (!email.enabled || !email.value) {
-      // Logged as `link`, not under a redacted key: without email this is how the
-      // developer gets the link (in the dev server output, or Workers Logs when deployed).
-      buildPlatform(env).logger.info("auth.mail_not_sent", {
-        subject: input.subject,
-        to: input.to.email,
-        link: input.url,
-      });
+      deliverAuthLinkWithoutEmail(
+        { logger: buildPlatform(env).logger, environment: linkEnvironment },
+        { subject: input.subject, to: input.to.email, url: input.url }
+      );
       return;
     }
 
@@ -177,6 +186,16 @@ export function createAuthOptions(env: AppEnv) {
       }),
     ],
     telemetry: { enabled: false },
+    hooks: {
+      // Deployed without email, refuse link-sending endpoints up front, for every address:
+      // failing only inside sendResetPassword would answer differently for registered
+      // emails (account enumeration).
+      before: createAuthMiddleware(async (ctx) => {
+        if (refuseEmailLinks && EMAIL_LINK_PATHS.includes(ctx.path)) {
+          throw emailNotConfiguredError();
+        }
+      }),
+    },
   } satisfies BetterAuthOptions;
 }
 

@@ -3,6 +3,10 @@
 # Deployed environments get secrets with `bun run setup:secrets --env <env>`.
 
 # Core (required)
+# Overrides APP_ENV=develop from wrangler.jsonc: "local" marks this as local
+# development, the only environment where auth links (which carry tokens) may be
+# logged when email is off.
+APP_ENV=local
 APP_URL=http://localhost:4321
 # At least 32 characters. Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=local-dev-secret-change-me-0000000000
@@ -16,7 +20,7 @@ GOOGLE_CLIENT_SECRET=
 
 # Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
 # is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
-# email off; auth links are then printed to the log.
+# email off; auth links are then printed to the dev log (only with APP_ENV=local).
 EMAIL_FROM=noreply@example.test
 EMAIL_FROM_NAME=Cloudflare Starter
 

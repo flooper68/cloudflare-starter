@@ -12,7 +12,7 @@ loggerFor(platform, context).warn("queue.invalid", { issues }); // in the queue 
 ```
 
 - `event` is a stable dotted name to filter on (`queue.hello`, `cron.hello`, `error.captured`, `mcp.error`, `auth.mail_not_sent`); details go in the fields.
-- Every line written through `ctx.logger` or `loggerFor(platform, context)` carries the request context: `requestId`, `source` (`http`, `queue`, `cron`), `userId`, `workspaceId`, `release` (the deployed version id from the `CF_VERSION_METADATA` binding, `local` without it) and `environment` (`APP_ENV`). The IP is not logged. The exception is `auth.mail_not_sent` (Better Auth callbacks get no request context), which has only its own fields.
+- Every line written through `ctx.logger` or `loggerFor(platform, context)` carries the request context: `requestId`, `source` (`http`, `queue`, `cron`), `userId`, `workspaceId`, `release` (the deployed version id from the `CF_VERSION_METADATA` binding, `local` without it) and `environment` (`APP_ENV`). The IP is not logged. The exception is `auth.mail_not_sent` (Better Auth callbacks get no request context), which has only its own fields; it carries the auth link only when `APP_ENV=local` ([how-to-setup-auth.md](how-to-setup-auth.md)).
 - `child(fields)` returns a logger that adds fields to each line and never changes its parent.
 - Fields are made safe by `toLogRecord` (`platform/log-record.ts`) in every adapter: values under secret-looking keys (`password`, `secret`, `token`, `authorization`, `cookie`, `apiKey`, …) become `[redacted]`, errors become `{ name, message, stack, cause }`, circular references `[circular]`, and long strings are cut. Logging never throws.
 

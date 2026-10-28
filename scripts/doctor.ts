@@ -56,9 +56,20 @@ if (!existsSync(DEV_VARS)) {
     error("no sign-in method: AUTH_EMAIL_PASSWORD=false and no Google keys");
   }
 
+  if (value("APP_ENV") === "local") ok("APP_ENV=local (local development)");
+  else
+    warn(
+      "APP_ENV is not local in .dev.vars: add APP_ENV=local (auth links are logged only there when email is off)"
+    );
+
   if (value("EMAIL_FROM"))
     ok(`email from ${value("EMAIL_FROM")} (simulated locally)`);
-  else warn("EMAIL_FROM empty: email off, auth links go to the dev log");
+  else if (value("APP_ENV") === "local")
+    warn("EMAIL_FROM empty: email off, auth links go to the dev log");
+  else
+    warn(
+      "EMAIL_FROM empty and APP_ENV not local: password reset and verification requests will fail"
+    );
   if (
     value("AUTH_REQUIRE_EMAIL_VERIFICATION") === "true" &&
     !value("EMAIL_FROM")
@@ -116,7 +127,9 @@ for (const env of ENVIRONMENTS) {
     d1?.database_id === PLACEHOLDER_ID
       ? "placeholder D1 id (bun run setup:cloudflare)"
       : null,
-    vars.EMAIL_FROM ? null : "no EMAIL_FROM (bun run setup:email)",
+    vars.EMAIL_FROM
+      ? null
+      : "no EMAIL_FROM: password reset and verification requests fail (bun run setup:email)",
   ].filter(Boolean);
   if (notes.length) warn(`${env}: ${notes.join("; ")}`);
   else ok(`${env}: D1 id and email sender set`);
