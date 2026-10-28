@@ -25,7 +25,8 @@
     "setup:cloudflare": "bun scripts/setup-cloudflare.ts",
     "setup:secrets": "bun scripts/setup-secrets.ts",
     "setup:email": "bun scripts/setup-email.ts",
-    "doctor": "bun scripts/doctor.ts"
+    "doctor": "bun scripts/doctor.ts",
+    "setup:github-runner": "bun scripts/setup-github-runner.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
