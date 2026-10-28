@@ -4,7 +4,7 @@ How dependencies are updated, audited for security and added: the commands, what
 
 ## Update
 
-Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true`, so `bun add` and `bun update` write no `^`/`~` ([CLAUDE.md](../../CLAUDE.md) rule 8, enforced by an architecture test). An update is therefore always an explicit diff in a `package.json` and `bun.lock`. A new project from the starter starts with the update in step 1 of [Starting a new project](../../README.md#starting-a-new-project-from-this-starter), then the steps below from 4 on, and an [audit](#security-audit).
+Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true`, so `bun add` and `bun update` write no `^`/`~` ([AGENTS.md](../../AGENTS.md) rule 8, enforced by an architecture test). An update is therefore always an explicit diff in a `package.json` and `bun.lock`. A new project from the starter starts with the update in step 1 of [Starting a new project](../../README.md#starting-a-new-project-from-this-starter), then the steps below from 4 on, and an [audit](#security-audit).
 
 1. See what is behind, per workspace:
 

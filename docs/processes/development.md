@@ -49,7 +49,7 @@ Producing evidence is part of done, before asking to ship.
 ### 5. Docs audit
 
 1. List what the diff changed that someone could notice: commands, scripts, env vars, secrets, bindings, Cloudflare resources, routes, MCP tools, file paths, CI jobs, deploy steps, UI behaviour.
-2. For each old and new name, search: `grep -rn "<name>" docs README.md CLAUDE.md apps/*/README.md packages/*/README.md .claude apps/web/.dev.vars.example apps/web/wrangler.jsonc scripts`.
+2. For each old and new name, search: `grep -rn "<name>" docs README.md AGENTS.md apps/*/README.md packages/*/README.md .claude apps/web/.dev.vars.example apps/web/wrangler.jsonc scripts`.
 3. Update every hit, in this PR. New knowledge goes where the [docs index](../README.md) leads ([documentation.md](documentation.md)).
 4. Write "nothing to update" only after the search, and list what you searched.
 

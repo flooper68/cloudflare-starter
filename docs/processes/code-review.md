@@ -7,7 +7,7 @@ How a change is reviewed before it ships: who reviews it, which findings count, 
 | Tier  | Applies to                                                                                                                                                                                    | Review                                                                                                                                                             |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Small | Local change in one feature or component, no auth, data, binding, migration, CI or deploy impact                                                                                              | Self-review in context, all six checklists                                                                                                                         |
-| Risky | Auth or authorization, migrations, new bindings or resources, MCP tools, HTTP routes, CI/deploy, `docs/processes/` or `CLAUDE.md`, cross-feature changes, anything the author is unsure about | Independent reviewer subagent, given only the written task contract (plan or issue with the owner's answers) and the diff, not the conversation. Then self-review. |
+| Risky | Auth or authorization, migrations, new bindings or resources, MCP tools, HTTP routes, CI/deploy, `docs/processes/` or `AGENTS.md`, cross-feature changes, anything the author is unsure about | Independent reviewer subagent, given only the written task contract (plan or issue with the owner's answers) and the diff, not the conversation. Then self-review. |
 
 After an independent review, the author tries to refute each finding (reads the code, runs the input) before reporting it. Findings that survive are fixed or reported; refuted ones are reported with the refutation.
 
@@ -112,4 +112,4 @@ Each finding: severity, `file:line`, evidence (input → wrong output, or the ru
 
 ## Learning loop
 
-After the owner reviews a PR, the author turns each general review point into a proposed checklist item or automated rule, in the PR or a follow-up. The owner approves which land. Changes to `docs/processes/` or `CLAUDE.md` are called out in the PR description.
+After the owner reviews a PR, the author turns each general review point into a proposed checklist item or automated rule, in the PR or a follow-up. The owner approves which land. Changes to `docs/processes/` or `AGENTS.md` are called out in the PR description.

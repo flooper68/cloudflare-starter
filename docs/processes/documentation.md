@@ -11,7 +11,7 @@ Where each kind of knowledge lives and how docs are kept true. Use when you writ
 | Process      | `docs/processes/`                                         | it describes how we work: plan, review, document, decide               |
 | Decision     | `docs/decisions/`                                         | it records why a choice was made, as an ADR ([adrs.md](adrs.md))       |
 | README       | next to code (`apps/*/README.md`, `packages/*/README.md`) | it is a fact that goes stale when that folder changes                  |
-| Agent entry  | `CLAUDE.md` (and `AGENTS.md`, a symlink)                  | it is an always-apply rule or a pointer to where to read next          |
+| Agent entry  | `AGENTS.md` (read by Claude Code, Codex and other agents) | it is an always-apply rule or a pointer to where to read next          |
 | Skill        | `.claude/skills/<name>/SKILL.md`                          | it is a short task procedure an agent runs, pointing at the guide      |
 
 ## Rules
