@@ -1,0 +1,21 @@
+[
+  {
+    "results": [
+      {
+        "action": "auth.human_check_failed",
+        "outcome": "failure",
+        "actor_kind": "user",
+        "target_type": "email",
+        "target_id": "eve@example.test",
+        "metadata": "{\"form\":\"sign-up\",\"reason\":\"missing\"}",
+        "trace_id": "dd0555f451eb49e99c4b5db7e73e8065",
+        "ip": "203.0.113.12",
+        "source": "http"
+      }
+    ],
+    "success": true,
+    "meta": {
+      "duration": 1
+    }
+  }
+]

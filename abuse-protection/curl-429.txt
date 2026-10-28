@@ -2,27 +2,41 @@
 $ curl -si -H "cf-connecting-ip: 203.0.113.8" http://localhost:4321/api/auth/get-session
 HTTP/1.1 200 OK
 ratelimit-policy: "auth.ip";q=60;w=60
+x-request-id: 6de8f7a247e243ea9200c3b789893490
 
 # 62 requests to /api/auth/get-session from one IP (auth.ip: 60 a minute)
   60 200 retry-after=
    2 429 retry-after=60
 
-# the refused response
+# the refused response: Problem Details with code and reference (= x-request-id)
 $ curl -si -H "cf-connecting-ip: 203.0.113.9" http://localhost:4321/api/auth/get-session
 HTTP/1.1 429 Too Many Requests
 content-type: application/problem+json
 ratelimit: "auth.ip";r=0;t=60
 ratelimit-policy: "auth.ip";q=60;w=60
 retry-after: 60
-{"type":"https://iana.org/assignments/http-problem-types#quota-exceeded","title":"Too many requests","status":429,"detail":"Too many requests. Try again in 60 seconds.","instance":"/api/auth/get-session","violated-policies":["auth.ip"],"retryAfterSeconds":60}
+x-request-id: 59ee63c87696419ab40edaf328121d9d
+{"type":"https://iana.org/assignments/http-problem-types#quota-exceeded","title":"Too Many Requests","status":429,"detail":"Too many requests. Try again in 60 seconds.","instance":"/api/auth/get-session","code":"RATE_LIMITED","violated-policies":["auth.ip"],"retryAfterSeconds":60,"reference":"59ee63c87696419ab40edaf328121d9d"}
 
 # another IP is not affected
 200
 
-# /mcp: see curl-mcp-429.txt
+# guessing invitation links: /invite/<token> until refused (token.lookup: 30 a minute per IP)
+request 49: 429
+HTTP/1.1 429 Too Many Requests
+content-type: application/problem+json
+ratelimit: "token.lookup";r=0;t=60
+ratelimit-policy: "token.lookup";q=30;w=60
+retry-after: 60
+{"type":"https://iana.org/assignments/http-problem-types#quota-exceeded","title":"Too Many Requests","status":429,"detail":"Too many requests. Try again in 60 seconds.","instance":"/invite/0000000000000000000000000000000000000000000000000000000000000099","code":"RATE_LIMITED","violated-policies":["token.lookup"],"retryAfterSeconds":60,"reference":"0f37c0fa08954b4c917ca9d331b9e094"}
 
-# sign-up without a Turnstile token
+# anonymous verification mails: 4 requests from one IP (auth.verification-email: 3 a minute)
+   3 200
+   1 429
+
+# sign-up without a Turnstile token: Problem Details, and an audit row
 HTTP/1.1 400 Bad Request
 content-type: application/problem+json
 ratelimit-policy: "auth.ip";q=60;w=60, "auth.sign-up";q=5;w=60
-{"type":"https://github.com/flooper68/cloudflare-starter/blob/main/docs/guides/how-to-configure-abuse-protection.md#human-check-failed","title":"Human check failed","status":400,"detail":"The human check did not pass. Try again.","instance":"/api/auth/sign-up/email","code":"HUMAN_CHECK_FAILED"}
+x-request-id: dd0555f451eb49e99c4b5db7e73e8065
+{"type":"https://github.com/flooper68/cloudflare-starter/blob/main/docs/guides/how-to-configure-abuse-protection.md#human-check-failed","title":"Human check failed","status":400,"detail":"The human check did not pass. Try again.","instance":"/api/auth/sign-up/email","code":"HUMAN_CHECK_FAILED","reference":"dd0555f451eb49e99c4b5db7e73e8065"}

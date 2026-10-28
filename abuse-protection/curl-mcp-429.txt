@@ -1,8 +1,9 @@
 # POSTs to /mcp without a token from one IP until refused (mcp.ip: 600 a minute; 401 until then)
 request 601: 429
-$ curl -si -X POST -H "cf-connecting-ip: 203.0.113.21" http://localhost:4321/mcp
+$ curl -si -X POST -H "cf-connecting-ip: 203.0.113.31" http://localhost:4321/mcp
 HTTP/1.1 429 Too Many Requests
 ratelimit: "mcp.ip";r=0;t=60
 ratelimit-policy: "mcp.ip";q=600;w=60
 retry-after: 60
-{"jsonrpc":"2.0","error":{"code":-32029,"message":"Too many requests. Try again in 60 seconds.","data":{"retryAfterSeconds":60}},"id":null}
+x-request-id: 618f83b5db014c9a89dcc676209f5a90
+{"jsonrpc":"2.0","error":{"code":-32029,"message":"Too many requests. Try again in 60 seconds.","data":{"code":"RATE_LIMITED","retryAfterSeconds":60,"reference":"618f83b5db014c9a89dcc676209f5a90"}},"id":null}
