@@ -17,6 +17,8 @@ Pure helpers inside `apps/web` (config parsing, log builders) are unit tests nex
 
 **Real databases, no mocks.** Integration and API tests run inside workerd, Cloudflare's Workers runtime, locally and in CI, through Miniflare. D1 is real SQLite with the real migrations applied, R2, queues and `send_email` are Miniflare's local implementations, and nothing reaches a Cloudflare account. Each test file starts from its own empty, migrated database (storage is isolated per file, not per test), so tests create their own users and data and do not depend on each other. Production settings stay on: for example sign-up is rate limited, so an API test file signs up one user and shares it.
 
+**Tests do not read your local settings.** Wrangler loads `apps/web/.dev.vars` into the API test Worker too; every var and secret the app reads is pinned in `apps/web/test/api-bindings.ts` (the develop values of `wrangler.jsonc`), which overrides it, so a local `APP_ENV=local`, `LOG_SINK=none` or Google keys cannot change results. `test/architecture/api-test-bindings.test.ts` fails when a key of `.dev.vars.example` or of the top-level `vars` is not pinned there: add new vars and secrets to it.
+
 Commands: `bun run test` (all Vitest projects in Node and workerd), `bun run test:unit` (Node: domain, helpers, architecture), `bun run test:integration` (both workerd projects), `bun run test:components` (stories in Chromium), `bun run test:e2e` (Playwright journeys). `bun run verify` runs lint, typecheck and `test`; run `test:components` after UI changes and `test:e2e` after changes to auth, pages or routes. CI runs all of them.
 
 ### Component tests

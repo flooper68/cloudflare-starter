@@ -2,6 +2,8 @@ import { fileURLToPath } from "node:url";
 import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
 import { defineConfig } from "vitest/config";
 
+import { API_TEST_BINDINGS } from "./test/api-bindings";
+
 // API tests: tRPC procedures, HTTP routes, auth and /mcp as a signed-in user, inside
 // workerd (Miniflare) with this app's real bindings (wrangler.jsonc) and a migrated D1.
 // Each test file gets isolated storage.
@@ -20,12 +22,8 @@ export default defineConfig(async () => {
         main: "./test/worker.ts",
         wrangler: { configPath: "./wrangler.jsonc" },
         miniflare: {
-          bindings: {
-            TEST_MIGRATIONS: migrations,
-            APP_URL: "http://localhost:4321",
-            BETTER_AUTH_SECRET: "api-test-secret-0123456789abcdefghij",
-            EMAIL_FROM: "noreply@example.test",
-          },
+          // Pinned so a local .dev.vars cannot change test behaviour (test/api-bindings.ts).
+          bindings: { ...API_TEST_BINDINGS, TEST_MIGRATIONS: migrations },
         },
       }),
     ],

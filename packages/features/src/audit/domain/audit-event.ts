@@ -105,6 +105,19 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     target: target("email"),
     metadata: noMetadata,
   }),
+  z.object({
+    ...common,
+    action: z.literal("auth.password_changed"),
+    target: target("user"),
+    metadata: z
+      .object({
+        /** `change`: signed in, current password given; `reset`: through an emailed link. */
+        method: z.enum(["change", "reset"]),
+        /** Better Auth's error code when the change was refused. */
+        reason: text.optional(),
+      })
+      .strict(),
+  }),
 
   // User administration (recorded by the admin portal).
   z.object({

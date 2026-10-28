@@ -7,7 +7,11 @@ import { jwt } from "better-auth/plugins";
 
 import type { AppConfig } from "@/lib/config";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
-import { auditAuthEndpoint, auditDatabaseHooks } from "@/server/auth-audit";
+import {
+  auditAuthEndpoint,
+  auditDatabaseHooks,
+  auditPasswordReset,
+} from "@/server/auth-audit";
 import {
   deliverAuthLinkWithoutEmail,
   EMAIL_LINK_PATHS,
@@ -117,6 +121,9 @@ export function createAuthOptions(env: AppEnv) {
       enabled: methods.emailPassword,
       requireEmailVerification: methods.requireEmailVerification,
       revokeSessionsOnPasswordReset: true,
+      // Audit log: a completed reset (server/auth-audit.ts).
+      onPasswordReset: ({ user }, request) =>
+        auditPasswordReset(env, user.id, request),
       async sendResetPassword({ user, url }) {
         await sendAuthMail({
           to: user,

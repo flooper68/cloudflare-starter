@@ -1,6 +1,6 @@
 /**
  * Audit events for Better Auth's own endpoints, which are not our use cases: sign-in,
- * failed sign-in, sign-up and password reset requests (docs/guides/how-to-use-the-audit-log.md).
+ * failed sign-in, sign-up, password reset requests and password changes (docs/guides/how-to-use-the-audit-log.md).
  * Wired into the auth options in server/auth.ts. A failure to record is reported and does
  * not fail the sign-in: losing an audit row is better than locking every user out.
  */
@@ -38,6 +38,15 @@ function signInMethodOf(ctx: GenericEndpointContext | null): {
       : { method: "social" };
   }
   return { method: "other" };
+}
+
+/** Better Auth's error code (INVALID_PASSWORD), or the HTTP status when it has none. */
+function errorCodeOf(error: {
+  readonly body?: unknown;
+  readonly status: unknown;
+}): string {
+  const code = (error.body as { code?: unknown } | undefined)?.code;
+  return String(code ?? error.status).slice(0, 200);
 }
 
 /** The email an anonymous request was about, normalized, or null when it named none. */
@@ -94,6 +103,8 @@ export function auditDatabaseHooks(
     session: {
       create: {
         async after(session, ctx) {
+          // A password change re-issues the session: recorded as auth.password_changed.
+          if (ctx?.path === "/change-password") return;
           await record(env, ctx, {
             action: "auth.sign_in",
             actor: { kind: "user", userId: session.userId },
@@ -129,8 +140,8 @@ export function auditDatabaseHooks(
 
 /**
  * Runs after every Better Auth endpoint (`hooks.after`), including ones that answered with
- * an error (`ctx.context.returned` is then the APIError): records failed email sign-ins and
- * accepted password reset requests.
+ * an error (`ctx.context.returned` is then the APIError): records failed email sign-ins,
+ * accepted password reset requests and password changes by a signed-in user.
  */
 export async function auditAuthEndpoint(
   env: AppEnv,
@@ -138,18 +149,31 @@ export async function auditAuthEndpoint(
 ): Promise<void> {
   // Set by Better Auth's dispatcher before after-hooks run; not in its public context type.
   const { returned } = ctx.context as { readonly returned?: unknown };
+
+  if (ctx.path === "/change-password") {
+    const userId = ctx.context.session?.user.id;
+    if (!userId) return;
+    await record(env, ctx, {
+      action: "auth.password_changed",
+      outcome: isAPIError(returned) ? "failure" : "success",
+      actor: { kind: "user", userId },
+      target: { type: "user", id: userId },
+      metadata: isAPIError(returned)
+        ? { method: "change", reason: errorCodeOf(returned) }
+        : { method: "change" },
+    });
+    return;
+  }
+
   const email = emailOf(ctx);
   if (!email) return;
 
   if (ctx.path === "/sign-in/email" && isAPIError(returned)) {
-    const reason =
-      (returned.body as { code?: unknown } | undefined)?.code ??
-      returned.status;
     await record(env, ctx, {
       action: "auth.sign_in_failed",
       actor: { kind: "user", userId: null },
       target: { type: "email", id: email },
-      metadata: { method: "password", reason: String(reason).slice(0, 200) },
+      metadata: { method: "password", reason: errorCodeOf(returned) },
     });
     return;
   }
@@ -161,4 +185,25 @@ export async function auditAuthEndpoint(
       target: { type: "email", id: email },
     });
   }
+}
+
+/**
+ * Better Auth's `emailAndPassword.onPasswordReset`: a reset through an emailed link
+ * completed. The request carries only the token, so the user comes from Better Auth.
+ */
+export async function auditPasswordReset(
+  env: AppEnv,
+  userId: string,
+  request: Request | undefined
+): Promise<void> {
+  await record(
+    env,
+    { request },
+    {
+      action: "auth.password_changed",
+      actor: { kind: "user", userId },
+      target: { type: "user", id: userId },
+      metadata: { method: "reset" },
+    }
+  );
 }

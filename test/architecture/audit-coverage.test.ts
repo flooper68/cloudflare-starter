@@ -65,16 +65,20 @@ describe("audit coverage", () => {
     }
   });
 
-  it("records Better Auth's sign-in, failed sign-in, sign-up and reset requests", () => {
+  it("records Better Auth's sign-in, failed sign-in, sign-up, reset requests and password changes", () => {
     const hooks = read("apps/web/src/server/auth-audit.ts");
     for (const action of [
       "auth.sign_in",
       "auth.sign_in_failed",
       "auth.sign_up",
       "auth.password_reset_requested",
+      "auth.password_changed",
     ]) {
       expect(hooks, action).toContain(`action: "${action}"`);
     }
+    expect(read("apps/web/src/server/auth.ts")).toContain(
+      "auditPasswordReset(env, user.id, request)"
+    );
     expect(read("apps/web/src/server/auth.ts")).toMatch(
       /databaseHooks: auditDatabaseHooks\(env\)[\s\S]*after: createAuthMiddleware\(\(ctx\) => auditAuthEndpoint\(env, ctx\)\)/
     );

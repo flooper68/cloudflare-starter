@@ -90,6 +90,16 @@
       "plugins": ["./lint/rules/tokens-only.grit"]
     },
     {
+      "includes": [
+        "packages/features/**",
+        "apps/web/**",
+        "!apps/web/src/server/request-scope.ts",
+        "!apps/web/src/server/http.ts",
+        "!apps/web/src/server/auth-audit.ts"
+      ],
+      "plugins": ["./lint/rules/request-scope-at-auth-edge.grit"]
+    },
+    {
       "includes": ["apps/web/src/**", "!**/*.test.ts"],
       "plugins": ["./lint/rules/no-db-in-adapters.grit"],
       "linter": {

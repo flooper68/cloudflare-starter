@@ -1,0 +1,16 @@
+// Dependencies are explicit arguments: no ambient request state. The one exception is the
+// bridge that hands the request context to Better Auth hooks, which the library calls and
+// which cannot take it as an argument: server/request-scope.ts (AsyncLocalStorage), set
+// in server/http.ts and read in server/auth-audit.ts. Applied to packages/features and
+// apps/web except those three files (biome.json overrides).
+or {
+  `import $_ from $source` as $hit where {
+    $source <: r"[\"'][a-z:]*async_hooks[\"']"
+  },
+  `import $_ from $source` as $hit where {
+    $source <: r"[\"'].*request-scope[\"']"
+  },
+  `AsyncLocalStorage` as $hit
+} where {
+  register_diagnostic(span=$hit, message="No ambient request state: pass the RequestContext as an argument. AsyncLocalStorage and server/request-scope.ts are only the Better Auth hook bridge (server/http.ts, server/auth-audit.ts). See docs/architecture/overview.md#principles.")
+}

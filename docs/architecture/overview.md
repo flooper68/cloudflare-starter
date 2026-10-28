@@ -79,7 +79,7 @@ flowchart LR
 
 **Cron.** `triggers.crons` in `wrangler.jsonc` fires `scheduled`; the handler branches on `controller.cron` and calls one use case per schedule, passing `controller.scheduledTime` as the time. Schedules: `*/5 * * * *` (the greeting demo) and `17 3 * * *` (the daily audit purge).
 
-**Audit event.** A use case that changes state records an audit event with `recordAuditEvent` after the change, passing its request context; Better Auth's sign-in, failed sign-in, sign-up and password reset request are recorded from hooks in `apps/web/src/server/auth-audit.ts`. See [Audit log](#audit-log).
+**Audit event.** A use case that changes state records an audit event with `recordAuditEvent` after the change, passing its request context; Better Auth's sign-in, failed sign-in, sign-up, password reset request and password change are recorded from hooks in `apps/web/src/server/auth-audit.ts`. See [Audit log](#audit-log).
 
 ## Environments and bindings
 
@@ -109,6 +109,7 @@ Each principle is the rule that holds now; a project records why it changes one 
 11. **One Worker** for HTTP, queue consumer and cron; split only for separate scaling, limits or deploys.
 12. **UI is token-only.** Components use theme tokens, never raw palette classes or hex values; brand lives in `packages/ui/src/brand/`. `lint/rules/tokens-only.grit` (enforced in CI). [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md)
 13. **Outside services only through a port.** Logging, error reporting and every later outside service (rate limiting, analytics, feature flags, billing) are reached through an interface in `packages/features/src/platform/ports/`; vendor code lives only in `platform/adapters/<vendor>/`, and only the Cloudflare adapters write to the console. See [Ports and adapters](#ports-and-adapters). Dependency-cruiser `vendor-sdks-only-in-adapters` (packages/features outside an adapter folder imports only zod, drizzle-orm and aws4fetch) and `vendor-sdks-not-in-app-server` (a denylist of vendor SDKs in `apps/web/src/server`), GritQL `lint/rules/no-console.grit` (packages/features and `apps/web/src/server`, tests and the Cloudflare adapters aside), and `test/architecture/test-presence.test.ts` (every adapter runs its port's contract suite) (enforced in CI).
+14. **Dependencies are explicit; no ambient request state.** Code receives the `RequestContext`, clock, ids and bindings as arguments; nothing reads them from a global or from `AsyncLocalStorage`. One exception, at the adapter edge: Better Auth calls its hooks itself and gives them no way to receive our context, so `apps/web/src/server/request-scope.ts` keeps the current request's context in an `AsyncLocalStorage` that `withRequestContext` (`server/http.ts`) sets and only `server/auth-audit.ts` reads, to give audit events the request's trace id. A new library callback that needs the context goes through the same bridge only with a reason in the PR. GritQL `lint/rules/request-scope-at-auth-edge.grit` (no `AsyncLocalStorage`, `node:async_hooks` or `request-scope` import in packages/features or apps/web outside those three files) (enforced in CI).
 
 ## Feature layout
 

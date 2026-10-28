@@ -10,28 +10,29 @@ The audit log is not the application log. Logs ([how-to-setup-logging.md](how-to
 
 ## What is recorded
 
-| Action                            | Recorded by                                          | Target       | Metadata                                                                     |
-| --------------------------------- | ---------------------------------------------------- | ------------ | ---------------------------------------------------------------------------- |
-| `auth.sign_in`                    | `databaseHooks.session.create.after` (auth-audit.ts) | `user`       | `method` (password, social, sign_up, email_verification, other), `provider?` |
-| `auth.sign_in_failed`             | `hooks.after` on `/sign-in/email` answering an error | `email`      | `method: password`, `reason` (Better Auth error code)                        |
-| `auth.sign_up`                    | `databaseHooks.user.create.after`                    | `user`       | `method` (password, social, other), `provider?`                              |
-| `auth.password_reset_requested`   | `hooks.after` on `/request-password-reset`           | `email`      | none                                                                         |
-| `user.role_changed`               | admin portal                                         | `user`       | `previousRole`, `role`                                                       |
-| `user.banned`                     | admin portal                                         | `user`       | `reason?`, `expiresAt?`                                                      |
-| `user.unbanned`                   | admin portal                                         | `user`       | none                                                                         |
-| `user.sessions_revoked`           | admin portal                                         | `user`       | `sessionCount?`                                                              |
-| `user.deleted`                    | admin portal                                         | `user`       | none                                                                         |
-| `impersonation.started`           | admin portal                                         | `user`       | none                                                                         |
-| `impersonation.stopped`           | admin portal                                         | `user`       | none                                                                         |
-| `workspace.invitation_created`    | workspace use cases                                  | `invitation` | `email`, `role`                                                              |
-| `workspace.invitation_accepted`   | workspace use cases                                  | `invitation` | `role`                                                                       |
-| `workspace.invitation_revoked`    | workspace use cases                                  | `invitation` | none                                                                         |
-| `workspace.member_role_changed`   | workspace use cases                                  | `user`       | `previousRole`, `role`                                                       |
-| `workspace.member_removed`        | workspace use cases                                  | `user`       | `role?`                                                                      |
-| `workspace.ownership_transferred` | workspace use cases                                  | `workspace`  | `previousOwnerUserId`, `ownerUserId`                                         |
-| `workspace.deleted`               | workspace use cases                                  | `workspace`  | none                                                                         |
+| Action                            | Recorded by                                                                                                    | Target       | Metadata                                                                     |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------- |
+| `auth.sign_in`                    | `databaseHooks.session.create.after` (auth-audit.ts)                                                           | `user`       | `method` (password, social, sign_up, email_verification, other), `provider?` |
+| `auth.sign_in_failed`             | `hooks.after` on `/sign-in/email` answering an error                                                           | `email`      | `method: password`, `reason` (Better Auth error code)                        |
+| `auth.sign_up`                    | `databaseHooks.user.create.after`                                                                              | `user`       | `method` (password, social, other), `provider?`                              |
+| `auth.password_reset_requested`   | `hooks.after` on `/request-password-reset`                                                                     | `email`      | none                                                                         |
+| `auth.password_changed`           | `hooks.after` on `/change-password` (success or refused), `emailAndPassword.onPasswordReset` (reset completed) | `user`       | `method` (change, reset), `reason?` (refused change)                         |
+| `user.role_changed`               | admin portal                                                                                                   | `user`       | `previousRole`, `role`                                                       |
+| `user.banned`                     | admin portal                                                                                                   | `user`       | `reason?`, `expiresAt?`                                                      |
+| `user.unbanned`                   | admin portal                                                                                                   | `user`       | none                                                                         |
+| `user.sessions_revoked`           | admin portal                                                                                                   | `user`       | `sessionCount?`                                                              |
+| `user.deleted`                    | admin portal                                                                                                   | `user`       | none                                                                         |
+| `impersonation.started`           | admin portal                                                                                                   | `user`       | none                                                                         |
+| `impersonation.stopped`           | admin portal                                                                                                   | `user`       | none                                                                         |
+| `workspace.invitation_created`    | workspace use cases                                                                                            | `invitation` | `email`, `role`                                                              |
+| `workspace.invitation_accepted`   | workspace use cases                                                                                            | `invitation` | `role`                                                                       |
+| `workspace.invitation_revoked`    | workspace use cases                                                                                            | `invitation` | none                                                                         |
+| `workspace.member_role_changed`   | workspace use cases                                                                                            | `user`       | `previousRole`, `role`                                                       |
+| `workspace.member_removed`        | workspace use cases                                                                                            | `user`       | `role?`                                                                      |
+| `workspace.ownership_transferred` | workspace use cases                                                                                            | `workspace`  | `previousOwnerUserId`, `ownerUserId`                                         |
+| `workspace.deleted`               | workspace use cases                                                                                            | `workspace`  | none                                                                         |
 
-The catalog is `auditEventSchema` in `packages/features/src/audit/domain/audit-event.ts`. The admin and workspace actions are defined ahead of the features that record them. A sign-up that opens a session records both `auth.sign_up` and `auth.sign_in` (`method: sign_up`). Any other endpoint that opens a session (a password change re-issues one) records `auth.sign_in` with `method: other`. Sign-in and sign-up hooks fail open: if the insert fails, the error is reported ([how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)) and the sign-in still succeeds.
+The catalog is `auditEventSchema` in `packages/features/src/audit/domain/audit-event.ts`. The admin and workspace actions are defined ahead of the features that record them. A sign-up that opens a session records both `auth.sign_up` and `auth.sign_in` (`method: sign_up`). The session a password change re-issues is not a sign-in: it is recorded as `auth.password_changed`. Any other endpoint that opens a session records `auth.sign_in` with `method: other`. Sign-in and sign-up hooks fail open: if the insert fails, the error is reported ([how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)) and the sign-in still succeeds.
 
 Each row: `id`, `occurred_at` (ms), `action`, `outcome` (`success` or `failure`), `actor_user_id`, `actor_kind` (`user`, `admin`, `system`), `impersonator_user_id`, `target_type`, `target_id`, `workspace_id`, `trace_id`, `source` (`http`, `queue`, `cron`), `ip`, `metadata` (JSON). There are no foreign keys: events outlive the users and workspaces they name. Indexes: `(occurred_at)`, `(actor_user_id, occurred_at)`, `(target_type, target_id)`, `(workspace_id, occurred_at)`.
 
@@ -55,7 +56,7 @@ await recordAuditEvent(deps, context, {
 - An invalid event throws `InvalidAuditInputError` (a `DomainError`, `invalid_input`), so a mistake fails the use case's tests instead of silently writing nothing.
 - D1 has no interactive transactions: the event is a second statement after the change. If a project needs the change and its event to commit together, build both statements and send them in one `db.batch([...])`.
 - Features listed in `AUDITED_FEATURES` in `test/architecture/audit-coverage.test.ts` must call `recordAuditEvent` from every use case that inserts, updates or deletes, or list the use case in `AUDIT_EXEMPT` with a reason. Add a new feature to `AUDITED_FEATURES` when it is created.
-- Code that runs inside a library and cannot take the context as an argument (Better Auth hooks) reads it with `currentRequestContext()` from `apps/web/src/server/request-scope.ts`; `withRequestContext` in `server/http.ts` runs every request in that scope.
+- Code that runs inside a library and cannot take the context as an argument (Better Auth hooks) reads it with `currentRequestContext()` from `apps/web/src/server/request-scope.ts`; `withRequestContext` in `server/http.ts` runs every request in that scope. This bridge is the only ambient request state, limited to `server/auth-audit.ts` by a lint rule ([overview.md principle 14](../architecture/overview.md#principles)); use cases always take the context as an argument.
 
 ## Adding an action
 
@@ -120,18 +121,19 @@ Fields follow the [Open Cybersecurity Schema Framework](https://schema.ocsf.io/)
 | `ip`                       | `src_endpoint.ip`                                                                                |
 | `metadata`                 | `unmapped` (and the class-specific attributes noted below)                                       |
 
-| Action                                                             | OCSF class                    | Activity                                        |
-| ------------------------------------------------------------------ | ----------------------------- | ----------------------------------------------- |
-| `auth.sign_in`, `auth.sign_in_failed`                              | Authentication (3002)         | 1 Logon; `auth_protocol` from `metadata.method` |
-| `auth.sign_up`                                                     | Account Change (3001)         | 1 Create                                        |
-| `auth.password_reset_requested`                                    | Account Change (3001)         | 4 Password Reset                                |
-| `user.role_changed`                                                | User Access Management (3005) | 1 Assign Privileges (or 2 Revoke Privileges)    |
-| `user.banned`, `user.unbanned`                                     | Account Change (3001)         | 5 Disable, 2 Enable                             |
-| `user.sessions_revoked`                                            | Authentication (3002)         | 2 Logoff                                        |
-| `user.deleted`                                                     | Account Change (3001)         | 6 Delete                                        |
-| `impersonation.started`, `impersonation.stopped`                   | Authentication (3002)         | 1 Logon, 2 Logoff, with `actor` the admin       |
-| `workspace.invitation_created`, `workspace.invitation_revoked`     | Entity Management (3004)      | 1 Create, 4 Delete                              |
-| `workspace.invitation_accepted`                                    | Group Management (3006)       | 3 Add User                                      |
-| `workspace.member_role_changed`, `workspace.ownership_transferred` | Group Management (3006)       | 1 Assign Privileges                             |
-| `workspace.member_removed`                                         | Group Management (3006)       | 4 Remove User                                   |
-| `workspace.deleted`                                                | Group Management (3006)       | 5 Delete                                        |
+| Action                                                             | OCSF class                    | Activity                                                                 |
+| ------------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------ |
+| `auth.sign_in`, `auth.sign_in_failed`                              | Authentication (3002)         | 1 Logon; `auth_protocol` from `metadata.method`                          |
+| `auth.sign_up`                                                     | Account Change (3001)         | 1 Create                                                                 |
+| `auth.password_reset_requested`                                    | Account Change (3001)         | 4 Password Reset                                                         |
+| `auth.password_changed`                                            | Account Change (3001)         | 3 Password Change (`method: change`), 4 Password Reset (`method: reset`) |
+| `user.role_changed`                                                | User Access Management (3005) | 1 Assign Privileges (or 2 Revoke Privileges)                             |
+| `user.banned`, `user.unbanned`                                     | Account Change (3001)         | 5 Disable, 2 Enable                                                      |
+| `user.sessions_revoked`                                            | Authentication (3002)         | 2 Logoff                                                                 |
+| `user.deleted`                                                     | Account Change (3001)         | 6 Delete                                                                 |
+| `impersonation.started`, `impersonation.stopped`                   | Authentication (3002)         | 1 Logon, 2 Logoff, with `actor` the admin                                |
+| `workspace.invitation_created`, `workspace.invitation_revoked`     | Entity Management (3004)      | 1 Create, 4 Delete                                                       |
+| `workspace.invitation_accepted`                                    | Group Management (3006)       | 3 Add User                                                               |
+| `workspace.member_role_changed`, `workspace.ownership_transferred` | Group Management (3006)       | 1 Assign Privileges                                                      |
+| `workspace.member_removed`                                         | Group Management (3006)       | 4 Remove User                                                            |
+| `workspace.deleted`                                                | Group Management (3006)       | 5 Delete                                                                 |

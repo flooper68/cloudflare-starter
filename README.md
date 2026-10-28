@@ -13,7 +13,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - One Worker for HTTP, the queue consumer (with a dead-letter queue) and Cron Triggers
 - R2 two ways: through the Worker with the `FILES` binding, or direct with presigned URLs
 - Cloudflare Email Service through the `send_email` binding (simulated in local dev)
-- Append-only audit log in D1 (sign-in, failed sign-in, sign-up, password reset; admin and workspace actions in the catalog): typed actions with strict metadata, the request's trace id on every event, OCSF-aligned fields, daily retention purge, and an architecture test that every state change is audited
+- Append-only audit log in D1 (sign-in, failed sign-in, sign-up, password reset and change; admin and workspace actions in the catalog): typed actions with strict metadata, the request's trace id on every event, OCSF-aligned fields, daily retention purge, and an architecture test that every state change is audited
 - OpenTelemetry-shaped logs and error reports in Workers Logs (exportable over OTLP) behind swappable ports (Logger, ErrorReporter), W3C Trace Context across HTTP and queue messages, and a reference (the trace id) users can quote instead of a stack trace
 - Component library in Linear's visual language (dark-first, dense, keyboard-first): 60+ components from buttons to data tables, command palette, kanban and app shell, themed by tokens, re-branded in two files
 - Storybook built into the web app at `/_storybook/` in every environment

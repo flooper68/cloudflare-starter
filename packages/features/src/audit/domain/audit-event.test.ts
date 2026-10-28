@@ -33,6 +33,11 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     action: "auth.password_reset_requested",
     target: email,
   },
+  "auth.password_changed": {
+    action: "auth.password_changed",
+    target: user,
+    metadata: { method: "reset" },
+  },
   "user.role_changed": {
     action: "user.role_changed",
     actor: { kind: "admin", userId: "user-grace" },

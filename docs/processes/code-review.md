@@ -40,10 +40,11 @@ If CI is green, these hold; reviewers do not check them manually:
 - Import cycles (Biome `noImportCycles`)
 - `drizzle-orm` in `apps/web` (Biome `noRestrictedImports`)
 - `export *` outside the package roots (Biome `noReExportAll`)
-- Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters (GritQL rules in `lint/rules/*.grit`)
+- Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters, no `AsyncLocalStorage` or `request-scope` import outside the Better Auth hook bridge (GritQL rules in `lint/rules/*.grit`)
 - Vendor SDKs only in `platform/adapters/<vendor>/`: packages/features imports only zod, drizzle-orm and aws4fetch elsewhere, `apps/web/src/server` imports none of the listed vendor SDKs (dependency-cruiser `vendor-sdks-only-in-adapters`, `vendor-sdks-not-in-app-server`)
 - Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
 - `audit_events` append-only (only `recordAuditEvent` inserts, only `purgeAuditEvents` deletes) and every state-changing use case of an audited feature records an event or is exempt (`test/architecture/audit-coverage.test.ts`)
+- Every var and secret of `.dev.vars.example` and the top-level `vars` pinned for the API tests (`test/architecture/api-test-bindings.test.ts`)
 - One exported runtime function per use-case file, a test per domain function and use case, an API test per tRPC procedure, a contract test per platform adapter, every UI component has stories, exact pins, bindings in all environments, the same `observability` and `version_metadata` in all environments, `-- contract:` reason on `DROP`/`RENAME` migrations (`test/architecture/`)
 - MCP parity (`parity.test.ts`), types, formatting, migrations in sync and applying to an empty D1
 - No AI agent credited in a PR's commits (`scripts/check-attribution.ts` in the CI `lint` job)

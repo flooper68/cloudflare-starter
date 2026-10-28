@@ -21,13 +21,18 @@ import { APP_URL, testRequestContext } from "./helpers";
 const CLIENT_IP = "203.0.113.7";
 
 /** A Better Auth request through the HTTP edge, as middleware.ts and the auth route run it. */
-function authPost(path: string, body: unknown): Promise<Response> {
+function authPost(
+  path: string,
+  body: unknown,
+  cookie?: string
+): Promise<Response> {
   const request = new Request(`${APP_URL}/api/auth${path}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       origin: APP_URL,
       "cf-connecting-ip": CLIENT_IP,
+      ...(cookie ? { cookie } : {}),
     },
     body: JSON.stringify(body),
   });
@@ -41,6 +46,7 @@ async function events(
 }
 
 const PASSWORD = "test-password-1234";
+const NEW_PASSWORD = "changed-password-5678";
 
 describe("audit log of Better Auth endpoints", () => {
   it("sign-up records auth.sign_up and the session it opens as auth.sign_in", async () => {
@@ -128,6 +134,87 @@ describe("audit log of Better Auth endpoints", () => {
         traceId: response.headers.get(REQUEST_ID_HEADER),
       }),
     ]);
+  });
+
+  it("a password change records auth.password_changed, not a sign-in", async () => {
+    const signIn = await authPost("/sign-in/email", {
+      email: "grace@example.test",
+      password: PASSWORD,
+    });
+    const cookie = (signIn.headers.get("set-cookie") ?? "").split(";")[0];
+    const { user } = (await signIn.json()) as { user: { id: string } };
+
+    const refused = await authPost(
+      "/change-password",
+      { currentPassword: "not-the-password", newPassword: NEW_PASSWORD },
+      cookie
+    );
+    expect(refused.status).toBe(400);
+    const changed = await authPost(
+      "/change-password",
+      {
+        currentPassword: PASSWORD,
+        newPassword: NEW_PASSWORD,
+        revokeOtherSessions: true,
+      },
+      cookie
+    );
+    expect(changed.status).toBe(200);
+
+    const traceOf = (response: Response) =>
+      response.headers.get(REQUEST_ID_HEADER);
+    const recorded = await events({
+      action: "auth.password_changed",
+      actorUserId: user.id,
+    });
+    expect(recorded).toEqual([
+      expect.objectContaining({
+        outcome: "success",
+        target: { type: "user", id: user.id },
+        metadata: { method: "change" },
+        traceId: traceOf(changed),
+      }),
+      expect.objectContaining({
+        outcome: "failure",
+        metadata: { method: "change", reason: "INVALID_PASSWORD" },
+        traceId: traceOf(refused),
+      }),
+    ]);
+    // The session the change re-issues is not a sign-in.
+    const signIns = await events({ action: "auth.sign_in" });
+    expect(signIns.map((event) => event.traceId)).not.toContain(
+      traceOf(changed)
+    );
+  });
+
+  it("a completed password reset records auth.password_changed", async () => {
+    await authPost("/request-password-reset", {
+      email: "grace@example.test",
+      redirectTo: "/reset-password",
+    });
+    const row = await env.DB.prepare(
+      "SELECT identifier FROM verification WHERE identifier LIKE 'reset-password:%' ORDER BY created_at DESC LIMIT 1"
+    ).first<{ identifier: string }>();
+    const token = row?.identifier.slice("reset-password:".length);
+
+    const response = await authPost("/reset-password", {
+      token,
+      newPassword: "reset-password-5678",
+    });
+    expect(response.status).toBe(200);
+
+    const [event] = await events({
+      action: "auth.password_changed",
+      limit: 1,
+    });
+    expect(event).toMatchObject({
+      outcome: "success",
+      actor: { kind: "user" },
+      target: { type: "user" },
+      metadata: { method: "reset" },
+      traceId: response.headers.get(REQUEST_ID_HEADER),
+    });
+    expect(JSON.stringify(event)).not.toContain(token);
   });
 });
 
