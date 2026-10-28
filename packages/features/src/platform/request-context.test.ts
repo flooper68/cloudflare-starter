@@ -1,14 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { createRequestContext, requestContextFields } from "./request-context";
+import {
+  createRequestContext,
+  requestContextAttributes,
+} from "./request-context";
 
-const ids = { uuid: () => "00000000-0000-4000-8000-000000000001" };
+function counting() {
+  let next = 0;
+  return {
+    uuid: () => `00000000-0000-4000-8000-${String(++next).padStart(12, "0")}`,
+  };
+}
 
 describe("createRequestContext", () => {
-  it("generates the request id and keeps the IP of an HTTP request", () => {
+  it("starts a new trace and keeps the IP of an HTTP request", () => {
     expect(
       createRequestContext(
-        { ids },
+        { ids: counting() },
         {
           source: "http",
           release: "v-123",
@@ -17,7 +25,10 @@ describe("createRequestContext", () => {
         }
       )
     ).toEqual({
-      requestId: "00000000-0000-4000-8000-000000000001",
+      traceId: "00000000000040008000000000000001",
+      spanId: "8000000000000002",
+      parentSpanId: null,
+      traceFlags: "01",
       source: "http",
       userId: null,
       workspaceId: null,
@@ -27,55 +38,71 @@ describe("createRequestContext", () => {
     });
   });
 
-  it("reuses the request id a queue message carries and drops any IP", () => {
-    expect(
-      createRequestContext(
-        { ids },
-        {
-          source: "queue",
-          release: "local",
-          environment: "local",
-          requestId: "req-from-producer",
-          userId: "user-1",
-          ip: "203.0.113.7",
-        }
-      )
-    ).toMatchObject({
-      requestId: "req-from-producer",
+  it("continues a valid incoming traceparent with its own span", () => {
+    const context = createRequestContext(
+      { ids: counting() },
+      {
+        source: "queue",
+        release: "local",
+        environment: "local",
+        traceparent: "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00",
+        userId: "user-1",
+        ip: "203.0.113.7",
+      }
+    );
+    expect(context).toMatchObject({
+      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+      parentSpanId: "00f067aa0ba902b7",
+      traceFlags: "00",
       source: "queue",
       userId: "user-1",
       ip: null,
     });
+    expect(context.spanId).not.toBe("00f067aa0ba902b7");
   });
 
-  it("generates an id when the message carries none", () => {
-    expect(
-      createRequestContext(
-        { ids },
-        {
-          source: "cron",
-          release: "local",
-          environment: "local",
-          requestId: "",
-        }
-      ).requestId
-    ).toBe("00000000-0000-4000-8000-000000000001");
+  it("starts a new trace when the traceparent is invalid", () => {
+    const context = createRequestContext(
+      { ids: counting() },
+      {
+        source: "http",
+        release: "local",
+        environment: "local",
+        traceparent: "00-not-a-trace-01",
+      }
+    );
+    expect(context.traceId).toBe("00000000000040008000000000000001");
+    expect(context.parentSpanId).toBeNull();
   });
 });
 
-describe("requestContextFields", () => {
-  it("lists the fields logs carry, without the IP", () => {
+describe("requestContextAttributes", () => {
+  it("maps the context to semantic-convention and app.* attributes, never the IP", () => {
     const context = createRequestContext(
-      { ids },
-      { source: "http", release: "r", environment: "e", ip: "203.0.113.7" }
+      { ids: counting() },
+      {
+        source: "http",
+        release: "r",
+        environment: "e",
+        ip: "203.0.113.7",
+        userId: "user-1",
+        workspaceId: "ws-1",
+      }
     );
-    expect(requestContextFields(context)).toEqual({
-      requestId: "00000000-0000-4000-8000-000000000001",
-      source: "http",
-      userId: null,
-      workspaceId: null,
-      release: "r",
-      environment: "e",
+    expect(requestContextAttributes(context)).toEqual({
+      "app.request.source": "http",
+      "user.id": "user-1",
+      "app.workspace.id": "ws-1",
+    });
+  });
+
+  it("leaves absent values out", () => {
+    const context = createRequestContext(
+      { ids: counting() },
+      { source: "cron", release: "r", environment: "e" }
+    );
+    expect(requestContextAttributes(context)).toEqual({
+      "app.request.source": "cron",
     });
   });
 });

@@ -23,6 +23,7 @@ function memoryPlatform(logger: Logger = createMemoryLogger()) {
   return { platform, errors };
 }
 
+const TRACEPARENT = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
 const hello = {
   type: "hello",
   name: "Nicole",
@@ -31,10 +32,10 @@ const hello = {
 };
 
 describe("queue consumer", () => {
-  it("logs a valid message under the request id that queued it, and acks it", async () => {
+  it("continues the producer's trace for a valid message, and acks it", async () => {
     const logger = createMemoryLogger();
     const { platform, errors } = memoryPlatform(logger);
-    const ok = message({ ...hello, requestId: "req-from-web" });
+    const ok = message({ ...hello, traceparent: TRACEPARENT });
 
     await handleQueueBatch(
       { messages: [ok] } as unknown as MessageBatch<unknown>,
@@ -42,25 +43,31 @@ describe("queue consumer", () => {
     );
 
     expect(ok.ack).toHaveBeenCalled();
-    expect(logger.records).toEqual([
-      expect.objectContaining({
-        level: "info",
-        event: "queue.hello",
-        requestId: "req-from-web",
-        source: "queue",
-        userId: "user-1",
-        release: "v-test",
-        messageId: "m1",
-        message: "Hello, Nicole",
-      }),
-    ]);
+    expect(logger.records).toHaveLength(1);
+    const [record] = logger.records;
+    expect(record).toMatchObject({
+      severity_text: "INFO",
+      body: "queue.hello",
+      trace_id: "4bf92f3577b34da6a3ce929d0e0e4736",
+      attributes: {
+        "app.request.source": "queue",
+        "user.id": "user-1",
+        "messaging.system": "cloudflare_queues",
+        "messaging.message.id": "m1",
+        "app.queue.attempts": 1,
+        "app.greeting.message": "Hello, Nicole",
+      },
+    });
+    // Its own span, child of the producer's.
+    expect(record?.span_id).toMatch(/^[0-9a-f]{16}$/);
+    expect(record?.span_id).not.toBe("00f067aa0ba902b7");
     expect(errors.captured).toEqual([]);
   });
 
-  it("drops a malformed message with a warning and a fresh request id", async () => {
+  it("drops a malformed message with a warning and a new trace", async () => {
     const logger = createMemoryLogger();
     const { platform, errors } = memoryPlatform(logger);
-    const bad = message({ type: "nope" });
+    const bad = message({ type: "nope", traceparent: TRACEPARENT });
 
     await handleQueueBatch(
       { messages: [bad] } as unknown as MessageBatch<unknown>,
@@ -71,12 +78,15 @@ describe("queue consumer", () => {
     expect(bad.retry).not.toHaveBeenCalled();
     expect(logger.records).toEqual([
       expect.objectContaining({
-        level: "warn",
-        event: "queue.invalid",
-        requestId: expect.stringMatching(/^[0-9a-f-]{36}$/),
-        userId: null,
+        severity_text: "WARN",
+        body: "queue.invalid",
+        trace_id: expect.stringMatching(/^[0-9a-f]{32}$/),
       }),
     ]);
+    expect(logger.records[0]?.trace_id).not.toBe(
+      "4bf92f3577b34da6a3ce929d0e0e4736"
+    );
+    expect(logger.records[0]?.attributes).not.toHaveProperty("user.id");
     expect(errors.captured).toEqual([]);
   });
 
@@ -87,9 +97,10 @@ describe("queue consumer", () => {
         throw new Error("sink down");
       },
       child: () => throwing,
+      withContext: () => throwing,
     };
     const { platform, errors } = memoryPlatform(throwing);
-    const msg = message({ ...hello, requestId: "req-7" });
+    const msg = message({ ...hello, traceparent: TRACEPARENT });
 
     await handleQueueBatch(
       { messages: [msg] } as unknown as MessageBatch<unknown>,
@@ -100,9 +111,14 @@ describe("queue consumer", () => {
     expect(msg.retry).toHaveBeenCalledWith({ delaySeconds: 30 });
     expect(errors.captured).toEqual([
       expect.objectContaining({
-        reference: "req-7",
+        reference: "4bf92f3577b34da6a3ce929d0e0e4736",
         context: expect.objectContaining({ source: "queue", userId: "user-1" }),
-        extra: { messageId: "m1", attempts: 1, type: "hello" },
+        extra: {
+          "messaging.system": "cloudflare_queues",
+          "messaging.message.id": "m1",
+          "app.queue.attempts": 1,
+          "app.queue.message_type": "hello",
+        },
       }),
     ]);
   });

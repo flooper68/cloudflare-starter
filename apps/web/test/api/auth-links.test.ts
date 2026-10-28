@@ -52,9 +52,9 @@ describe("auth links with email off", () => {
       redirectTo: "/reset-password",
     });
     expect(reset.status).toBe(200);
-    expect(output()).toContain('"event":"auth.mail_not_sent"');
+    expect(output()).toContain('"body":"auth.mail_not_sent"');
     expect(output()).toMatch(
-      /"link":"http:\/\/localhost:4321\/api\/auth\/reset-password\/[^"]+"/
+      /"app.auth.link":"http:\/\/localhost:4321\/api\/auth\/reset-password\/[^"]+"/
     );
   });
 
@@ -90,7 +90,9 @@ describe("auth links with email off", () => {
         email: `ada.${appEnv}@example.test`,
       });
       expect(verify.status).toBe(412);
-      expect(output()).not.toMatch(/reset-password\/|verify-email|"link"/);
+      expect(output()).not.toMatch(
+        /reset-password\/|verify-email|"app.auth.link"/
+      );
     }
   );
 });

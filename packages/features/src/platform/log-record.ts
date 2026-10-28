@@ -1,9 +1,43 @@
+/**
+ * Log records in the OpenTelemetry Logs Data Model
+ * (https://opentelemetry.io/docs/specs/otel/logs/data-model/), serialized as JSON with
+ * snake_case field names. Shared by every logging adapter so redaction, exception mapping
+ * and the resource behave the same whichever sink is used.
+ */
+import type { RequestContext } from "../kernel";
 import type { LogFields, LogLevel } from "./ports";
+import { requestContextAttributes } from "./request-context";
 
-/** One structured log line: level and event first, then the fields, all JSON-safe. */
-export type LogRecord = Readonly<Record<string, unknown>> & {
-  readonly level: LogLevel;
-  readonly event: string;
+export type SeverityText = "DEBUG" | "INFO" | "WARN" | "ERROR";
+
+/** Resource attributes: what emitted the record (OpenTelemetry resource conventions). */
+export interface LogResource {
+  readonly "service.name": string;
+  /** The deployed version (version_metadata id), "local" in dev. */
+  readonly "service.version": string;
+  readonly "deployment.environment.name": string;
+}
+
+export interface LogRecord {
+  /** ISO 8601 time the record was created. */
+  readonly timestamp: string;
+  readonly severity_text: SeverityText;
+  /** OpenTelemetry severity number: DEBUG 5, INFO 9, WARN 13, ERROR 17. */
+  readonly severity_number: number;
+  /** The event name. */
+  readonly body: string;
+  readonly trace_id?: string;
+  readonly span_id?: string;
+  readonly trace_flags?: string;
+  readonly attributes: Readonly<Record<string, unknown>>;
+  readonly resource: LogResource;
+}
+
+const SEVERITY: Record<LogLevel, readonly [SeverityText, number]> = {
+  debug: ["DEBUG", 5],
+  info: ["INFO", 9],
+  warn: ["WARN", 13],
+  error: ["ERROR", 17],
 };
 
 /** Keys whose values never reach a log: credentials, tokens, cookies, signatures. */
@@ -31,7 +65,7 @@ function sanitizeObject(
   return out;
 }
 
-/** Errors become `{ name, message, stack }` plus their own fields (`code`, `kind`, `cause`). */
+/** Errors nested in attributes become `{ name, message, stack }` plus their own fields. */
 function sanitizeError(
   error: Error,
   ancestors: readonly object[]
@@ -105,31 +139,98 @@ export function sanitize(
       return [...object].map((item) => sanitize(item, next));
     return sanitizeObject(Object.entries(object), next);
   } catch {
-    // A throwing getter or proxy: keep the line, lose the value.
+    // A throwing getter or proxy: keep the record, lose the value.
     return "[unserializable]";
   }
 }
 
 /**
- * Builds one log line. `base` are the logger's bound fields (child loggers), `fields` the
- * call's own; the call wins on a clash, and neither can overwrite `level` or `event`.
- * Shared by every logging adapter so redaction behaves the same whichever sink is used.
+ * The OpenTelemetry exception attributes of a thrown value
+ * (https://opentelemetry.io/docs/specs/semconv/exceptions/).
  */
-export function toLogRecord(
-  level: LogLevel,
-  event: string,
-  fields: LogFields | undefined,
-  base: LogFields = {}
-): LogRecord {
+export function exceptionAttributes(
+  thrown: unknown
+): Readonly<Record<string, unknown>> {
   try {
-    const merged = sanitizeObject(
-      Object.entries({ ...base, ...(fields ?? {}) }).filter(
-        ([key]) => key !== "level" && key !== "event"
-      ),
-      []
-    );
-    return { level, event, ...merged };
+    if (thrown instanceof Error) {
+      const own = sanitizeObject(
+        Object.entries(thrown).filter(
+          ([key]) => key !== "name" && key !== "message" && key !== "stack"
+        ),
+        [thrown]
+      );
+      return {
+        "exception.type": thrown.name,
+        "exception.message": truncate(thrown.message),
+        ...(thrown.stack
+          ? { "exception.stacktrace": truncate(thrown.stack) }
+          : {}),
+        ...(Object.keys(own).length ? { "app.exception.fields": own } : {}),
+        ...(thrown.cause !== undefined
+          ? { "app.exception.cause": sanitize(thrown.cause, [thrown]) }
+          : {}),
+      };
+    }
+    const message = sanitize(thrown);
+    return {
+      "exception.type": thrown === null ? "null" : typeof thrown,
+      "exception.message":
+        typeof message === "string" ? message : JSON.stringify(message),
+    };
   } catch {
-    return { level, event, fields: "[unserializable]" };
+    return {
+      "exception.type": "unknown",
+      "exception.message": "[unserializable]",
+    };
   }
+}
+
+/** Attributes as given, made safe; an Error under `error` becomes the exception.* attributes. */
+function toAttributes(fields: LogFields): Record<string, unknown> {
+  const { error, ...rest } = fields;
+  return {
+    ...sanitizeObject(Object.entries(rest), []),
+    ...(error !== undefined ? exceptionAttributes(error) : {}),
+  };
+}
+
+export interface LogRecordInput {
+  readonly level: LogLevel;
+  readonly event: string;
+  readonly fields?: LogFields;
+  /** Attributes bound by `child()`; the call's own fields win on a clash. */
+  readonly bound?: LogFields;
+  readonly context?: RequestContext;
+  readonly resource: LogResource;
+  readonly now: Date;
+}
+
+/** Builds one record. Never throws. */
+export function toLogRecord(input: LogRecordInput): LogRecord {
+  const [severity_text, severity_number] = SEVERITY[input.level];
+  let attributes: Record<string, unknown>;
+  try {
+    attributes = toAttributes({
+      ...(input.context ? requestContextAttributes(input.context) : {}),
+      ...(input.bound ?? {}),
+      ...(input.fields ?? {}),
+    });
+  } catch {
+    attributes = { "app.log.attributes": "[unserializable]" };
+  }
+  return {
+    timestamp: input.now.toISOString(),
+    severity_text,
+    severity_number,
+    body: input.event,
+    ...(input.context
+      ? {
+          trace_id: input.context.traceId,
+          span_id: input.context.spanId,
+          trace_flags: input.context.traceFlags,
+        }
+      : {}),
+    attributes,
+    resource: input.resource,
+  };
 }

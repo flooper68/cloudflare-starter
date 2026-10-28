@@ -51,9 +51,9 @@ export function toolError(error: unknown, reporting: ToolErrorReporting) {
   }
   const reference =
     error instanceof TRPCError
-      ? reporting.requestContext.requestId
+      ? reporting.requestContext.traceId
       : reporting.errors.capture(error, reporting.requestContext, {
-          edge: "mcp",
+          "app.error.origin": "mcp",
         });
   return toolResult({
     code: "INTERNAL_SERVER_ERROR",

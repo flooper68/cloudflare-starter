@@ -9,7 +9,7 @@ import { loggerFor, type Platform } from "@/server/platform";
 
 /**
  * Consumes `APP_QUEUE`: validates each message and hands it to its feature. Each message
- * runs with its own request context, reusing the request id of the request that queued it.
+ * runs with its own request context, continuing the trace (traceparent) of the request that queued it.
  * A malformed message is logged and dropped; a handler failure is reported and retried
  * with backoff and, after `max_retries`, kept in the dead-letter queue.
  */
@@ -25,19 +25,20 @@ export async function handleQueueBatch(
         source: "queue",
         release: platform.release,
         environment: platform.environment,
-        // Validated by the message schema; a malformed message gets a fresh id.
-        requestId: parsed.success ? (parsed.data.requestId ?? null) : null,
+        // Validated by the message schema; a malformed message starts a new trace.
+        traceparent: parsed.success ? (parsed.data.traceparent ?? null) : null,
         userId: parsed.success ? parsed.data.userId : null,
       }
     );
     const logger = loggerFor(platform, context).child({
-      messageId: message.id,
-      attempts: message.attempts,
+      "messaging.system": "cloudflare_queues",
+      "messaging.message.id": message.id,
+      "app.queue.attempts": message.attempts,
     });
 
     if (!parsed.success) {
       // A malformed message never succeeds; retrying it would only delay the dead-letter queue.
-      logger.warn("queue.invalid", { issues: parsed.error.issues });
+      logger.warn("queue.invalid", { "app.queue.issues": parsed.error.issues });
       message.ack();
       continue;
     }
@@ -45,18 +46,16 @@ export async function handleQueueBatch(
     try {
       switch (parsed.data.type) {
         case "hello":
-          logger.info(
-            "queue.hello",
-            helloGreeting(parsed.data, platform.environment)
-          );
+          logger.info("queue.hello", helloGreeting(parsed.data));
           break;
       }
       message.ack();
     } catch (error) {
       platform.errors.capture(error, context, {
-        messageId: message.id,
-        attempts: message.attempts,
-        type: parsed.data.type,
+        "messaging.system": "cloudflare_queues",
+        "messaging.message.id": message.id,
+        "app.queue.attempts": message.attempts,
+        "app.queue.message_type": parsed.data.type,
       });
       message.retry({ delaySeconds: 30 * message.attempts });
     }

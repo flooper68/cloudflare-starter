@@ -4,39 +4,30 @@ import { helloGreeting } from "./greeting-log";
 import { scheduledGreeting } from "./scheduled-greeting";
 
 describe("greetings", () => {
-  it("describes a consumed hello message", () => {
+  it("describes a consumed hello message as app.* attributes", () => {
     expect(
-      helloGreeting(
-        {
-          type: "hello",
-          name: "Nicole",
-          userId: "u1",
-          queuedAt: "2026-04-20T12:00:00.000Z",
-        },
-        "staging"
-      )
+      helloGreeting({
+        type: "hello",
+        name: "Nicole",
+        userId: "u1",
+        queuedAt: "2026-04-20T12:00:00.000Z",
+      })
     ).toEqual({
-      tag: "queue-hello",
-      environment: "staging",
-      message: "Hello, Nicole",
-      userId: "u1",
-      queuedAt: "2026-04-20T12:00:00.000Z",
+      "app.greeting.message": "Hello, Nicole",
+      "app.greeting.queued_at": "2026-04-20T12:00:00.000Z",
     });
   });
 
-  it("describes a cron run", () => {
+  it("describes a cron run as app.* attributes", () => {
     expect(
       scheduledGreeting({
-        environment: "develop",
         cron: "*/5 * * * *",
         scheduledTime: Date.parse("2026-04-20T12:00:00.000Z"),
       })
     ).toEqual({
-      tag: "cron-hello",
-      message: "Hello from cron",
-      environment: "develop",
-      cron: "*/5 * * * *",
-      scheduledTime: "2026-04-20T12:00:00.000Z",
+      "app.greeting.message": "Hello from cron",
+      "app.cron.schedule": "*/5 * * * *",
+      "app.cron.scheduled_time": "2026-04-20T12:00:00.000Z",
     });
   });
 });

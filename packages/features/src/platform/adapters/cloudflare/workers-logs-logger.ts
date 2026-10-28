@@ -1,21 +1,26 @@
-import { toLogRecord } from "../../log-record";
-import type { LogFields, Logger, LogLevel } from "../../ports";
+import type { Clock } from "../../../kernel";
+import { systemClock } from "../../clock";
+import type { LogResource } from "../../log-record";
+import type { Logger } from "../../ports";
+import { createRecordLogger } from "../../record-logger";
+
+export interface WorkersLogsLoggerOptions {
+  readonly resource: LogResource;
+  readonly clock?: Clock;
+}
 
 /**
- * Logger adapter for Cloudflare Workers Logs: one structured object per line on the
- * console, which Workers Logs indexes field by field (`observability.logs` in
- * wrangler.jsonc). Secrets are redacted, errors serialized and circular references cut
- * by `toLogRecord`. The only place in server code that writes to the console.
+ * Logger adapter for Cloudflare Workers Logs: one OpenTelemetry log record per console
+ * call, as an object, which Workers Logs indexes field by field and Workers OTel export
+ * forwards (`observability` in wrangler.jsonc). The only place in server code that writes
+ * to the console.
  */
-export function createWorkersLogsLogger(fields: LogFields = {}): Logger {
-  const write = (level: LogLevel, event: string, extra?: LogFields) => {
-    console[level](toLogRecord(level, event, extra, fields));
-  };
-  return {
-    debug: (event, extra) => write("debug", event, extra),
-    info: (event, extra) => write("info", event, extra),
-    warn: (event, extra) => write("warn", event, extra),
-    error: (event, extra) => write("error", event, extra),
-    child: (more) => createWorkersLogsLogger({ ...fields, ...more }),
-  };
+export function createWorkersLogsLogger(
+  options: WorkersLogsLoggerOptions
+): Logger {
+  return createRecordLogger({
+    resource: options.resource,
+    clock: options.clock ?? systemClock,
+    write: (record, level) => console[level](record),
+  });
 }

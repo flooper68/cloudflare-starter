@@ -16,7 +16,7 @@ How to set up or do something; read while doing it.
 | [how-to-setup-mcp.md](guides/how-to-setup-mcp.md)                         | you add an MCP tool or connect Claude to an environment                                                                          |
 | [how-to-setup-logging.md](guides/how-to-setup-logging.md)                 | you change `LOG_SINK`, add log lines, look up a request's logs by its id, or connect Datadog or OpenTelemetry                    |
 | [how-to-setup-error-reporting.md](guides/how-to-setup-error-reporting.md) | you change `ERROR_REPORTER`, handle an unexpected error in server code, find a report from a user's reference, or connect Sentry |
-| [how-to-setup-ci.md](guides/how-to-setup-ci.md) | you change CI, set up the deploy workflow and its secrets, or run self-hosted runners in Docker |
+| [how-to-setup-ci.md](guides/how-to-setup-ci.md)                           | you change CI, set up the deploy workflow and its secrets, or run self-hosted runners in Docker                                  |
 | [how-to-setup-container.md](guides/how-to-setup-container.md)             | you run or deploy the Container demo                                                                                             |
 | [how-to-define-branding.md](guides/how-to-define-branding.md)             | you give a project its own name, logo, accent, fonts or radius                                                                   |
 | [how-to-use-storybook.md](guides/how-to-use-storybook.md)                 | you build or review components in Storybook, write their tests, or change who can open `/_storybook/`                            |

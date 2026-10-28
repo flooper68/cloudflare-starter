@@ -8,7 +8,7 @@ import {
 import type { APIRoute } from "astro";
 
 import { getDb } from "@/server/db";
-import { internalErrorResponse } from "@/server/http";
+import { httpAttributes, internalErrorResponse } from "@/server/http";
 
 /**
  * Upload through the Worker into the `FILES` R2 binding (multipart field `file`).
@@ -56,10 +56,10 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       { status: 201 }
     );
   } catch (error) {
-    // { error, reference }: the reference is the request id users quote.
+    // Problem Details 500 with `reference`: the trace id users quote.
     return internalErrorResponse(env, error, locals.requestContext, {
-      route: "POST /api/files",
-      cfRay: request.headers.get("cf-ray"),
+      ...httpAttributes(request),
+      "http.route": "/api/files",
     });
   }
 };

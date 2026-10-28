@@ -1,3 +1,4 @@
+import type { LogLevel } from "../../ports";
 import { describeLoggerContract } from "../../ports/logger.contract";
 import { createMemoryLogger } from "./memory-logger";
 
@@ -6,6 +7,9 @@ describeLoggerContract("createMemoryLogger", () => {
   return {
     logger,
     lines: () =>
-      logger.records.map((record) => ({ level: record.level, record })),
+      logger.records.map((record) => ({
+        level: record.severity_text.toLowerCase() as LogLevel,
+        record: { ...record },
+      })),
   };
 });

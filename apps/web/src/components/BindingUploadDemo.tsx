@@ -14,7 +14,7 @@ interface UploadResponse {
   readonly fileId?: string;
   readonly url?: string;
   readonly error?: string;
-  /** Present on unexpected (500) failures: the request id to quote. */
+  /** Present on unexpected (500) failures: the trace id to quote. */
   readonly reference?: string;
 }
 

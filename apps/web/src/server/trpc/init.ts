@@ -23,7 +23,7 @@ export interface Context {
   readonly email: FeatureConfig<EmailService>;
   readonly r2: FeatureConfig<R2Config>;
   readonly queue: Queue<QueueMessage> | undefined;
-  /** The request (or MCP call) this procedure runs for; its id is the error reference. */
+  /** The request (or MCP call) this procedure runs for; its trace id is the error reference. */
   readonly requestContext: RequestContext;
   /** Logger bound to the request context. */
   readonly logger: Logger;
@@ -37,7 +37,7 @@ export interface Context {
 
 const t = initTRPC.context<Context>().create({
   /**
-   * Internal errors carry `data.reference` (the request id) so users can quote it, and a
+   * Internal errors carry `data.reference` (the trace id) so users can quote it, and a
    * generic message: the cause (a driver error, a stack frame) goes to the error report,
    * never to the client.
    */
@@ -51,7 +51,7 @@ const t = initTRPC.context<Context>().create({
       message: internal ? "Internal error" : shape.message,
       data: {
         ...data,
-        reference: internal && ctx ? ctx.requestContext.requestId : undefined,
+        reference: internal && ctx ? ctx.requestContext.traceId : undefined,
       },
     };
   },
@@ -62,8 +62,9 @@ const reportInternalErrors = t.middleware(async ({ ctx, next, path, type }) => {
   const result = await next();
   if (!result.ok && result.error.code === "INTERNAL_SERVER_ERROR") {
     ctx.errors.capture(result.error.cause ?? result.error, ctx.requestContext, {
-      procedure: path,
-      type,
+      "rpc.system": "trpc",
+      "rpc.method": path,
+      "app.trpc.type": type,
     });
   }
   return result;

@@ -19,8 +19,8 @@ export function createMemoryErrorReporter(): MemoryErrorReporter {
   return {
     captured,
     capture(error, context, extra = {}) {
-      captured.push({ error, context, extra, reference: context.requestId });
-      return context.requestId;
+      captured.push({ error, context, extra, reference: context.traceId });
+      return context.traceId;
     },
   };
 }

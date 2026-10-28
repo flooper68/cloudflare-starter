@@ -2,4 +2,8 @@
 export type { Clock } from "./clock";
 export { DomainError, type DomainErrorKind } from "./domain-error";
 export type { Ids } from "./ids";
-export type { RequestContext, RequestSource } from "./request-context";
+export {
+  type RequestContext,
+  type RequestSource,
+  TRACEPARENT_PATTERN,
+} from "./request-context";

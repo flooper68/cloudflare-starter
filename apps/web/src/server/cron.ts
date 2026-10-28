@@ -27,13 +27,14 @@ export async function runScheduled(
     loggerFor(platform, context).info(
       "cron.hello",
       scheduledGreeting({
-        environment: platform.environment,
         cron: controller.cron,
         scheduledTime: controller.scheduledTime,
       })
     );
   } catch (error) {
-    platform.errors.capture(error, context, { cron: controller.cron });
+    platform.errors.capture(error, context, {
+      "app.cron.schedule": controller.cron,
+    });
     throw error;
   }
 }

@@ -7,4 +7,5 @@ export const noopLogger: Logger = {
   warn: () => {},
   error: () => {},
   child: () => noopLogger,
+  withContext: () => noopLogger,
 };

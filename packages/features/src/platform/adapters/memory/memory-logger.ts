@@ -1,27 +1,30 @@
-import { type LogRecord, toLogRecord } from "../../log-record";
-import type { LogFields, Logger, LogLevel } from "../../ports";
+import type { Clock } from "../../../kernel";
+import type { LogRecord, LogResource } from "../../log-record";
+import type { Logger } from "../../ports";
+import { createRecordLogger } from "../../record-logger";
 
-/** A logger that keeps its lines in memory; children share the parent's list. */
+/** A logger that keeps its records in memory; children share the parent's list. */
 export interface MemoryLogger extends Logger {
   readonly records: readonly LogRecord[];
-  child(fields: LogFields): MemoryLogger;
 }
 
-function build(records: LogRecord[], fields: LogFields): MemoryLogger {
-  const write = (level: LogLevel, event: string, extra?: LogFields) => {
-    records.push(toLogRecord(level, event, extra, fields));
-  };
-  return {
-    records,
-    debug: (event, extra) => write("debug", event, extra),
-    info: (event, extra) => write("info", event, extra),
-    warn: (event, extra) => write("warn", event, extra),
-    error: (event, extra) => write("error", event, extra),
-    child: (more) => build(records, { ...fields, ...more }),
-  };
-}
+export const TEST_RESOURCE: LogResource = {
+  "service.name": "test",
+  "service.version": "local",
+  "deployment.environment.name": "test",
+};
 
-/** Logger for tests: assert on `records` instead of spying on the console. */
-export function createMemoryLogger(): MemoryLogger {
-  return build([], {});
+const FIXED_CLOCK: Clock = { now: () => new Date("2026-10-28T12:00:00.000Z") };
+
+/** Logger for tests: assert on `records` (OpenTelemetry records) instead of spying on the console. */
+export function createMemoryLogger(
+  options: { readonly resource?: LogResource; readonly clock?: Clock } = {}
+): MemoryLogger {
+  const records: LogRecord[] = [];
+  const logger = createRecordLogger({
+    resource: options.resource ?? TEST_RESOURCE,
+    clock: options.clock ?? FIXED_CLOCK,
+    write: (record) => records.push(record),
+  });
+  return { ...logger, records };
 }

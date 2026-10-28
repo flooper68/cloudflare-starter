@@ -45,7 +45,7 @@ export interface ErrorStateProps
   /** Technical details (status code, request path) in a collapsed section. */
   readonly details?: ReactNode;
   /**
-   * The server's reference for this failure (the request id), shown as text the user can
+   * The server's reference for this failure (the trace id), shown as text the user can
    * select and quote to support. Pass it for unexpected (500) errors.
    */
   readonly reference?: string;

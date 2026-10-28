@@ -7,8 +7,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { RequestContext } from "../../kernel";
 import type { ErrorReporter } from "./error-reporter";
 
-/** One report as the adapter recorded or emitted it, flattened to its fields. */
-export type ObservedReport = Readonly<Record<string, unknown>>;
+/**
+ * One report as the adapter recorded or emitted it, as an OpenTelemetry log record:
+ * `trace_id`, `span_id` and `attributes` with the exception.* conventions.
+ */
+export type ObservedReport = Readonly<{
+  trace_id?: unknown;
+  span_id?: unknown;
+  attributes?: Readonly<Record<string, unknown>>;
+}>;
 
 export interface ErrorReporterHarness {
   readonly reporter: ErrorReporter;
@@ -21,7 +28,10 @@ export function contractContext(
   overrides: Partial<RequestContext> = {}
 ): RequestContext {
   return {
-    requestId: "8f14e45f-ceea-467a-9575-0f4c5e9b2c11",
+    traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+    spanId: "00f067aa0ba902b7",
+    parentSpanId: null,
+    traceFlags: "01",
     source: "http",
     userId: "user-1",
     workspaceId: null,
@@ -47,10 +57,10 @@ export function describeErrorReporterContract(
       for (const created of made.splice(0)) created.dispose?.();
     });
 
-    it("returns the request id as the reference", () => {
+    it("returns the trace id as the reference", () => {
       const { reporter } = harness();
       expect(reporter.capture(new Error("boom"), contractContext())).toBe(
-        contractContext().requestId
+        contractContext().traceId
       );
     });
 
@@ -76,28 +86,28 @@ export function describeErrorReporterContract(
     observable.dispose?.();
     if (!observable.reports) return;
 
-    it("records one report per capture with the error, its stack and the context", () => {
+    it("records one report per capture with exception.*, trace ids, context and extra", () => {
       const { reporter, reports } = harness();
       reporter.capture(
         new RangeError("quota exceeded"),
         contractContext({ source: "queue", userId: "user-2" }),
-        { messageId: "m-1" }
+        { "messaging.message.id": "m-1" }
       );
       const all = reports?.() ?? [];
       expect(all).toHaveLength(1);
       expect(all[0]).toMatchObject({
-        requestId: contractContext().requestId,
-        source: "queue",
-        userId: "user-2",
-        release: "local",
-        environment: "local",
-        messageId: "m-1",
-        error: {
-          name: "RangeError",
-          message: "quota exceeded",
-          stack: expect.stringContaining("quota exceeded"),
+        trace_id: contractContext().traceId,
+        span_id: contractContext().spanId,
+        attributes: {
+          "exception.type": "RangeError",
+          "exception.message": "quota exceeded",
+          "exception.stacktrace": expect.stringContaining("quota exceeded"),
+          "app.request.source": "queue",
+          "user.id": "user-2",
+          "messaging.message.id": "m-1",
         },
       });
+      expect(JSON.stringify(all[0])).not.toContain("203.0.113.7");
     });
   });
 }

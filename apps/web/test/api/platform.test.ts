@@ -1,5 +1,6 @@
-// The platform edge: request ids on every response, references on internal errors (tRPC,
-// MCP tools, file routes), and the named error when a platform setting is missing.
+// The platform edge: W3C trace headers on every response, OpenTelemetry error reports,
+// references (the trace id) on internal errors (tRPC, MCP tools, file routes), and the
+// named error when a platform setting is missing.
 import { env } from "cloudflare:workers";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { APIContext } from "astro";
@@ -12,7 +13,11 @@ import {
   type MiddlewareContext,
 } from "@/server/app-middleware";
 import type { AppEnv } from "@/server/env";
-import { REQUEST_ID_HEADER, withRequestContext } from "@/server/http";
+import {
+  REQUEST_ID_HEADER,
+  TRACEPARENT_HEADER,
+  withRequestContext,
+} from "@/server/http";
 import { buildMcpServer } from "@/server/mcp/server";
 
 import {
@@ -23,15 +28,25 @@ import {
   testRequestContext,
 } from "./helpers";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const TRACE_ID = /^[0-9a-f]{32}$/;
+const TRACEPARENT = /^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$/;
+const INCOMING = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+
+interface Report {
+  readonly body: string;
+  readonly trace_id: string;
+  readonly span_id: string;
+  readonly attributes: Record<string, unknown>;
+  readonly resource: Record<string, string>;
+}
 
 /** Error reports written to Workers Logs (LOG_SINK/ERROR_REPORTER are workers-logs here). */
 function captureReports() {
   const spy = vi.spyOn(console, "error").mockImplementation(() => {});
   return () =>
     spy.mock.calls
-      .map(([record]) => record as Record<string, unknown>)
-      .filter((record) => record?.event === "error.captured");
+      .map(([record]) => record as Report)
+      .filter((record) => record?.body === "error.captured");
 }
 
 function routeContext(
@@ -50,14 +65,14 @@ function routeContext(
   } as unknown as APIContext;
 }
 
-describe("platform edge (request ids and error references)", () => {
+describe("platform edge (trace context and error references)", () => {
   let user: TestUser;
   beforeAll(async () => {
     user = await signUp("Nicole Example", "nicole@example.test");
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it("gives every response a server-generated x-request-id", async () => {
+  it("gives every response traceparent and x-request-id (the trace id), ignoring an incoming x-request-id", async () => {
     const ok = await withRequestContext(
       new Request(`${APP_URL}/api/hello`, {
         headers: { [REQUEST_ID_HEADER]: "client-chosen-id" },
@@ -65,9 +80,10 @@ describe("platform edge (request ids and error references)", () => {
       env,
       async () => new Response("ok")
     );
-    const id = ok.headers.get(REQUEST_ID_HEADER);
-    expect(id).toMatch(UUID);
-    expect(id).not.toBe("client-chosen-id");
+    const traceId = ok.headers.get(REQUEST_ID_HEADER);
+    expect(traceId).toMatch(TRACE_ID);
+    expect(ok.headers.get(TRACEPARENT_HEADER)).toMatch(TRACEPARENT);
+    expect(ok.headers.get(TRACEPARENT_HEADER)).toContain(`-${traceId}-`);
 
     // Responses with immutable headers (redirects, fetched responses) are copied.
     const redirect = await withRequestContext(
@@ -76,7 +92,38 @@ describe("platform edge (request ids and error references)", () => {
       async () => Response.redirect(`${APP_URL}/sign-in`, 302)
     );
     expect(redirect.status).toBe(302);
-    expect(redirect.headers.get(REQUEST_ID_HEADER)).toMatch(UUID);
+    expect(redirect.headers.get(REQUEST_ID_HEADER)).toMatch(TRACE_ID);
+    expect(redirect.headers.get(TRACEPARENT_HEADER)).toMatch(TRACEPARENT);
+  });
+
+  it("continues a valid incoming traceparent with its own span, and ignores an invalid one", async () => {
+    const continued = await withRequestContext(
+      new Request(`${APP_URL}/api/hello`, {
+        headers: { [TRACEPARENT_HEADER]: INCOMING },
+      }),
+      env,
+      async (scope) => {
+        expect(scope.context.parentSpanId).toBe("00f067aa0ba902b7");
+        return new Response("ok");
+      }
+    );
+    const [, traceId, spanId] =
+      TRACEPARENT.exec(continued.headers.get(TRACEPARENT_HEADER) ?? "") ?? [];
+    expect(traceId).toBe("4bf92f3577b34da6a3ce929d0e0e4736");
+    expect(spanId).not.toBe("00f067aa0ba902b7");
+    expect(continued.headers.get(REQUEST_ID_HEADER)).toBe(traceId);
+
+    const fresh = await withRequestContext(
+      new Request(`${APP_URL}/api/hello`, {
+        headers: { [TRACEPARENT_HEADER]: "00-zzz-01" },
+      }),
+      env,
+      async () => new Response("ok")
+    );
+    expect(fresh.headers.get(REQUEST_ID_HEADER)).toMatch(TRACE_ID);
+    expect(fresh.headers.get(REQUEST_ID_HEADER)).not.toBe(
+      "4bf92f3577b34da6a3ce929d0e0e4736"
+    );
   });
 
   describe("the app middleware (src/middleware.ts)", () => {
@@ -94,7 +141,7 @@ describe("platform edge (request ids and error references)", () => {
       } satisfies MiddlewareContext;
     }
 
-    it("gives /mcp a request context and an x-request-id before its early return", async () => {
+    it("gives /mcp a request context and trace headers before its early return", async () => {
       const context = middlewareContext("/mcp");
       const response = await handleAppRequest(
         context,
@@ -102,7 +149,10 @@ describe("platform edge (request ids and error references)", () => {
         async () => new Response(null, { status: 401 })
       );
       expect(response.headers.get(REQUEST_ID_HEADER)).toBe(
-        context.locals.requestContext.requestId
+        context.locals.requestContext.traceId
+      );
+      expect(response.headers.get(TRACEPARENT_HEADER)).toContain(
+        context.locals.requestContext.spanId
       );
       expect(context.locals.requestContext).toMatchObject({
         source: "http",
@@ -118,7 +168,7 @@ describe("platform edge (request ids and error references)", () => {
         async () => new Response("never")
       );
       expect(redirect.status).toBe(302);
-      expect(redirect.headers.get(REQUEST_ID_HEADER)).toMatch(UUID);
+      expect(redirect.headers.get(REQUEST_ID_HEADER)).toMatch(TRACE_ID);
 
       const signedIn = middlewareContext("/app/dashboard", user.cookie);
       const page = await handleAppRequest(
@@ -129,12 +179,12 @@ describe("platform edge (request ids and error references)", () => {
       expect(page.status).toBe(200);
       expect(signedIn.locals.requestContext.userId).toBe(user.id);
       expect(page.headers.get(REQUEST_ID_HEADER)).toBe(
-        signedIn.locals.requestContext.requestId
+        signedIn.locals.requestContext.traceId
       );
     });
   });
 
-  it("turns an unhandled error into a 500 whose reference is the request id", async () => {
+  it("turns an unhandled error into a Problem Details 500 and an OpenTelemetry error report", async () => {
     const reports = captureReports();
     const response = await withRequestContext(
       new Request(`${APP_URL}/boom`, { headers: { "cf-ray": "8f00-AMS" } }),
@@ -144,18 +194,37 @@ describe("platform edge (request ids and error references)", () => {
       }
     );
     expect(response.status).toBe(500);
+    expect(response.headers.get("content-type")).toBe(
+      "application/problem+json"
+    );
     const body = (await response.json()) as Record<string, unknown>;
     expect(body).toEqual({
-      error: "Internal error",
+      type: "about:blank",
+      title: "Internal Server Error",
+      status: 500,
+      detail:
+        "Something went wrong on our side. Quote the reference when you report it.",
       reference: response.headers.get(REQUEST_ID_HEADER),
     });
     expect(reports()).toEqual([
       expect.objectContaining({
-        requestId: body.reference,
-        source: "http",
-        cfRay: "8f00-AMS",
-        path: "/boom",
-        error: expect.objectContaining({ message: "render failed" }),
+        trace_id: body.reference,
+        severity_text: "ERROR",
+        resource: {
+          "service.name": "cloudflare-starter-web",
+          "service.version": expect.any(String),
+          "deployment.environment.name": "develop",
+        },
+        attributes: expect.objectContaining({
+          "app.request.source": "http",
+          "http.request.method": "GET",
+          "url.path": "/boom",
+          "http.response.status_code": 500,
+          "app.cloudflare.ray_id": "8f00-AMS",
+          "exception.type": "Error",
+          "exception.message": "render failed",
+          "exception.stacktrace": expect.stringContaining("render failed"),
+        }),
       }),
     ]);
   });
@@ -183,7 +252,7 @@ describe("platform edge (request ids and error references)", () => {
       };
     };
     const header = response.headers.get(REQUEST_ID_HEADER);
-    expect(header).toMatch(UUID);
+    expect(header).toMatch(TRACE_ID);
     expect(body.error.data).toMatchObject({
       code: "INTERNAL_SERVER_ERROR",
       reference: header,
@@ -194,15 +263,18 @@ describe("platform edge (request ids and error references)", () => {
     expect(JSON.stringify(body)).not.toContain("queue unavailable");
     expect(reports()).toEqual([
       expect.objectContaining({
-        requestId: header,
-        userId: user.id,
-        procedure: "queue.enqueueHello",
-        error: expect.objectContaining({ message: "queue unavailable" }),
+        trace_id: header,
+        attributes: expect.objectContaining({
+          "user.id": user.id,
+          "rpc.system": "trpc",
+          "rpc.method": "queue.enqueueHello",
+          "exception.message": "queue unavailable",
+        }),
       }),
     ]);
   });
 
-  it("gives expected tRPC errors no reference", async () => {
+  it("gives expected tRPC errors no reference and no stack", async () => {
     const request = new Request(`${APP_URL}/api/trpc/queue.enqueueHello`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-trpc-source": "app" },
@@ -216,6 +288,7 @@ describe("platform edge (request ids and error references)", () => {
       error: { data: Record<string, unknown> };
     };
     expect(body.error.data).not.toHaveProperty("reference");
+    expect(body.error.data).not.toHaveProperty("stack");
   });
 
   it("returns the reference in an MCP tool error", async () => {
@@ -255,16 +328,16 @@ describe("platform edge (request ids and error references)", () => {
       code: "INTERNAL_SERVER_ERROR",
       httpStatus: 500,
       message: "Internal error",
-      reference: requestContext.requestId,
+      reference: requestContext.traceId,
     });
     // Reported once, by the procedure, not again by the tool wrapper.
     expect(context.errors.capture).not.toHaveBeenCalled();
     expect(reports()).toEqual([
-      expect.objectContaining({ requestId: requestContext.requestId }),
+      expect.objectContaining({ trace_id: requestContext.traceId }),
     ]);
   });
 
-  it("answers a failed file upload with 500 and the reference", async () => {
+  it("answers a failed file upload with a Problem Details 500 and the reference", async () => {
     vi.spyOn(env.FILES, "put").mockRejectedValue(new Error("R2 down"));
     const reports = captureReports();
     const form = new FormData();
@@ -275,7 +348,7 @@ describe("platform edge (request ids and error references)", () => {
     const request = new Request(`${APP_URL}/api/files`, {
       method: "POST",
       body: form,
-      headers: { origin: APP_URL },
+      headers: { origin: APP_URL, "cf-ray": "8f01-AMS" },
     });
     const requestContext = testRequestContext();
 
@@ -284,19 +357,25 @@ describe("platform edge (request ids and error references)", () => {
     );
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({
-      error: "Internal error",
-      reference: requestContext.requestId,
+    expect(await response.json()).toMatchObject({
+      status: 500,
+      title: "Internal Server Error",
+      reference: requestContext.traceId,
     });
     expect(reports()).toEqual([
       expect.objectContaining({
-        requestId: requestContext.requestId,
-        route: "POST /api/files",
+        trace_id: requestContext.traceId,
+        attributes: expect.objectContaining({
+          "http.route": "/api/files",
+          "http.request.method": "POST",
+          "app.cloudflare.ray_id": "8f01-AMS",
+          "exception.message": "R2 down",
+        }),
       }),
     ]);
   });
 
-  it("fails with an error naming LOG_SINK when the setting is missing", async () => {
+  it("fails with a Problem Details error naming LOG_SINK when the setting is missing", async () => {
     const handle = vi.fn(async () => new Response("never"));
     const misconfigured = { ...env, LOG_SINK: undefined } as AppEnv;
     const response = await withRequestContext(
@@ -307,7 +386,7 @@ describe("platform edge (request ids and error references)", () => {
     expect(handle).not.toHaveBeenCalled();
     expect(response.status).toBe(500);
     const body = (await response.json()) as Record<string, string>;
-    expect(body.error).toMatch(
+    expect(body.detail).toMatch(
       /^LOG_SINK is not set: set LOG_SINK to one of workers-logs, none/
     );
     expect(body.reference).toBe(response.headers.get(REQUEST_ID_HEADER));

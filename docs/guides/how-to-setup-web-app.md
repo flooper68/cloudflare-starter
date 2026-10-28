@@ -52,10 +52,10 @@ Open `http://localhost:4321`, create an account at `/sign-up`, and you land on `
 
 Queue and cron run in the same dev server:
 
-- `/app/queue-demo` sends a message; the consumer logs `event: 'queue.hello'` in the dev output, with the `requestId` of the request that queued it.
-- `curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"` runs the cron handler, which logs `event: 'cron.hello'`.
+- `/app/queue-demo` sends a message; the consumer logs a `body: 'queue.hello'` record in the dev output, with the `trace_id` of the request that queued it.
+- `curl "http://localhost:4321/cdn-cgi/handler/scheduled?cron=*/5+*+*+*+*"` runs the cron handler, which logs a `body: 'cron.hello'` record.
 
-Every response has an `x-request-id` header; the same id is on that request's log lines.
+Every response has `traceparent` and `x-request-id` headers; the trace id in them is the `trace_id` of that request's log records.
 
 ## Deploy
 
@@ -95,7 +95,7 @@ The environment is picked when building: `deploy:production` runs `CLOUDFLARE_EN
 ## Queues and Cron
 
 - Producer: tRPC `queue.enqueueHello` sends a typed message (the greetings feature's `sendHello`; message types in `packages/features/src/queue-messages.ts`).
-- Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). Each message runs with its own request context, reusing the `requestId` the producer put on it. A malformed message is logged (`queue.invalid`) and dropped; a failing handler is reported (`error.captured`) and retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
+- Consumer: [src/server/queue.ts](../../apps/web/src/server/queue.ts). Each message runs with its own request context, continuing the trace of the `traceparent` the producer put on it. A malformed message is logged (`queue.invalid`) and dropped; a failing handler is reported (`error.captured`) and retried with backoff, and after `max_retries` the message goes to the dead-letter queue.
 - Cron: [src/server/cron.ts](../../apps/web/src/server/cron.ts), schedules in `triggers.crons` (UTC), a request context per run. With several schedules, branch on `controller.cron`.
 - Logs: `bunx wrangler tail --env production`, or Workers Logs in the dashboard; filtering and fields in [how-to-setup-logging.md](how-to-setup-logging.md).
 
@@ -118,7 +118,7 @@ The var is missing from this environment's `vars` in `wrangler.jsonc`, or `.dev.
 
 ### A user reports an error with a reference
 
-The reference is the request id. Search Workers Logs for `requestId = <reference>` ([how-to-setup-error-reporting.md](how-to-setup-error-reporting.md#finding-a-report)).
+The reference is the trace id. Search Workers Logs for `trace_id = <reference>` ([how-to-setup-error-reporting.md](how-to-setup-error-reporting.md#finding-a-report)).
 
 ### `no such table: user`
 

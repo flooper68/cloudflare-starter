@@ -72,17 +72,17 @@ export const Inline: Story = {
   ),
 };
 
-/** An unexpected server error: the reference (request id) is what the user quotes to support. */
+/** An unexpected server error: the reference (trace id) is what the user quotes to support. */
 export const WithReference: Story = {
   args: {
     title: "Couldn't queue the message",
     description: "Something went wrong on our side. Try again in a moment.",
-    reference: "3f6c1d2e-8b4a-4f0e-9c7d-5a1b2c3d4e5f",
+    reference: "4bf92f3577b34da6a3ce929d0e0e4736",
   },
   play: async ({ canvasElement }) => {
     const alert = within(canvasElement).getByRole("alert");
     await expect(alert).toHaveTextContent(
-      "Reference 3f6c1d2e-8b4a-4f0e-9c7d-5a1b2c3d4e5f"
+      "Reference 4bf92f3577b34da6a3ce929d0e0e4736"
     );
   },
 };
@@ -93,7 +93,7 @@ export const InlineWithReference: Story = {
       <ErrorState
         variant="inline"
         description="Internal error"
-        reference="3f6c1d2e-8b4a-4f0e-9c7d-5a1b2c3d4e5f"
+        reference="4bf92f3577b34da6a3ce929d0e0e4736"
         onRetry={() => new Promise((resolve) => setTimeout(resolve, 800))}
       />
     </div>

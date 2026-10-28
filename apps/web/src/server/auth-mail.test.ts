@@ -19,13 +19,15 @@ describe("auth links without email", () => {
     const logger = createMemoryLogger();
     deliverAuthLinkWithoutEmail({ logger, environment: "local" }, link);
     expect(logger.records).toEqual([
-      {
-        level: "info",
-        event: "auth.mail_not_sent",
-        subject: "Reset your password",
-        to: "nicole@example.test",
-        link: link.url,
-      },
+      expect.objectContaining({
+        severity_text: "INFO",
+        body: "auth.mail_not_sent",
+        attributes: {
+          "app.auth.mail.subject": "Reset your password",
+          "app.auth.mail.recipient": "nicole@example.test",
+          "app.auth.link": link.url,
+        },
+      }),
     ]);
   });
 
@@ -43,12 +45,14 @@ describe("auth links without email", () => {
       expect((thrown as APIError).status).toBe("PRECONDITION_FAILED");
       expect((thrown as APIError).message).toBe(EMAIL_NOT_CONFIGURED_MESSAGE);
       expect(logger.records).toEqual([
-        {
-          level: "error",
-          event: "auth.mail_not_sent",
-          subject: "Reset your password",
-          reason: "email is not configured",
-        },
+        expect.objectContaining({
+          severity_text: "ERROR",
+          body: "auth.mail_not_sent",
+          attributes: {
+            "app.auth.mail.subject": "Reset your password",
+            "app.auth.mail.reason": "email is not configured",
+          },
+        }),
       ]);
       expect(JSON.stringify(logger.records)).not.toMatch(/tok_secret|nicole/);
     }

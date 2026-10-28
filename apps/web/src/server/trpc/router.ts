@@ -1,6 +1,7 @@
 import {
   createDownloadUrl,
   createPresignedUpload,
+  formatTraceparent,
   listOwnedFiles,
   sendHello,
   uploadInputSchema,
@@ -71,7 +72,7 @@ export const appRouter = router({
           {
             name: input.name,
             userId: ctx.user.id,
-            requestId: ctx.requestContext.requestId,
+            traceparent: formatTraceparent(ctx.requestContext),
           }
         );
         return { queued: true };

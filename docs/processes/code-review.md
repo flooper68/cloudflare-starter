@@ -61,6 +61,7 @@ Automation proves a test exists, not that it is good: reviewers still check that
 - [ ] Failures are typed domain errors, mapped to transport errors in the adapter.
 - [ ] Use cases take explicit deps (`db`, `bucket`, `clock`, `ids`), no globals or `cloudflare:workers` imports.
 - [ ] Outside services only via a port; vendor code only in `platform/adapters/<vendor>/`; no `console` (log through the Logger, report unexpected errors once with the ErrorReporter, and give users the reference, never the error).
+- [ ] A new wire, log or event format (HTTP error body, log attributes, queue message, webhook, analytics event, metric) follows the standard listed in [overview.md Standards](../architecture/overview.md#standards), or the PR states why not.
 - [ ] Every new procedure has an MCP tool with a model-facing description, or an exemption with a reason.
 
 ### 2. Security and auth

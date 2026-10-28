@@ -1,14 +1,14 @@
-/** The structured log line for one run of the cron demo. */
+/**
+ * Log attributes for one run of the cron demo (OpenTelemetry `app.*` keys; the event name,
+ * environment and trace ids come from the logger).
+ */
 export function scheduledGreeting(input: {
-  readonly environment: string;
   readonly cron: string;
   readonly scheduledTime: number;
 }) {
   return {
-    tag: "cron-hello",
-    message: "Hello from cron",
-    environment: input.environment,
-    cron: input.cron,
-    scheduledTime: new Date(input.scheduledTime).toISOString(),
+    "app.greeting.message": "Hello from cron",
+    "app.cron.schedule": input.cron,
+    "app.cron.scheduled_time": new Date(input.scheduledTime).toISOString(),
   } as const;
 }

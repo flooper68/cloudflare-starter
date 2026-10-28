@@ -45,15 +45,15 @@ export function deliverAuthLinkWithoutEmail(
 ): void {
   if (mayLogAuthLinks(deps.environment)) {
     deps.logger.info("auth.mail_not_sent", {
-      subject: input.subject,
-      to: input.to,
-      link: input.url,
+      "app.auth.mail.subject": input.subject,
+      "app.auth.mail.recipient": input.to,
+      "app.auth.link": input.url,
     });
     return;
   }
   deps.logger.error("auth.mail_not_sent", {
-    subject: input.subject,
-    reason: "email is not configured",
+    "app.auth.mail.subject": input.subject,
+    "app.auth.mail.reason": "email is not configured",
   });
   throw emailNotConfiguredError();
 }

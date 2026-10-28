@@ -1,26 +1,29 @@
 import type { RequestContext } from "../../../kernel";
 import type { ErrorReporter, LogFields } from "../../ports";
-import { requestContextFields } from "../../request-context";
-import { createWorkersLogsLogger } from "./workers-logs-logger";
+import {
+  createWorkersLogsLogger,
+  type WorkersLogsLoggerOptions,
+} from "./workers-logs-logger";
 
-/** The event name of an error report in Workers Logs; filter on it to list errors. */
+/** The body of an error report in Workers Logs; filter on it to list errors. */
 export const ERROR_REPORT_EVENT = "error.captured";
 
 /**
- * ErrorReporter adapter that writes each report as one structured error line to Workers
- * Logs: the error (name, message, stack, cause), the request context and `extra`. Search
- * Workers Logs for the reference (`requestId`) a user quotes to find it.
+ * ErrorReporter adapter that writes each report as one ERROR log record to Workers Logs,
+ * with the OpenTelemetry exception attributes (`exception.type`, `exception.message`,
+ * `exception.stacktrace`), the trace and span ids of the work that failed and `extra`.
+ * Search Workers Logs for `trace_id = <reference>` to find it.
  */
-export function createWorkersLogsErrorReporter(): ErrorReporter {
-  const logger = createWorkersLogsLogger();
+export function createWorkersLogsErrorReporter(
+  options: WorkersLogsLoggerOptions
+): ErrorReporter {
+  const logger = createWorkersLogsLogger(options);
   return {
     capture(error: unknown, context: RequestContext, extra?: LogFields) {
-      logger.error(ERROR_REPORT_EVENT, {
-        ...extra,
-        ...requestContextFields(context),
-        error,
-      });
-      return context.requestId;
+      logger
+        .withContext(context)
+        .error(ERROR_REPORT_EVENT, { ...extra, error });
+      return context.traceId;
     },
   };
 }

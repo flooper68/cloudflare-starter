@@ -1,14 +1,16 @@
 import type { Ids, RequestContext, RequestSource } from "../kernel";
+import { newSpanId, newTraceId, parseTraceparent } from "./trace-context";
 
 export interface CreateRequestContextInput {
   readonly source: RequestSource;
   readonly release: string;
   readonly environment: string;
   /**
-   * An id carried by our own queue messages, so a consumer run shares the id of the request
-   * that queued it. Never pass a client header (x-request-id): HTTP ids are generated here.
+   * A W3C `traceparent` to continue: the incoming header of an HTTP request, or the one a
+   * queue message carries. Invalid or missing starts a new trace. This unit of work always
+   * gets its own span id. Correlation only: never trust it for anything else.
    */
-  readonly requestId?: string | null;
+  readonly traceparent?: string | null;
   readonly userId?: string | null;
   readonly workspaceId?: string | null;
   /** cf-connecting-ip for HTTP requests; ignored for queue and cron. */
@@ -20,8 +22,12 @@ export function createRequestContext(
   deps: { readonly ids: Ids },
   input: CreateRequestContextInput
 ): RequestContext {
+  const parent = parseTraceparent(input.traceparent);
   return {
-    requestId: input.requestId || deps.ids.uuid(),
+    traceId: parent?.traceId ?? newTraceId(deps.ids),
+    spanId: newSpanId(deps.ids),
+    parentSpanId: parent?.parentSpanId ?? null,
+    traceFlags: parent?.traceFlags ?? "01",
     source: input.source,
     userId: input.userId ?? null,
     workspaceId: input.workspaceId ?? null,
@@ -32,18 +38,17 @@ export function createRequestContext(
 }
 
 /**
- * The context fields every log line and error report of that unit of work carries. The IP
- * is left out: it is personal data and has no place in general logs.
+ * The context as OpenTelemetry log attributes (semantic conventions where they exist,
+ * `app.*` otherwise). Absent values are left out. The IP is personal data and is never
+ * an attribute; trace and span ids are top-level fields of the record, not attributes.
  */
-export function requestContextFields(
+export function requestContextAttributes(
   context: RequestContext
-): Readonly<Record<string, string | null>> {
-  return {
-    requestId: context.requestId,
-    source: context.source,
-    userId: context.userId,
-    workspaceId: context.workspaceId,
-    release: context.release,
-    environment: context.environment,
+): Readonly<Record<string, string>> {
+  const attributes: Record<string, string> = {
+    "app.request.source": context.source,
   };
+  if (context.userId) attributes["user.id"] = context.userId;
+  if (context.workspaceId) attributes["app.workspace.id"] = context.workspaceId;
+  return attributes;
 }

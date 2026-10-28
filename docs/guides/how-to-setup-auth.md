@@ -55,7 +55,7 @@ At least one method must be on. If none is, or verification is required without 
 
 Password reset links and verification links go out through Cloudflare Email Service when the environment has email ([how-to-setup-email.md](./how-to-setup-email.md)). Locally the binding is simulated and the dev log shows each message. With email off, the links carry tokens, so what happens depends on `APP_ENV` (`apps/web/src/server/auth-mail.ts`):
 
-- `APP_ENV=local` (set in `.dev.vars`, local development only): the link is logged (event `auth.mail_not_sent`, field `link`, through the Logger, so with `LOG_SINK=none` it goes nowhere).
+- `APP_ENV=local` (set in `.dev.vars`, local development only): the link is logged (record body `auth.mail_not_sent`, attribute `app.auth.link`, through the Logger, so with `LOG_SINK=none` it goes nowhere).
 - Any other value, or unset (every deployed environment): no link is logged. `/request-password-reset` and `/send-verification-email` answer 412 with code `EMAIL_NOT_CONFIGURED` ("Email is not configured for this environment …") for every address, so the response does not reveal which emails are registered. An error-level `auth.mail_not_sent` line without link or recipient is logged if a link is attempted elsewhere. Set up email ([how-to-setup-email.md](./how-to-setup-email.md)) before offering password reset in a deployed environment.
 
 When email is on, a verification mail is sent on sign-up even if verification is not required, so `emailVerified` becomes true once the user clicks it.

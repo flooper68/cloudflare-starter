@@ -27,7 +27,10 @@ function context(overrides: Partial<Context> = {}): Context {
     r2: { enabled: false, value: null, reason: "R2 is not configured" },
     queue: { send: vi.fn() } as unknown as Context["queue"],
     requestContext: {
-      requestId: "req-mcp-1",
+      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+      spanId: "00f067aa0ba902b7",
+      parentSpanId: null,
+      traceFlags: "01",
       source: "http",
       userId: "user-1",
       workspaceId: null,
@@ -123,12 +126,13 @@ describe("MCP server", () => {
       code: "INTERNAL_SERVER_ERROR",
       httpStatus: 500,
       message: "Internal error",
-      reference: "req-mcp-1",
+      reference: "4bf92f3577b34da6a3ce929d0e0e4736",
     });
     expect(errors.captured).toHaveLength(1);
     expect(errors.captured[0]?.extra).toEqual({
-      procedure: "queue.enqueueHello",
-      type: "mutation",
+      "rpc.system": "trpc",
+      "rpc.method": "queue.enqueueHello",
+      "app.trpc.type": "mutation",
     });
   });
 

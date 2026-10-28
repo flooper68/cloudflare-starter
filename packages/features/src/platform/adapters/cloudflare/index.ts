@@ -3,4 +3,7 @@ export {
   createWorkersLogsErrorReporter,
   ERROR_REPORT_EVENT,
 } from "./workers-logs-error-reporter";
-export { createWorkersLogsLogger } from "./workers-logs-logger";
+export {
+  createWorkersLogsLogger,
+  type WorkersLogsLoggerOptions,
+} from "./workers-logs-logger";

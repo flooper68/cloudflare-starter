@@ -9,6 +9,7 @@ export {
   type MemoryLogger,
   noopErrorReporter,
   noopLogger,
+  type WorkersLogsLoggerOptions,
 } from "./adapters";
 export { systemClock } from "./clock";
 export { createDb, type Db } from "./db";
@@ -21,11 +22,18 @@ export {
   type SendTestEmailInput,
 } from "./email";
 export { randomIds } from "./ids";
-export type { LogRecord } from "./log-record";
+export type { LogRecord, LogResource, SeverityText } from "./log-record";
 export type { ErrorReporter, LogFields, Logger, LogLevel } from "./ports";
 export { sendMessage } from "./queue";
 export {
   type CreateRequestContextInput,
   createRequestContext,
-  requestContextFields,
+  requestContextAttributes,
 } from "./request-context";
+export {
+  formatTraceparent,
+  newSpanId,
+  newTraceId,
+  parseTraceparent,
+  type TraceParent,
+} from "./trace-context";

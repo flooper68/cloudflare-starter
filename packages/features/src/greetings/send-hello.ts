@@ -8,8 +8,8 @@ export async function sendHello(
   input: {
     readonly name: string;
     readonly userId: string;
-    /** The caller's request id; the consumer reuses it for its logs and errors. */
-    readonly requestId?: string;
+    /** The caller's W3C traceparent; the consumer continues that trace. */
+    readonly traceparent?: string;
   }
 ): Promise<void> {
   await sendMessage(deps.queue, helloMessageSchema, {
@@ -17,6 +17,6 @@ export async function sendHello(
     name: input.name,
     userId: input.userId,
     queuedAt: deps.clock.now().toISOString(),
-    ...(input.requestId ? { requestId: input.requestId } : {}),
+    ...(input.traceparent ? { traceparent: input.traceparent } : {}),
   });
 }

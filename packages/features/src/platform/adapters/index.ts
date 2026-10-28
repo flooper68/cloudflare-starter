@@ -5,6 +5,7 @@ export {
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
   ERROR_REPORT_EVENT,
+  type WorkersLogsLoggerOptions,
 } from "./cloudflare";
 export {
   type CapturedError,

@@ -14,7 +14,13 @@ describeLoggerContract("createWorkersLogsLogger", () => {
       [level, vi.spyOn(console, level).mockImplementation(() => {})] as const
   );
   return {
-    logger: createWorkersLogsLogger(),
+    logger: createWorkersLogsLogger({
+      resource: {
+        "service.name": "cloudflare-starter-web",
+        "service.version": "local",
+        "deployment.environment.name": "test",
+      },
+    }),
     lines: () =>
       spies
         .flatMap(([level, spy]) =>
