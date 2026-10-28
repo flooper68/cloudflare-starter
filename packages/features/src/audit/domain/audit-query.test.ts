@@ -38,6 +38,7 @@ describe("auditQuerySchema", () => {
     { limit: 0 },
     { limit: AUDIT_PAGE_SIZE_MAX + 1 },
     { unknownFilter: "x" },
+    { targetId: "user-ada" },
   ])("rejects %o", (query) => {
     expect(auditQuerySchema.safeParse(query).success).toBe(false);
   });

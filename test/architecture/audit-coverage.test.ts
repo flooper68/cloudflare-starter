@@ -48,7 +48,10 @@ describe("audit coverage", () => {
     stateChanging.length ? stateChanging : ["(no state-changing use case yet)"]
   )("%s records an audit event or is exempt", (path) => {
     if (!stateChanging.includes(path)) return;
-    const records = read(path).includes("recordAuditEvent");
+    const records =
+      /import\s*\{[^}]*\brecordAuditEvent\b[^}]*\}\s*from\s*["']\.\.\/audit["']/.test(
+        read(path)
+      ) && /\brecordAuditEvent\(/.test(read(path));
     expect(
       records || path in AUDIT_EXEMPT,
       "call recordAuditEvent (from ../audit) after the change, or add it to AUDIT_EXEMPT with a reason"

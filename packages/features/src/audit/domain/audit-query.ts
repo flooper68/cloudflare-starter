@@ -32,7 +32,12 @@ export const auditQuerySchema = z
       .max(AUDIT_PAGE_SIZE_MAX)
       .default(AUDIT_PAGE_SIZE_DEFAULT),
   })
-  .strict();
+  .strict()
+  // The target index is (target_type, target_id): a target id alone could not use it.
+  .refine((query) => !query.targetId || query.targetType, {
+    message: "targetId needs targetType",
+    path: ["targetType"],
+  });
 
 export type AuditQueryInput = z.input<typeof auditQuerySchema>;
 export type AuditQuery = z.output<typeof auditQuerySchema>;

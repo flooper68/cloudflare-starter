@@ -29,6 +29,8 @@ Nothing else: Wrangler keeps the local database under `apps/web/.wrangler/state`
 3. `bun run db:migrate:local`, run the app or tests.
 4. Commit the `.sql` file and `migrations/meta/` together. CI fails if the schema and migrations disagree.
 
+In the starter itself (before a project's first real deploy): regenerate the single `0000_init` in place (delete `packages/features/migrations/`, then `bunx drizzle-kit generate --name init` in `packages/features`) instead of adding a migration. A database that already applied an older `0000_init` will not pick up new tables: locally delete `apps/web/.wrangler/state/v3/d1` and migrate again; ask the user before recreating or hand-patching a remote database. Details: the guide's "Changing The Schema".
+
 Rules: additive first (new tables, nullable or defaulted columns); renames and type changes go through a new column, a backfill and a later drop; never `drizzle-kit push` against a remote database. Migrate before deploying the code that needs it.
 
 ## Verify
