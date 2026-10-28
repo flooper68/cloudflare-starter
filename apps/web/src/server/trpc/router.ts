@@ -1,14 +1,21 @@
 import {
   createDownloadUrl,
   createPresignedUpload,
+  evaluateClientFlags,
+  flagRulesSchema,
+  flagUpdateSchema,
+  listFlags,
   listWorkspaceFiles,
   sendHello,
+  setFlagRules,
+  updateFlag,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
 import { z } from "zod";
 
 import { displayName } from "@/lib/user";
 
+import { localAdminProcedure } from "./admin";
 import {
   protectedProcedure,
   publicProcedure,
@@ -87,6 +94,43 @@ export const appRouter = router({
 
   public: router({
     hello: publicProcedure.query(() => ({ message: "hello world" })),
+  }),
+
+  flags: router({
+    /**
+     * The caller's values of the `client: true` flags in a workspace they belong to: a
+     * workspace rollout gives every member the same value.
+     */
+    client: workspaceProcedure.query(async ({ ctx }) => ({
+      flags: await evaluateClientFlags(ctx, {
+        userId: ctx.actor.userId,
+        workspaceId: ctx.actor.workspaceId,
+        // TODO(plans): the workspace's plan once plans exist.
+        plan: null,
+        environment: ctx.config.APP_ENV,
+      }),
+    })),
+  }),
+
+  // TODO(admin-portal): move under the admin portal's router and adminProcedure.
+  admin: router({
+    flags: router({
+      list: localAdminProcedure.query(async ({ ctx }) => ({
+        flags: await listFlags(ctx),
+      })),
+
+      update: localAdminProcedure
+        .input(flagUpdateSchema)
+        .mutation(({ ctx, input }) =>
+          updateFlag(ctx, { ...input, actorUserId: ctx.user.id })
+        ),
+
+      setRules: localAdminProcedure
+        .input(flagRulesSchema)
+        .mutation(({ ctx, input }) =>
+          setFlagRules(ctx, { ...input, actorUserId: ctx.user.id })
+        ),
+    }),
   }),
 });
 

@@ -21,6 +21,7 @@ export const AUDIT_TARGET_TYPES = [
   "email",
   "workspace",
   "invitation",
+  "feature_flag",
 ] as const;
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
 
@@ -66,6 +67,7 @@ const signInMethod = z.enum([
   "email_verification",
   "other",
 ]);
+const flagValue = z.union([z.boolean(), z.string().max(TEXT_MAX), z.number()]);
 const signUpMethod = z.enum(["password", "social", "other"]);
 
 export const auditEventSchema = z.discriminatedUnion("action", [
@@ -232,6 +234,28 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     action: z.literal("workspace.deleted"),
     target: target("workspace"),
     metadata: noMetadata,
+  }),
+
+  // Feature flags (platform configuration, recorded by the flag admin use cases). The
+  // target id is the flag key; values are flag values (boolean, short string, number).
+  z.object({
+    ...common,
+    action: z.literal("feature_flag.updated"),
+    target: target("feature_flag"),
+    metadata: z
+      .object({ enabled: z.boolean(), fallthrough: flagValue.nullable() })
+      .strict(),
+  }),
+  z.object({
+    ...common,
+    action: z.literal("feature_flag.rules_changed"),
+    target: target("feature_flag"),
+    metadata: z
+      .object({
+        ruleCount: z.number().int().min(0).max(50),
+        ruleKinds: z.array(z.enum(["workspace", "plan", "percentage"])).max(50),
+      })
+      .strict(),
   }),
 ]);
 

@@ -101,6 +101,20 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: { type: "workspace", id: workspace },
     metadata: { previousOwnerUserId: "user-ada", ownerUserId: "user-grace" },
   },
+  "feature_flag.updated": {
+    action: "feature_flag.updated",
+    actor: { kind: "admin", userId: "user-grace" },
+    workspaceId: null,
+    target: { type: "feature_flag", id: "upload-demo-presigned" },
+    metadata: { enabled: true, fallthrough: false },
+  },
+  "feature_flag.rules_changed": {
+    action: "feature_flag.rules_changed",
+    actor: { kind: "admin", userId: "user-grace" },
+    workspaceId: null,
+    target: { type: "feature_flag", id: "upload-demo-presigned" },
+    metadata: { ruleCount: 2, ruleKinds: ["workspace", "percentage"] },
+  },
   "workspace.deleted": {
     action: "workspace.deleted",
     workspaceId: workspace,

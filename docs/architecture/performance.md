@@ -88,6 +88,10 @@ The Workers platform sets hard limits; the current values per plan are in Cloudf
 | Slow or retryable work   | Enqueue a job (`enqueueJob`) and return; the consumer does the work with its own limits and retries                                                            |
 | Caching                  | Cache public, rarely changing responses (static assets, public pages) with `Cache-Control` and the Cache API; never cache per-user data in a shared cache      |
 
+## Feature flags
+
+The D1 flag provider (`FEATURE_FLAGS=d1`) reads every flag with its rules in **one query per isolate per 30 seconds** and evaluates from memory; a request that evaluates several flags, or `flags.client`, adds no query while the cache is warm. Writes through the admin procedures clear the cache of the isolate that made them. The query reads every row of `feature_flags` and `feature_flag_rules`, which stays small because flags are removed when done (the catalog test fails on unused flags). `d1-feature-flags.integration.test.ts` pins the query count and the TTL. A vendor provider brings its own caching (usually a streamed in-memory copy); check its subrequests per request before adopting it.
+
 ## Regressions and budget changes
 
 - A check that fails is a regression until shown otherwise. Fix the code, or change the budget.

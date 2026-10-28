@@ -55,17 +55,23 @@ describe("platform config", () => {
         APP_ENV: "staging",
         LOG_SINK: "workers-logs",
         ERROR_REPORTER: "none",
+        FEATURE_FLAGS: "d1",
       })
     ).toEqual({
       APP_ENV: "staging",
       LOG_SINK: "workers-logs",
       ERROR_REPORTER: "none",
+      FEATURE_FLAGS: "d1",
     });
   });
 
   it("requires APP_ENV: no default environment", () => {
     expect(() =>
-      parsePlatformConfig({ LOG_SINK: "none", ERROR_REPORTER: "none" })
+      parsePlatformConfig({
+        LOG_SINK: "none",
+        ERROR_REPORTER: "none",
+        FEATURE_FLAGS: "none",
+      })
     ).toThrow(
       /^APP_ENV is not set: set APP_ENV to one of local, develop, staging, production/
     );
@@ -94,6 +100,22 @@ describe("platform config", () => {
         ERROR_REPORTER: "",
       })
     ).toThrow(/^ERROR_REPORTER is not set/);
+  });
+
+  it("requires FEATURE_FLAGS and accepts only d1 or none", () => {
+    const rest = { APP_ENV: "local", LOG_SINK: "none", ERROR_REPORTER: "none" };
+    expect(() => parsePlatformConfig(rest)).toThrow(
+      new ConfigError(
+        "FEATURE_FLAGS",
+        "FEATURE_FLAGS is not set: set FEATURE_FLAGS to one of d1, none in the vars of apps/web/wrangler.jsonc for every environment"
+      )
+    );
+    expect(() =>
+      parsePlatformConfig({ ...rest, FEATURE_FLAGS: "launchdarkly" })
+    ).toThrow(/^FEATURE_FLAGS is "launchdarkly"/);
+    expect(
+      parsePlatformConfig({ ...rest, FEATURE_FLAGS: "none" }).FEATURE_FLAGS
+    ).toBe("none");
   });
 
   it("rejects values that name no adapter", () => {

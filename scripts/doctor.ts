@@ -20,6 +20,7 @@ import {
 const PLATFORM_SETTINGS = {
   LOG_SINK: ["workers-logs", "none"],
   ERROR_REPORTER: ["workers-logs", "none"],
+  FEATURE_FLAGS: ["d1", "none"],
 } as const;
 
 let errors = 0;

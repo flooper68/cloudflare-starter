@@ -95,6 +95,16 @@
     },
     {
       "includes": [
+        "apps/web/src/**",
+        "packages/features/src/**",
+        "!packages/features/src/feature-flags/**",
+        "!apps/web/src/lib/feature-flags.tsx",
+        "!**/*.test.ts"
+      ],
+      "plugins": ["./lint/rules/flag-key-literal.grit"]
+    },
+    {
+      "includes": [
         "packages/ui/src/**",
         "apps/web/src/**",
         "!packages/ui/src/brand/**"

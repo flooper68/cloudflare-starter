@@ -5,6 +5,8 @@ import {
   DomainError,
   type EmailService,
   type ErrorReporter,
+  type FeatureFlagStore,
+  type FeatureFlags,
   type Ids,
   type JobQueue,
   type Logger,
@@ -34,10 +36,19 @@ export interface Context {
   readonly errors: ErrorReporter;
   /** The FILES binding, for use cases that delete objects. */
   readonly bucket: R2Bucket;
+  /** Feature-flag provider: procedures pass it to `evaluateFlag` / use cases, never call it. */
+  readonly flags: FeatureFlags;
+  /** The provider's store (FEATURE_FLAGS=d1), null otherwise. */
+  readonly flagStore: FeatureFlagStore | null;
   readonly user: {
     readonly id: string;
     readonly email: string;
     readonly name: string;
+    /**
+     * Platform role. TODO(admin-portal): no user column holds it yet, so it is never set
+     * outside tests and admin procedures answer NOT_FOUND (see trpc/admin.ts).
+     */
+    readonly role?: string | null;
   } | null;
 }
 

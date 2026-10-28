@@ -306,3 +306,24 @@ CREATE TABLE `workspaces` (
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
 );
+--> statement-breakpoint
+CREATE TABLE `feature_flag_rules` (
+	`id` text PRIMARY KEY NOT NULL,
+	`flag_key` text NOT NULL,
+	`position` integer NOT NULL,
+	`kind` text NOT NULL,
+	`workspace_id` text,
+	`plan_id` text,
+	`percentage_bp` integer,
+	`value_json` text NOT NULL,
+	FOREIGN KEY (`flag_key`) REFERENCES `feature_flags`(`key`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `feature_flag_rules_flag_key_idx` ON `feature_flag_rules` (`flag_key`);--> statement-breakpoint
+CREATE TABLE `feature_flags` (
+	`key` text PRIMARY KEY NOT NULL,
+	`enabled` integer NOT NULL,
+	`fallthrough_json` text,
+	`updated_at` integer NOT NULL,
+	`updated_by` text
+);

@@ -4,19 +4,24 @@
 // vendor-sdks-only-in-adapters).
 export {
   createCloudflareJobQueue,
+  createD1FeatureFlags,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
+  D1_FLAGS_TTL_MS,
+  type D1FeatureFlagsOptions,
   ERROR_REPORT_EVENT,
   type WorkersLogsLoggerOptions,
 } from "./cloudflare";
 export {
   type CapturedError,
   createMemoryErrorReporter,
+  createMemoryFeatureFlags,
   createMemoryJobQueue,
   createMemoryLogger,
   type MemoryErrorReporter,
+  type MemoryFeatureFlags,
   type MemoryJobQueue,
   type MemoryLogger,
   type SentJob,
 } from "./memory";
-export { noopErrorReporter, noopLogger } from "./noop";
+export { noopErrorReporter, noopFeatureFlags, noopLogger } from "./noop";

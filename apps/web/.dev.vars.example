@@ -46,6 +46,13 @@ EMAIL_FROM_NAME=Cloudflare Starter
 # LOG_SINK=none
 # ERROR_REPORTER=none
 
+# Feature flags. FEATURE_FLAGS is a required var set in apps/web/wrangler.jsonc for
+# every environment: d1 (flags stored in the local D1, changed through the admin.flags
+# procedures or MCP tools) or none (every flag is its catalog default). Same rule: to
+# override locally, uncomment the line; never leave it blank.
+# Guide: docs/guides/how-to-use-feature-flags.md
+# FEATURE_FLAGS=none
+
 # R2 presigned URLs (optional). The FILES binding needs nothing here.
 R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=

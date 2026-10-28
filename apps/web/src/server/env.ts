@@ -17,6 +17,8 @@ export interface AppEnv {
   readonly LOG_SINK?: string;
   /** Required var, validated by `parsePlatformConfig`: workers-logs | none. */
   readonly ERROR_REPORTER?: string;
+  /** Required var, validated by `parsePlatformConfig`: d1 | none. */
+  readonly FEATURE_FLAGS?: string;
   readonly APP_URL?: string;
   readonly BETTER_AUTH_SECRET?: string;
   readonly GOOGLE_CLIENT_ID?: string;
