@@ -48,3 +48,5 @@ On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with
 ## Verify
 
 `bun run doctor` (also checks the workspace and abuse-protection vars), then in the dev server: sign up (the Turnstile test widget passes on its own), sign out, sign in; with email/password off, `/forgot-password` must redirect to `/sign-in`; with `SIGN_UP=invite`, a stranger's sign-up shows the invite-only message. `bun run test` covers MCP parity, the MCP server, sign-up in every mode and the human check.
+
+Account management is enabled through Settings: verified email changes (`/change-email` needs email outside local development), same-email account linking and own-session revocation without tokens in the client. See `docs/guides/how-to-use-settings.md`; preserve these options when adding auth plugins. Self-service deletion stays disabled until the serialized privacy pipeline lands.

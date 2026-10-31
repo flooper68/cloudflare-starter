@@ -13,6 +13,7 @@ import {
   buildR2Feature,
   buildRequiredConfig,
 } from "@/lib/env";
+import { createAccountAuthGateway } from "@/server/account-auth-gateway";
 import {
   type BrowserExchange,
   createAdminAuthGateway,
@@ -93,18 +94,21 @@ export function createAppContext(
     session: browser.session,
     browser: browser.exchange,
     adminAuth: createAdminAuthGateway(() => getAuth(env), browser.exchange),
+    accountAuth: createAccountAuthGateway(() => getAuth(env), browser.exchange),
   };
 }
 
 /** The session fields procedures read, from Better Auth's session (Astro.locals.session). */
 export function sessionOf(
   session: {
+    readonly id?: string;
     readonly createdAt: Date | string;
     readonly impersonatedBy?: string | null;
   } | null
 ): SessionInfo | null {
   return session
     ? {
+        id: session.id,
         createdAt: new Date(session.createdAt),
         impersonatedBy: session.impersonatedBy ?? null,
       }

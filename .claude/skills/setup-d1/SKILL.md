@@ -38,3 +38,5 @@ Data tables carry a required `workspace_id` (see `docs/guides/how-to-configure-w
 ## Verify
 
 `bun run verify`, `bun run doctor`, and for remote: `bunx wrangler d1 migrations list DB --remote --env <env>` shows nothing pending.
+
+Account settings adds user-scoped `user_settings` (intentional workspace exemption) and `workspaces.logo_key`. Both are included in the generated initial migration; see the settings guide for current image references and cleanup.

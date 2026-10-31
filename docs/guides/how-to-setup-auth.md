@@ -22,7 +22,7 @@ Pages:
 | `/reset-password?token=…` | Sets a new password and revokes other sessions                                                                                                                  |
 | `/consent`                | Lets the user allow or deny an MCP client                                                                                                                       |
 | `/invite/<token>`         | Shows a workspace invitation and accepts it (signing in or up first)                                                                                            |
-| `/app/profile`            | Shows the user; changes the password when email + password is on                                                                                                |
+| `/app/profile`            | Redirects to `/app/settings/account`; account, appearance, security and workspace settings                                                                      |
 
 ## Secrets
 
@@ -64,7 +64,7 @@ At least one method must be on. If none is, or verification is required without 
 Password reset links and verification links go out through Cloudflare Email Service when the environment has email ([how-to-setup-email.md](./how-to-setup-email.md)). Locally the binding is simulated and the dev log shows each message. With email off, the links carry tokens, so what happens depends on `APP_ENV` (`apps/web/src/server/auth-mail.ts`):
 
 - `APP_ENV=local` (set in `.dev.vars`, local development only): the link is logged (record body `auth.mail_not_sent`, attribute `app.auth.link`, through the Logger, so with `LOG_SINK=none` it goes nowhere).
-- Any other value, or unset (every deployed environment): no link is logged. `/request-password-reset` and `/send-verification-email` answer 412 with code `EMAIL_NOT_CONFIGURED` ("Email is not configured for this environment …") for every address, so the response does not reveal which emails are registered. An error-level `auth.mail_not_sent` line without link or recipient is logged if a link is attempted elsewhere. Set up email ([how-to-setup-email.md](./how-to-setup-email.md)) before offering password reset in a deployed environment.
+- Any other value, or unset (every deployed environment): no link is logged. `/request-password-reset`, `/send-verification-email` and `/change-email` answer 412 with code `EMAIL_NOT_CONFIGURED` ("Email is not configured for this environment …") for every address, so the response does not reveal which emails are registered. An error-level `auth.mail_not_sent` line without link or recipient is logged if a link is attempted elsewhere. Set up email ([how-to-setup-email.md](./how-to-setup-email.md)) before offering password reset in a deployed environment.
 
 When email is on, a verification mail is sent on sign-up even if verification is not required, so `emailVerified` becomes true once the user clicks it.
 
@@ -93,3 +93,5 @@ Replace `accounts.schema.ts` with the result (keep its header comment), delete `
 - Platform admins: Better Auth's admin plugin supplies the `role`, ban and impersonation columns and refuses suspended users at sign-in; its HTTP endpoints are closed and the admin portal acts through our use cases ([how-to-use-admin-portal.md](./how-to-use-admin-portal.md)). Upgrading Better Auth means re-checking `apps/web/src/server/admin-auth-gateway.ts`.
 - API keys, self-service account-deletion UI: not built yet. Workspace roles are in [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
 - Magic links, passkeys, two-factor: Better Auth plugins, added the same way as above.
+
+Account management options and session/image security are documented in [settings](how-to-use-settings.md). Self-deletion remains disabled until the privacy pipeline lands; email changes always require verification and linked accounts must share the same email.

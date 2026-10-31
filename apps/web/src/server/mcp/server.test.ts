@@ -80,6 +80,7 @@ function context(overrides: Partial<Context> = {}): Context {
     session: null,
     browser: null,
     adminAuth: {} as Context["adminAuth"],
+    accountAuth: { revokeSession: async () => {} },
     ...overrides,
   };
 }

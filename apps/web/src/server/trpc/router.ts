@@ -14,6 +14,7 @@ import {
 import { z } from "zod";
 
 import { displayName } from "@/lib/user";
+import { accountRouter } from "./account-router";
 import { adminRouter } from "./admin-router";
 import {
   protectedProcedure,
@@ -41,6 +42,7 @@ export const appRouter = router({
   }),
 
   workspace: workspaceRouter,
+  account: accountRouter,
 
   notifications: notificationsRouter,
   admin: adminRouter,

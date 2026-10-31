@@ -86,3 +86,5 @@ If customers must define their own roles, keep the map as the list of actions an
 | Many teams              | `WORKSPACE_MODE=multi`    | Nothing                                                                                                                                                                                                                    |
 
 Keep the `workspaces` tables and `workspace_id` on data tables in every case: they cost little and make a later change of mode a data change, not a rewrite.
+
+Owners manage names/logos and delete confirmed shared workspaces from Settings → Workspace. `workspace.manage` and `workspace.delete` are explicit permission actions; deletion is refused for personal and single-mode workspaces. See [settings](how-to-use-settings.md).

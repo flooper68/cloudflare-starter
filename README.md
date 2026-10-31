@@ -172,3 +172,5 @@ See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) f
 - [How to setup the container demo](docs/guides/how-to-setup-container.md)
 - [How to use Storybook](docs/guides/how-to-use-storybook.md)
 - [How to define the brand](docs/guides/how-to-define-branding.md)
+
+Account and workspace settings: profile/avatar, verified email changes, linked accounts, own session revocation, locale/time zone/theme, and confirmed workspace deletion. Self-service account deletion arrives with the privacy pipeline. See [the settings guide](docs/guides/how-to-use-settings.md).

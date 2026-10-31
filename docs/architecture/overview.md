@@ -502,3 +502,7 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 - [ ] Parsed and validated in `apps/web/src/lib/config.ts`; `doctor` checks it if the app cannot boot without it.
 - [ ] GitHub environment secret added to [how-to-setup-ci.md](../guides/how-to-setup-ci.md) if the deploy workflow needs it.
 - [ ] Documented in the guide for the feature that uses it.
+
+## Account settings
+
+`accounts/user-settings.schema.ts` holds user-scoped preferences and the current avatar reference; it is a reasoned exception to workspace-owned data and cascades with its user. Workspace logos remain workspace-owned. Settings layout/section registration, auth ownership, image versioning and the MCP session gateway are documented in [the settings guide](../guides/how-to-use-settings.md). Account pages are available without an active workspace.

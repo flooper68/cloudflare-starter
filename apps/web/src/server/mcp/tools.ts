@@ -103,6 +103,72 @@ function direct(
 
 export const MCP_TOOLS: readonly ToolDefinition[] = [
   direct(
+    "get_account_settings",
+    "read",
+    "account.settings.get",
+    "Account settings",
+    "The current person\u2019s theme, time zone, locale and custom avatar URL."
+  ),
+  direct(
+    "update_account_settings",
+    "write",
+    "account.settings.update",
+    "Update account settings",
+    "Set the current person\u2019s theme, valid IANA time zone and supported locale."
+  ),
+  direct(
+    "list_sessions",
+    "read",
+    "account.sessions.list",
+    "List sessions",
+    "The current person\u2019s active browser sessions with opaque ids and device details. Never returns credentials."
+  ),
+  direct(
+    "revoke_session",
+    "write",
+    "account.sessions.revoke",
+    "Sign out a session",
+    "Sign out one of the current person\u2019s sessions by id from list_sessions. Confirm with the person first.",
+    { destructive: true }
+  ),
+  direct(
+    "remove_avatar",
+    "write",
+    "account.removeAvatar",
+    "Remove avatar",
+    "Remove the current person\u2019s custom avatar."
+  ),
+  direct(
+    "get_workspace_settings",
+    "read",
+    "workspace.settings",
+    "Workspace settings",
+    "Name, kind and current logo URL of a workspace the person belongs to."
+  ),
+  direct(
+    "update_workspace",
+    "write",
+    "workspace.update",
+    "Update workspace",
+    "Rename a workspace. Owners only."
+  ),
+  direct(
+    "delete_workspace",
+    "write",
+    "workspace.delete",
+    "Delete workspace",
+    "Delete a shared workspace in multi mode, with its files and memberships. Owners only; confirmName must exactly match its name. Confirm with the person first.",
+    { destructive: true }
+  ),
+  direct(
+    "remove_workspace_logo",
+    "write",
+    "workspace.removeLogo",
+    "Remove workspace logo",
+    "Remove the current workspace\u2019s logo. Owners only."
+  ),
+
+  direct(
     "ping",
     "read",
     "public.hello",
@@ -513,6 +579,14 @@ export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {
  * moved behind a tRPC procedure (and so a tool).
  */
 export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
+  "api/workspaces/[workspaceId]/logo/[version].ts":
+    "Authenticated binary image transfer; agents read settings and can remove the current avatar/logo through tools",
+  "api/workspaces/[workspaceId]/logo/index.ts":
+    "Authenticated binary image transfer; agents read settings and can remove the current avatar/logo through tools",
+  "api/account/avatar/[version].ts":
+    "Authenticated binary image transfer; agents read settings and can remove the current avatar/logo through tools",
+  "api/account/avatar/index.ts":
+    "Authenticated binary image transfer; agents read settings and can remove the current avatar/logo through tools",
   "api/auth/[...all].ts":
     "Better Auth handler; MCP clients use it as their OAuth server",
   "api/trpc/[...trpc].ts": "the tRPC endpoint the tools call in-process",

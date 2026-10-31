@@ -134,3 +134,5 @@ Each finding: severity, `file:line`, evidence (input → wrong output, or the ru
 ## Learning loop
 
 After the owner reviews a PR, the author turns each general review point into a proposed checklist item or automated rule, in the PR or a follow-up. The owner approves which land. Changes to `docs/processes/` or `AGENTS.md` are called out in the PR description.
+
+Settings review: confirm that own-session ids are scoped to the current user before credential access; tokens never enter responses or audit metadata. Verify settings without a workspace, Intl validation, capped raster uploads, private versioned reads, last-sign-in-method protection and workspace deletion confirmation/mode/role guards. See [settings](../guides/how-to-use-settings.md).

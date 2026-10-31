@@ -151,3 +151,5 @@ The limiter and the human check are ports in `packages/features/src/platform/por
 | Every sign-up fails with "The human check did not pass"                                      | Site key and secret key belong to different widgets, or a test site key is paired with a real secret. |
 | An error report "Siteverify rejected the secret key" (attribute `app.auth.human_check.form`) | `TURNSTILE_SECRET_KEY` is wrong for this widget.                                                      |
 | Everyone shares one limit                                                                    | Requests arrive without `CF-Connecting-IP` (local dev, or a proxy in front of the Worker).            |
+
+Settings adds Better Auth policies `auth.change-email` (3/60 seconds) and `auth.delete-user` (3/3600 seconds). Avatar/logo uploads reuse `upload.user` and require same origin; authenticated current-image reads are explicitly exempt. No new rate-limit binding.

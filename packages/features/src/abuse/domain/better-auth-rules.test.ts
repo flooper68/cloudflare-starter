@@ -8,6 +8,8 @@ describe("betterAuthRules", () => {
     expect(betterAuthRules(RATE_LIMIT_POLICIES)).toEqual({
       "/sign-in/*": { window: 60, max: 10 },
       "/sign-up/*": { window: 60, max: 5 },
+      "/change-email": { window: 60, max: 3 },
+      "/delete-user": { window: 3600, max: 3 },
       "/request-password-reset": { window: 60, max: 3 },
       "/send-verification-email": { window: 60, max: 3 },
       "/oauth2/register": { window: 3600, max: 5 },

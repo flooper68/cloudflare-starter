@@ -2,6 +2,7 @@
 // The only module allowed to import feature internals (their *.schema.ts files).
 // Use cases import the Database type from here with `import type`.
 import * as accountsSchema from "./accounts/accounts.schema";
+import * as userSettingsSchema from "./accounts/user-settings.schema";
 import * as auditSchema from "./audit/audit.schema";
 import * as billingSchema from "./billing/billing.schema";
 import * as filesSchema from "./files/files.schema";
@@ -12,6 +13,7 @@ import * as workspacesSchema from "./workspaces/workspaces.schema";
 
 export const schema = {
   ...accountsSchema,
+  ...userSettingsSchema,
   ...auditSchema,
   ...billingSchema,
   ...filesSchema,

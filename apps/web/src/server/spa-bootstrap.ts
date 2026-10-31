@@ -4,7 +4,11 @@
  * the billing mode, whether they may open the admin portal, and whether this session is
  * an impersonation.
  */
-import { findAdminAccess, systemClock } from "@cloudflare-starter/features";
+import {
+  findAdminAccess,
+  getAccountSettings,
+  systemClock,
+} from "@cloudflare-starter/features";
 
 import { buildRequiredConfig } from "@/lib/env";
 import { getAuthMethods } from "@/server/auth";
@@ -18,7 +22,15 @@ export interface SpaBootstrap {
     readonly email: string;
     readonly image: string | null;
   } | null;
-  readonly methods: { readonly emailPassword: boolean };
+  readonly methods: {
+    readonly emailPassword: boolean;
+    readonly google?: boolean;
+  };
+  readonly settings?: {
+    readonly theme: "system" | "light" | "dark";
+    readonly timezone: string;
+    readonly locale: string;
+  };
   readonly workspace: { readonly mode: "personal" | "single" | "multi" };
   /** BILLING: off hides the billing page and every upgrade prompt. */
   readonly billing: { readonly mode: "off" | "manual" | "provider" };
@@ -55,16 +67,32 @@ export async function spaBootstrap(
           )
         ).isAdmin
       : false;
+  const settings = user
+    ? await getAccountSettings({ db: getDb(env) }, { userId: user.id })
+    : {
+        theme: "system" as const,
+        timezone: "UTC",
+        locale: "en",
+        avatarUrl: null,
+      };
   return {
+    settings: {
+      theme: settings.theme,
+      timezone: settings.timezone,
+      locale: settings.locale,
+    },
     user: user
       ? {
           id: user.id,
           name: user.name,
           email: user.email,
-          image: user.image ?? null,
+          image: settings.avatarUrl ?? user.image ?? null,
         }
       : null,
-    methods: { emailPassword: getAuthMethods(env).emailPassword },
+    methods: {
+      emailPassword: getAuthMethods(env).emailPassword,
+      google: getAuthMethods(env).google,
+    },
     workspace: { mode: config.workspaces.mode },
     billing: { mode: config.billing.mode },
     admin,

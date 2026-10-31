@@ -54,6 +54,22 @@ export const RATE_LIMIT_POLICIES = {
     authPath: "/sign-up/*",
     description: "Account creation",
   },
+  "auth.change-email": {
+    limit: 3,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "better-auth",
+    authPath: "/change-email",
+    description: "Account email change requests",
+  },
+  "auth.delete-user": {
+    limit: 3,
+    periodSeconds: 3600,
+    scope: "ip",
+    enforcer: "better-auth",
+    authPath: "/delete-user",
+    description: "Account deletion attempts",
+  },
   "auth.password-reset": {
     limit: 3,
     periodSeconds: 60,
@@ -201,6 +217,8 @@ export const ROUTE_POLICIES: Readonly<
 > = {
   "api/auth/[...all].ts": ["auth.ip"],
   "api/files/index.ts": ["upload.user"],
+  "api/workspaces/[workspaceId]/logo/index.ts": ["upload.user"],
+  "api/account/avatar/index.ts": ["upload.user"],
   "api/billing/webhook.ts": ["billing.webhook"],
   "mcp.ts": ["mcp.ip", "mcp.user"],
   "invite/[token].astro": ["token.lookup"],
@@ -213,6 +231,10 @@ export const ROUTE_POLICIES: Readonly<
  * procedure path or a file under apps/web/src/pages. Keep it short.
  */
 export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
+  "api/workspaces/[workspaceId]/logo/[version].ts":
+    "authenticated immutable current profile image read",
+  "api/account/avatar/[version].ts":
+    "authenticated immutable current profile image read",
   "api/trpc/[...trpc].ts":
     "each mutation is limited by the tRPC middleware with its own policy",
   "api/hello.ts": "public read-only example with no state or cost behind it",

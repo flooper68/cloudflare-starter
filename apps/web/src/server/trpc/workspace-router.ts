@@ -6,17 +6,23 @@ import {
   createInvitation,
   createPortalUrl,
   createWorkspace,
+  deleteOwnWorkspace,
+  deleteWorkspaceFiles,
   getBillingSummary,
+  getWorkspaceSettings,
   leaveWorkspace,
   listInvitations,
   listMembers,
   listWorkspaces,
   previewInvitation,
+  purgeWorkspaceLogos,
   ROLES,
   removeMember,
+  removeWorkspaceLogo,
   revokeInvitation,
   switchWorkspace,
   transferOwnership,
+  updateWorkspace,
 } from "@cloudflare-starter/features";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -44,6 +50,30 @@ const token = z.string().min(1).max(200);
  * test/architecture/workspace-scope.test.ts.
  */
 export const workspaceRouter = router({
+  settings: workspaceProcedure.query(({ ctx }) =>
+    getWorkspaceSettings(ctx, ctx.actor)
+  ),
+  update: workspaceProcedure
+    .input(z.object({ name: z.string().min(1).max(80) }))
+    .mutation(({ ctx, input }) => updateWorkspace(ctx, ctx.actor, input)),
+  delete: workspaceProcedure
+    .input(z.object({ confirmName: z.string().min(1).max(80) }))
+    .mutation(({ ctx, input }) =>
+      deleteOwnWorkspace(
+        {
+          ...ctx,
+          purgeWorkspaceFiles: async (workspaceIds) => {
+            await deleteWorkspaceFiles(ctx, { workspaceIds });
+            await purgeWorkspaceLogos(ctx, { workspaceIds });
+          },
+        },
+        ctx.actor,
+        { ...input, mode: ctx.config.workspaces.mode }
+      )
+    ),
+  removeLogo: workspaceProcedure.mutation(({ ctx }) =>
+    removeWorkspaceLogo(ctx, ctx.actor)
+  ),
   list: protectedProcedure.query(async ({ ctx }) => ({
     mode: ctx.config.workspaces.mode,
     ...(await listWorkspaces(ctx, { userId: ctx.user.id })),

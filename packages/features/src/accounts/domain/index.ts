@@ -10,3 +10,7 @@ export {
   newSignInNotification,
   passwordChangedNotification,
 } from "./notifications";
+export {
+  type AccountSettingsInput,
+  accountSettingsSchema,
+} from "./preferences";

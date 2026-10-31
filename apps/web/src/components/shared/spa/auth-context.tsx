@@ -10,7 +10,15 @@ export interface AuthUser {
 /** The page's bootstrap JSON (`__APP_AUTH__` in pages/app/[...path].astro). */
 export interface AuthContextValue {
   readonly user: AuthUser | null;
-  readonly methods: { readonly emailPassword: boolean };
+  readonly methods: {
+    readonly emailPassword: boolean;
+    readonly google?: boolean;
+  };
+  readonly settings?: {
+    readonly theme: "system" | "light" | "dark";
+    readonly timezone: string;
+    readonly locale: string;
+  };
   /** WORKSPACE_MODE: which workspace UI the app shows (switcher, members). */
   readonly workspace: { readonly mode: "personal" | "single" | "multi" };
   /** BILLING: the billing page and upgrade prompts show unless it is off. */

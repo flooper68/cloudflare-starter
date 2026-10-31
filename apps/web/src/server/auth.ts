@@ -1,16 +1,21 @@
 import { mcp } from "@better-auth/mcp";
 import {
+  assertUserErasureAllowed,
   betterAuthRules,
   checkSignUpAllowed,
   DomainError,
   deleteWorkspaceFiles,
+  LastAdminError,
   LastOwnerError,
   LimitReachedError,
   prepareUserDeletion,
   promoteBootstrapAdmin,
   provisionUser,
+  purgeAccountImages,
+  purgeWorkspaceLogos,
   RATE_LIMIT_POLICIES,
   randomIds,
+  recordAccountDeletion,
   SignUpNotAllowedError,
   schema,
   systemClock,
@@ -314,6 +319,7 @@ async function prepareAccountDeletion(
 ) {
   const db = getDb(env);
   try {
+    await assertUserErasureAllowed({ db, clock: systemClock }, userId);
     await prepareUserDeletion(
       {
         db,
@@ -325,14 +331,16 @@ async function prepareAccountDeletion(
             { db, bucket: env.FILES },
             { workspaceIds }
           );
+          await purgeWorkspaceLogos({ bucket: env.FILES }, { workspaceIds });
         },
       },
       { userId }
     );
+    await purgeAccountImages({ bucket: env.FILES }, { userId });
   } catch (error) {
-    if (error instanceof LastOwnerError) {
+    if (error instanceof LastOwnerError || error instanceof LastAdminError) {
       throw new APIError("BAD_REQUEST", {
-        code: "LAST_OWNER",
+        code: error instanceof LastAdminError ? "LAST_ADMIN" : "LAST_OWNER",
         message: error.message,
       });
     }
@@ -515,14 +523,43 @@ export function createAuthOptions(env: AppEnv) {
             },
           }
         : {},
+    account: {
+      accountLinking: {
+        enabled: true,
+        allowDifferentEmails: false,
+        allowUnlinkingAll: false,
+      },
+    },
     user: {
+      changeEmail: {
+        enabled: true,
+        updateEmailWithoutVerification: false,
+        async sendChangeEmailConfirmation({ user, url }) {
+          await sendAuthMail({
+            to: user,
+            subject: "Confirm email change",
+            action: "confirm your email change",
+            url,
+          });
+        },
+      },
       deleteUser: {
-        // Off: no account-deletion UI yet. When a project turns it on, this check runs
-        // before Better Auth deletes sessions and accounts, so a refused deletion (last
-        // owner) leaves the user able to sign in and hand over first.
+        // Self-service deletion is enabled with the serialized data-erasure pipeline.
+        // Administrative deletion still uses the last-owner/last-admin preflight above.
         enabled: false,
         beforeDelete: async (user, request) => {
           await prepareAccountDeletion(env, user.id, { request });
+        },
+        afterDelete: async (user, request) => {
+          await recordAccountDeletion(
+            {
+              db: getDb(env),
+              clock: systemClock,
+              ids: randomIds,
+              requestContext: contextFor(env, { request }),
+            },
+            { userId: user.id }
+          );
         },
       },
     },
@@ -567,6 +604,7 @@ export function createAuthOptions(env: AppEnv) {
       },
     },
     session: {
+      freshAge: 15 * 60,
       // Short cookie cache keeps get-session cheap without long-lived stale data.
       cookieCache: { enabled: true, maxAge: 60 },
     },

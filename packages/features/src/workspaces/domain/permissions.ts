@@ -26,6 +26,8 @@ export const ACTIONS = {
   "files.read": ["owner", "member"],
   "files.write": ["owner", "member"],
   "members.read": ["owner", "member"],
+  "workspace.manage": ["owner"],
+  "workspace.delete": ["owner"],
   "members.manage": ["owner"],
   "invitations.read": ["owner"],
   "invitations.manage": ["owner"],

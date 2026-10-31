@@ -14,7 +14,7 @@ const bootstrap = await spaBootstrap(env, Astro.locals);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={bootstrap.settings?.locale ?? "en"} data-theme={bootstrap.settings?.theme === "system" ? undefined : bootstrap.settings?.theme}>
   <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />

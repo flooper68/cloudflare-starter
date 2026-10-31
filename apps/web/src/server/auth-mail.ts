@@ -17,6 +17,7 @@ export const EMAIL_NOT_CONFIGURED_MESSAGE =
 export const EMAIL_LINK_PATHS: readonly string[] = [
   "/request-password-reset",
   "/send-verification-email",
+  "/change-email",
 ];
 
 export function mayLogAuthLinks(environment: string): boolean {
