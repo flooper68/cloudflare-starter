@@ -20,11 +20,28 @@ export function newAccount(label: string) {
 
 export type Account = ReturnType<typeof newAccount>;
 
+const configuredPages = new WeakSet<Page>();
+const localWidget = readFileSync(
+  new URL("./turnstile-widget.js", import.meta.url),
+  "utf8"
+);
+
 /**
  * Opens a page and waits until its React islands have hydrated (Astro drops the `ssr`
  * attribute then); a form submitted earlier would post natively instead of through JS.
  */
 export async function open(page: Page, path: string) {
+  if (!configuredPages.has(page)) {
+    await page.route(
+      "https://challenges.cloudflare.com/turnstile/v0/api.js*",
+      (route) =>
+        route.fulfill({
+          contentType: "application/javascript",
+          body: localWidget,
+        })
+    );
+    configuredPages.add(page);
+  }
   await page.goto(path);
   await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
 }
@@ -62,7 +79,7 @@ export async function signIn(
   await open(page, "/sign-in");
   await page.getByLabel("Email").fill(account.email);
   await page.getByLabel("Password").fill(account.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/app\/dashboard$/);
 }
 

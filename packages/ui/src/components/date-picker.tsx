@@ -184,7 +184,7 @@ export function DatePicker({
                   className={presetRow}
                 >
                   {preset.label}
-                  <span className="text-fg-subtle text-xs">
+                  <span className="text-fg-muted text-xs">
                     {date ? format(date, "EEE, MMM d") : null}
                   </span>
                 </button>

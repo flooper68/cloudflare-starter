@@ -32,6 +32,10 @@ export default defineConfig(async () => {
     ],
     test: {
       name: "web-api",
+      // Large warm-module snapshots exceed workerd's 32 MiB WebSocket limit.
+      // Keep per-file storage isolation; fetch transformed modules individually.
+      // https://github.com/cloudflare/workers-sdk/issues/16349
+      fsModuleCache: false,
       include: ["test/api/**/*.test.ts"],
       setupFiles: ["./test/setup.ts"],
     },

@@ -86,7 +86,7 @@ The top-level `vars` of `apps/web/wrangler.jsonc`, which local dev uses too, set
 | secret `1x0000000000000000000000000000000AA` | accepts only the test token `XXXX.DUMMY.TOKEN.XXXX` |
 | secret `2x0000000000000000000000000000000AA` | always rejects                                      |
 
-The rate-limit bindings are simulated by Miniflare (windows aligned to the clock). Locally nothing sets `CF-Connecting-IP`, so every local request shares one IP counter; send the header yourself to test per-IP limits, as `apps/web/test/e2e/abuse.spec.ts` does. The widget loads Cloudflare's script, so the sign-up page needs network access.
+The rate-limit bindings are simulated by Miniflare (windows aligned to the clock). Locally nothing sets `CF-Connecting-IP`, so every local request shares one IP counter; send the header yourself to test per-IP limits, as `apps/web/test/e2e/abuse.spec.ts` does. Ordinary local development loads Cloudflare's widget and calls Siteverify, so sign-up needs network access. Automated E2E runs instead simulate the published test keys locally, with Turnstile enabled and all widget, verification and rate-limit assertions intact; see [the test-only transport](../architecture/testing.md#e2e-tests). This simulation cannot be used in a production build.
 
 Try it:
 

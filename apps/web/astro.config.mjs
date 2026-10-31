@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, sessionDrivers } from "astro/config";
 
 import { devPort } from "./dev-port.mjs";
+import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
 
 export default defineConfig({
   output: "server",
@@ -22,7 +23,10 @@ export default defineConfig({
   // The port of APP_URL in .dev.vars (4321 by default): Better Auth trusts only that origin.
   server: { port: devPort() },
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      ...localTurnstilePlugins(process.env.E2E_LOCAL_TURNSTILE === "1"),
+    ],
     resolve: {
       alias: {
         "@": new URL("./src", import.meta.url).pathname,
