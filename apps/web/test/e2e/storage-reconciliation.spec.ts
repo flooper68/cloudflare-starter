@@ -1,6 +1,9 @@
 import { expect, type Route, test } from "@playwright/test";
 import { open, readAdminAccounts, signIn } from "./helpers";
 
+// Independent browser client: unrelated sign-in journeys must not consume this spec's quota.
+test.use({ extraHTTPHeaders: { "cf-connecting-ip": "198.51.100.90" } });
+
 /** The real default-off deployment still allows an administrator to request a report. */
 test("an admin submits a real storage report and sees the queued run", async ({
   page,
