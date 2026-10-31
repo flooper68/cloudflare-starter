@@ -20,10 +20,19 @@ const AUDITED_FEATURES = [
   "notifications",
   "trash",
   "storage-reconciliation",
+  "privacy",
 ] as const;
 
 /** Use cases that change state without an audit event: path → reason. */
 const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
+  "packages/features/src/privacy/erase-user-exports.ts":
+    "Cleanup inside account/workspace erasure; privacy.user_erased or workspace.deleted is recorded by its owner.",
+  "packages/features/src/privacy/erase-identity-references.ts":
+    "Cleanup inside erasure; completion records privacy.user_erased.",
+  "packages/features/src/privacy/prepare-user-erasure.ts":
+    "Pre-auth cleanup; completion after the auth gateway records privacy.user_erased, never claim erasure before auth deletion.",
+  "packages/features/src/privacy/purge-data-exports.ts":
+    "Automatic expiry of temporary export downloads; no new access or user action.",
   "packages/features/src/accounts/purge-account-images.ts":
     "storage cleanup within authorized account deletion; self-delete afterDelete and the admin delete use case record user.deleted",
   "packages/features/src/workspaces/purge-workspace-logos.ts":
@@ -136,6 +145,7 @@ describe("audit_events is append-only", () => {
       (path) =>
         !auditFeature.test(path) &&
         path !== "packages/features/src/database.ts" &&
+        path !== "packages/features/src/data-catalog.ts" &&
         /\bauditEvents\b|\baudit_events\b/.test(read(path))
     );
     expect(outside, "write audit events through recordAuditEvent").toEqual([]);
@@ -151,6 +161,14 @@ describe("audit_events is append-only", () => {
     expect(using(/\.delete\(|\bDELETE\s+FROM\b/i)).toEqual([
       "packages/features/src/audit/purge-audit-events.ts",
     ]);
-    expect(using(/\.update\(|\bUPDATE\s+\w+\s+SET\b/i)).toEqual([]);
+    expect(using(/\.update\(|\bUPDATE\s+\w+\s+SET\b/i)).toEqual([
+      "packages/features/src/audit/redact-audit-subject.ts",
+    ]);
+    const redactor = read(
+      "packages/features/src/audit/redact-audit-subject.ts"
+    );
+    expect(redactor).not.toMatch(
+      /\.set\(\{[^}]*\b(action|occurredAt|actorUserId|actorKind|outcome|traceId)\s*:/s
+    );
   });
 });

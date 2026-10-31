@@ -89,7 +89,6 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       "STORAGE_RECONCILE",
       STORAGE_RECONCILE_MODES
     ),
-
     security: securitySettingsSchema.parse(env),
   };
 }

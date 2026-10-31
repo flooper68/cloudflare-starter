@@ -24,6 +24,7 @@ import {
   workspaceProcedure,
 } from "./init";
 import { notificationsRouter } from "./notifications-router";
+import { privacyRouter } from "./privacy-router";
 import { requireFeature } from "./require-feature";
 import { trashRouter } from "./trash-router";
 import { workspaceRouter } from "./workspace-router";
@@ -47,6 +48,7 @@ export const appRouter = router({
   account: accountRouter,
 
   notifications: notificationsRouter,
+  privacy: privacyRouter,
   admin: adminRouter,
 
   storage: router({

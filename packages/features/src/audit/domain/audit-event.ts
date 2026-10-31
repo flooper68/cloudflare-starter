@@ -24,6 +24,7 @@ export const AUDIT_TARGET_TYPES = [
   "feature_flag",
   "file",
   "storage",
+  "data_request",
 ] as const;
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
 
@@ -93,6 +94,26 @@ const flagValue = z.union([z.boolean(), z.string().max(TEXT_MAX), z.number()]);
 const signUpMethod = z.enum(["password", "social", "other"]);
 
 export const auditEventSchema = z.discriminatedUnion("action", [
+  z.object({
+    ...common,
+    action: z.literal("privacy.export_requested"),
+    target: target("data_request"),
+    metadata: z
+      .object({ scope: z.enum(["user", "workspace"]), subjectId: id })
+      .strict(),
+  }),
+  z.object({
+    ...common,
+    action: z.literal("privacy.export_ready"),
+    target: target("data_request"),
+    metadata: z.object({ bytes: z.number().int().nonnegative() }).strict(),
+  }),
+  z.object({
+    ...common,
+    action: z.literal("privacy.user_erased"),
+    target: target("user"),
+    metadata: z.object({}).strict(),
+  }),
   z.object({
     ...common,
     action: z.literal("account.settings_updated"),

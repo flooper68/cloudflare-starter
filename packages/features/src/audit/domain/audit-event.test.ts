@@ -28,6 +28,21 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     action: "user.second_factor_reset",
     target: user,
   },
+  "privacy.export_requested": {
+    action: "privacy.export_requested",
+    target: { type: "data_request", id: "request" },
+    metadata: { scope: "user", subjectId: "person" },
+  },
+  "privacy.export_ready": {
+    action: "privacy.export_ready",
+    target: { type: "data_request", id: "request" },
+    metadata: { bytes: 123 },
+  },
+  "privacy.user_erased": {
+    action: "privacy.user_erased",
+    target: { type: "user", id: "person" },
+    metadata: {},
+  },
   "account.settings_updated": {
     action: "account.settings_updated",
     target: user,

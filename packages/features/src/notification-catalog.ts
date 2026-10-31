@@ -9,6 +9,7 @@ import {
 } from "./accounts";
 import type { NotificationDefinition } from "./kernel";
 import { createNotificationCatalog } from "./notifications";
+import { exportReadyNotification } from "./privacy";
 import {
   memberJoinedNotification,
   roleChangedNotification,
@@ -20,4 +21,6 @@ export const notificationCatalog = createNotificationCatalog([
   passwordChangedNotification,
   newSignInNotification,
   securityFactorChangedNotification,
+
+  exportReadyNotification,
 ] as readonly NotificationDefinition<unknown>[]);

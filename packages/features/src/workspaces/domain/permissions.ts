@@ -32,6 +32,7 @@ export const ACTIONS = {
   "members.read": ["owner", "member"],
   "workspace.manage": ["owner"],
   "workspace.delete": ["owner"],
+  "workspace.export": ["owner"],
   "members.manage": ["owner"],
   "invitations.read": ["owner"],
   "invitations.manage": ["owner"],

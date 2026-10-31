@@ -1,11 +1,11 @@
 import { createRoute, redirect } from "@tanstack/react-router";
 
 import { rootRoute } from "@/components/app/root-route";
-
 import { AdminLayout } from "./AdminLayout";
 import { AdminAuditPage } from "./pages/AdminAuditPage";
 import { AdminFlagsPage } from "./pages/AdminFlagsPage";
 import { AdminOverviewPage } from "./pages/AdminOverviewPage";
+import { AdminPrivacyPage } from "./pages/AdminPrivacyPage";
 import { AdminSettingsPage } from "./pages/AdminSettingsPage";
 import { AdminUserPage } from "./pages/AdminUserPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
@@ -83,7 +83,14 @@ const settingsRoute = createRoute({
  * `adminLayoutRoute`) and an entry to `adminNav` (admin-nav.tsx); its data comes from an
  * `admin.*` procedure (docs/guides/how-to-use-admin-portal.md).
  */
+const privacyRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/data-requests",
+  component: AdminPrivacyPage,
+});
+
 export const adminRoutes = [
+  privacyRoute,
   indexRoute,
   overviewRoute,
   usersRoute,

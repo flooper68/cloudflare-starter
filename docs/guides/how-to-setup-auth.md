@@ -22,7 +22,7 @@ Pages:
 | `/reset-password?token=…` | Sets a new password and revokes other sessions                                                                                                                  |
 | `/consent`                | Lets the user allow or deny an MCP client                                                                                                                       |
 | `/invite/<token>`         | Shows a workspace invitation and accepts it (signing in or up first)                                                                                            |
-| `/app/profile`            | Redirects to `/app/settings/account`; account, appearance, security and workspace settings                                                                      |
+| `/app/profile`            | Redirects to `/app/settings/account`; account, appearance, security, workspace and privacy settings                                                             |
 
 ## Secrets
 
@@ -92,8 +92,11 @@ Replace `accounts.schema.ts` with the result (keep its header comment), delete `
 
 - Platform admins: Better Auth's admin plugin supplies the `role`, ban and impersonation columns and refuses suspended users at sign-in; its HTTP endpoints are closed and the admin portal acts through our use cases ([how-to-use-admin-portal.md](./how-to-use-admin-portal.md)). Upgrading Better Auth means re-checking `apps/web/src/server/admin-auth-gateway.ts`.
 - API keys, self-service account-deletion UI: not built yet. Workspace roles are in [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
-- Magic links, passkeys, two-factor: Better Auth plugins, added the same way as above.
+- Passkeys and two-factor authentication are configured by [the account security guide](how-to-configure-account-security.md). Other methods, such as magic links, use additional Better Auth plugins.
 
-Account management options and session/image security are documented in [settings](how-to-use-settings.md). Self-deletion remains disabled until the privacy pipeline lands; email changes always require verification and linked accounts must share the same email.
+Account management options and session/image security are documented in [settings](how-to-use-settings.md). Self-deletion is enabled with password or a session fresh within 15 minutes; email changes always require verification and linked accounts must share the same email.
+
 
 Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.
+
+Account deletion now uses the common privacy preflight before any cleanup, including the sole-active-platform-admin rule. Both before-delete hooks call it; the after-delete hook completes the minimal erasure ledger. [Erasure rules and retained data](how-to-handle-data-privacy.md#erasure-and-retained-data).

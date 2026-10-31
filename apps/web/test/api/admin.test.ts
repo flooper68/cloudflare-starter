@@ -690,7 +690,9 @@ describe("admin tools through /mcp", () => {
       userId: grace.id,
     });
     await ok("admin_delete_workspace", { workspaceId: team.id });
-    await ok("admin_remove_user", { userId: target.id });
+    await browserCallerFor(admin).caller.admin.users.remove({
+      userId: target.id,
+    });
     const audit = await ok("admin_list_audit_events", {
       targetType: "user",
       targetId: target.id,

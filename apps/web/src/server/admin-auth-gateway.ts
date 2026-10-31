@@ -91,9 +91,14 @@ export function createAdminAuthGateway(
       await internal.deleteUserSessions(userId);
       return sessions.length;
     },
-    async deleteUser(userId) {
-      // Runs `user.delete.before` (server/auth.ts): workspaces were already prepared.
-      await (await adapter()).deleteUser(userId);
+    async deleteUser(userId, operationId) {
+      // Explicit server-owned identity survives both library hooks. Separate calls never share it.
+      await auth().withErasureOperation(
+        operationId ?? crypto.randomUUID(),
+        async () => {
+          await (await adapter()).deleteUser(userId);
+        }
+      );
     },
     async sendPasswordReset(email, redirectTo) {
       try {

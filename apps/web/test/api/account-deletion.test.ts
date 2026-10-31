@@ -16,9 +16,12 @@ import {
 } from "./helpers";
 
 async function deleteUser(user: TestUser, runtimeEnv = env) {
-  // Better Auth's own deletion path, which runs the user.delete hooks.
-  const context = await getAuth(runtimeEnv).$context;
-  await context.internalAdapter.deleteUser(user.id);
+  // Supported server gateway operation: private invocation identity spans both auth hooks.
+  const auth = getAuth(runtimeEnv);
+  await auth.withErasureOperation(crypto.randomUUID(), async () => {
+    const context = await auth.$context;
+    await context.internalAdapter.deleteUser(user.id);
+  });
 }
 
 async function objectCount() {

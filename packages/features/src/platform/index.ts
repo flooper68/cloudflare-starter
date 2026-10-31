@@ -11,6 +11,7 @@ export {
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
   createD1FeatureFlags,
+  createFflateZip,
   createMemoryBillingProvider,
   createMemoryEmail,
   createMemoryErrorReporter,
@@ -22,6 +23,7 @@ export {
   createMemoryProductAnalytics,
   createMemoryRateLimiter,
   createMemoryTracer,
+  createMemoryZip,
   createTurnstileVerifier,
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
@@ -138,6 +140,8 @@ export type {
   Tracer,
   TrackedEvent,
   UpDownCounter,
+  Zip,
+  ZipWriter,
 } from "./ports";
 export { mathRandom } from "./random";
 export {

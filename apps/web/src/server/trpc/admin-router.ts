@@ -4,20 +4,23 @@ import {
   assignWorkspaceOwner,
   auditQuerySchema,
   banUser,
+  buildErasureHandlers,
   deleteWorkspace,
   deleteWorkspaceFiles,
   deploymentSettings,
+  eraseUserData,
   flagRulesSchema,
   flagUpdateSchema,
   getAdminOverview,
   getUserDetail,
   getWorkspaceDetail,
+  listAdminDataRequests,
   listAllWorkspaces,
   listAuditEvents,
   listFlags,
   listUsers,
   PLATFORM_ROLES,
-  removeUser,
+  requestDataExport,
   requestStorageReconciliation,
   resetSecondFactor,
   revokeUserSessions,
@@ -63,6 +66,28 @@ const RESET_PASSWORD_PAGE = "/reset-password";
  * test/architecture/admin-procedures.test.ts checks every procedure here is gated.
  */
 export const adminRouter = router({
+  privacy: router({
+    list: adminProcedure.query(({ ctx }) =>
+      listAdminDataRequests(ctx, ctx.admin)
+    ),
+    requestExport: adminProcedure
+      .input(z.object({ userId }))
+      .mutation(({ ctx, input }) => requestDataExport(ctx, input.userId)),
+    eraseUser: adminDestructiveProcedure
+      .input(z.object({ userId }))
+      .mutation(({ ctx, input }) => {
+        if (!ctx.browser)
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Account erasure requires a signed-in browser",
+          });
+        return eraseUserData(
+          { ...ctx, ...buildErasureHandlers(ctx), gateway: ctx.adminAuth },
+          ctx.admin,
+          input
+        );
+      }),
+  }),
   storage: router({
     status: adminProcedure.query(({ ctx }) => ({
       mode: ctx.config.STORAGE_RECONCILE,
@@ -171,19 +196,18 @@ export const adminRouter = router({
 
     remove: adminDestructiveProcedure
       .input(z.object({ userId }))
-      .mutation(({ ctx, input }) =>
-        removeUser(
-          {
-            ...ctx,
-            gateway: ctx.adminAuth,
-            purgeWorkspaceFiles: async (workspaceIds) => {
-              await deleteWorkspaceFiles(ctx, { workspaceIds });
-            },
-          },
+      .mutation(({ ctx, input }) => {
+        if (!ctx.browser)
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Account erasure requires a signed-in browser",
+          });
+        return eraseUserData(
+          { ...ctx, ...buildErasureHandlers(ctx), gateway: ctx.adminAuth },
           ctx.admin,
           input
-        )
-      ),
+        );
+      }),
 
     sendPasswordReset: adminProcedure
       .input(z.object({ userId }))

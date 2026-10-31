@@ -308,7 +308,7 @@ describe("workspace settings", () => {
 });
 
 describe("Better Auth account-management configuration", () => {
-  it("requires verified email changes and same-email linking while self-deletion stays disabled", () => {
+  it("requires verification for changed emails, same-email account linking, and fresh self-delete", () => {
     const options = createAuthOptions(env);
     expect(options.user.changeEmail.enabled).toBe(true);
     expect(options.user.changeEmail.updateEmailWithoutVerification).toBe(false);
@@ -316,15 +316,20 @@ describe("Better Auth account-management configuration", () => {
       allowDifferentEmails: false,
       allowUnlinkingAll: false,
     });
-    expect(options.user.deleteUser.enabled).toBe(false);
+    expect(options.user.deleteUser.enabled).toBe(true);
     expect(options.session.freshAge).toBe(900);
   });
-  it("keeps native self-deletion unavailable until the privacy pipeline lands", async () => {
+  it("blocks a stale session from deleting without a password and accepts a current password", async () => {
     const user = await signUp(
       "Delete Settings",
       "delete-settings@example.test"
     );
-    const deleted = await getAuth(env).handler(
+    await workerEnv.DB.prepare(
+      "UPDATE session SET created_at = ? WHERE user_id = ?"
+    )
+      .bind(Date.now() - 3600000, user.id)
+      .run();
+    const request = (body: unknown) =>
       new Request(`${APP_URL}/api/auth/delete-user`, {
         method: "POST",
         headers: {
@@ -332,22 +337,18 @@ describe("Better Auth account-management configuration", () => {
           origin: APP_URL,
           "content-type": "application/json",
         },
-        body: JSON.stringify({ password: "test-password-1234" }),
-      })
+        body: JSON.stringify(body),
+      });
+    expect((await getAuth(env).handler(request({}))).status).toBe(400);
+    const deleted = await getAuth(env).handler(
+      request({ password: "test-password-1234" })
     );
-    expect(deleted.status).toBe(404);
+    expect(deleted.status).toBe(200);
     expect(
       await workerEnv.DB.prepare("SELECT id FROM user WHERE id = ?")
         .bind(user.id)
         .first()
-    ).not.toBeNull();
-    expect(
-      (
-        await workerEnv.DB.prepare("SELECT id FROM session WHERE user_id = ?")
-          .bind(user.id)
-          .all()
-      ).results.length
-    ).toBeGreaterThan(0);
+    ).toBeNull();
   });
 });
 

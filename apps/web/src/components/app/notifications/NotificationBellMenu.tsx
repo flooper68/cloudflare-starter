@@ -6,6 +6,7 @@ import {
 } from "@cloudflare-starter/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { notificationDestination } from "@/lib/notification-navigation";
 
 import { useInbox, useUnreadCount } from "./use-notifications";
 
@@ -26,7 +27,13 @@ function BellInbox({
   function open(item: NotificationItem) {
     if (!item.read) void inbox.markRead([item.id]);
     onClose();
-    if (item.href) void navigate({ to: item.href });
+    const destination = notificationDestination(
+      item.href,
+      window.location.href
+    );
+    if (!destination) return;
+    if (destination.kind === "spa") void navigate({ to: destination.href });
+    else window.location.assign(destination.href);
   }
 
   return (

@@ -186,3 +186,9 @@ Profile avatars/logos use capped PNG/JPEG/WebP uploads, current-reference checks
 ## Orphaned storage
 
 Optional daily maintenance and on-demand admin reports use `STORAGE_RECONCILE=off|report|delete` (required; explicitly off in the starter). `bun run setup:storage --env all --dry-run` previews source configuration; `doctor` checks it. Start with a report; deletion is permanent and only touches registered application key shapes older than 24 hours with no live, trashed, avatar/logo or pending-upload reference. See [storage reconciliation](how-to-use-trash.md#optional-storage-reconciliation) for the cursor job, admin actions, audit results and safety contract.
+
+Temporary data exports use `exports/`. Preview the separate lifecycle backstop with `bun run setup:privacy-storage --env all --dry-run`; real execution requires account-change approval. Two-day object expiry and one-day multipart abort complement the hourly app purge and exact 24-hour download expiry. [Privacy guide](how-to-handle-data-privacy.md#storage-expiry-setup).
+
+### Erasure and late uploads
+
+Binding uploads recheck their exact live-or-trashed row after R2 writes; an erased reference refuses success and schedules durable targeted cleanup on failure. Already-issued presigned PUTs remain valid for 3,600 seconds. Erasure preserves old workspace prefixes (uploads/logos) and user avatar prefixes, sweeps after that window and again 24 hours after the first successful sweep, with reference/existence guards and durable retries even when `STORAGE_RECONCILE=off`. See [the exact windows and slow-write residual](how-to-handle-data-privacy.md#uploads-already-in-flight-when-erasure-starts).

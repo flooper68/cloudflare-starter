@@ -4,7 +4,7 @@ import type {
 } from "@cloudflare-starter/ui";
 import { toast } from "@cloudflare-starter/ui";
 import { useCallback, useEffect, useState } from "react";
-
+import { notificationDestination } from "@/lib/notification-navigation";
 import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 
@@ -73,7 +73,10 @@ export function useInbox(
           id: item.id,
           title: item.title,
           body: item.body,
-          href: item.href,
+          // Invalid schemes never become anchors, including modified/middle clicks.
+          href:
+            notificationDestination(item.href, window.location.href)?.href ??
+            null,
           createdAt: item.createdAt,
           read: item.readAt !== null,
           archived: item.archivedAt !== null,

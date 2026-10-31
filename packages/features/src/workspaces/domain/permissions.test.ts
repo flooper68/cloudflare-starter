@@ -73,7 +73,11 @@ describe("permissions", () => {
 });
 
 it("only owners manage workspace settings and deletion", () => {
-  for (const action of ["workspace.manage", "workspace.delete"] as const) {
+  for (const action of [
+    "workspace.manage",
+    "workspace.delete",
+    "workspace.export",
+  ] as const) {
     expect(can("owner", action)).toBe(true);
     expect(can("member", action)).toBe(false);
   }

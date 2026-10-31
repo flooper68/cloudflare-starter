@@ -176,7 +176,7 @@
     }
   ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
-  "triggers": { "crons": ["0 8 * * *", "17 3 * * *"] },
+  "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] },
 
   "env": {
     "staging": {
@@ -295,7 +295,7 @@
           "simple": { "limit": 20, "period": 60 }
         }
       ],
-      "triggers": { "crons": ["0 8 * * *", "17 3 * * *"] }
+      "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] }
     },
     "production": {
       "observability": {
@@ -413,7 +413,7 @@
           "simple": { "limit": 20, "period": 60 }
         }
       ],
-      "triggers": { "crons": ["0 8 * * *", "17 3 * * *"] }
+      "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] }
     }
   }
 }

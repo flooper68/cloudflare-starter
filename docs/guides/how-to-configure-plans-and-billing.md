@@ -184,3 +184,5 @@ Better Auth's Stripe plugin is an alternative inside such an adapter: it manages
 | `workspace_addon`        | Add-on id and quantity per workspace                                                                                           |
 | `entitlement_override`   | `key`, `kind` (`feature` with `enabled`, or `limit` with `limit_value`, NULL = unlimited), `reason`, `created_by`              |
 | `usage_counter`          | `metric`, `period` (`YYYY-MM`), `value`                                                                                        |
+
+Operational subscription/add-on/override/usage records are deleted with erased workspaces. This starter stores no invoices or payment transactions; the owner explicitly chose not to invent fiscal retention. A provider adapter adding such records must register their export/retention contract in DATA_CATALOG. [Privacy guide](how-to-handle-data-privacy.md).

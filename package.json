@@ -26,6 +26,7 @@
     "setup:email": "bun scripts/setup-email.ts",
     "setup:auth": "bun scripts/setup-auth.ts",
     "setup:analytics": "bun scripts/setup-analytics.ts",
+    "setup:privacy-storage": "bun scripts/setup-privacy-storage.ts",
     "setup:storage": "bun scripts/setup-storage.ts",
     "setup:admin": "bun scripts/setup-admin.ts",
     "doctor": "bun scripts/doctor.ts",

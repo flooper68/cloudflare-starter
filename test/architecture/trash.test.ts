@@ -14,6 +14,8 @@ import { filesUnder, read } from "./repo";
 
 /** Feature files that read a trashable table without liveIn/trashedIn: path → reason. */
 const UNSCOPED_READS: Readonly<Record<string, string>> = {
+  "packages/features/src/files/store-file.ts":
+    "Post-put ownership check protects live and trashed references alike; an erased exact reference triggers mandatory cleanup.",
   "packages/features/src/files/find-referenced-file-keys.ts":
     "system orphan reconciliation must preserve all file references including live, trashed and pending uploads",
   "packages/features/src/files/delete-workspace-files.ts":

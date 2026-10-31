@@ -6,6 +6,7 @@
 
 import { purgeAuditEventsJob } from "./audit";
 import { expireTrialsJob } from "./billing";
+import { retryFileCleanupsJob } from "./files";
 import { createCronCatalog, enqueueJob, purgeIdempotencyKeysJob } from "./jobs";
 import type { Clock, Ids } from "./kernel";
 import {
@@ -14,6 +15,7 @@ import {
   purgeNotificationsJob,
 } from "./notifications";
 import type { JobQueue, Logger } from "./platform";
+import { purgeDataExportsJob } from "./privacy";
 import {
   reconcileStorageJob,
   type StorageReconcileMode,
@@ -33,6 +35,23 @@ export interface CronDeps {
 const DAILY = "17 3 * * *";
 
 export const cronCatalog = createCronCatalog<CronDeps>([
+  {
+    name: "files.retry-cleanup",
+    schedule: "17 * * * *",
+    run: (deps, { context }) =>
+      enqueueJob(deps, retryFileCleanupsJob, {}, { context }),
+  },
+  {
+    name: "privacy.purge-exports",
+    schedule: "17 * * * *",
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeDataExportsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
+  },
   {
     name: "audit.purge-events",
     schedule: DAILY,

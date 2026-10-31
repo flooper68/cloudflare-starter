@@ -48,3 +48,19 @@ export const files = sqliteTable(
       .where(sql`${table.deletedAt} IS NOT NULL`),
   ]
 );
+
+/** Temporary, non-cascading cleanup intents; keep targets until physical cleanup succeeds. */
+export const pendingFileCleanup = sqliteTable(
+  "pending_file_cleanup",
+  {
+    target: text("target").primaryKey(),
+    kind: text("kind", { enum: ["upload", "erasure"] }).notNull(),
+    workspaceId: text("workspace_id"),
+    userId: text("user_id"),
+    notBefore: integer("not_before", { mode: "timestamp_ms" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    cursor: text("cursor"),
+    sweep: integer("sweep").notNull().default(0),
+  },
+  (table) => [index("pending_file_cleanup_due_idx").on(table.notBefore)]
+);

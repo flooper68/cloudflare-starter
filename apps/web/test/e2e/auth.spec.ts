@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 
 import { newAccount, open, signIn, signOut, signUp } from "./helpers";
@@ -95,4 +97,84 @@ test("sign in takes the new password, not the old one", async () => {
   await expect(
     page.getByRole("heading", { name: "Starter app" })
   ).toBeVisible();
+});
+
+test("privacy export finishes, notifies and downloads a valid archive", async () => {
+  await open(page, "/app/settings/privacy");
+  await page.getByRole("button", { name: "Request personal export" }).click();
+  await expect(page.getByText("Data export queued")).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        await page.getByRole("button", { name: "Refresh exports" }).click();
+        return page
+          .getByRole("button", { name: "Download", exact: true })
+          .count();
+      },
+      { timeout: 60000 }
+    )
+    .toBe(1);
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download", exact: true }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  if (!path) throw new Error("No archive path");
+  expect(readFileSync(path).subarray(0, 2).toString()).toBe("PK");
+  const checked = spawnSync("python3", [
+    "-c",
+    "import sys,zipfile,json; z=zipfile.ZipFile(sys.argv[1]); assert z.testzip() is None; assert 'manifest.json' in z.namelist(); assert json.loads(z.read('manifest.json'))['format']==1; assert any(n.startswith('data/user/') for n in z.namelist())",
+    path,
+  ]);
+  expect(checked.status, checked.stderr.toString()).toBe(0);
+  await expect
+    .poll(
+      async () => {
+        await open(page, "/app/notifications");
+        const link = page.getByRole("link", {
+          name: "Your data export is ready",
+          exact: true,
+        });
+        // Hydration precedes the inbox query; wait for this render before reloading.
+        await link
+          .waitFor({ state: "visible", timeout: 1000 })
+          .catch(() => undefined);
+        return link.count();
+      },
+      { timeout: 30000 }
+    )
+    .toBe(1);
+  const notification = page.getByRole("link", {
+    name: "Your data export is ready",
+    exact: true,
+  });
+  await expect(notification).toBeVisible();
+  const notificationDownload = page.waitForEvent("download");
+  await notification.click();
+  const linkedArchive = await (await notificationDownload).path();
+  if (!linkedArchive)
+    throw new Error("Notification did not deliver an archive");
+  expect(readFileSync(linkedArchive).equals(readFileSync(path))).toBe(true);
+  await open(page, "/app/settings/privacy");
+  await page.getByRole("button", { name: /^Notifications(?:,|$)/ }).click();
+  const bell = page.getByRole("dialog", { name: "Notifications", exact: true });
+  const bellDownload = page.waitForEvent("download");
+  await bell
+    .getByRole("link", { name: "Your data export is ready", exact: true })
+    .click();
+  const bellArchive = await (await bellDownload).path();
+  if (!bellArchive)
+    throw new Error("Notification bell did not deliver an archive");
+  expect(readFileSync(bellArchive).equals(readFileSync(path))).toBe(true);
+});
+
+test("privacy settings deletes the account after confirmation", async () => {
+  await open(page, "/app/settings/privacy");
+  await page.getByLabel("Confirm your email").fill(account.email);
+  await page.getByLabel("Current password").fill(newPassword);
+  await page
+    .getByRole("button", { name: "Delete account permanently" })
+    .click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto("/app/settings/account");
+  await expect(page).toHaveURL(/\/sign-in/);
 });

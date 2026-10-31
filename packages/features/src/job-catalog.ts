@@ -4,6 +4,13 @@
 
 import { purgeAuditEvents, purgeAuditEventsJob } from "./audit";
 import { expireTrials, expireTrialsJob } from "./billing";
+import { DATA_CATALOG } from "./data-catalog";
+import {
+  cleanupStorage,
+  cleanupStorageJob,
+  retryFileCleanups,
+  retryFileCleanupsJob,
+} from "./files";
 import { helloJob, sayHello } from "./greetings";
 import {
   createJobCatalog,
@@ -16,6 +23,7 @@ import { notificationCatalog } from "./notification-catalog";
 import {
   dispatchNotification,
   dispatchNotificationJob,
+  notify,
   planDigests,
   planDigestsJob,
   purgeNotifications,
@@ -25,6 +33,13 @@ import {
   sendNotificationEmail,
   sendNotificationEmailJob,
 } from "./notifications";
+import { createFflateZip } from "./platform";
+import {
+  buildDataExport,
+  dataExportJob,
+  purgeDataExports,
+  purgeDataExportsJob,
+} from "./privacy";
 import {
   reconcileStorage,
   reconcileStorageJob,
@@ -34,6 +49,28 @@ import { purgeExpiredTrash, purgeExpiredTrashJob } from "./trash";
 import { TRASH_CATALOG } from "./trash-catalog";
 
 export const jobCatalog = createJobCatalog<JobDeps>([
+  registerJob(cleanupStorageJob, (deps: JobDeps, payload, job) =>
+    cleanupStorage({ ...deps, requestContext: job.context }, payload)
+  ),
+  registerJob(retryFileCleanupsJob, (deps: JobDeps, payload, job) =>
+    retryFileCleanups({ ...deps, requestContext: job.context }, payload)
+  ),
+  registerJob(dataExportJob, (deps: JobDeps, payload, job) =>
+    buildDataExport(
+      {
+        ...deps,
+        catalog: DATA_CATALOG,
+        zip: createFflateZip(),
+        requestContext: job.context,
+        notify: (definition, input) =>
+          notify({ ...deps, errors: deps.errors }, definition, input),
+      },
+      { ...payload, attempts: job.attempts }
+    )
+  ),
+  registerJob(purgeDataExportsJob, (deps: JobDeps, payload, job) =>
+    purgeDataExports({ ...deps, requestContext: job.context }, payload)
+  ),
   registerJob(reconcileStorageJob, async (deps: JobDeps, payload, job) => {
     const result = await reconcileStorage(
       {

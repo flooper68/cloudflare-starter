@@ -1,19 +1,17 @@
 import { mcp } from "@better-auth/mcp";
 import {
-  assertUserErasureAllowed,
   betterAuthRules,
+  buildErasureHandlers,
   checkSignUpAllowed,
+  completeUserErasure,
   DomainError,
-  deleteWorkspaceFiles,
   getSecurityState,
   LastAdminError,
   LastOwnerError,
   LimitReachedError,
-  prepareUserDeletion,
+  prepareUserErasure,
   promoteBootstrapAdmin,
   provisionUser,
-  purgeAccountImages,
-  purgeWorkspaceLogos,
   RATE_LIMIT_POLICIES,
   randomIds,
   recordAccountDeletion,
@@ -41,7 +39,9 @@ import {
   auditHumanCheckFailed,
   auditImpersonationConsentRefused,
   auditPasswordReset,
+  authOperationId,
   contextFor,
+  runAuthOperation,
 } from "@/server/auth-audit";
 import {
   deliverAuthLinkWithoutEmail,
@@ -326,24 +326,16 @@ async function prepareAccountDeletion(
 ) {
   const db = getDb(env);
   try {
-    await assertUserErasureAllowed({ db, clock: systemClock }, userId);
-    await prepareUserDeletion(
+    await prepareUserErasure(
       {
         db,
         clock: systemClock,
         ids: randomIds,
         requestContext: contextFor(env, ctx),
-        purgeWorkspaceFiles: async (workspaceIds) => {
-          await deleteWorkspaceFiles(
-            { db, bucket: env.FILES },
-            { workspaceIds }
-          );
-          await purgeWorkspaceLogos({ bucket: env.FILES }, { workspaceIds });
-        },
+        ...buildErasureHandlers({ db, bucket: env.FILES, clock: systemClock }),
       },
-      { userId }
+      { userId, operationId: authOperationId() }
     );
-    await purgeAccountImages({ bucket: env.FILES }, { userId });
   } catch (error) {
     if (error instanceof LastOwnerError || error instanceof LastAdminError) {
       throw new APIError("BAD_REQUEST", {
@@ -553,9 +545,9 @@ export function createAuthOptions(env: AppEnv) {
         },
       },
       deleteUser: {
-        // Self-service deletion is enabled with the serialized data-erasure pipeline.
-        // Administrative deletion still uses the last-owner/last-admin preflight above.
-        enabled: false,
+        // Password or a fresh session is required by Better Auth. The UI also asks for
+        // an explicit confirmation; last-owner checks run before sessions are removed.
+        enabled: true,
         beforeDelete: async (user, request) => {
           await prepareAccountDeletion(env, user.id, { request });
         },
@@ -565,7 +557,7 @@ export function createAuthOptions(env: AppEnv) {
               db: getDb(env),
               clock: systemClock,
               ids: randomIds,
-              requestContext: contextFor(env, { request }),
+              requestContext: { ...contextFor(env, { request }), ip: null },
             },
             { userId: user.id }
           );
@@ -608,6 +600,25 @@ export function createAuthOptions(env: AppEnv) {
         delete: {
           before: async (user, ctx) => {
             await prepareAccountDeletion(env, user.id, ctx);
+          },
+          after: async (user, ctx) => {
+            const platform = buildPlatform(env);
+            await completeUserErasure(
+              {
+                db: getDb(env),
+                clock: systemClock,
+                ids: randomIds,
+                requestContext: contextFor(env, ctx),
+                email: platform.email,
+                errors: platform.errors,
+                jobQueue: platform.jobQueue,
+              },
+              {
+                userId: user.id,
+                email: user.email,
+                operationId: authOperationId(),
+              }
+            );
           },
         },
       },
@@ -702,7 +713,16 @@ export function createAuthOptions(env: AppEnv) {
 }
 
 function createAuth(env: AppEnv) {
-  return betterAuth(createAuthOptions(env));
+  const auth = betterAuth(createAuthOptions(env));
+  return {
+    ...auth,
+    handler: (request: Request) =>
+      runAuthOperation(env, { request }, undefined, () =>
+        auth.handler(request)
+      ),
+    withErasureOperation: (operationId: string, handle: () => Promise<void>) =>
+      runAuthOperation(env, null, operationId, handle),
+  };
 }
 
 export type Auth = ReturnType<typeof createAuth>;

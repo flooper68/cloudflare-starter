@@ -110,6 +110,41 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Reads your factor enrollment and this connection's verification status, without secrets or recovery codes. Configure factors in the browser."
   ),
   direct(
+    "request_data_export",
+    "write",
+    "privacy.requestExport",
+    "Request a data export",
+    "Queue an export of your own data, or a workspace you own. At most one active export and three requests per day. Excludes credentials; completion appears in notifications."
+  ),
+  direct(
+    "list_data_exports",
+    "read",
+    "privacy.list",
+    "List your data exports",
+    "Read your export status and expiry, never another person's archives."
+  ),
+  direct(
+    "get_data_export_download",
+    "read",
+    "privacy.download",
+    "Get export download link",
+    "Get a signed 24-hour download link for your completed export. Opening it requires your signed-in browser; workspace permission is rechecked."
+  ),
+  direct(
+    "admin_list_data_requests",
+    "read",
+    "admin.privacy.list",
+    "List data requests",
+    "Platform admins only. List export and erasure metadata without archive contents or download tokens."
+  ),
+  direct(
+    "admin_request_data_export",
+    "write",
+    "admin.privacy.requestExport",
+    "Request a user's data export",
+    "Platform admins only. Queue a personal export delivered to the subject, not to the administrator."
+  ),
+  direct(
     "get_account_settings",
     "read",
     "account.settings.get",
@@ -576,14 +611,6 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     { destructive: true }
   ),
   direct(
-    "admin_remove_user",
-    "write",
-    "admin.users.remove",
-    "Admin: delete user",
-    "Platform admins only. Deletes a user's account (by userId): their own workspaces and files go with it, they leave shared ones. Refused while they are the last owner of a shared workspace (assign another owner first). Cannot be undone. Confirm with the user before calling.",
-    { destructive: true }
-  ),
-  direct(
     "admin_send_password_reset",
     "write",
     "admin.users.sendPasswordReset",
@@ -634,6 +661,10 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
 export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {
   "admin.users.resetSecondFactor":
     "Recovery resets authentication and is deliberately browser-only with fresh administrator assurance.",
+  "admin.users.remove":
+    "Legacy web alias of privacy.eraseUser; permanent erasure requires an interactive browser with fresh assurance.",
+  "admin.privacy.eraseUser":
+    "Permanent account erasure requires an interactive administrator with fresh second-factor assurance; browser only.",
   "analytics.track": "client telemetry, not an agent capability",
   "admin.impersonation.start":
     "creates a browser cookie session; an MCP client has no browser session to swap",
@@ -647,6 +678,8 @@ export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {
  * moved behind a tRPC procedure (and so a tool).
  */
 export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
+  "api/privacy/exports/[id].ts":
+    "Authenticated signed streaming download; privacy.download supplies the link and rechecks access.",
   "api/workspaces/[workspaceId]/logo/[version].ts":
     "Authenticated binary image transfer; agents read settings and can remove the current avatar/logo through tools",
   "api/workspaces/[workspaceId]/logo/index.ts":

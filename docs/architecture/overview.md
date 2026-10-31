@@ -322,7 +322,7 @@ Prefer an open standard over a format of our own: tools, vendors and people alre
 
 Security-relevant actions are recorded in `audit_events`, a D1 table owned by the `audit` feature ([how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md)).
 
-- **Append-only.** Only `recordAuditEvent` inserts and only `purgeAuditEvents` deletes; nothing updates a row or touches the table from outside `audit/` (`test/architecture/audit-coverage.test.ts`, enforced in CI).
+- **Append-only.** Only `recordAuditEvent` inserts and only `purgeAuditEvents` deletes. `redactAuditSubject` is the sole erasure-time update exception for subject IP/email fields; action, time and outcome remain unchanged. Nothing touches the table from outside `audit/` (`test/architecture/audit-coverage.test.ts`, enforced in CI).
 - **Every state change is audited.** Each state-changing use case of a feature in `AUDITED_FEATURES` calls `recordAuditEvent`, or is in `AUDIT_EXEMPT` with a reason (same test). Better Auth's endpoints are recorded from its hooks.
 - **A typed catalog.** Actions, their targets and their metadata are a zod discriminated union with `.strict()` metadata (`audit/domain/audit-event.ts`); credential-like keys (`token`, `password`, `secret`, `code`) are refused.
 - **Origin from the request context.** Each event carries the `trace_id`, `source` and `ip` of the work that caused it, so the logs of that work are one search away.
@@ -345,7 +345,7 @@ Platform admins (`user.role = admin`, Better Auth's admin plugin) run the app fr
 
 - **Closed by default.** Every `admin.*` procedure is an `adminProcedure` (`trpc/init.ts`): role admin and not suspended, read from D1 on each call, and the portal on; anything else is `NOT_FOUND`. Destructive ones are `adminDestructiveProcedure`s: a sign-in from the last 15 minutes (the session's; over MCP the admin's newest own session), else `FORBIDDEN` with `appCode` `REAUTH_REQUIRED`. `test/architecture/admin-procedures.test.ts` (enforced in CI).
 - **Better Auth behind a port.** The plugin supplies the columns, ban enforcement at sign-in and impersonation sessions; its HTTP endpoints are closed (`disabledPaths`). Use cases in `packages/features/src/admin/` read D1 and change users and sessions only through `AdminAuthGateway` (`admin/ports/`), implemented once in `apps/web/src/server/admin-auth-gateway.ts` over `auth.$context.internalAdapter` and `auth.api`.
-- **Rules in the domain.** `admin/domain/admin-policy.ts`: no acting on yourself, the last active admin stays, no impersonating admins or suspended users, suspensions end in the future. Account deletion reuses the workspaces' last-owner rule (`prepareUserDeletion`); a workspace without an owner is rescued with `assignWorkspaceOwner`.
+- **Rules in the domain.** `admin/domain/admin-policy.ts`: no acting on yourself, the last active admin stays, no impersonating admins or suspended users, suspensions end in the future. Common privacy preflight enforces the last-admin rule for self-deletion as well as administrative erasure and reuses the workspaces' last-owner rule (`prepareUserDeletion`); a workspace without an owner is rescued with `assignWorkspaceOwner`.
 - **Audited.** `admin` is in `AUDITED_FEATURES`; every change records an event with actor kind `admin` (the bootstrap promotion and `setup:admin`: `system`).
 
 ## Product analytics
@@ -526,5 +526,10 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 
 `storage-reconciliation/` implements bounded orphan maintenance through R2 bindings and injected reference sources. `storage-reference-catalog.ts` composes each feature's reference lookup so the maintenance feature imports no owning tables. `STORAGE_RECONCILE` explicitly chooses off/report/delete; schema rows for live, trashed and pending files are references. Unknown key shapes and objects less than 24 hours old are always preserved. See [the safety contract](../guides/how-to-use-trash.md#optional-storage-reconciliation).
 
-
 Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](../guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.
+
+## Data privacy
+
+`DATA_CATALOG` covers every table with a whitelisted export projection and erasure/retention treatment. `privacy/` provides atomic request limits, bounded streaming exports, expiring authenticated downloads and common account erasure; `erasure-catalog.ts` composes owning features' external-object cleanup. `redactAuditSubject` is the sole constrained audit-update exception. [Privacy guide](../guides/how-to-handle-data-privacy.md), [ADR 0002](../decisions/0002-data-export-and-erasure.md).
+
+Late-upload cleanup uses temporary `pending_file_cleanup` state in the files feature, without cascading user/workspace foreign keys. It survives the metadata erasure that caused cleanup and is distinct from job history. Binding writes recheck their exact reference after R2 finishes; erased workspace prefixes receive mandatory delayed/two-pass cleanup with existence/reference guards, even with general reconciliation off. [Contract](../guides/how-to-handle-data-privacy.md#uploads-already-in-flight-when-erasure-starts).

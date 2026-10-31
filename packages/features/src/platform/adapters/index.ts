@@ -33,6 +33,7 @@ export {
   type WorkersLogsLoggerOptions,
   type WorkersTracerOptions,
 } from "./cloudflare";
+export { createFflateZip } from "./fflate";
 export {
   type CapturedError,
   createMemoryBillingProvider,
@@ -46,6 +47,7 @@ export {
   createMemoryProductAnalytics,
   createMemoryRateLimiter,
   createMemoryTracer,
+  createMemoryZip,
   type MemoryBillingProvider,
   type MemoryEmail,
   type MemoryErrorReporter,

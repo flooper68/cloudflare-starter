@@ -1,7 +1,13 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "../database";
 import type { Clock, Ids, JobEnvelope } from "../kernel";
-import type { EmailService, JobQueue, Logger, Metrics } from "../platform";
+import type {
+  EmailService,
+  ErrorReporter,
+  JobQueue,
+  Logger,
+  Metrics,
+} from "../platform";
 import type { StorageReconcileMode } from "../storage-reconciliation";
 import {
   claimWindow,
@@ -17,6 +23,7 @@ import { jobIdempotencyKeys } from "./jobs.schema";
  * (`(deps: { logger: Logger }, payload) => …`); the consumer passes all of it.
  */
 export interface JobDeps {
+  readonly errors: ErrorReporter;
   readonly storageReconcile: StorageReconcileMode;
   readonly db: Database;
   readonly clock: Clock;

@@ -193,3 +193,7 @@ The queue must exist for the environment before the first deploy: `bun run setup
 ### Storage maintenance jobs
 
 `trash.purge-expired` shares the daily 03:17 UTC schedule and drains expired trash in 500-row batches, with guarded rows-before-R2 deletion. `storage.reconcile` shares that schedule but enqueues nothing when `STORAGE_RECONCILE=off`; report/delete modes scan registered storage key namespaces, 100 objects per delivery, retaining the original cutoff across cursor continuations. The latter records page counts and bounded samples in audit/logs. [Configuration and safety](how-to-use-trash.md#optional-storage-reconciliation).
+
+`privacy.build-export` builds a leased, bounded streaming ZIP; `privacy.purge-exports` runs hourly (`17 * * * *`) and removes expired downloads/stale attempts. [Privacy retry/cleanup contract](how-to-handle-data-privacy.md#implementation-and-limits).
+
+`files.cleanup-storage` performs one targeted late-upload or erased-workspace/avatar-prefix cleanup page (up to 100 R2 objects). `files.retry-cleanup` runs hourly on `17 * * * *` and keyset-pages due intents in rounds of 50, repairing failed/missed queue publication. Erasure also publishes that dispatcher after the presigned validity window. These jobs are mandatory and independent of optional general reconciliation; pending targets/cursors survive metadata erasure and failed delivery until the required two sweeps complete. [Late-upload cleanup](how-to-handle-data-privacy.md#uploads-already-in-flight-when-erasure-starts).

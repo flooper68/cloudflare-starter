@@ -104,3 +104,5 @@ The D1 flag provider (`FEATURE_FLAGS=d1`) reads every flag with its rules in **o
 - A production regression is handled like a bug: a check at the cheapest layer that reproduces it, then the fix ([testing.md](testing.md#change--required-test)).
 
 Storage reconciliation bounds each queue delivery to 100 listed objects; every owning feature's reference query uses indexed key columns in groups of at most 50 D1 parameters. Unknown namespaces are skipped, and R2 pagination uses `truncated`/`cursor` rather than the returned count. There is no whole-bucket materialization or per-object D1 query.
+
+Targeted late-upload cleanup lists at most 100 objects per queue delivery. The hourly due-intent dispatcher reads 50 keys per page with keyset continuation, so one persistent failure does not starve later targets; account completion updates deadlines in SQL and publishes one dispatcher rather than enqueueing an unbounded per-workspace list.

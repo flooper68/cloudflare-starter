@@ -255,6 +255,8 @@ export const ROUTE_POLICIES: Readonly<
  * procedure path or a file under apps/web/src/pages. Keep it short.
  */
 export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
+  "api/privacy/exports/[id].ts":
+    "Authenticated signed read of the owner's completed export; expiration and current workspace permission are checked on every request.",
   "api/workspaces/[workspaceId]/logo/[version].ts":
     "authenticated immutable current profile image read",
   "api/account/avatar/[version].ts":

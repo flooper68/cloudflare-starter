@@ -29,7 +29,11 @@ import { isAPIError } from "better-auth/api";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
-import { currentRequestContext } from "@/server/request-scope";
+import {
+  currentRequestContext,
+  currentRequestOperationId,
+  runInRequestScope,
+} from "@/server/request-scope";
 
 type SignInMethod = "password" | "social" | "sign_up" | "email_verification";
 
@@ -357,4 +361,26 @@ export async function auditCompletedSignIn(
       }
     )
   );
+}
+
+/** Bridge for library callbacks and direct gateway calls; no isolate-wide mutable request state. */
+export function runAuthOperation<T>(
+  env: AppEnv,
+  ctx: { readonly request?: Request } | null,
+  operationId: string | undefined,
+  handle: () => T
+): T {
+  if (operationId === undefined && currentRequestOperationId()) return handle();
+  return runInRequestScope(
+    {
+      context: contextFor(env, ctx),
+      operationId: operationId ?? crypto.randomUUID(),
+    },
+    handle
+  );
+}
+export function authOperationId(): string {
+  const id = currentRequestOperationId();
+  if (!id) throw new Error("Account deletion requires an auth operation scope");
+  return id;
 }

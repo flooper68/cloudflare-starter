@@ -10,7 +10,10 @@ import {
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
-import { createMemoryProductAnalytics } from "../platform";
+import {
+  createMemoryJobQueue,
+  createMemoryProductAnalytics,
+} from "../platform";
 import type { Actor } from "../workspaces";
 import { FileNotFoundError } from "./domain";
 import { readWorkspaceFile } from "./read-workspace-file";
@@ -26,6 +29,7 @@ async function storedFile(actor: Actor, idPrefix: string) {
       requestContext: testRequestContext(),
       analytics: createMemoryProductAnalytics(),
       billing: testBilling(),
+      jobQueue: createMemoryJobQueue(),
     },
     actor,
     {

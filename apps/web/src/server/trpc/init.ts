@@ -337,8 +337,8 @@ export const requireAdmin = t.middleware(async ({ ctx, next }) => {
 export const adminProcedure = publicProcedure.use(requireAdmin);
 
 /**
- * Hook for a second factor on destructive admin actions (a later change adds 2FA). Today
- * it accepts every call.
+ * Destructive actions by enrolled administrators require a recent explicit factor.
+ * A remembered device grants normal access, but cannot satisfy this fresh-factor gate.
  */
 export async function requireAdminSecondFactor(
   ctx: Context & { readonly admin: AdminActor }

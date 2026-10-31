@@ -177,6 +177,7 @@ async function handleMessage(
           clock: systemClock,
           ids: randomIds,
           logger,
+          errors: platform.errors,
           jobQueue: platform.jobQueue,
           email: platform.email,
           metrics: platform.metrics,

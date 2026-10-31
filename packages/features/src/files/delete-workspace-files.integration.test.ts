@@ -9,7 +9,10 @@ import {
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
-import { createMemoryProductAnalytics } from "../platform";
+import {
+  createMemoryJobQueue,
+  createMemoryProductAnalytics,
+} from "../platform";
 import { deleteWorkspaceFiles } from "./delete-workspace-files";
 import { storeFile } from "./store-file";
 
@@ -26,6 +29,7 @@ describe("deleteWorkspaceFiles", () => {
       requestContext: testRequestContext(),
       analytics: createMemoryProductAnalytics(),
       billing: testBilling(),
+      jobQueue: createMemoryJobQueue(),
     };
     const body = new TextEncoder().encode("x").buffer as ArrayBuffer;
     const input = {

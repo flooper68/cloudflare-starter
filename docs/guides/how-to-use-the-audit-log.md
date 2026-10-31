@@ -4,7 +4,7 @@ What the audit log records (who did what to what, when, with which outcome, from
 
 ## What it is
 
-The `audit` feature (`packages/features/src/audit/`) keeps one D1 table, `audit_events`, that is **append-only**: `recordAuditEvent` is the only code that inserts, `purgeAuditEvents` the only code that deletes (past retention), and nothing updates a row. `test/architecture/audit-coverage.test.ts` enforces this. Better Auth has no audit log of its own, so its endpoints are recorded from hooks.
+The `audit` feature (`packages/features/src/audit/`) keeps one D1 table, `audit_events`, that is **append-only**: `recordAuditEvent` is the only code that inserts, `purgeAuditEvents` the only code that deletes (past retention), and `redactAuditSubject` is the sole constrained update exception during erasure: subject IP/email identifiers are redacted while action, time and outcome remain unchanged. `test/architecture/audit-coverage.test.ts` enforces these boundaries. Better Auth has no audit log of its own, so its endpoints are recorded from hooks.
 
 The audit log is not the application log. Logs ([how-to-setup-logging.md](how-to-setup-logging.md)) are for operating the service and are sampled, rotated and vendor-shaped; audit events are business records of security-relevant actions, kept for a fixed period and queried by actor, target and workspace. They share the trace id: every event carries the `trace_id` of the request, queue message or cron run that caused it, so the logs of that work are one search away.
 
@@ -171,3 +171,5 @@ Fields follow the [Open Cybersecurity Schema Framework](https://schema.ocsf.io/)
 ### Storage maintenance events
 
 `storage.reconciliation_requested`: platform admin, target `storage:<runId>`, mode report/delete. `storage.reconciliation_page`: system, same target, mode, prefix, scanned/orphaned/deleted counts, continuation flag and at most five sample keys. Page counts can repeat on retry and should not be summed as an exactly-once billing measure. Keys are application-generated identifiers, never object contents or credentials.
+
+Privacy adds `privacy.export_requested` (scope/subject), `privacy.export_ready` (bytes) and `privacy.user_erased` (no personal payload). The only update exception is `redactAuditSubject`: clear subject IP and replace exact email targets/metadata with the erased user id; preserve actions/times and unrelated actors. [Retention details](how-to-handle-data-privacy.md#erasure-and-retained-data).
