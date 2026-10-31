@@ -22,6 +22,10 @@ const AUDITED_FEATURES = [
 
 /** Use cases that change state without an audit event: path → reason. */
 const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
+  "packages/features/src/accounts/purge-account-images.ts":
+    "storage cleanup within authorized account deletion; self-delete afterDelete and the admin delete use case record user.deleted",
+  "packages/features/src/workspaces/purge-workspace-logos.ts":
+    "storage cleanup within authorized workspace/account deletion; the parent records workspace.deleted",
   "packages/features/src/billing/record-usage.ts":
     "usage metering (one counter increment per upload); grants or removes nothing, and the action it counts is the record",
   "packages/features/src/workspaces/switch-workspace.ts":

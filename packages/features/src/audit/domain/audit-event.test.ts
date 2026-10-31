@@ -14,6 +14,32 @@ const workspace = "ws-analytical-engines";
 
 /** One valid event per action, the smallest the catalog accepts. */
 const VALID: Record<AuditAction, AuditEventInput> = {
+  "account.settings_updated": {
+    action: "account.settings_updated",
+    target: user,
+  },
+  "account.session_revoked": {
+    action: "account.session_revoked",
+    target: user,
+  },
+  "account.avatar_updated": { action: "account.avatar_updated", target: user },
+  "account.avatar_removed": { action: "account.avatar_removed", target: user },
+  "workspace.updated": {
+    action: "workspace.updated",
+    target: { type: "workspace", id: workspace },
+    workspaceId: workspace,
+  },
+  "workspace.logo_updated": {
+    action: "workspace.logo_updated",
+    target: { type: "workspace", id: workspace },
+    workspaceId: workspace,
+  },
+  "workspace.logo_removed": {
+    action: "workspace.logo_removed",
+    target: { type: "workspace", id: workspace },
+    workspaceId: workspace,
+  },
+
   "auth.sign_in": {
     action: "auth.sign_in",
     target: user,

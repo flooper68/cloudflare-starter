@@ -63,3 +63,10 @@ describe("permissions", () => {
     ).toThrow(ActionNotAllowedError);
   });
 });
+
+it("only owners manage workspace settings and deletion", () => {
+  for (const action of ["workspace.manage", "workspace.delete"] as const) {
+    expect(can("owner", action)).toBe(true);
+    expect(can("member", action)).toBe(false);
+  }
+});

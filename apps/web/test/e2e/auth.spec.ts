@@ -30,8 +30,8 @@ test("sign up lands on the dashboard", async () => {
 });
 
 test("the profile shows the signed-in account", async () => {
-  await page.getByRole("link", { name: "Profile" }).first().click();
-  await expect(page).toHaveURL(/\/app\/profile$/);
+  await page.getByRole("link", { name: "Settings" }).first().click();
+  await expect(page).toHaveURL(/\/app\/settings\/account$/);
   await expect(
     page.getByRole("heading", { name: "Account settings" })
   ).toBeVisible();
@@ -41,7 +41,30 @@ test("the profile shows the signed-in account", async () => {
   ).toBeVisible();
 });
 
-test("the profile changes the password", async () => {
+test("security settings revokes another browser session", async () => {
+  const browser = page.context().browser();
+  if (!browser) throw new Error("Browser unavailable");
+  const other = await browser.newPage();
+  try {
+    await signIn(other, account);
+    await open(page, "/app/settings/security");
+    await page
+      .getByRole("button", { name: "Sign out session", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Sign out session", exact: true })
+    ).toHaveCount(0);
+    const result = await other.request.get(
+      "/api/auth/get-session?disableCookieCache=true"
+    );
+    expect(await result.json()).toBeNull();
+  } finally {
+    await other.close();
+  }
+});
+
+test("security settings changes the password", async () => {
+  await page.getByRole("link", { name: "Security", exact: true }).click();
   const update = page.getByRole("button", { name: "Update password" });
   await page.getByLabel("Current password").fill(account.password);
   await page.getByLabel("New password", { exact: true }).fill(newPassword);

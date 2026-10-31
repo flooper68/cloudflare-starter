@@ -1,3 +1,4 @@
+export { assertUserErasureAllowed } from "./assert-user-erasure-allowed";
 export { assignWorkspaceOwner } from "./assign-workspace-owner";
 export { banUser } from "./ban-user";
 export { deleteWorkspace } from "./delete-workspace";

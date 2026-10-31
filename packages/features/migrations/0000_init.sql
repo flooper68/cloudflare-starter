@@ -226,6 +226,16 @@ CREATE TABLE `verification` (
 );
 --> statement-breakpoint
 CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);--> statement-breakpoint
+CREATE TABLE `user_settings` (
+	`user_id` text PRIMARY KEY NOT NULL,
+	`theme` text DEFAULT 'system' NOT NULL,
+	`timezone` text DEFAULT 'UTC' NOT NULL,
+	`locale` text DEFAULT 'en' NOT NULL,
+	`avatar_key` text,
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `user_settings_avatar_key_idx` ON `user_settings` (`avatar_key`);--> statement-breakpoint
 CREATE TABLE `audit_events` (
 	`id` text PRIMARY KEY NOT NULL,
 	`occurred_at` integer NOT NULL,
@@ -389,12 +399,14 @@ CREATE INDEX `workspace_members_user_id_idx` ON `workspace_members` (`user_id`);
 CREATE TABLE `workspaces` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
+	`logo_key` text,
 	`kind` text NOT NULL,
 	`created_by` text,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
+CREATE INDEX `workspaces_logo_key_idx` ON `workspaces` (`logo_key`);--> statement-breakpoint
 CREATE TABLE `feature_flag_rules` (
 	`id` text PRIMARY KEY NOT NULL,
 	`flag_key` text NOT NULL,

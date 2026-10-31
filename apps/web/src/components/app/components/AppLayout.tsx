@@ -22,6 +22,11 @@ import { AppSidebar } from "./AppSidebar";
 const titles: Record<string, string> = {
   "/app/dashboard": "Dashboard",
   "/app/profile": "Profile",
+  "/app/settings/account": "Account settings",
+  "/app/settings/appearance": "Appearance & language",
+  "/app/settings/security": "Security",
+  "/app/settings/workspace": "Workspace settings",
+  "/app/settings/privacy": "Privacy",
   "/app/members": "Members",
   "/app/billing": "Billing",
   "/app/upload-demo": "Upload demo",
@@ -98,7 +103,11 @@ export function AppLayout() {
       />
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">
-          <WorkspaceGate />
+          {pathname.startsWith("/app/settings") ? (
+            <Outlet />
+          ) : (
+            <WorkspaceGate />
+          )}
         </div>
       </div>
       <Toaster />

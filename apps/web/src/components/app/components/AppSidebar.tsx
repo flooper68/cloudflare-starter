@@ -72,9 +72,9 @@ export function AppSidebar() {
           <SidebarMenuLabel>{user?.email}</SidebarMenuLabel>
           <SidebarMenuItem
             icon={<UserRound />}
-            onSelect={() => void navigate({ to: "/app/profile" })}
+            onSelect={() => void navigate({ to: "/app/settings/account" })}
           >
-            Profile
+            Settings
           </SidebarMenuItem>
           <SidebarMenuItem
             icon={<BookOpen />}
@@ -118,9 +118,9 @@ export function AppSidebar() {
           <SidebarItem
             asChild
             icon={<UserRound />}
-            active={pathname === "/app/profile"}
+            active={pathname.startsWith("/app/settings")}
           >
-            <Link to="/app/profile">Profile</Link>
+            <Link to="/app/settings/account">Settings</Link>
           </SidebarItem>
         </SidebarSection>
         {admin ? (

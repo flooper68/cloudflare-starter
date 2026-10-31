@@ -12,17 +12,22 @@ import { user } from "../accounts";
 const now = sql`(cast(unixepoch('subsecond') * 1000 as integer))`;
 
 /** A workspace owns the app's data; `created_by` is attribution only, never access. */
-export const workspaces = sqliteTable("workspaces", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  kind: text("kind", { enum: ["personal", "shared"] }).notNull(),
-  createdBy: text("created_by").references(() => user.id, {
-    onDelete: "set null",
-  }),
-  createdAt: integer("created_at", { mode: "timestamp_ms" })
-    .default(now)
-    .notNull(),
-});
+export const workspaces = sqliteTable(
+  "workspaces",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    logoKey: text("logo_key"),
+    kind: text("kind", { enum: ["personal", "shared"] }).notNull(),
+    createdBy: text("created_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(now)
+      .notNull(),
+  },
+  (table) => [index("workspaces_logo_key_idx").on(table.logoKey)]
+);
 
 /** Who belongs to a workspace and with which role (domain/permissions.ts). */
 export const workspaceMembers = sqliteTable(

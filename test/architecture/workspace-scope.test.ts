@@ -20,6 +20,8 @@ import { filesUnder, read } from "./repo";
 /** Tables without `workspace_id`, with the reason. Auth tables are found separately. */
 const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
   workspaces: "the tenant itself; its id is what workspace_id points at",
+  user_settings:
+    "personal preferences and avatar reference across workspaces; cascades with user",
   audit_events: "platform table; workspace_id optional",
   feature_flags:
     "platform configuration, not tenant data: one switch per flag for the whole deployment",
@@ -53,6 +55,10 @@ const WORKSPACE_SCOPED_FEATURES = ["billing", "files", "workspaces"] as const;
 
 /** Files in those features that are not actor use cases, with the reason. */
 const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
+  "workspaces/purge-workspace-logos.ts":
+    "runs only after account/workspace deletion authorization, including old image versions",
+  "workspaces/find-referenced-logo-keys.ts":
+    "system/admin reconciliation reads current image references across workspaces",
   "billing/resolve-entitlements.ts":
     "reads a workspace's billing for the gate and billing use cases, whose callers authorized it",
   "billing/assert-feature.ts":

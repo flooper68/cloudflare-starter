@@ -146,7 +146,9 @@ export function ChangePasswordForm() {
           </div>
 
           {error ? <p className="text-sm text-danger">{error}</p> : null}
-          {success ? <p className="text-sm text-accent">{success}</p> : null}
+          {success ? (
+            <p className="text-sm text-accent-text">{success}</p>
+          ) : null}
 
           <Button disabled={loading} type="submit" variant="primary">
             {loading ? "Updating password..." : "Update password"}

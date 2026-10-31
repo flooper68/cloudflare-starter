@@ -1,25 +1,21 @@
 import { createRoute, createRouter, redirect } from "@tanstack/react-router";
 
 import { adminLayoutRoute, adminRoutes } from "@/components/admin/routes";
-
-import { AppLayout } from "./components/AppLayout";
+import {
+  settingsLayoutRoute,
+  settingsRoutes,
+} from "@/components/settings/routes";
+import { appLayoutRoute } from "./layout-route";
 import { BillingPage } from "./pages/BillingPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EmailDemoPage } from "./pages/EmailDemoPage";
 import { MembersPage } from "./pages/MembersPage";
 import { NotificationPreferencesPage } from "./pages/NotificationPreferencesPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
-import { ProfilePage } from "./pages/ProfilePage";
+
 import { QueueDemoPage } from "./pages/QueueDemoPage";
 import { UploadDemoPage } from "./pages/UploadDemoPage";
 import { rootRoute } from "./root-route";
-
-/** The app's pages, inside the app shell (AppLayout). */
-const appLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: "app-layout",
-  component: AppLayout,
-});
 
 const appIndexRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
@@ -38,7 +34,9 @@ const dashboardRoute = createRoute({
 const profileRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/app/profile",
-  component: ProfilePage,
+  beforeLoad: () => {
+    throw redirect({ to: "/app/settings/account" });
+  },
 });
 
 const membersRoute = createRoute({
@@ -86,6 +84,7 @@ const notificationPreferencesRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   appLayoutRoute.addChildren([
+    settingsLayoutRoute.addChildren(settingsRoutes),
     appIndexRoute,
     dashboardRoute,
     profileRoute,

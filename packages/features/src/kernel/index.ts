@@ -36,6 +36,7 @@ export {
   type NotifyResult,
   type RenderedNotification,
 } from "./notification";
+export { profileImageType } from "./profile-image";
 export type { Random } from "./random";
 export {
   type RequestContext,

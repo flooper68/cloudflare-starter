@@ -111,3 +111,7 @@ What exists: unit tests (domain, helpers), integration tests on real D1/R2, API 
 ## Performance checks
 
 Performance checks (D1 query budgets, bundle budgets, Web Vitals, load tests) are not a layer of their own: each fits next to a layer above or runs against a deployment. The starter ships none; which a project adopts, and how, is in [performance.md](performance.md).
+
+Settings journeys also cover profile/avatar changes, saved formatting/theme, own session revocation, confirmed shared-workspace rename/deletion. `settings.test.ts` covers both browser and MCP session revocation, no token disclosure, image size/type/origin guards and cross-workspace refusals.
+
+Settings regressions cover concurrent avatar/logo writes in both completion orders, upload/auth quota headers, provider-image fallback after reload, indexed reference lookups, the shared last-admin preflight, and a real Better Auth refusal while the native self-deletion endpoint is disabled.

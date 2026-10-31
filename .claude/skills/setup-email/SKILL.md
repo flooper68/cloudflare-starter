@@ -31,3 +31,5 @@ Optional: `AUTH_REQUIRE_EMAIL_VERIFICATION=true` in the environment's vars once 
 - "Email is not configured" in the demo: the environment has no `EMAIL_FROM` var or no `send_email` binding.
 - Send rejected: the sender is not on an onboarded domain, or not in `allowed_sender_addresses`.
 - Mail in spam: check SPF/DKIM/DMARC records from `bunx wrangler email sending dns get <domain>`.
+
+Email changes from Settings use Better Auth confirmation/verification mail. `/change-email` joins the deployed-without-email 412 guard; local development logs links only under `APP_ENV=local`.

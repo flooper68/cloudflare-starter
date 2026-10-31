@@ -4,6 +4,7 @@ export { checkSignUpAllowed } from "./check-sign-up-allowed";
 export { countWorkspaceSeats } from "./count-workspace-seats";
 export { type CreatedInvitation, createInvitation } from "./create-invitation";
 export { createWorkspace } from "./create-workspace";
+export { deleteOwnWorkspace } from "./delete-own-workspace";
 export {
   ACTIONS,
   type Action,
@@ -43,6 +44,8 @@ export {
   workspaceNameSchema,
   workspaceSettingsSchema,
 } from "./domain";
+export { findReferencedLogoKeys } from "./find-referenced-logo-keys";
+export { getWorkspaceSettings } from "./get-workspace-settings";
 export { identifyMember } from "./identify-member";
 export { leaveWorkspace } from "./leave-workspace";
 export { type InvitationSummary, listInvitations } from "./list-invitations";
@@ -54,11 +57,16 @@ export {
   previewInvitation,
 } from "./preview-invitation";
 export { provisionUser } from "./provision-user";
+export { purgeWorkspaceLogos } from "./purge-workspace-logos";
+export { readWorkspaceLogo } from "./read-workspace-logo";
 export { removeMember } from "./remove-member";
+export { removeWorkspaceLogo } from "./remove-workspace-logo";
 export { resolveActor } from "./resolve-actor";
 export { revokeInvitation } from "./revoke-invitation";
+export { setWorkspaceLogo } from "./set-workspace-logo";
 export { switchWorkspace } from "./switch-workspace";
 export { transferOwnership } from "./transfer-ownership";
+export { updateWorkspace } from "./update-workspace";
 export {
   workspaceInvitations,
   workspaceMembers,

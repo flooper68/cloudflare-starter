@@ -180,3 +180,5 @@ Adding presigned URLs:
 2. Create an R2 API token scoped to the bucket (Object Read & Write)
 3. Fill `R2_*` in `apps/web/.dev.vars`; `bunx wrangler secret put R2_* --env <env>` for deploys
 4. Add a CORS policy on the bucket for your web origin(s)
+
+Profile avatars/logos use capped PNG/JPEG/WebP uploads, current-reference checks and private versioned reads under users/<id>/avatar/ and workspaces/<id>/logo/. See [settings](how-to-use-settings.md) for ownership, cleanup and reconciliation.

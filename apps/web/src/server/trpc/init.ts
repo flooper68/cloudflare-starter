@@ -1,4 +1,5 @@
 import {
+  type AccountAuthGateway,
   type Actor,
   type AdminActor,
   type AdminAuthGateway,
@@ -82,10 +83,12 @@ export interface Context {
   readonly browser: BrowserExchange | null;
   /** The admin portal's way into Better Auth (server/admin-auth-gateway.ts). */
   readonly adminAuth: AdminAuthGateway;
+  readonly accountAuth: AccountAuthGateway;
 }
 
 /** What procedures read from the Better Auth session. */
 export interface SessionInfo {
+  readonly id?: string;
   /** When this session was created: the sign-in time, for recent-sign-in checks. */
   readonly createdAt: Date;
   /** The admin impersonating the user in this session, if it is an impersonation. */

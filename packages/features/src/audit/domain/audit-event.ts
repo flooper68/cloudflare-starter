@@ -78,6 +78,49 @@ const flagValue = z.union([z.boolean(), z.string().max(TEXT_MAX), z.number()]);
 const signUpMethod = z.enum(["password", "social", "other"]);
 
 export const auditEventSchema = z.discriminatedUnion("action", [
+  z.object({
+    ...common,
+    action: z.literal("account.settings_updated"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
+    action: z.literal("account.session_revoked"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
+    action: z.literal("account.avatar_updated"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
+    action: z.literal("account.avatar_removed"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("workspace.updated"),
+    target: target("workspace"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("workspace.logo_updated"),
+    target: target("workspace"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("workspace.logo_removed"),
+    target: target("workspace"),
+    metadata: noMetadata,
+  }),
+
   // Authentication (recorded from Better Auth hooks in apps/web/src/server/auth-audit.ts).
   z.object({
     ...common,
