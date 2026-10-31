@@ -40,7 +40,8 @@ type Story = StoryObj<typeof meta>;
 export const Playground: Story = {};
 
 export const Open: Story = {
-  args: { defaultOpen: true, defaultValue: addDays(startOfToday(), 2) },
+  // Keep a preset selected on every weekday so axe checks its active background.
+  args: { defaultOpen: true, defaultValue: startOfToday() },
 };
 
 export const WithoutPresets: Story = {

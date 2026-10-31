@@ -82,3 +82,5 @@ report failure with a toast or an inline `ErrorState`, never silently.
   interaction gets a `play` function (`storybook/test`) in a story named for what it proves
   (`SearchAndPick`, `KeyboardNavigation`). Never disable an axe rule globally; see
   [testing.md](../../docs/architecture/testing.md#component-tests) for the one exception.
+
+Global element resets in app styles belong in the CSS `base` layer. An unlayered `a { color: inherit }` overrides token utility classes and can make sidebar links unreadable in light mode; keep per-component token colors effective.

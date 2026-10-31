@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { open } from "./helpers";
 
 // Abuse protection in the browser: the Turnstile widget (Cloudflare's always-pass test
-// site key from .dev.vars.example, loaded from Cloudflare) gates the auth forms, and a
+// site key from .dev.vars.example, simulated locally) gates the auth forms, and a
 // rate-limited request shows the notice. The sign-up journey itself (auth.spec.ts) passes
 // through the widget too. This file signs nobody up: sign-up is limited to 5 a minute.
 
@@ -14,7 +14,7 @@ test("the sign-up form waits for the human check, then allows submitting", async
   const submit = page.getByRole("button", { name: "Create account" });
   await expect(page.getByRole("group", { name: "Human check" })).toBeVisible();
   await expect(submit).toBeDisabled();
-  // The test site key passes on its own after a moment.
+  // The test widget passes on its own after a moment; the disabled state remains real.
   await expect(submit).toBeEnabled({ timeout: 20_000 });
 });
 
