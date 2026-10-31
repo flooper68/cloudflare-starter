@@ -9,6 +9,7 @@ import {
   sendHello,
   testEmail,
   trackClientEvents,
+  trashFile,
   uploadInputSchema,
 } from "@cloudflare-starter/features";
 import { z } from "zod";
@@ -24,6 +25,7 @@ import {
 } from "./init";
 import { notificationsRouter } from "./notifications-router";
 import { requireFeature } from "./require-feature";
+import { trashRouter } from "./trash-router";
 import { workspaceRouter } from "./workspace-router";
 
 /**
@@ -71,7 +73,16 @@ export const appRouter = router({
           fileId: input.fileId,
         })
       ),
+
+    /** Moves a file to the workspace's trash; `trash.restore` brings it back. */
+    deleteFile: workspaceProcedure
+      .input(z.object({ fileId: z.uuid() }))
+      .mutation(({ ctx, input }) =>
+        trashFile(ctx, ctx.actor, { fileId: input.fileId })
+      ),
   }),
+
+  trash: trashRouter,
 
   queue: router({
     enqueueHello: protectedProcedure

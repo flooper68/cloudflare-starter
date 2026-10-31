@@ -40,6 +40,7 @@ import {
   type RateLimitPolicy,
   type RequestContext,
   randomIds,
+  type StorageReconcileMode,
   systemClock,
   type Tracer,
 } from "@cloudflare-starter/features";
@@ -62,6 +63,7 @@ import type { AppEnv } from "@/server/env";
 export const SERVICE_NAME = "cloudflare-starter-web";
 
 export interface Platform {
+  readonly storageReconcile: StorageReconcileMode;
   readonly logger: Logger;
   readonly errors: ErrorReporter;
   /** The job queue (APP_QUEUE). Enqueue through `enqueueJob`, never `send` directly. */
@@ -223,6 +225,7 @@ export function buildPlatform(env: AppEnv): Platform {
         })
       : null;
   const platform: Platform = {
+    storageReconcile: config.STORAGE_RECONCILE,
     logger,
     errors:
       config.ERROR_REPORTER === "workers-logs"

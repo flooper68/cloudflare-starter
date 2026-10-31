@@ -19,4 +19,8 @@ export { notificationCatalog } from "./notification-catalog";
 export * from "./notifications";
 export * from "./platform";
 export * from "./product-analytics";
+export * from "./storage-reconciliation";
+export { storageReferenceCatalog } from "./storage-reference-catalog";
+export * from "./trash";
+export { TRASH_CATALOG } from "./trash-catalog";
 export * from "./workspaces";

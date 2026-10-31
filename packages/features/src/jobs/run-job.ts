@@ -1,8 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
-
 import type { Database } from "../database";
 import type { Clock, Ids, JobEnvelope } from "../kernel";
 import type { EmailService, JobQueue, Logger, Metrics } from "../platform";
+import type { StorageReconcileMode } from "../storage-reconciliation";
 import {
   claimWindow,
   completedExpiry,
@@ -17,6 +17,7 @@ import { jobIdempotencyKeys } from "./jobs.schema";
  * (`(deps: { logger: Logger }, payload) => …`); the consumer passes all of it.
  */
 export interface JobDeps {
+  readonly storageReconcile: StorageReconcileMode;
   readonly db: Database;
   readonly clock: Clock;
   readonly ids: Ids;
@@ -34,6 +35,8 @@ export interface JobDeps {
     readonly url: string;
     readonly secret: string;
   };
+  /** The `FILES` bucket: purges remove orphanable objects after guarded row deletion. */
+  readonly bucket: R2Bucket;
 }
 
 /**

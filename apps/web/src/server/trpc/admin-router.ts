@@ -18,7 +18,9 @@ import {
   listUsers,
   PLATFORM_ROLES,
   removeUser,
+  requestStorageReconciliation,
   revokeUserSessions,
+  STORAGE_GRACE_MS,
   sendPasswordReset,
   setFlagRules,
   setUserRole,
@@ -60,6 +62,25 @@ const RESET_PASSWORD_PAGE = "/reset-password";
  * test/architecture/admin-procedures.test.ts checks every procedure here is gated.
  */
 export const adminRouter = router({
+  storage: router({
+    status: adminProcedure.query(({ ctx }) => ({
+      mode: ctx.config.STORAGE_RECONCILE,
+      graceHours: STORAGE_GRACE_MS / 3600000,
+    })),
+    reconcile: adminProcedure.mutation(({ ctx }) =>
+      requestStorageReconciliation(
+        { ...ctx, storageReconcile: ctx.config.STORAGE_RECONCILE },
+        ctx.admin
+      )
+    ),
+    deleteOrphans: adminDestructiveProcedure.mutation(({ ctx }) =>
+      requestStorageReconciliation(
+        { ...ctx, storageReconcile: ctx.config.STORAGE_RECONCILE },
+        ctx.admin,
+        { deleteOrphans: true }
+      )
+    ),
+  }),
   overview: router({
     get: adminProcedure.query(({ ctx }) =>
       getAdminOverview({ ...ctx, billing: ctx.config.billing }, ctx.admin)

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "93fdcf05-0dc2-4231-8c59-ddeb684b861b",
+  "id": "133d6aea-6bc1-4f11-aa0f-582a66c8ad71",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -2013,6 +2013,20 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_by": {
+          "name": "deleted_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -2025,6 +2039,12 @@
           "name": "files_workspace_id_created_at_idx",
           "columns": ["workspace_id", "created_at"],
           "isUnique": false
+        },
+        "files_workspace_id_deleted_at_idx": {
+          "name": "files_workspace_id_deleted_at_idx",
+          "columns": ["workspace_id", "deleted_at"],
+          "isUnique": false,
+          "where": "\"files\".\"deleted_at\" IS NOT NULL"
         }
       },
       "foreignKeys": {
@@ -2042,6 +2062,15 @@
           "tableFrom": "files",
           "tableTo": "user",
           "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "files_deleted_by_user_id_fk": {
+          "name": "files_deleted_by_user_id_fk",
+          "tableFrom": "files",
+          "tableTo": "user",
+          "columnsFrom": ["deleted_by"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"

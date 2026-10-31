@@ -14,9 +14,15 @@ import {
   purgeNotificationsJob,
 } from "./notifications";
 import type { JobQueue, Logger } from "./platform";
+import {
+  reconcileStorageJob,
+  type StorageReconcileMode,
+} from "./storage-reconciliation";
+import { purgeExpiredTrashJob } from "./trash";
 
 /** What a cron entry may use. */
 export interface CronDeps {
+  readonly storageReconcile: StorageReconcileMode;
   readonly jobQueue: JobQueue;
   readonly clock: Clock;
   readonly ids: Ids;
@@ -77,5 +83,35 @@ export const cronCatalog = createCronCatalog<CronDeps>([
         { asOf: new Date(scheduledTime).toISOString() },
         { context }
       ),
+  },
+  {
+    name: "trash.purge-expired",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeExpiredTrashJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
+  },
+  {
+    name: "storage.reconcile",
+    schedule: DAILY,
+    run: async (deps, { scheduledTime, context }) => {
+      if (deps.storageReconcile === "off") return;
+      return enqueueJob(
+        deps,
+        reconcileStorageJob,
+        {
+          runId: deps.ids.uuid(),
+          mode: deps.storageReconcile,
+          trigger: "scheduled",
+          asOf: new Date(scheduledTime).toISOString(),
+          prefix: "workspaces/",
+        },
+        { context }
+      );
+    },
   },
 ]);

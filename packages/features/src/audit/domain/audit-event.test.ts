@@ -40,6 +40,24 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     workspaceId: workspace,
   },
 
+  "storage.reconciliation_requested": {
+    action: "storage.reconciliation_requested",
+    target: { type: "storage", id: "run" },
+    metadata: { mode: "report" },
+  },
+  "storage.reconciliation_page": {
+    action: "storage.reconciliation_page",
+    target: { type: "storage", id: "run" },
+    metadata: {
+      mode: "report",
+      prefix: "users/",
+      scanned: 1,
+      orphaned: 1,
+      deleted: 0,
+      continued: false,
+      sampleKeys: ["users/one/avatar/two"],
+    },
+  },
   "auth.sign_in": {
     action: "auth.sign_in",
     target: user,
@@ -230,6 +248,25 @@ const VALID: Record<AuditAction, AuditEventInput> = {
       provider: "stripe",
     },
   },
+  "trash.item_trashed": {
+    action: "trash.item_trashed",
+    workspaceId: workspace,
+    target: { type: "file", id: "file-roadmap" },
+    metadata: { entityType: "file" },
+  },
+  "trash.item_restored": {
+    action: "trash.item_restored",
+    workspaceId: workspace,
+    target: { type: "file", id: "file-roadmap" },
+    metadata: { entityType: "file" },
+  },
+  "trash.item_purged": {
+    action: "trash.item_purged",
+    actor: { kind: "system" },
+    workspaceId: workspace,
+    target: { type: "file", id: "file-roadmap" },
+    metadata: { entityType: "file", reason: "retention" },
+  },
   "workspace.created": {
     action: "workspace.created",
     workspaceId: workspace,
@@ -313,6 +350,27 @@ describe("auditEventSchema", () => {
     expect(auditEventSchema.safeParse(VALID["user.deleted"]).success).toBe(
       true
     );
+  });
+
+  it("trash events name a trashable target and a known purge reason", () => {
+    expect(
+      auditEventSchema.safeParse({
+        ...VALID["trash.item_trashed"],
+        target: { type: "workspace", id: workspace },
+      }).success
+    ).toBe(false);
+    expect(
+      auditEventSchema.safeParse({
+        ...VALID["trash.item_purged"],
+        metadata: { entityType: "file", reason: "because" },
+      }).success
+    ).toBe(false);
+    expect(
+      auditEventSchema.safeParse({
+        ...VALID["trash.item_restored"],
+        workspaceId: undefined,
+      }).success
+    ).toBe(false);
   });
 
   it("rejects a password in sign-in metadata", () => {

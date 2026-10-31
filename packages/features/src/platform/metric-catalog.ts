@@ -23,6 +23,7 @@ export const METRIC_UNITS = [
   "{run}",
   "{call}",
   "{notification}",
+  "{object}",
 ] as const;
 export type MetricUnit = (typeof METRIC_UNITS)[number];
 
@@ -50,6 +51,18 @@ export interface MetricDefinition {
 
 /** The catalog. Add a metric here before recording it; remove it when nothing records it. */
 export const METRIC_CATALOG = {
+  "app.storage.orphaned": {
+    kind: "counter",
+    unit: "{object}",
+    description: "Unreferenced objects seen on reconciliation page attempts.",
+    attributes: ["app.storage.mode"],
+  },
+  "app.storage.deleted": {
+    kind: "counter",
+    unit: "{object}",
+    description: "Orphan objects removed by reconciliation.",
+    attributes: ["app.storage.mode"],
+  },
   "http.server.request.duration": {
     kind: "histogram",
     unit: "s",
@@ -206,6 +219,7 @@ const OPENMETRICS_UNIT: Readonly<Record<MetricUnit, string>> = {
   "{run}": "",
   "{call}": "",
   "{notification}": "",
+  "{object}": "",
 };
 
 /**

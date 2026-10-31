@@ -52,6 +52,7 @@ function instrumentedCaller(user: TestUser) {
       requestContext
     ),
     tracer,
+    storageReconcile: "off",
     metrics,
   };
   return { caller: appRouter.createCaller(context), context, tracer, metrics };

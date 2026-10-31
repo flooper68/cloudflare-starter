@@ -33,7 +33,7 @@ describe("auditQuerySchema", () => {
 
   it.each([
     { action: "user.renamed" },
-    { targetType: "file" },
+    { targetType: "project" },
     { from: "yesterday" },
     { limit: 0 },
     { limit: AUDIT_PAGE_SIZE_MAX + 1 },

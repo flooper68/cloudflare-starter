@@ -49,6 +49,8 @@
     "FEATURE_FLAGS": "d1",
     "METRICS": "analytics-engine",
     "TRACING": "workers",
+    // Optional daily orphan storage check; off | report | delete.
+    "STORAGE_RECONCILE": "off",
     "AUTH_EMAIL_PASSWORD": "true",
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
     "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -188,6 +190,8 @@
         "FEATURE_FLAGS": "d1",
         "METRICS": "analytics-engine",
         "TRACING": "workers",
+        // Optional daily orphan storage check; off | report | delete.
+        "STORAGE_RECONCILE": "off",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -304,6 +308,8 @@
         "FEATURE_FLAGS": "d1",
         "METRICS": "analytics-engine",
         "TRACING": "workers",
+        // Optional daily orphan storage check; off | report | delete.
+        "STORAGE_RECONCILE": "off",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter",

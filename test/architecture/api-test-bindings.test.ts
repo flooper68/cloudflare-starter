@@ -2,9 +2,10 @@
  * API tests do not depend on a developer's apps/web/.dev.vars: every var and secret the app
  * reads is pinned in apps/web/test/api-bindings.ts, which overrides what Wrangler loads.
  */
+import { parseEnv } from "node:util";
 import { parse } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
-
+import { parseAppConfig } from "../../apps/web/src/lib/config";
 import { API_TEST_BINDINGS } from "../../apps/web/test/api-bindings";
 import { read } from "./repo";
 
@@ -19,6 +20,17 @@ const topLevelVars = (
 ).vars;
 
 describe("API test bindings", () => {
+  it("ships a parseable local example without overriding duplicate assignments", () => {
+    expect(new Set(devVarsKeys).size).toBe(devVarsKeys.length);
+    const example = parseEnv(read("apps/web/.dev.vars.example"));
+    const values = Object.fromEntries(
+      Object.entries({ ...topLevelVars, ...example }).map(([key, value]) => [
+        key,
+        value || undefined,
+      ])
+    );
+    expect(() => parseAppConfig(values)).not.toThrow();
+  });
   it("finds the .dev.vars.example keys", () => {
     expect(devVarsKeys).toContain("APP_ENV");
   });

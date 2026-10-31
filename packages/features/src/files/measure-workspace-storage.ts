@@ -4,7 +4,9 @@ import type { Database } from "../database";
 import { files } from "./files.schema";
 
 /**
- * Bytes a workspace stores: the sum of its files' sizes. The `storage_bytes` metric of the
+ * Bytes a workspace stores: the sum of its files' sizes, trashed files included (R2 keeps
+ * them until the purge, and counting them stops trash-and-restore from dodging the
+ * limit; deliberately not `liveIn`). The `storage_bytes` metric of the
  * billing catalog (source `files.measureWorkspaceStorage`); billing calls it for a
  * workspace its caller has already authorized.
  */

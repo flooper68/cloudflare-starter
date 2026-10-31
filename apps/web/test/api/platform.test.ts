@@ -303,6 +303,7 @@ describe("platform edge (trace context and error references)", () => {
       errors: { capture: vi.fn() },
       requestContext,
       tracer: noopTracer,
+      storageReconcile: "off",
     };
     const handler = createMcpHandler(() =>
       buildMcpServer(() => caller, context)

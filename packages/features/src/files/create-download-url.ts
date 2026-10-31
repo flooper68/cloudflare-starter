@@ -6,7 +6,9 @@ import { presignR2Url, type R2Config } from "./r2-presign";
 
 /**
  * Presigned path: a GET URL (valid 1 hour) for a file of the actor's workspace. The URL
- * is signed only after `findWorkspaceFile` found the file in that workspace.
+ * is signed only after `findWorkspaceFile` found the live file in that workspace, so a
+ * trashed file gets no new URL; a URL issued before it was trashed stays valid for its
+ * hour (R2 checks only the signature).
  */
 export async function createDownloadUrl(
   deps: { readonly db: Database; readonly r2: R2Config | null },

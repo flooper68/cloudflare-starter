@@ -12,6 +12,7 @@ export const API_TEST_BINDINGS = {
   FEATURE_FLAGS: "d1",
   METRICS: "analytics-engine",
   TRACING: "workers",
+  STORAGE_RECONCILE: "off",
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "api-test-secret-0123456789abcdefghij",
   AUTH_EMAIL_PASSWORD: "true",

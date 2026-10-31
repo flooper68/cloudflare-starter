@@ -246,6 +246,7 @@ if (!existsSync(DEV_VARS)) {
     Object.fromEntries(vars),
     value("ANALYTICS_ID_SECRET") ?? ""
   );
+  checkStorageVar("local", vars.get("STORAGE_RECONCILE"));
   checkBillingVar("local", vars.get("BILLING"));
 }
 
@@ -346,6 +347,7 @@ for (const env of ENVIRONMENTS) {
     (block.ratelimits as { namespace_id: string }[] | undefined) ?? []
   ).map((binding) => binding.namespace_id);
   namespaceIds.push(...ids);
+  checkStorageVar(env, vars.STORAGE_RECONCILE);
   if (!vars.BILLING) {
     warn(
       `${env}: no BILLING yet: bun run setup:auth --env ${env} before deploying (the Worker refuses to start)`
@@ -373,3 +375,12 @@ else
 
 console.log(errors ? `\n${errors} problem(s) to fix.` : "\nAll good.");
 process.exit(errors ? 1 : 0);
+
+/** Explicit orphan-maintenance setting, required in every runtime environment. */
+function checkStorageVar(label: string, value: string | undefined) {
+  if (!value || !["off", "report", "delete"].includes(value))
+    error(
+      `${label}: STORAGE_RECONCILE must be off, report or delete; bun run setup:storage --dry-run --env all`
+    );
+  else ok(`${label}: STORAGE_RECONCILE=${value}`);
+}

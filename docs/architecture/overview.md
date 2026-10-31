@@ -77,7 +77,7 @@ flowchart LR
 
 **Background job.** A feature declares a job with `defineJob` (type, zod payload, backoff, optional idempotency key) in its domain and registers its handler, a use case, in `packages/features/src/job-catalog.ts`. A use case enqueues it with `enqueueJob`, which validates the payload and sends a CloudEvents envelope carrying the caller's `traceparent`, user and workspace (a workspace procedure's `ctx.requestContext` carries the actor's workspace) through the JobQueue port to `APP_QUEUE`; nothing else sends to the queue. The `queue` handler (`apps/web/src/server/queue.ts`) parses each envelope, continues the producer's trace, runs the job (claiming its idempotency key in D1 first, if it has one) and acks it. A failure is retried with the job's exponential backoff (`retry({ delaySeconds })`); a permanent failure (malformed, unknown type, invalid payload, `DomainError` of kind invalid_input, forbidden, not_found) is reported and acked; a failure on the final attempt is reported and goes to the dead-letter queue, which has no consumer and keeps messages 14 days. No job history is stored. [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md)
 
-**Cron.** `triggers.crons` in `wrangler.jsonc` fires `scheduled`; the handler (`apps/web/src/server/cron.ts`) runs every entry of the cron catalog (`packages/features/src/cron-catalog.ts`) whose schedule equals `controller.cron` (several entries may share one schedule, listed once in `triggers.crons`), each in a new trace with `controller.scheduledTime` as its time. Entries fan out by enqueueing jobs (the daily `audit.purge-events`, `jobs.purge-idempotency-keys` and `billing.expire-trials`). A failing entry is reported, the others still run, and the run fails.
+**Cron.** `triggers.crons` in `wrangler.jsonc` fires `scheduled`; the handler (`apps/web/src/server/cron.ts`) runs every entry of the cron catalog (`packages/features/src/cron-catalog.ts`) whose schedule equals `controller.cron` (several entries may share one schedule, listed once in `triggers.crons`), each in a new trace with `controller.scheduledTime` as its time. Entries fan out by enqueueing jobs (the daily `audit.purge-events`, `jobs.purge-idempotency-keys`, `billing.expire-trials` and `trash.purge-expired`). A failing entry is reported, the others still run, and the run fails.
 
 **Rate-limited or human-checked request.** `/api/auth/*`, `/mcp` and `POST /api/files` count the request against their edge policy first and answer 429 (Problem Details, `Retry-After`, `RateLimit` header fields) when it is over; every tRPC mutation does the same in the `limitMutations` middleware (TOO_MANY_REQUESTS). Better Auth then applies its own per-path limits and, on sign-up, sign-in and password reset, verifies the Turnstile token. See [Abuse protection](#abuse-protection).
 
@@ -118,6 +118,7 @@ Each principle is the rule that holds now; a project records why it changes one 
 14. **Dependencies are explicit; no ambient request state.** Code receives the `RequestContext`, clock, ids and bindings as arguments; nothing reads them from a global or from `AsyncLocalStorage`. One exception, at the adapter edge: Better Auth calls its hooks itself and gives them no way to receive our context, so `apps/web/src/server/request-scope.ts` keeps the current request's context in an `AsyncLocalStorage` that `withRequestContext` (`server/http.ts`) sets and only `server/auth-audit.ts` reads, to give audit events the request's trace id. A new library callback that needs the context goes through the same bridge only with a reason in the PR. GritQL `lint/rules/request-scope-at-auth-edge.grit` (no `AsyncLocalStorage`, `node:async_hooks` or `request-scope` import in packages/features or apps/web outside those three files) (enforced in CI).
 15. **Data belongs to a workspace.** Every table has a non-null `workspace_id` (auth tables, the `workspaces` table, the platform tables `audit_events` and `job_idempotency_keys`, and the user-scoped notification tables `notifications` (optional `workspace_id`), `notification_preferences` and `notification_settings` excepted, each with its reason in the test), every procedure on data is a `workspaceProcedure`, and use cases take the actor and check `can()`. See [Tenancy and authorization](#tenancy-and-authorization). `test/architecture/workspace-scope.test.ts` (enforced in CI).
 16. **Background work only through `enqueueJob`.** Jobs are declared with `defineJob`, registered in the job catalog and enqueued with `enqueueJob`; scheduled work is an entry of the cron catalog that enqueues jobs. No code reads `APP_QUEUE` or calls `.send(` on a queue outside `packages/features/src/jobs/`, the Cloudflare JobQueue adapter and `buildPlatform`. Every consumer has a dead-letter queue and `max_retries` equal to `JOB_MAX_RETRIES`; `triggers.crons` equals the cron catalog's schedules in every environment. GritQL `lint/rules/no-direct-queue-send.grit` and `test/architecture/jobs.test.ts` (enforced in CI). [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md)
+17. **Trashed rows never reach a live read.** A trashable table (one of `TRASH_CATALOG`, `packages/features/src/trash-catalog.ts`) has `deleted_at` and `deleted_by`; every read of it goes through `liveIn(table, actor)` or `trashedIn(table, actor)` (`trash/`), never a bare workspace filter, unless the file is listed with a reason (erasure, the storage metric). Deleting is a move to the trash; data leaves for good only through the trash (permanent delete, empty, the daily retention purge) or erasure, which calls the entity's `purge` directly. `test/architecture/trash.test.ts` (enforced in CI). [how-to-use-trash.md](../guides/how-to-use-trash.md)
 
 ## Feature layout
 
@@ -129,6 +130,7 @@ packages/features/src/
 ├── cron-catalog.ts              composition root: every cron entry (name, schedule, run)
 ├── notification-catalog.ts      composition root: every notification type (defineNotification)
 ├── analytics-events.ts          composition root: every product analytics event (analyticsEvents)
+├── trash-catalog.ts             composition root: every trashable entity (TRASH_CATALOG)
 ├── kernel/                      pure shared building blocks (domain may import these)
 │   ├── domain-error.ts          DomainError with a kind adapters map, optional code and details
 │   ├── billing-gate.ts          BillingGate: what features ask billing (requireFeature, requireLimit, recordUsage, planId)
@@ -207,6 +209,8 @@ packages/features/src/
 ├── greetings/                   the job demo: helloJob, sendHello (enqueue), sayHello (handler)
 ├── notifications/               notify, dispatch, inbox (list, unread count, read, archive), preferences,
 │                                digest, RFC 8058 unsubscribe tokens, retention purge; tables in notifications.schema.ts
+├── trash/                       soft delete: liveIn/trashedIn, the TrashableEntity contract, list, restore,
+│                                permanent delete, empty, retention purge (job trash.purge-expired)
 ├── workspaces/                  tenancy: workspaces, members, invitations, sign-up policy
 │   ├── domain/                  permissions.ts (roles, ACTIONS, can), membership-rules.ts,
 │   │                            sign-up-policy.ts, invitation.ts, mode.ts, actor.ts, config.ts
@@ -226,6 +230,8 @@ packages/features/src/
     ├── find-workspace-file.ts
     ├── list-workspace-files.ts
     ├── delete-workspace-files.ts
+    ├── trash-file.ts            (move to trash)
+    ├── trash.ts                 fileTrash: the files entity of the trash catalog
     └── r2-presign.ts            presignR2Url (S3 API signing)
 ```
 
@@ -247,6 +253,7 @@ Data belongs to a **workspace**, never to a user: every data table has a require
 
 - **Actor.** A `workspaceProcedure` (`apps/web/src/server/trpc/init.ts`) takes an optional `workspaceId`, resolves the membership with `resolveActor` and puts `ctx.actor` (`{ userId, workspaceId, role }`) on the context; a workspace the user is not a member of is NOT_FOUND. Without `workspaceId` the user's default applies (the only workspace in personal and single mode, the one switched to last in multi mode), the same for the web app and MCP. HTTP routes resolve the actor the same way (`?workspaceId=`).
 - **Use cases** of workspace-scoped features take `(deps, actor, input)`, filter every query by `actor.workspaceId`, and check the action first with `requirePermission(actor, "<action>")`. Use cases that act for a user across workspaces (listing, creating, accepting an invitation, sign-up, account deletion) take the user in `input` and are listed with a reason in `test/architecture/workspace-scope.test.ts`.
+- **Trash.** Deleting workspace data moves it to the workspace's trash (`deleted_at` set); reads of trashable tables filter with `liveIn` or `trashedIn`, which include the workspace filter. Restore and permanent delete act only on the actor's workspace's trash; the retention purge is the one cross-workspace path ([how-to-use-trash.md](../guides/how-to-use-trash.md)).
 - **Invariant.** A workspace always keeps a member who can manage members (`membership-rules.ts`); the last owner cannot leave, be removed, be demoted or delete their account.
 - **Modes and sign-up** (`WORKSPACE_MODE`, `SIGN_UP`, …) are environment settings validated at startup; sign-up is checked in Better Auth's `user.create.before` hook for every method.
 - **Why our own tables, not Better Auth's organization plugin:** roles and permissions stay in the domain (and can be replaced), every operation is a use case with an MCP tool, and multi-row changes are atomic `db.batch` writes on D1. Patterns borrowed from the plugin: hashed invitation tokens, expiry, the last-owner rule.
@@ -357,31 +364,32 @@ Do not cite these as precedent until they are closed. None today. When the code 
 
 ## To change X, read Y
 
-| To change                                   | Read                                                                                                                                                                                           |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sign-in methods, auth tables, OAuth for MCP | [how-to-setup-auth.md](../guides/how-to-setup-auth.md), `apps/web/src/server/auth.ts`                                                                                                          |
-| Rate limits, Turnstile                      | [how-to-configure-abuse-protection.md](../guides/how-to-configure-abuse-protection.md), `packages/features/src/abuse/domain/policies.ts`                                                       |
-| Workspaces, sign-up policy, roles           | [how-to-configure-workspaces.md](../guides/how-to-configure-workspaces.md), [Tenancy and authorization](#tenancy-and-authorization)                                                            |
-| Database schema or migrations               | [how-to-setup-d1.md](../guides/how-to-setup-d1.md)                                                                                                                                             |
-| File storage                                | [how-to-setup-r2.md](../guides/how-to-setup-r2.md)                                                                                                                                             |
-| Email                                       | [how-to-setup-email.md](../guides/how-to-setup-email.md)                                                                                                                                       |
-| MCP tools                                   | [how-to-setup-mcp.md](../guides/how-to-setup-mcp.md), `apps/web/src/server/mcp/tools.ts`                                                                                                       |
-| Plans, features, limits, billing modes      | [how-to-configure-plans-and-billing.md](../guides/how-to-configure-plans-and-billing.md), [Plans, features and limits](#plans-features-and-limits)                                             |
-| Admin portal, platform admins               | [how-to-use-admin-portal.md](../guides/how-to-use-admin-portal.md), [Admin portal](#admin-portal)                                                                                              |
-| Audit log, retention                        | [how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md), [Audit log](#audit-log)                                                                                                  |
-| Product analytics, Web Analytics            | [how-to-setup-product-analytics.md](../guides/how-to-setup-product-analytics.md), `packages/features/src/analytics-events.ts`                                                                  |
-| Feature flags                               | [how-to-use-feature-flags.md](../guides/how-to-use-feature-flags.md), `packages/features/src/feature-flags/domain/catalog.ts`                                                                  |
-| Logging, error reports, tracing             | [how-to-setup-logging.md](../guides/how-to-setup-logging.md), [how-to-setup-error-reporting.md](../guides/how-to-setup-error-reporting.md), [Ports and adapters](#ports-and-adapters)          |
-| Metrics, spans, the metric catalog          | [how-to-setup-metrics-and-tracing.md](../guides/how-to-setup-metrics-and-tracing.md), `packages/features/src/platform/metric-catalog.ts`                                                       |
-| Deploy, environments                        | [how-to-setup-web-app.md](../guides/how-to-setup-web-app.md)                                                                                                                                   |
-| Notifications, digest, unsubscribe          | [how-to-send-notifications.md](../guides/how-to-send-notifications.md), `packages/features/src/notification-catalog.ts`                                                                        |
-| Background jobs, cron, dead-letter queue    | [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md)                                                                                                                       |
-| CI or the deploy workflow                   | [how-to-setup-ci.md](../guides/how-to-setup-ci.md)                                                                                                                                             |
-| UI components, brand, Storybook             | [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md), [how-to-define-branding.md](../guides/how-to-define-branding.md), [how-to-use-storybook.md](../guides/how-to-use-storybook.md) |
-| Dependencies, security updates              | [processes/dependencies.md](../processes/dependencies.md)                                                                                                                                      |
-| Performance targets and checks              | [performance.md](performance.md)                                                                                                                                                               |
-| Tests                                       | [testing.md](testing.md)                                                                                                                                                                       |
-| How work is planned, reviewed and shipped   | [processes/development.md](../processes/development.md), [processes/code-review.md](../processes/code-review.md)                                                                               |
+| To change                                     | Read                                                                                                                                                                                           |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign-in methods, auth tables, OAuth for MCP   | [how-to-setup-auth.md](../guides/how-to-setup-auth.md), `apps/web/src/server/auth.ts`                                                                                                          |
+| Rate limits, Turnstile                        | [how-to-configure-abuse-protection.md](../guides/how-to-configure-abuse-protection.md), `packages/features/src/abuse/domain/policies.ts`                                                       |
+| Workspaces, sign-up policy, roles             | [how-to-configure-workspaces.md](../guides/how-to-configure-workspaces.md), [Tenancy and authorization](#tenancy-and-authorization)                                                            |
+| Database schema or migrations                 | [how-to-setup-d1.md](../guides/how-to-setup-d1.md)                                                                                                                                             |
+| File storage                                  | [how-to-setup-r2.md](../guides/how-to-setup-r2.md)                                                                                                                                             |
+| Email                                         | [how-to-setup-email.md](../guides/how-to-setup-email.md)                                                                                                                                       |
+| MCP tools                                     | [how-to-setup-mcp.md](../guides/how-to-setup-mcp.md), `apps/web/src/server/mcp/tools.ts`                                                                                                       |
+| Plans, features, limits, billing modes        | [how-to-configure-plans-and-billing.md](../guides/how-to-configure-plans-and-billing.md), [Plans, features and limits](#plans-features-and-limits)                                             |
+| Admin portal, platform admins                 | [how-to-use-admin-portal.md](../guides/how-to-use-admin-portal.md), [Admin portal](#admin-portal)                                                                                              |
+| Audit log, retention                          | [how-to-use-the-audit-log.md](../guides/how-to-use-the-audit-log.md), [Audit log](#audit-log)                                                                                                  |
+| Product analytics, Web Analytics              | [how-to-setup-product-analytics.md](../guides/how-to-setup-product-analytics.md), `packages/features/src/analytics-events.ts`                                                                  |
+| Feature flags                                 | [how-to-use-feature-flags.md](../guides/how-to-use-feature-flags.md), `packages/features/src/feature-flags/domain/catalog.ts`                                                                  |
+| Logging, error reports, tracing               | [how-to-setup-logging.md](../guides/how-to-setup-logging.md), [how-to-setup-error-reporting.md](../guides/how-to-setup-error-reporting.md), [Ports and adapters](#ports-and-adapters)          |
+| Metrics, spans, the metric catalog            | [how-to-setup-metrics-and-tracing.md](../guides/how-to-setup-metrics-and-tracing.md), `packages/features/src/platform/metric-catalog.ts`                                                       |
+| Deploy, environments                          | [how-to-setup-web-app.md](../guides/how-to-setup-web-app.md)                                                                                                                                   |
+| Notifications, digest, unsubscribe            | [how-to-send-notifications.md](../guides/how-to-send-notifications.md), `packages/features/src/notification-catalog.ts`                                                                        |
+| Background jobs, cron, dead-letter queue      | [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md)                                                                                                                       |
+| CI or the deploy workflow                     | [how-to-setup-ci.md](../guides/how-to-setup-ci.md)                                                                                                                                             |
+| UI components, brand, Storybook               | [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md), [how-to-define-branding.md](../guides/how-to-define-branding.md), [how-to-use-storybook.md](../guides/how-to-use-storybook.md) |
+| Dependencies, security updates                | [processes/dependencies.md](../processes/dependencies.md)                                                                                                                                      |
+| Performance targets and checks                | [performance.md](performance.md)                                                                                                                                                               |
+| Tests                                         | [testing.md](testing.md)                                                                                                                                                                       |
+| How work is planned, reviewed and shipped     | [processes/development.md](../processes/development.md), [processes/code-review.md](../processes/code-review.md)                                                                               |
+| Trash, soft delete, retention of deleted data | [how-to-use-trash.md](../guides/how-to-use-trash.md), `packages/features/src/trash-catalog.ts`                                                                                                 |
 
 ## Extension checklists
 
@@ -409,6 +417,13 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 - [ ] `bun run db:generate`; commit the SQL and `migrations/meta/`.
 - [ ] `bun run db:migrate:local`; integration test for the queries that use it.
 - [ ] Deploy order: migrations before code ([how-to-setup-d1.md](../guides/how-to-setup-d1.md)).
+
+**A trashable table** ([how-to-use-trash.md](../guides/how-to-use-trash.md#making-a-table-trashable))
+
+- [ ] `deleted_at` (timestamp ms, nullable) and `deleted_by` (FK `user`, `ON DELETE SET NULL`), and the partial index `(workspace_id, deleted_at) WHERE deleted_at IS NOT NULL`; unique indexes partial over live rows (`WHERE deleted_at IS NULL`).
+- [ ] A `TrashableEntity` in `<feature>/trash.ts` (`defineTrashableEntity`), listed in `TRASH_CATALOG` (its `purge` reads nothing unscoped, or it goes in `UNSCOPED_READS` of `test/architecture/trash.test.ts` with a reason); its type in `AUDIT_TRASH_TARGET_TYPES`.
+- [ ] Every read uses `liveIn` or `trashedIn`; the move-to-trash use case records `trash.item_trashed`; its MCP tool is not destructive.
+- [ ] Erasure paths call the entity's `purge` directly, bypassing the trash.
 
 **A workspace-scoped table or procedure**
 
@@ -506,3 +521,7 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 ## Account settings
 
 `accounts/user-settings.schema.ts` holds user-scoped preferences and the current avatar reference; it is a reasoned exception to workspace-owned data and cascades with its user. Workspace logos remain workspace-owned. Settings layout/section registration, auth ownership, image versioning and the MCP session gateway are documented in [the settings guide](../guides/how-to-use-settings.md). Account pages are available without an active workspace.
+
+## Storage reconciliation
+
+`storage-reconciliation/` implements bounded orphan maintenance through R2 bindings and injected reference sources. `storage-reference-catalog.ts` composes each feature's reference lookup so the maintenance feature imports no owning tables. `STORAGE_RECONCILE` explicitly chooses off/report/delete; schema rows for live, trashed and pending files are references. Unknown key shapes and objects less than 24 hours old are always preserved. See [the safety contract](../guides/how-to-use-trash.md#optional-storage-reconciliation).

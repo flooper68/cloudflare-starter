@@ -55,6 +55,8 @@ cd apps/web && bunx wrangler d1 execute DB --local --command "EXPLAIN QUERY PLAN
 
 `SCAN <table>` on a table that grows with users or data is a finding; `SEARCH <table> USING INDEX` is what you want. The PR states the plan for each new query on such a table.
 
+A query that only ever reads a small slice of a big table gets a **partial index** over that slice, which stays as small as the slice. Trashable tables have `(workspace_id, deleted_at) WHERE deleted_at IS NOT NULL` ([how-to-use-trash.md](../guides/how-to-use-trash.md)): the trash list and the daily retention purge read only trashed rows, so the index holds the trash, not the table. SQLite uses a partial index only when the query's `WHERE` implies the index's condition, which is why `trashedIn` and the purge state `deleted_at IS NOT NULL` explicitly. The cross-workspace retention purge has no `workspace_id` to lead with: its plan is `SCAN files USING INDEX files_workspace_id_deleted_at_idx` plus a temporary B-tree for `ORDER BY deleted_at`, so each run reads the whole trash of every workspace (not the table). That is accepted while the trash is small next to the table; a project whose trash grows large adds a partial index on `(deleted_at) WHERE deleted_at IS NOT NULL`. Live reads (`liveIn`) keep using the table's ordinary index that starts with `workspace_id` and filter `deleted_at IS NULL` on the rows it finds.
+
 ### Bundle budgets
 
 After `bun run build`, the client assets for each page are measured (gzip size) and compared with the budget in [Targets](#targets). The Worker bundle size is also bounded by Cloudflare's script size limit; `wrangler deploy --dry-run` reports it.
@@ -100,3 +102,5 @@ The D1 flag provider (`FEATURE_FLAGS=d1`) reads every flag with its rules in **o
 - A check that fails is a regression until shown otherwise. Fix the code, or change the budget.
 - Changing a budget or a target is part of the diff: the PR says the old and new value, why (more data per request, a feature that is worth the bytes), and the owner agrees.
 - A production regression is handled like a bug: a check at the cheapest layer that reproduces it, then the fix ([testing.md](testing.md#change--required-test)).
+
+Storage reconciliation bounds each queue delivery to 100 listed objects; every owning feature's reference query uses indexed key columns in groups of at most 50 D1 parameters. Unknown namespaces are skipped, and R2 pagination uses `truncated`/`cursor` rather than the returned count. There is no whole-bucket materialization or per-object D1 query.

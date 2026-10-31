@@ -8,6 +8,7 @@ export {
   type ContentCategory,
   contentCategory,
   FILE_BUCKETS,
+  FILE_TRASH_RETENTION_DAYS,
   type FileBucket,
   FileNotFoundError,
   fileUploadedEvent,
@@ -16,9 +17,12 @@ export {
   type UploadInput,
   uploadInputSchema,
 } from "./domain";
+export { findReferencedFileKeys } from "./find-referenced-file-keys";
 export { findWorkspaceFile, type WorkspaceFile } from "./find-workspace-file";
 export { type FileSummary, listWorkspaceFiles } from "./list-workspace-files";
 export { measureWorkspaceStorage } from "./measure-workspace-storage";
 export type { R2Config } from "./r2-presign";
 export { readWorkspaceFile } from "./read-workspace-file";
 export { storeFile } from "./store-file";
+export { fileTrash } from "./trash";
+export { trashFile } from "./trash-file";

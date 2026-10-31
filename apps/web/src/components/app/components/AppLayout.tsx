@@ -29,6 +29,7 @@ const titles: Record<string, string> = {
   "/app/settings/privacy": "Privacy",
   "/app/members": "Members",
   "/app/billing": "Billing",
+  "/app/trash": "Trash",
   "/app/upload-demo": "Upload demo",
   "/app/queue-demo": "Queue demo",
   "/app/email-demo": "Email demo",
