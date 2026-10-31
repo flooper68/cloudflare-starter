@@ -10,6 +10,7 @@ import {
 } from "../../test/fixtures";
 import { defineJob, type JobEnvelope, type RequestContext } from "../kernel";
 import {
+  createMemoryErrorReporter,
   createMemoryJobQueue,
   createMemoryLogger,
   noopEmail,
@@ -30,6 +31,7 @@ function deps(iso = "2026-10-28T12:00:00.000Z"): JobDeps {
     db: testDb(),
     clock: fixedClock(iso),
     ids: sequentialIds(),
+    errors: createMemoryErrorReporter(),
     logger: createMemoryLogger(),
     jobQueue: createMemoryJobQueue(),
     email: noopEmail,

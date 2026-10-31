@@ -29,3 +29,5 @@ export {
 } from "./memory-product-analytics";
 export { createMemoryRateLimiter } from "./memory-rate-limiter";
 export { createMemoryTracer, type MemoryTracer } from "./memory-tracer";
+
+export { createMemoryZip } from "./zip";

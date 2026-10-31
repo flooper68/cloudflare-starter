@@ -19,6 +19,14 @@ import { filesUnder, read } from "./repo";
 
 /** Tables without `workspace_id`, with the reason. Auth tables are found separately. */
 const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
+  pending_file_cleanup:
+    "Temporary targeted cleanup state survives erasure; avatar prefixes are user-scoped and have no workspace. It is not user content or job history.",
+  data_requests:
+    "Privacy request control plane: explicit user owner and scoped subject; exports themselves enforce workspace permission.",
+  erasure_records:
+    "Minimal user id and timestamps deliberately survive account deletion to reapply erasure after restore.",
+  privacy_erasure_lock:
+    "Expiring global serialization lease protects concurrent last-admin and last-owner deletion checks.",
   workspaces: "the tenant itself; its id is what workspace_id points at",
   user_settings:
     "personal preferences and avatar reference across workspaces; cascades with user",
@@ -60,6 +68,16 @@ const WORKSPACE_SCOPED_FEATURES = [
 
 /** Files in those features that are not actor use cases, with the reason. */
 const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
+  "files/remember-upload-cleanup.ts":
+    "System cleanup intent after an authorized in-flight upload loses its exact reference; no live workspace actor remains.",
+  "files/remember-erasure-storage.ts":
+    "Authorized erasure preserves deleted workspace prefixes before metadata disappears.",
+  "files/cleanup-storage.ts":
+    "System cleanup of durable targets with fresh reference and user/workspace existence guards.",
+  "files/retry-file-cleanups.ts":
+    "Scheduled bounded dispatcher for durable cleanup intents, not a workspace action.",
+  "files/schedule-erasure-storage.ts":
+    "Successful account erasure refreshes the targeted cleanup deadline and queues it.",
   "workspaces/purge-workspace-logos.ts":
     "runs only after account/workspace deletion authorization, including old image versions",
   "workspaces/find-referenced-logo-keys.ts":

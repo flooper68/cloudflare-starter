@@ -19,9 +19,9 @@ Pure helpers inside `apps/web` (config parsing, log builders) are unit tests nex
 
 **Tests do not read your local settings.** Wrangler loads `apps/web/.dev.vars` into the API test Worker too; every var and secret the app reads is pinned in `apps/web/test/api-bindings.ts` (the develop values of `wrangler.jsonc`), which overrides it, so a local `APP_ENV=local`, `LOG_SINK=none` or Google keys cannot change results. `test/architecture/api-test-bindings.test.ts` fails when a key of `.dev.vars.example` or of the top-level `vars` is not pinned there: add new vars and secrets to it.
 
-The `web-api` project disables Vitest's filesystem module cache (`fsModuleCache: false`). With Vitest 5 and `@cloudflare/vitest-plugin` 1.4.9, its auth dependency graph makes the bulk warm-module snapshot exceed workerd's 32 MiB WebSocket message limit: later files exit before running tests with close code 1009, `Message is too large` ([upstream issue #16349](https://github.com/cloudflare/workers-sdk/issues/16349)). Fetching transformed modules individually avoids that transport failure and preserves per-file storage isolation and every assertion. Recheck the workaround when upgrading the plugin; other test projects retain their cache.
-
 Commands: `bun run test` (all Vitest projects in Node and workerd), `bun run test:unit` (Node: domain, helpers, architecture), `bun run test:integration` (both workerd projects), `bun run test:components` (stories in Chromium), `bun run test:e2e` (Playwright journeys). `bun run verify` runs lint, typecheck and `test`; run `test:components` after UI changes and `test:e2e` after changes to auth, pages or routes. CI runs all of them.
+
+The `web-api` project disables Vitest's filesystem module cache (`fsModuleCache: false`). With Vitest 5 and `@cloudflare/vitest-plugin` 1.4.9, its auth dependency graph makes the bulk warm-module snapshot exceed workerd's 32 MiB WebSocket message limit: later files exit before running tests with close code 1009, `Message is too large` ([upstream issue #16349](https://github.com/cloudflare/workers-sdk/issues/16349)). Fetching transformed modules individually avoids that transport failure and preserves per-file storage isolation and every assertion. Recheck the workaround when upgrading the plugin; other test projects retain their cache.
 
 ### Component tests
 
@@ -113,12 +113,18 @@ What exists: unit tests (domain, helpers), integration tests on real D1/R2, API 
 
 Performance checks (D1 query budgets, bundle budgets, Web Vitals, load tests) are not a layer of their own: each fits next to a layer above or runs against a deployment. The starter ships none; which a project adopts, and how, is in [performance.md](performance.md).
 
-Settings journeys also cover profile/avatar changes, saved formatting/theme, own session revocation, confirmed shared-workspace rename/deletion. `settings.test.ts` covers both browser and MCP session revocation, no token disclosure, image size/type/origin guards and cross-workspace refusals.
+Settings journeys also cover profile/avatar changes, saved formatting/theme, own session revocation, confirmed shared-workspace rename/deletion and self-deletion. `settings.test.ts` covers both browser and MCP session revocation, no token disclosure, image size/type/origin guards and cross-workspace refusals.
 
 Storage reconciliation requires pure cutoff/mode-policy tests, real D1/R2 tests preserving live/trashed/pending references and cleaning an orphan from a failed purge, fail-closed lookup failures, short-page cursor continuations, repeated deletion, disabled/downgraded jobs, admin permission/recent-sign-in checks and MCP parity. Browser evidence covers report and confirmed delete controls in both themes, plus the existing trash states and journeys.
 
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](../guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.
+
 Review regressions also gate concurrent avatar/logo replacements in both publication orders on real D1/R2, profile mutation 429 quota headers and Problem Details, provider-avatar fallback after reloading, and admin storage report/confirmation/outcome journeys. The reconciliation E2E report reaches the real local queue; delete-mode UI outcomes use controlled browser responses while the default remains off. Separate local delete-mode evidence exercises the real job.
 
-Settings regressions cover concurrent avatar/logo writes in both completion orders, upload/auth quota headers, provider-image fallback after reload, indexed reference lookups, the shared last-admin preflight, and a real Better Auth refusal while the native self-deletion endpoint is disabled.
+Privacy changes require actual archive content/credential-exclusion checks, cross-user/workspace download refusal, concurrent admission and failure cleanup, catalog coverage, and real Better Auth deletion preflight proving last-admin/last-owner refusals leave data intact. Do not weaken those assertions for adapters or MCP.
 
-Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](../guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.
+Erasure tests pause a real binding R2 put after its D1 row is created, erase user/workspaces, then resume and assert refusal plus byte cleanup. Targeted-cleanup coverage includes live/trash references, failed delete and failed queue publication, partial-auth retries preserving old prefixes, no early presigned cleanup, first-sweep retention, writes between mandatory sweeps and a failed second sweep retaining its retry state.
+
+Avatar erasure tests also pause the real setAccountAvatar R2 put across user deletion, assert failed FK publication, retained mandatory avatar-prefix intent, cleanup in both sweeps, failure persistence and live-user protection.
+
+The privacy export journey waits for actual queued notification delivery by reopening the inbox, retains its visible-link assertion, and verifies ZIP downloads from the Privacy page, inbox and notification bell. Reconciliation browser tests use their own documentation-range client IP so unrelated sign-in journeys cannot exhaust their real sign-in quota. Production limits and the dedicated rate-limit assertions remain unchanged.

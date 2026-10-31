@@ -112,6 +112,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       {
         db,
         bucket: env.FILES,
+        jobQueue: platform.jobQueue,
         clock: systemClock,
         ids: randomIds,
         requestContext: locals.requestContext,

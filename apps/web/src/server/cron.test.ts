@@ -51,6 +51,17 @@ const controller = (cron: string) => ({
 });
 
 describe("cron handler", () => {
+  it("privacy.purge-exports runs hourly with the scheduled cutoff", async () => {
+    const { platform, jobQueue } = memoryPlatform();
+    await runScheduled(controller("17 * * * *"), platform);
+    expect(jobQueue.sent.map((x) => x.envelope)).toEqual([
+      expect.objectContaining({ type: "files.retry-cleanup", data: {} }),
+      expect.objectContaining({
+        type: "privacy.purge-exports",
+        data: { asOf: "2026-10-28T03:17:00.000Z" },
+      }),
+    ]);
+  });
   it("storage.reconcile enqueues the explicit report or delete mode and off enqueues nothing", async () => {
     for (const mode of ["off", "report", "delete"] as const) {
       const { platform, jobQueue } = memoryPlatform();

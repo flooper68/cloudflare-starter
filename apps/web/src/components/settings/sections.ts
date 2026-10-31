@@ -35,6 +35,13 @@ export const settingsSections: readonly SettingsSection[] = [
     visible: () => true,
   },
   {
+    id: "privacy",
+    label: "Privacy",
+    to: "/app/settings/privacy",
+    group: "account",
+    visible: () => true,
+  },
+  {
     id: "workspace",
     label: "Workspace",
     to: "/app/settings/workspace",

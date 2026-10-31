@@ -115,6 +115,11 @@ export {
   type CommentThreadProps,
 } from "../components/patterns/comment-thread";
 export {
+  type DataExportItem,
+  DataExportList,
+  type DataExportListProps,
+} from "../components/patterns/data-export-list";
+export {
   type Filter,
   FilterBar,
   type FilterBarProps,

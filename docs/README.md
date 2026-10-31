@@ -34,6 +34,8 @@ How to set up or do something; read while doing it.
 | [how-to-use-storybook.md](guides/how-to-use-storybook.md)                             | you build or review components in Storybook, write their tests, or change who can open `/_storybook/`                                                                                |
 | [how-to-use-trash.md](guides/how-to-use-trash.md)                                     | you make a table trashable, read one, change a trash retention, debug a missing or restored item, or erase data for good (GDPR)                                                      |
 
+
+Privacy exports and erasure: [how-to-handle-data-privacy.md](guides/how-to-handle-data-privacy.md) — use when adding data, handling a data request, configuring export expiry or restoring after erasure.
 ## Architecture
 
 Contracts and principles that hold regardless of the current code.

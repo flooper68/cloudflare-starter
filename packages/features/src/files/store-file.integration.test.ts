@@ -9,7 +9,10 @@ import {
   testDb,
   testRequestContext,
 } from "../../test/fixtures";
-import { createMemoryProductAnalytics } from "../platform";
+import {
+  createMemoryJobQueue,
+  createMemoryProductAnalytics,
+} from "../platform";
 import { storeFile } from "./store-file";
 
 const body = new TextEncoder().encode("Q4 roadmap").buffer as ArrayBuffer;
@@ -33,6 +36,7 @@ describe("storeFile", () => {
         requestContext: testRequestContext(),
         analytics,
         billing: testBilling(),
+        jobQueue: createMemoryJobQueue(),
       },
       actor,
       { ...input, body }
@@ -81,6 +85,7 @@ describe("storeFile", () => {
           requestContext: testRequestContext(),
           analytics,
           billing: testBilling(),
+          jobQueue: createMemoryJobQueue(),
         },
         actor,
         { ...input, body }
@@ -107,6 +112,7 @@ describe("storeFile", () => {
           requestContext: testRequestContext(),
           analytics: createMemoryProductAnalytics(),
           billing: testBilling(),
+          jobQueue: createMemoryJobQueue(),
         },
         // A role outside the map, as stored by an older version of the roles.
         { userId: "u", workspaceId: "w", role: "guest" as never },

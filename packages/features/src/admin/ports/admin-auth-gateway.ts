@@ -23,7 +23,7 @@ export interface AdminAuthGateway {
   /** Signs the user out everywhere; returns how many sessions were revoked. */
   revokeSessions(userId: string): Promise<number>;
   /** Deletes the user with their sessions and accounts (runs the auth library's hooks). */
-  deleteUser(userId: string): Promise<void>;
+  deleteUser(userId: string, operationId?: string): Promise<void>;
   /** Emails the user a password reset link that opens `redirectTo`. */
   sendPasswordReset(email: string, redirectTo: string): Promise<void>;
   /**

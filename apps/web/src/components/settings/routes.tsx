@@ -2,6 +2,7 @@ import { createRoute, redirect } from "@tanstack/react-router";
 import { appLayoutRoute } from "@/components/app/layout-route";
 import { AccountSettingsPage } from "./pages/AccountSettingsPage";
 import { AppearanceSettingsPage } from "./pages/AppearanceSettingsPage";
+import { PrivacySettingsPage } from "./pages/PrivacySettingsPage";
 import { SecuritySettingsPage } from "./pages/SecuritySettingsPage";
 import { WorkspaceSettingsPage } from "./pages/WorkspaceSettingsPage";
 import { SettingsLayout } from "./SettingsLayout";
@@ -38,4 +39,16 @@ const workspace = createRoute({
   path: "workspace",
   component: WorkspaceSettingsPage,
 });
-export const settingsRoutes = [index, account, appearance, security, workspace];
+const privacy = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
+  path: "privacy",
+  component: PrivacySettingsPage,
+});
+export const settingsRoutes = [
+  index,
+  account,
+  appearance,
+  security,
+  workspace,
+  privacy,
+];

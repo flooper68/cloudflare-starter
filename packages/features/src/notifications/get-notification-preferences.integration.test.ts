@@ -22,6 +22,8 @@ describe("getNotificationPreferences", () => {
       ["auth.password-changed", true, true, true],
       ["auth.new-sign-in", true, true, true],
       ["auth.factor-changed", true, true, true],
+
+      ["privacy.export-ready", true, true, true],
     ]);
   });
 

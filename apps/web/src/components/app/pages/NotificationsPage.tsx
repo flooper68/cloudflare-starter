@@ -8,11 +8,11 @@ import {
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Settings2 } from "lucide-react";
 import { useState } from "react";
-
 import {
   useInbox,
   useUnreadCount,
 } from "@/components/app/notifications/use-notifications";
+import { notificationDestination } from "@/lib/notification-navigation";
 
 /** `/app/notifications`: the full inbox, with views, paging and the actions. */
 export function NotificationsPage() {
@@ -23,7 +23,13 @@ export function NotificationsPage() {
 
   function open(item: NotificationItem) {
     if (!item.read) void inbox.markRead([item.id]);
-    if (item.href) void navigate({ to: item.href });
+    const destination = notificationDestination(
+      item.href,
+      window.location.href
+    );
+    if (!destination) return;
+    if (destination.kind === "spa") void navigate({ to: destination.href });
+    else window.location.assign(destination.href);
   }
 
   return (

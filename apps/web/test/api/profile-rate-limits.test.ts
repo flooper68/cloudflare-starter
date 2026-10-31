@@ -94,7 +94,7 @@ describe("profile mutation quotas at the HTTP edge", () => {
           )
         )
       );
-      expect(first.status).toBe(policy === "auth.delete-user" ? 404 : 400);
+      expect(first.status).toBe(400);
       expect(call).toBe(limit + 1);
       expect(first.headers.get("ratelimit-policy")).toContain(
         `"${policy}";q=${limit}`

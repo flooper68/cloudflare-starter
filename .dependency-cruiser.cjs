@@ -22,6 +22,7 @@ const FEATURES_ALLOWED_PACKAGES = ["zod", "drizzle-orm", "aws4fetch"];
  * Matches the package name whether or not it is installed.
  */
 const VENDOR_SDKS = [
+  "fflate",
   "@sentry/",
   "posthog-",
   "dd-trace",

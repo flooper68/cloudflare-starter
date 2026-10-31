@@ -356,6 +356,18 @@ CREATE TABLE `files` (
 CREATE UNIQUE INDEX `files_r2_key_unique` ON `files` (`r2_key`);--> statement-breakpoint
 CREATE INDEX `files_workspace_id_created_at_idx` ON `files` (`workspace_id`,`created_at`);--> statement-breakpoint
 CREATE INDEX `files_workspace_id_deleted_at_idx` ON `files` (`workspace_id`,`deleted_at`) WHERE "files"."deleted_at" IS NOT NULL;--> statement-breakpoint
+CREATE TABLE `pending_file_cleanup` (
+	`target` text PRIMARY KEY NOT NULL,
+	`kind` text NOT NULL,
+	`workspace_id` text,
+	`user_id` text,
+	`not_before` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	`cursor` text,
+	`sweep` integer DEFAULT 0 NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `pending_file_cleanup_due_idx` ON `pending_file_cleanup` (`not_before`);--> statement-breakpoint
 CREATE TABLE `job_idempotency_keys` (
 	`key` text PRIMARY KEY NOT NULL,
 	`job_type` text NOT NULL,
@@ -403,6 +415,39 @@ CREATE INDEX `notifications_unread_idx` ON `notifications` (`user_id`) WHERE "no
 CREATE INDEX `notifications_email_state_idx` ON `notifications` (`email_state`,`user_id`) WHERE "notifications"."email_state" = 'pending_digest';--> statement-breakpoint
 CREATE INDEX `notifications_event_id_idx` ON `notifications` (`event_id`);--> statement-breakpoint
 CREATE INDEX `notifications_created_at_idx` ON `notifications` (`created_at`);--> statement-breakpoint
+CREATE TABLE `data_requests` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`scope` text NOT NULL,
+	`subject_id` text NOT NULL,
+	`status` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`expires_at` integer,
+	`object_key` text,
+	`upload_id` text,
+	`attempt_id` text,
+	`lease_until` integer,
+	`size_bytes` integer,
+	`failure` text
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `data_requests_one_active_idx` ON `data_requests` (`scope`,`subject_id`) WHERE "data_requests"."status" in ('queued','building');--> statement-breakpoint
+CREATE INDEX `data_requests_subject_created_idx` ON `data_requests` (`scope`,`subject_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `data_requests_user_created_idx` ON `data_requests` (`user_id`,`created_at`);--> statement-breakpoint
+CREATE INDEX `data_requests_expiry_idx` ON `data_requests` (`expires_at`);--> statement-breakpoint
+CREATE TABLE `privacy_erasure_lock` (
+	`id` text PRIMARY KEY NOT NULL,
+	`user_id` text NOT NULL,
+	`operation_id` text NOT NULL,
+	`lease_until` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `erasure_records` (
+	`user_id` text PRIMARY KEY NOT NULL,
+	`requested_at` integer NOT NULL,
+	`completed_at` integer
+);
+--> statement-breakpoint
 CREATE TABLE `workspace_invitations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`workspace_id` text NOT NULL,

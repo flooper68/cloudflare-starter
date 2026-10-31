@@ -365,7 +365,6 @@ for (const env of ENVIRONMENTS) {
   ).map((binding) => binding.namespace_id);
   namespaceIds.push(...ids);
   checkStorageVar(env, vars.STORAGE_RECONCILE);
-
   if (vars.TWO_FACTOR) checkSecurity(env, vars);
   else
     warn(

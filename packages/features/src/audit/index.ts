@@ -23,3 +23,5 @@ export {
 export { type AuditEventPage, listAuditEvents } from "./list-audit-events";
 export { purgeAuditEvents } from "./purge-audit-events";
 export { recordAuditEvent } from "./record-audit-event";
+
+export { redactAuditSubject } from "./redact-audit-subject";

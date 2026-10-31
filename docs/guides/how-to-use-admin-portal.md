@@ -50,7 +50,7 @@ If every admin ends up suspended or demoted (two admins acting on each other at 
 
 ## Recent sign-in for destructive actions
 
-Destructive procedures are `adminDestructiveProcedure`s: they need a sign-in from the last 15 minutes, else `FORBIDDEN` with `data.appCode` `REAUTH_REQUIRED` (the web portal then asks the admin to sign in again). In the browser that is the current session's sign-in; over MCP, which has no browser session, it is the admin's newest own session (impersonation sessions aside), so an admin signs in to the web app shortly before asking Claude to suspend or delete. `requireAdminSecondFactor` in `apps/web/src/server/trpc/init.ts` is the hook a later two-factor change fills.
+Destructive procedures are `adminDestructiveProcedure`s: they need a sign-in from the last 15 minutes, else `FORBIDDEN` with `data.appCode` `REAUTH_REQUIRED`. The existing sign-in check uses the current browser session, or the newest own sign-in for MCP. When security is enabled, `requireAdminSecondFactor` additionally requires an enrolled administrator's recent explicit factor on the exact acting session (the OAuth granting session for MCP). A remembered device is insufficient: `STEP_UP_REQUIRED` opens a forced browser challenge and returns to the interrupted page. Connecting clients must reconnect when their granting session is revoked or expires. Permanent erasure and factor reset are browser-only; MCP can still perform its other authorized administrative actions.
 
 ## Impersonation
 
@@ -91,7 +91,7 @@ Append a route to `adminRoutes` in `apps/web/src/components/admin/routes.tsx` (p
 
 ## Not built
 
-Jobs or queue pages (use Cloudflare Queues metrics and Workers Logs), product analytics and Analytics Engine charts, editing settings from the portal.
+Jobs or queue pages (use Cloudflare Queues metrics and Workers Logs), product analytics and Analytics Engine charts, editing deployment settings from the portal.
 
 ### Storage maintenance
 
@@ -99,4 +99,8 @@ Settings includes report-only storage inspection (`admin.storage.reconcile`, MCP
 
 Storage maintenance browser coverage submits a real local report and checks its returned run/job ids, hides deletion while off, and covers confirmation cancellation and success/failure UI outcomes in delete mode. Evidence fixtures are documented separately from the real local job capture.
 
-Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.
+### Account security
+
+[Authenticators, passkeys, required enrollment and session-bound MCP assurance](how-to-configure-account-security.md) enforce the chosen policy. Destructive administrative actions require the configured assurance; factor reset is available only in the browser, with the self/last-admin safeguards.
+
+Data requests at `/admin/data-requests` show export/erasure metadata. `admin.privacy.eraseUser` and legacy `admin.users.remove` are browser-only destructive actions; the historical `admin_remove_user` MCP tool was removed to prevent bypassing interactive erasure assurance. [Privacy guide](how-to-handle-data-privacy.md).

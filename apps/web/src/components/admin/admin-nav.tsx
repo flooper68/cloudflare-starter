@@ -26,6 +26,7 @@ export const adminNav: readonly AdminNavItem[] = [
     icon: <Building2 />,
     workspaces: true,
   },
+  { to: "/admin/data-requests", label: "Data requests", icon: <ScrollText /> },
   { to: "/admin/audit", label: "Audit log", icon: <ScrollText /> },
   { to: "/admin/flags", label: "Feature flags", icon: <Flag /> },
   { to: "/admin/settings", label: "Settings", icon: <Settings /> },

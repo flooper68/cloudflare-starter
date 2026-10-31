@@ -60,3 +60,5 @@ export type {
   SpanStatus,
   Tracer,
 } from "./tracer";
+
+export type { Zip, ZipWriter } from "./zip";

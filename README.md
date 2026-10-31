@@ -174,8 +174,12 @@ See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) f
 - [How to use Storybook](docs/guides/how-to-use-storybook.md)
 - [How to define the brand](docs/guides/how-to-define-branding.md)
 
-Account and workspace settings: profile/avatar, verified email changes, linked accounts, own session revocation, locale/time zone/theme, and confirmed workspace deletion. Self-service account deletion arrives with the privacy pipeline. See [the settings guide](docs/guides/how-to-use-settings.md).
+Account and workspace settings: profile/avatar, verified email changes, linked accounts, own session revocation, locale/time zone/theme, and confirmed workspace/account deletion. See [the settings guide](docs/guides/how-to-use-settings.md).
 
 Storage cleanup is optional: `bun run setup:storage --env all --dry-run` previews `STORAGE_RECONCILE=off|report|delete`. Admin Settings can queue a report without deleting; explicit delete mode enables confirmed cleanup. See [trash and storage reconciliation](docs/guides/how-to-use-trash.md#optional-storage-reconciliation).
 
 Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](docs/guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.
+
+Personal/workspace data exports and account erasure are included. See [privacy operations](docs/guides/how-to-handle-data-privacy.md) for catalog coverage, bounded streaming ZIPs, browser-only admin erasure, retention limits and the required `setup:privacy-storage --dry-run` lifecycle preview.
+
+Erasure also handles late uploads: binding writes cannot report success after their row disappeared, and previously issued presigned PUTs receive mandatory delayed cleanup with durable retries and a second sweep. [Physical cleanup windows](docs/guides/how-to-handle-data-privacy.md#uploads-already-in-flight-when-erasure-starts).
