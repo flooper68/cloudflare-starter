@@ -103,6 +103,13 @@ function direct(
 
 export const MCP_TOOLS: readonly ToolDefinition[] = [
   direct(
+    "get_security_status",
+    "read",
+    "account.security.status",
+    "Security status",
+    "Reads your factor enrollment and this connection's verification status, without secrets or recovery codes. Configure factors in the browser."
+  ),
+  direct(
     "get_account_settings",
     "read",
     "account.settings.get",
@@ -625,6 +632,8 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
 
 /** Procedures deliberately not exposed to MCP, with the reason. Keep it empty if you can. */
 export const MCP_EXEMPT_PROCEDURES: Readonly<Record<string, string>> = {
+  "admin.users.resetSecondFactor":
+    "Recovery resets authentication and is deliberately browser-only with fresh administrator assurance.",
   "analytics.track": "client telemetry, not an agent capability",
   "admin.impersonation.start":
     "creates a browser cookie session; an MCP client has no browser session to swap",

@@ -222,6 +222,37 @@ export const auditEventSchema = z.discriminatedUnion("action", [
       .strict(),
   }),
 
+  z.object({
+    ...common,
+    action: z.literal("auth.second_factor_verified"),
+    target: target("user"),
+    metadata: z
+      .object({ method: z.enum(["totp", "email", "backup"]) })
+      .strict(),
+  }),
+  z.object({
+    ...common,
+    action: z.literal("auth.factor_changed"),
+    target: target("user"),
+    metadata: z
+      .object({
+        change: z.enum([
+          "enabled",
+          "disabled",
+          "backup_regenerated",
+          "passkey_added",
+          "passkey_removed",
+        ]),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...common,
+    action: z.literal("user.second_factor_reset"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+
   // User administration (recorded by the admin portal).
   z.object({
     ...common,

@@ -46,7 +46,7 @@ test("an admin suspends a member; the member cannot sign in; the audit log shows
   await open(page, "/sign-in");
   await page.getByLabel("Email").fill(member.email);
   await page.getByLabel("Password").fill(member.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByText(/suspended/i)).toBeVisible();
   await expect(page).toHaveURL(/\/sign-in/);
 

@@ -11,6 +11,11 @@ import {
 
 const core = {
   STORAGE_RECONCILE: "off",
+
+  TWO_FACTOR: "optional",
+  TWO_FACTOR_EMAIL_OTP: "off",
+  TWO_FACTOR_TRUSTED_DEVICE_DAYS: "0",
+  PASSKEYS: "on",
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "local-dev-secret-change-me-0000000000",
   APP_ENV: "local",

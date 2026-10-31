@@ -3,11 +3,17 @@
  * request context and x-request-id for every on-demand request, then the cookie session
  * and the /app guard.
  */
+import {
+  getSecurityState,
+  SecondFactorRequiredError,
+  systemClock,
+} from "@cloudflare-starter/features";
 import type { APIContext } from "astro";
-
+import { buildRequiredConfig } from "@/lib/env";
 import { AUTH_BASE_PATH, getAuth, MCP_PATH } from "@/server/auth";
+import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
-import { withRequestContext } from "@/server/http";
+import { domainErrorResponse, withRequestContext } from "@/server/http";
 
 const PROTECTED_PREFIX = "/app";
 
@@ -64,6 +70,34 @@ export async function handleAppRequest(
         return context.redirect("/sign-in");
       }
 
+      if (
+        result &&
+        (isProtected(pathname) ||
+          pathname.startsWith("/admin") ||
+          pathname === "/consent" ||
+          pathname.startsWith("/api/files"))
+      ) {
+        const security = await getSecurityState(
+          { db: getDb(env), clock: systemClock },
+          {
+            userId: result.user.id,
+            sessionId: result.session.id,
+            settings: buildRequiredConfig(env).security,
+          }
+        );
+        if (!security.sessionValid) return context.redirect("/sign-in");
+        if (security.decision !== "allowed") {
+          if (pathname.startsWith("/api/"))
+            return domainErrorResponse(
+              new SecondFactorRequiredError(
+                security.decision === "enrollment_required"
+              )
+            );
+          return context.redirect(
+            `/two-factor?next=${encodeURIComponent(pathname + context.url.search)}`
+          );
+        }
+      }
       return next();
     },
     { route: context.routePattern }

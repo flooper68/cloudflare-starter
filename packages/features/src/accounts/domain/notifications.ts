@@ -66,3 +66,25 @@ export const newSignInNotification = defineNotification({
     };
   },
 });
+
+/** Factors are security-critical changes; no secrets appear in the notice. */
+export const securityFactorChangedNotification = defineNotification({
+  type: "auth.factor-changed",
+  label: "Your sign-in security changes",
+  data: z.object({ change: z.string().min(1).max(100) }).strict(),
+  defaultChannels: { inApp: true, email: true },
+  securityCritical: true,
+  render: (data, { appUrl }) => ({
+    inApp: {
+      title: "Your account security changed",
+      body: `Sign-in security was ${data.change}. If this was not you, contact an administrator.`,
+      href: "/app/settings/security",
+    },
+    email: {
+      subject: "Your account security changed",
+      text: `Sign-in security was ${data.change}. Review ${appUrl}/app/settings/security. If this was not you, contact an administrator.`,
+      html: html`<p>Sign-in security was ${data.change}.</p><p><a href="${appUrl}/app/settings/security">Review account security</a>. If this was not you, contact an administrator.</p>`
+        .value,
+    },
+  }),
+});

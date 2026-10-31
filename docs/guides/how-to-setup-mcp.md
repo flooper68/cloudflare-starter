@@ -48,3 +48,6 @@ A tool may compose several procedures with a custom `run`; list them all in `pro
 ## Testing
 
 MCP is used against deployed environments only: Claude connects from Anthropic's servers and cannot reach `localhost`, and there is no local MCP setup. Locally, `bun run test` covers the tool layer (`server.test.ts` calls the MCP server in-process) and the parity rule; connect Claude to the develop environment to try the full flow.
+
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

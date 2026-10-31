@@ -30,7 +30,16 @@ export function useAdminAction(): AdminAction {
       toast.success(done);
       return true;
     } catch (error) {
-      if (appCodeOf(error) === "REAUTH_REQUIRED") {
+      const code = appCodeOf(error);
+      if (
+        code === "STEP_UP_REQUIRED" ||
+        code === "SECOND_FACTOR_ENROLLMENT_REQUIRED"
+      ) {
+        const next = `${window.location.pathname}${window.location.search}`;
+        window.location.assign(
+          `/two-factor?${code === "STEP_UP_REQUIRED" ? "stepUp=1&" : ""}next=${encodeURIComponent(next)}`
+        );
+      } else if (code === "REAUTH_REQUIRED") {
         setReauth(true);
       } else {
         toast.error(

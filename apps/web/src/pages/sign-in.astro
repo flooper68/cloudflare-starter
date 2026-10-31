@@ -23,6 +23,7 @@ const { turnstile } = buildPlatform(env);
       client:load
       emailPassword={methods.emailPassword}
       google={methods.google}
+      passkeys={methods.passkeys}
       search={Astro.url.search}
       initialError={authErrorForCode(Astro.url.searchParams.get("error"))}
       humanCheck={turnstile}

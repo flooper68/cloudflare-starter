@@ -72,3 +72,6 @@ How work is planned, reviewed, documented and decided, and how dependencies are 
 | [../packages/ui/README.md](../packages/ui/README.md)           | you need the UI package layout and imports                                                |
 | [../apps/web/README.md](../apps/web/README.md)                 | you work in the web app                                                                   |
 | [../.claude/skills/](../.claude/skills/)                       | you are an agent setting up auth (`setup-auth`), D1 (`setup-d1`) or email (`setup-email`) |
+
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

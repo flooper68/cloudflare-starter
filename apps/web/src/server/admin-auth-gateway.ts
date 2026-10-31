@@ -48,6 +48,26 @@ export function createAdminAuthGateway(
   };
 
   return {
+    async resetSecondFactor(userId) {
+      const context = await auth().$context;
+      await context.internalAdapter.deleteUserSessions(userId);
+      for (const model of [
+        "twoFactor",
+        "oauthAccessToken",
+        "oauthRefreshToken",
+      ])
+        await context.adapter.deleteMany({
+          model,
+          where: [{ field: "userId", value: userId }],
+        });
+      await context.adapter.deleteMany({
+        model: "verification",
+        where: [{ field: "value", value: userId }],
+      });
+      await context.internalAdapter.updateUser(userId, {
+        twoFactorEnabled: false,
+      });
+    },
     async setRole(userId: string, role: PlatformRole) {
       await (await adapter()).updateUser(userId, { role });
     },

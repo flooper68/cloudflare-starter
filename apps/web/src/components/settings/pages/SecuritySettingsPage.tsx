@@ -16,6 +16,7 @@ import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 import { useFormatters } from "@/lib/use-formatters";
+import { SecurityFactors } from "../SecurityFactors";
 
 export function SecuritySettingsPage() {
   const { methods } = useAuth();
@@ -47,6 +48,7 @@ export function SecuritySettingsPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-fg">Security</h2>
+      <SecurityFactors />
       {methods.emailPassword ? <ChangePasswordForm /> : null}
       <Card>
         <CardHeader>

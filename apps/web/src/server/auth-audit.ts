@@ -166,40 +166,6 @@ export function auditDatabaseHooks(
   env: AppEnv
 ): NonNullable<BetterAuthOptions["databaseHooks"]> {
   return {
-    session: {
-      create: {
-        async after(session, ctx) {
-          // A password change re-issues the session: recorded as auth.password_changed.
-          if (ctx?.path === "/change-password") return;
-          // An admin's impersonation session: recorded as impersonation.started.
-          if ((session as { impersonatedBy?: string | null }).impersonatedBy)
-            return;
-          const signIn = signInMethodOf(ctx);
-          await record(env, ctx, {
-            action: "auth.sign_in",
-            actor: { kind: "user", userId: session.userId },
-            target: { type: "user", id: session.userId },
-            metadata: signIn,
-          });
-          // A brand-new account or a just-verified address is not a sign-in to warn about.
-          if (signIn.method !== "password" && signIn.method !== "social")
-            return;
-          const context = { ...contextFor(env, ctx), userId: session.userId };
-          await notifySafely(env, context, "auth.new-sign-in", () =>
-            notifyNewSignIn(
-              { db: getDb(env), clock: systemClock, notify: notifierFor(env) },
-              {
-                userId: session.userId,
-                sessionId: session.id,
-                userAgent: session.userAgent ?? null,
-                ip: session.ipAddress ?? null,
-                requestContext: context,
-              }
-            )
-          );
-        },
-      },
-    },
     user: {
       create: {
         async after(user, ctx) {
@@ -345,4 +311,50 @@ export async function auditPasswordReset(
     }
   );
   await notifyPasswordChanged(env, { request }, userId, "reset");
+}
+
+/** Records a completed sign-in only after factor hooks preserve a real session. */
+export async function auditCompletedSignIn(
+  env: AppEnv,
+  ctx: GenericEndpointContext,
+  session: {
+    id: string;
+    userId: string;
+    userAgent?: string | null;
+    ipAddress?: string | null;
+    impersonatedBy?: string | null;
+  }
+) {
+  // A password change re-issues the session: recorded as auth.password_changed.
+  if (ctx?.path === "/change-password") return;
+  // An admin's impersonation session: recorded as impersonation.started.
+  if ((session as { impersonatedBy?: string | null }).impersonatedBy) return;
+  const signIn = signInMethodOf(ctx);
+  await record(env, ctx, {
+    action: "auth.sign_in",
+    actor: { kind: "user", userId: session.userId },
+    target: { type: "user", id: session.userId },
+    metadata: signIn,
+  });
+  // A brand-new account or a just-verified address is not a sign-in to warn about.
+  if (
+    signIn.method !== "password" &&
+    signIn.method !== "social" &&
+    !ctx.path.startsWith("/two-factor/verify") &&
+    ctx.path !== "/passkey/verify-authentication"
+  )
+    return;
+  const context = { ...contextFor(env, ctx), userId: session.userId };
+  await notifySafely(env, context, "auth.new-sign-in", () =>
+    notifyNewSignIn(
+      { db: getDb(env), clock: systemClock, notify: notifierFor(env) },
+      {
+        userId: session.userId,
+        sessionId: session.id,
+        userAgent: session.userAgent ?? null,
+        ip: session.ipAddress ?? null,
+        requestContext: context,
+      }
+    )
+  );
 }

@@ -1,5 +1,6 @@
 import {
   findUserById,
+  getSecurityState,
   type RateLimitedError,
   type RequestContext,
   systemClock,
@@ -140,7 +141,27 @@ export async function handleMcp(
   );
   if (byUser) return byUser;
 
-  const context = createAppContext(user, requestContext);
+  const authSessionId =
+    typeof claims.starter_session_id === "string"
+      ? claims.starter_session_id
+      : null;
+  const security = await getSecurityState(
+    { db: getDb(env), clock: systemClock },
+    {
+      userId: user.id,
+      sessionId: authSessionId,
+      settings: buildRequiredConfig(env).security,
+    }
+  );
+  if (
+    !authSessionId ||
+    !security.sessionValid ||
+    security.decision !== "allowed"
+  )
+    return unauthorized(appUrl, "invalid_token");
+  const context = createAppContext(user, requestContext, env, {
+    authSessionId,
+  });
   const handler = createMcpHandler(
     () => buildMcpServer(callerInSpan(context), context),
     {

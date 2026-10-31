@@ -333,6 +333,11 @@ describe("rate limits", () => {
       body: {
         payload: {
           sub: user.id,
+          starter_session_id: (
+            await getAuth(env).api.getSession({
+              headers: new Headers({ cookie: user.cookie }),
+            })
+          )?.session.id,
           azp: "abuse-test-client",
           aud: `${APP_URL}/mcp`,
           iss: `${APP_URL}/api/auth`,

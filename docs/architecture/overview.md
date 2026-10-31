@@ -525,3 +525,6 @@ Each list is the minimum; [testing.md](testing.md#change--required-test) names t
 ## Storage reconciliation
 
 `storage-reconciliation/` implements bounded orphan maintenance through R2 bindings and injected reference sources. `storage-reference-catalog.ts` composes each feature's reference lookup so the maintenance feature imports no owning tables. `STORAGE_RECONCILE` explicitly chooses off/report/delete; schema rows for live, trashed and pending files are references. Unknown key shapes and objects less than 24 hours old are always preserved. See [the safety contract](../guides/how-to-use-trash.md#optional-storage-reconciliation).
+
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](../guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

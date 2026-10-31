@@ -27,11 +27,13 @@ interface FieldErrors {
 
 export function SignInForm({
   emailPassword,
+  passkeys = false,
   google,
   search,
   initialError = null,
   humanCheck,
 }: {
+  readonly passkeys?: boolean;
   readonly emailPassword: boolean;
   readonly google: boolean;
   /** Turnstile site key when TURNSTILE=on. */
@@ -109,6 +111,25 @@ export function SignInForm({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {passkeys ? (
+          <Button
+            className="w-full"
+            disabled={loading}
+            onClick={() => {
+              setLoading(true);
+              void authClient.signIn
+                .passkey()
+                .then(({ data, error }) => {
+                  if (error) setError(authErrorMessage(error));
+                  else window.location.href = afterSignIn(data, search);
+                })
+                .catch(() => setError("Couldn't sign in with a passkey."))
+                .finally(() => setLoading(false));
+            }}
+          >
+            Sign in with a passkey
+          </Button>
+        ) : null}
         {emailPassword ? (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">

@@ -45,6 +45,14 @@ ADMIN_PORTAL=on
 #   billing provider adapter registered in apps/web/src/server/billing-provider.ts)
 BILLING=manual
 
+# Explicit security policy (setup:auth writes deployed choices; no deployed defaults).
+# TWO_FACTOR: off | optional | required-for-admins | required. Email OTP is recovery.
+TWO_FACTOR=optional
+TWO_FACTOR_EMAIL_OTP=off
+# 0 disables remembered devices; maximum 30 days.
+TWO_FACTOR_TRUSTED_DEVICE_DAYS=0
+PASSKEYS=on
+
 # Email (Cloudflare Email Service). Locally the EMAIL binding is simulated: mail
 # is logged by the dev server, any sender works. Leave EMAIL_FROM blank to turn
 # email off; auth and invitation links are then printed to the dev log (only with

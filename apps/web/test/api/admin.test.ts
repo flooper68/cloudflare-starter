@@ -617,6 +617,11 @@ describe("suspension and MCP access tokens", () => {
       body: {
         payload: {
           sub: bea.id,
+          starter_session_id: (
+            await getAuth(env).api.getSession({
+              headers: new Headers({ cookie: bea.cookie }),
+            })
+          )?.session.id,
           azp: "test-client",
           aud: mcpResource(APP_URL),
           iss: `${APP_URL}/api/auth`,

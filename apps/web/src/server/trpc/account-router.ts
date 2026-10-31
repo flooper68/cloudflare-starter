@@ -8,9 +8,11 @@ import {
 } from "@cloudflare-starter/features";
 import { z } from "zod";
 import { protectedProcedure, router } from "./init";
+import { securityRouter } from "./security-router";
 
 /** Personal settings and sessions are independent of workspace membership. */
 export const accountRouter = router({
+  security: securityRouter,
   settings: router({
     get: protectedProcedure.query(({ ctx }) =>
       getAccountSettings(ctx, { userId: ctx.user.id })

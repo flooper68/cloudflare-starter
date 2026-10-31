@@ -46,6 +46,7 @@ export function createAppContext(
   env: AppEnv = workerEnv as AppEnv,
   options: {
     readonly billingProvider?: BillingProvider;
+    readonly authSessionId?: string | null;
     readonly browser?: BrowserContext;
   } = {}
 ): Context {
@@ -92,6 +93,7 @@ export function createAppContext(
     analytics: platform.productAnalytics(),
     user,
     session: browser.session,
+    authSessionId: options.authSessionId ?? browser.session?.id,
     browser: browser.exchange,
     adminAuth: createAdminAuthGateway(() => getAuth(env), browser.exchange),
     accountAuth: createAccountAuthGateway(() => getAuth(env), browser.exchange),

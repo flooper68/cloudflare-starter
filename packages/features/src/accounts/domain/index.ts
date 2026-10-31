@@ -9,8 +9,17 @@ export {
 export {
   newSignInNotification,
   passwordChangedNotification,
+  securityFactorChangedNotification,
 } from "./notifications";
 export {
   type AccountSettingsInput,
   accountSettingsSchema,
 } from "./preferences";
+export { SecondFactorRequiredError } from "./security-error";
+export {
+  type SecurityDecision,
+  type SecuritySettings,
+  securityDecision,
+  securitySettingsSchema,
+  TWO_FACTOR_MODES,
+} from "./security-policy";

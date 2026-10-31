@@ -41,6 +41,12 @@ function context(overrides: Partial<Context> = {}): Context {
     clock: { now: () => new Date("2026-10-28T12:00:00.000Z") },
     ids: { uuid: () => "9f4c17b6-e154-4db2-b97b-08e09ec90f4e" },
     config: {
+      security: {
+        mode: "off",
+        emailOtp: false,
+        trustedDeviceDays: 0,
+        passkeys: false,
+      },
       APP_URL: "http://localhost:4321",
       BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret",
       AUTH_EMAIL_PASSWORD: true,

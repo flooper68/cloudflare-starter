@@ -52,6 +52,7 @@ export { type AdminUserPage, type AdminUserRow, listUsers } from "./list-users";
 export type { AdminAuthGateway } from "./ports";
 export { promoteBootstrapAdmin } from "./promote-bootstrap-admin";
 export { removeUser } from "./remove-user";
+export { resetSecondFactor } from "./reset-second-factor";
 export { revokeUserSessions } from "./revoke-user-sessions";
 export { sendPasswordReset } from "./send-password-reset";
 export { setUserRole } from "./set-user-role";

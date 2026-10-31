@@ -14,6 +14,7 @@ import {
   type FeatureFlagStore,
   type FeatureFlags,
   findAdminAccess,
+  getSecurityState,
   type Ids,
   isRecentSignIn,
   type JobQueue,
@@ -27,6 +28,7 @@ import {
   ReauthRequiredError,
   type RequestContext,
   resolveActor,
+  SecondFactorRequiredError,
   type Tracer,
 } from "@cloudflare-starter/features";
 import { initTRPC, TRPCError } from "@trpc/server";
@@ -79,6 +81,7 @@ export interface Context {
   } | null;
   /** The cookie session of a web request; null for MCP calls and anonymous requests. */
   readonly session: SessionInfo | null;
+  readonly authSessionId?: string | null;
   /** The web request's headers in and response headers out; null for MCP calls. */
   readonly browser: BrowserExchange | null;
   /** The admin portal's way into Better Auth (server/admin-auth-gateway.ts). */
@@ -216,7 +219,7 @@ export const publicProcedure = t.procedure
   .use(mapDomainErrors)
   .use(limitMutations);
 
-export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
+export const signedInProcedure = publicProcedure.use(({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -226,6 +229,28 @@ export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
 
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
+
+/** Every protected procedure validates current, user-bound assurance, not cached enrollment. */
+export const protectedProcedure = signedInProcedure.use(
+  async ({ ctx, next }) => {
+    if (ctx.config.security.mode === "off") return next();
+    const state = await getSecurityState(ctx, {
+      userId: ctx.user.id,
+      sessionId: ctx.authSessionId ?? ctx.session?.id,
+      settings: ctx.config.security,
+    });
+    if ((ctx.authSessionId || ctx.session?.id) && !state.sessionValid)
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Session expired. Sign in again.",
+      });
+    if (state.decision !== "allowed")
+      throw new SecondFactorRequiredError(
+        state.decision === "enrollment_required"
+      );
+    return next();
+  }
+);
 
 /**
  * The input every workspace procedure accepts: the workspace to act in. Without it the
@@ -288,6 +313,20 @@ export const requireAdmin = t.middleware(async ({ ctx, next }) => {
   if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user) throw notFound();
   const access = await findAdminAccess(ctx, { userId: ctx.user.id });
   if (!access.isAdmin) throw notFound();
+  const state = await getSecurityState(ctx, {
+    userId: ctx.user.id,
+    sessionId: ctx.authSessionId ?? ctx.session?.id,
+    settings: ctx.config.security,
+  });
+  if ((ctx.authSessionId || ctx.session?.id) && !state.sessionValid)
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Session expired. Sign in again.",
+    });
+  if (state.decision !== "allowed")
+    throw new SecondFactorRequiredError(
+      state.decision === "enrollment_required"
+    );
   const admin: AdminActor = { userId: ctx.user.id };
   return next({
     ctx: { ...ctx, user: ctx.user, admin, lastSignInAt: access.lastSignInAt },
@@ -301,9 +340,23 @@ export const adminProcedure = publicProcedure.use(requireAdmin);
  * Hook for a second factor on destructive admin actions (a later change adds 2FA). Today
  * it accepts every call.
  */
-export function requireAdminSecondFactor(_ctx: {
-  readonly admin: AdminActor;
-}): void {}
+export async function requireAdminSecondFactor(
+  ctx: Context & { readonly admin: AdminActor }
+): Promise<void> {
+  if (ctx.config.security.mode === "off") return;
+  const state = await getSecurityState(ctx, {
+    userId: ctx.admin.userId,
+    sessionId: ctx.authSessionId ?? ctx.session?.id,
+    settings: ctx.config.security,
+  });
+  if (
+    state.enrolled &&
+    (!state.freshFactor ||
+      !state.secondFactorAt ||
+      !isRecentSignIn(new Date(state.secondFactorAt), ctx.clock.now()))
+  )
+    throw new SecondFactorRequiredError();
+}
 
 /**
  * Admin procedures that remove access or data (suspend, delete, sign out, change roles,
@@ -311,15 +364,17 @@ export function requireAdminSecondFactor(_ctx: {
  * FORBIDDEN with `appCode` REAUTH_REQUIRED. In the browser that is this session's sign-in;
  * over MCP (no browser session) the admin's newest own sign-in (owner decision).
  */
-export const adminDestructiveProcedure = adminProcedure.use(({ ctx, next }) => {
-  const signedInAt = ctx.session ? ctx.session.createdAt : ctx.lastSignInAt;
-  if (!isRecentSignIn(signedInAt, ctx.clock.now())) {
-    // Thrown as the domain error so the formatter adds its code (data.appCode).
-    throw new ReauthRequiredError();
+export const adminDestructiveProcedure = adminProcedure.use(
+  async ({ ctx, next }) => {
+    const signedInAt = ctx.session ? ctx.session.createdAt : ctx.lastSignInAt;
+    if (!isRecentSignIn(signedInAt, ctx.clock.now())) {
+      // Thrown as the domain error so the formatter adds its code (data.appCode).
+      throw new ReauthRequiredError();
+    }
+    await requireAdminSecondFactor(ctx);
+    return next();
   }
-  requireAdminSecondFactor(ctx);
-  return next();
-});
+);
 
 /**
  * The one admin procedure an impersonated session calls: stopping the impersonation. The
