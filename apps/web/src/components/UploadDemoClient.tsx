@@ -8,7 +8,9 @@ import {
   Label,
 } from "@cloudflare-starter/ui";
 import { useState } from "react";
+import { BillingLimitPrompt } from "@/components/app/billing/BillingLimitPrompt";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
+import { limitRefusalOf } from "@/lib/billing-prompts";
 import {
   errorReference,
   UNEXPECTED_ERROR_MESSAGE,
@@ -56,6 +58,9 @@ export function UploadDemoClient() {
     }
   }
 
+  // A plan limit or a feature not in the plan (tRPC data.appCode / data.domain).
+  const refusal = limitRefusalOf(failure);
+
   return (
     <Card className="space-y-5">
       <div className="space-y-2">
@@ -72,7 +77,9 @@ export function UploadDemoClient() {
         <Input id="presigned-upload-file" type="file" onChange={onFileChange} />
       </div>
 
-      {failure ? (
+      {refusal ? (
+        <BillingLimitPrompt refusal={refusal} />
+      ) : failure ? (
         <ErrorState
           variant="inline"
           error={failure}

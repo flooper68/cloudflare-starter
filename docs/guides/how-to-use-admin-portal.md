@@ -71,7 +71,7 @@ Destructive procedures are `adminDestructiveProcedure`s: they need a sign-in fro
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Overview              | Users, sign-ups and active users (30 days, sparklines), admins and suspended users, workspace counts and sizes                                        |
 | Users, User           | Search and Role/Status filters, server pages; profile, sign-in methods, workspaces, sessions, and suspend, impersonate, sign out, reset, role, delete |
-| Workspaces, Workspace | Hidden in personal mode. Flags workspaces without an owner; members, owner rescue, deletion                                                           |
+| Workspaces, Workspace | Hidden in personal mode. Flags workspaces without an owner; members, owner rescue, deletion; billing panel (plan, add-ons, overrides, usage)          |
 | Audit log             | Action and target filters, server pages; the impersonating admin on each event                                                                        |
 | Feature flags         | Every catalog flag: its switch and targeting rules (workspace, plan, percentage)                                                                      |
 | Settings              | The deployment's settings, read-only, and a link to Cloudflare Queues for background jobs                                                             |
@@ -91,4 +91,4 @@ Append a route to `adminRoutes` in `apps/web/src/components/admin/routes.tsx` (p
 
 ## Not built
 
-Jobs or queue pages (use Cloudflare Queues metrics and Workers Logs), product analytics and Analytics Engine charts, a billing page in the portal (billing's admin procedures and tools exist; the overview shows plans, trials and usage), two-factor for admins, editing settings from the portal.
+Jobs or queue pages (use Cloudflare Queues metrics and Workers Logs), product analytics and Analytics Engine charts, two-factor for admins, editing settings from the portal.
