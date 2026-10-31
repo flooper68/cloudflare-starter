@@ -14,6 +14,20 @@ const workspace = "ws-analytical-engines";
 
 /** One valid event per action, the smallest the catalog accepts. */
 const VALID: Record<AuditAction, AuditEventInput> = {
+  "auth.second_factor_verified": {
+    action: "auth.second_factor_verified",
+    target: user,
+    metadata: { method: "totp" },
+  },
+  "auth.factor_changed": {
+    action: "auth.factor_changed",
+    target: user,
+    metadata: { change: "enabled" },
+  },
+  "user.second_factor_reset": {
+    action: "user.second_factor_reset",
+    target: user,
+  },
   "account.settings_updated": {
     action: "account.settings_updated",
     target: user,

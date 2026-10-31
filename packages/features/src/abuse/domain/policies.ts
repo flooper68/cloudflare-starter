@@ -30,6 +30,30 @@ export interface RateLimitPolicy {
 export const EDGE_PERIODS: readonly number[] = [10, 60];
 
 export const RATE_LIMIT_POLICIES = {
+  "auth.two-factor": {
+    limit: 10,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "better-auth",
+    authPath: "/two-factor/*",
+    description: "Second-factor attempts; account lockout also applies",
+  },
+  "auth.otp-send": {
+    limit: 3,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "better-auth",
+    authPath: "/two-factor/send-otp",
+    description: "Email recovery-code sends",
+  },
+  "auth.passkey": {
+    limit: 20,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "better-auth",
+    authPath: "/passkey/*",
+    description: "Passkey ceremonies and management",
+  },
   "auth.ip": {
     limit: 60,
     periodSeconds: 60,

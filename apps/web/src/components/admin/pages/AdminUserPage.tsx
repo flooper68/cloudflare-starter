@@ -75,6 +75,12 @@ export function AdminUserPage() {
                 `${user.name} can sign in again`
               )
             }
+            onResetSecondFactor={() =>
+              act(
+                () => trpc.admin.users.resetSecondFactor.mutate({ userId }),
+                "Two-factor authentication reset"
+              )
+            }
             onRevokeSessions={() =>
               act(
                 () => trpc.admin.users.revokeSessions.mutate({ userId }),

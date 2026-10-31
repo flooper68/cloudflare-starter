@@ -1,8 +1,10 @@
 import {
   type BillingSettings,
   billingSettingsSchema,
+  type SecuritySettings,
   STORAGE_RECONCILE_MODES,
   type StorageReconcileMode,
+  securitySettingsSchema,
   type WorkspaceSettings,
   workspaceSettingsSchema,
 } from "@cloudflare-starter/features";
@@ -48,6 +50,7 @@ export type AdminPortalSetting = (typeof ADMIN_PORTAL_VALUES)[number];
 export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
   readonly billing: BillingSettings;
+  readonly security: SecuritySettings;
   readonly ADMIN_PORTAL: AdminPortalSetting;
   readonly STORAGE_RECONCILE: StorageReconcileMode;
 };
@@ -86,6 +89,8 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       "STORAGE_RECONCILE",
       STORAGE_RECONCILE_MODES
     ),
+
+    security: securitySettingsSchema.parse(env),
   };
 }
 

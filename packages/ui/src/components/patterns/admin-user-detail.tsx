@@ -82,6 +82,7 @@ export interface AdminBanInput {
 export interface AdminUserActions {
   readonly onBan: (input: AdminBanInput) => Promise<void>;
   readonly onUnban: () => Promise<void>;
+  readonly onResetSecondFactor?: () => Promise<void>;
   readonly onRevokeSessions: () => Promise<void>;
   readonly onSetRole: (role: "user" | "admin") => Promise<void>;
   readonly onSendPasswordReset: () => Promise<void>;
@@ -209,6 +210,7 @@ export function AdminUserDetail({
   onBan,
   onUnban,
   onRevokeSessions,
+  onResetSecondFactor,
   onSetRole,
   onSendPasswordReset,
   onImpersonate,
@@ -343,6 +345,25 @@ export function AdminUserDetail({
         </DescriptionList>
       </Card>
 
+      {onResetSecondFactor && !isSelf ? (
+        <Button
+          className="self-start"
+          onClick={() =>
+            void ask(
+              {
+                title: `Reset two-factor authentication for ${user.name}?`,
+                description:
+                  "Their authenticator and recovery codes stop working. Every session and connected client is signed out. They must set up security again if required.",
+                confirmLabel: "Reset two-factor authentication",
+                tone: "danger",
+              },
+              onResetSecondFactor
+            )
+          }
+        >
+          Reset two-factor authentication
+        </Button>
+      ) : null}
       <Card className="flex flex-col p-0">
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
           <h3 className="text-sm font-medium text-fg">

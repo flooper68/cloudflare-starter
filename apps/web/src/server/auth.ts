@@ -5,6 +5,7 @@ import {
   checkSignUpAllowed,
   DomainError,
   deleteWorkspaceFiles,
+  getSecurityState,
   LastAdminError,
   LastOwnerError,
   LimitReachedError,
@@ -48,6 +49,12 @@ import {
   emailNotConfiguredError,
   mayLogAuthLinks,
 } from "@/server/auth-mail";
+import {
+  assuranceFields,
+  authAssurance,
+  enforceAuthSecurity,
+  securityPlugins,
+} from "@/server/auth-security";
 import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
@@ -349,6 +356,7 @@ async function prepareAccountDeletion(
 }
 
 export interface AuthMethods {
+  readonly passkeys?: boolean;
   readonly emailPassword: boolean;
   readonly google: boolean;
   readonly requireEmailVerification: boolean;
@@ -357,7 +365,7 @@ export interface AuthMethods {
 /** Which sign-in methods this deployment offers (env flags; Google needs both keys). */
 export function getAuthMethods(env: AppEnv): AuthMethods {
   const config = buildRequiredConfig(env);
-  return authMethodsOf(config);
+  return { ...authMethodsOf(config), passkeys: config.security.passkeys };
 }
 
 /** The sign-in methods a parsed config turns on. */
@@ -471,6 +479,7 @@ export function createAuthOptions(env: AppEnv) {
   }
 
   const audit = auditDatabaseHooks(env);
+  const security = securityPlugins(env, config.security);
 
   return {
     appName: APP_NAME,
@@ -607,6 +616,7 @@ export function createAuthOptions(env: AppEnv) {
       freshAge: 15 * 60,
       // Short cookie cache keeps get-session cheap without long-lived stale data.
       cookieCache: { enabled: true, maxAge: 60 },
+      additionalFields: assuranceFields,
     },
     advanced: {
       // Behind Cloudflare the client IP is CF-Connecting-IP.
@@ -633,8 +643,37 @@ export function createAuthOptions(env: AppEnv) {
         scopes: ["openid", "profile", "email", "offline_access"],
         allowDynamicClientRegistration: true,
         allowUnauthenticatedClientRegistration: true,
+        extensions: [
+          {
+            claims: {
+              accessToken: async ({ user, sessionId }) => {
+                if (!user) return {};
+                if (!sessionId)
+                  throw new APIError("BAD_REQUEST", {
+                    error: "invalid_grant",
+                    error_description:
+                      "The authorization session ended. Reconnect this client.",
+                  });
+                const state = await getSecurityState(
+                  { db: getDb(env), clock: systemClock },
+                  { userId: user.id, sessionId, settings: config.security }
+                );
+                if (!state.sessionValid || state.decision !== "allowed")
+                  throw new APIError("BAD_REQUEST", {
+                    error: "invalid_grant",
+                    error_description:
+                      "The authorization session ended or requires verification. Reconnect this client.",
+                  });
+                return { starter_session_id: sessionId };
+              },
+            },
+          },
+        ],
       }),
       adminPlugin,
+      security.factors,
+      security.keys,
+      authAssurance(env),
     ],
     telemetry: { enabled: false },
     // The admin plugin's endpoints answer 404 over HTTP; server code still calls them
@@ -650,6 +689,7 @@ export function createAuthOptions(env: AppEnv) {
         await enforceHumanCheck(env, ctx);
         // No OAuth (MCP) grants from an admin's impersonation session.
         await refuseOAuthWhileImpersonating(env, ctx);
+        await enforceAuthSecurity(env, ctx);
         // Deployed without email, refuse link-sending endpoints up front, for every address:
         // failing only inside sendResetPassword would answer differently for registered
         // emails (account enumeration).

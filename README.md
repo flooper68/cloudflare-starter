@@ -177,3 +177,5 @@ See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) f
 Account and workspace settings: profile/avatar, verified email changes, linked accounts, own session revocation, locale/time zone/theme, and confirmed workspace deletion. Self-service account deletion arrives with the privacy pipeline. See [the settings guide](docs/guides/how-to-use-settings.md).
 
 Storage cleanup is optional: `bun run setup:storage --env all --dry-run` previews `STORAGE_RECONCILE=off|report|delete`. Admin Settings can queue a report without deleting; explicit delete mode enables confirmed cleanup. See [trash and storage reconciliation](docs/guides/how-to-use-trash.md#optional-storage-reconciliation).
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](docs/guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

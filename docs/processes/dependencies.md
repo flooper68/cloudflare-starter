@@ -120,3 +120,6 @@ When a vulnerability is reachable in a deployed Worker:
 - the checks under [Supply chain](#supply-chain): maintenance, downloads, install scripts, transitive count;
 - where it runs (Worker, browser, build only) and, for runtime packages, the bundle size it adds;
 - that it runs in workerd, for anything used by the Worker (Node built-ins are only partly available there).
+
+
+Security milestone dependencies: `@better-auth/passkey@1.7.14` matches the existing auth release and supplies reviewed WebAuthn ceremonies through SimpleWebAuthn 13; it runs in the Worker and browser. `uqr@0.1.2` renders enrollment QR data locally in the browser (no external QR service). The already-transitive `@better-auth/utils@0.5.1` is explicit test tooling for real TOTP generation. None adds lifecycle scripts or trustedDependencies. The lockfile records their transitive dependencies. Runtime compatibility is verified by API/browser tests and the Worker build; no paid provider or external account is required. Upstream online documentation retrieval failed during implementation, so exact installed package sources/types were used; release/download metadata must be independently checked before shipping.

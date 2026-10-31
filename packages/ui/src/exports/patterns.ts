@@ -101,6 +101,10 @@ export {
   type ViewSwitchProps,
 } from "../components/patterns/app-shell";
 export {
+  BackupCodes,
+  type BackupCodesProps,
+} from "../components/patterns/backup-codes";
+export {
   CommentComposer,
   type CommentComposerProps,
   type CommentData,
@@ -200,6 +204,10 @@ export {
   type NotificationPreferencesProps,
 } from "../components/patterns/notification-preferences";
 export {
+  PasskeyList,
+  type PasskeyListProps,
+} from "../components/patterns/passkey-list";
+export {
   PlanCard,
   type PlanCardProps,
   PlanCardSkeleton,
@@ -221,6 +229,11 @@ export {
   SettingsSection,
   type SettingsSectionProps,
 } from "../components/patterns/settings-page";
+
+export {
+  TotpSetup,
+  type TotpSetupProps,
+} from "../components/patterns/totp-setup";
 export {
   TrashList,
   type TrashListItem,

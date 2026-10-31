@@ -95,3 +95,5 @@ Replace `accounts.schema.ts` with the result (keep its header comment), delete `
 - Magic links, passkeys, two-factor: Better Auth plugins, added the same way as above.
 
 Account management options and session/image security are documented in [settings](how-to-use-settings.md). Self-deletion remains disabled until the privacy pipeline lands; email changes always require verification and linked accounts must share the same email.
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

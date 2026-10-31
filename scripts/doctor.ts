@@ -4,6 +4,7 @@
  */
 import { existsSync } from "node:fs";
 
+import { securitySettingsSchema } from "../packages/features/src/accounts/domain/security-policy";
 import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 
@@ -16,6 +17,21 @@ import {
   readWranglerConfig,
   wrangler,
 } from "./lib";
+
+function checkSecurity(
+  label: string,
+  vars: Record<string, string | undefined>
+) {
+  const security = securitySettingsSchema.safeParse(vars);
+  if (!security.success)
+    error(
+      `${label}: security settings invalid: ${security.error.issues.map((issue) => issue.path.join(".")).join(", ")}; run setup:auth`
+    );
+  else
+    ok(
+      `${label}: TWO_FACTOR=${security.data.mode}, PASSKEYS=${security.data.passkeys ? "on" : "off"}`
+    );
+}
 
 /** Required platform settings (apps/web/src/lib/config.ts parsePlatformConfig), no defaults. */
 const PLATFORM_SETTINGS = {
@@ -248,6 +264,7 @@ if (!existsSync(DEV_VARS)) {
   );
   checkStorageVar("local", vars.get("STORAGE_RECONCILE"));
   checkBillingVar("local", vars.get("BILLING"));
+  checkSecurity("local", Object.fromEntries(vars));
 }
 
 const migrations = wrangler(["d1", "migrations", "list", "DB", "--local"]);
@@ -348,6 +365,12 @@ for (const env of ENVIRONMENTS) {
   ).map((binding) => binding.namespace_id);
   namespaceIds.push(...ids);
   checkStorageVar(env, vars.STORAGE_RECONCILE);
+
+  if (vars.TWO_FACTOR) checkSecurity(env, vars);
+  else
+    warn(
+      `${env}: security policy not chosen yet: bun run setup:auth --env ${env}`
+    );
   if (!vars.BILLING) {
     warn(
       `${env}: no BILLING yet: bun run setup:auth --env ${env} before deploying (the Worker refuses to start)`

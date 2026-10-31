@@ -87,7 +87,7 @@ test("sign in takes the new password, not the old one", async () => {
   await open(page, "/sign-in");
   await page.getByLabel("Email").fill(account.email);
   await page.getByLabel("Password").fill(account.password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByText(/invalid/i)).toBeVisible();
   await expect(page).toHaveURL(/\/sign-in/);
 

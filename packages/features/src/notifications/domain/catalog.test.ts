@@ -65,6 +65,7 @@ describe("notification catalog", () => {
       "workspaces.role-changed",
       "auth.password-changed",
       "auth.new-sign-in",
+      "auth.factor-changed",
     ]);
     for (const entry of notificationCatalog.values()) {
       expect(entry.label.length).toBeGreaterThan(5);

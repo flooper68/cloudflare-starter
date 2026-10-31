@@ -6,12 +6,20 @@ export {
   newSignInNotification,
   type OtherSession,
   passwordChangedNotification,
+  type SecurityDecision,
+  type SecuritySettings,
   SIGN_UP_METHODS,
+  securityDecision,
+  securityFactorChangedNotification,
+  securitySettingsSchema,
   signedUpEvent,
+  TWO_FACTOR_MODES,
 } from "./domain";
+export { SecondFactorRequiredError } from "./domain/security-error";
 export { findReferencedAvatarKeys } from "./find-referenced-avatar-keys";
 export { type AccountUser, findUserById } from "./find-user-by-id";
 export { getAccountSettings } from "./get-account-settings";
+export { getSecurityState } from "./get-security-state";
 export { listAccountSessions } from "./list-account-sessions";
 export { notifyNewSignIn } from "./notify-new-sign-in";
 export type { AccountAuthGateway } from "./ports";

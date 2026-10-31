@@ -11,6 +11,7 @@ import type { PlatformRole } from "../domain";
  */
 export interface AdminAuthGateway {
   /** Sets the user's platform role. */
+  resetSecondFactor(userId: string): Promise<void>;
   setRole(userId: string, role: PlatformRole): Promise<void>;
   /** Suspends the user (refused at sign-in from now on) until `expiresAt`, or for good. */
   ban(

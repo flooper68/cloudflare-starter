@@ -1,9 +1,12 @@
 /**
  * Outbound fetches of the Worker under test (Miniflare `outboundService`). No test
  * reaches the network: Turnstile Siteverify is answered here the way Cloudflare answers
- * for its published test secret keys, everything else fails.
+ * for its published test secret keys; synthetic Google protocol fixtures are served from
+ * google-fixture.ts. Everything else fails.
  * https://developers.cloudflare.com/turnstile/troubleshooting/testing/
  */
+import { googleFixture } from "./google-fixture";
+
 export const TURNSTILE_PASS_SECRET = "1x0000000000000000000000000000000AA";
 export const TURNSTILE_FAIL_SECRET = "2x0000000000000000000000000000000AA";
 export const TURNSTILE_DUMMY_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
@@ -11,6 +14,8 @@ export const TURNSTILE_DUMMY_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
 const SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
 export async function outbound(request: Request): Promise<Response> {
+  const google = await googleFixture(request);
+  if (google) return google;
   if (request.url !== SITEVERIFY || request.method !== "POST") {
     return new Response(
       `No network in tests: ${request.method} ${request.url}`,

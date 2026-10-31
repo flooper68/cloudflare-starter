@@ -27,6 +27,10 @@ const SETUP_WRITTEN_VARS: Readonly<Record<string, string>> = {
     "written by setup:analytics: the Web Analytics site token differs per environment",
   ADMIN_PORTAL:
     "written by setup:auth; deliberately absent until the owner chooses (no default)",
+  TWO_FACTOR: "written by setup:auth; explicit enrollment policy",
+  TWO_FACTOR_EMAIL_OTP: "written by setup:auth; optional email recovery",
+  TWO_FACTOR_TRUSTED_DEVICE_DAYS: "written by setup:auth; bounded device trust",
+  PASSKEYS: "written by setup:auth; explicit passkey choice",
   BILLING:
     "written by setup:auth; deliberately absent until the owner chooses off, manual or provider",
 };

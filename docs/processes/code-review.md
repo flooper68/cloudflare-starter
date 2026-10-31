@@ -138,3 +138,6 @@ Each finding: severity, `file:line`, evidence (input → wrong output, or the ru
 After the owner reviews a PR, the author turns each general review point into a proposed checklist item or automated rule, in the PR or a follow-up. The owner approves which land. Changes to `docs/processes/` or `AGENTS.md` are called out in the PR description.
 
 Settings review: confirm that own-session ids are scoped to the current user before credential access; tokens never enter responses or audit metadata. Verify settings without a workspace, Intl validation, capped raster uploads, private versioned reads, last-sign-in-method protection and workspace deletion confirmation/mode/role guards. See [settings](../guides/how-to-use-settings.md).
+
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](../guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

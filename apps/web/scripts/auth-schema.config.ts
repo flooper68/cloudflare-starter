@@ -17,6 +17,11 @@ const env = {
   WORKSPACE_MODE: "multi",
   SIGN_UP: "open",
   ADMIN_PORTAL: "on",
+  BILLING: "manual",
+  TWO_FACTOR: "optional",
+  TWO_FACTOR_EMAIL_OTP: "off",
+  TWO_FACTOR_TRUSTED_DEVICE_DAYS: "0",
+  PASSKEYS: "on",
 } as unknown as AppEnv;
 
 export const auth = betterAuth(createAuthOptions(env));

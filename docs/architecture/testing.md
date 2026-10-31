@@ -120,3 +120,5 @@ Storage reconciliation requires pure cutoff/mode-policy tests, real D1/R2 tests 
 Review regressions also gate concurrent avatar/logo replacements in both publication orders on real D1/R2, profile mutation 429 quota headers and Problem Details, provider-avatar fallback after reloading, and admin storage report/confirmation/outcome journeys. The reconciliation E2E report reaches the real local queue; delete-mode UI outcomes use controlled browser responses while the default remains off. Separate local delete-mode evidence exercises the real job.
 
 Settings regressions cover concurrent avatar/logo writes in both completion orders, upload/auth quota headers, provider-image fallback after reload, indexed reference lookups, the shared last-admin preflight, and a real Better Auth refusal while the native self-deletion endpoint is disabled.
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](../guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

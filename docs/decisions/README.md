@@ -6,3 +6,6 @@ Architecture Decision Records of the project built from this starter: why it is 
 | --- | -------- | ------ |
 
 New ADR: copy [0000-template.md](0000-template.md) to the next free number (`0001-…` first) and add a row here.
+
+
+Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](../guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

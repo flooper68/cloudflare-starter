@@ -21,6 +21,7 @@ describe("getNotificationPreferences", () => {
       ["workspaces.role-changed", false, true, true],
       ["auth.password-changed", true, true, true],
       ["auth.new-sign-in", true, true, true],
+      ["auth.factor-changed", true, true, true],
     ]);
   });
 

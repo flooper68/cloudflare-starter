@@ -19,6 +19,7 @@ import {
   PLATFORM_ROLES,
   removeUser,
   requestStorageReconciliation,
+  resetSecondFactor,
   revokeUserSessions,
   STORAGE_GRACE_MS,
   sendPasswordReset,
@@ -142,6 +143,20 @@ export const adminRouter = router({
         unbanUser({ ...ctx, gateway: ctx.adminAuth }, ctx.admin, input)
       ),
 
+    resetSecondFactor: adminDestructiveProcedure
+      .input(z.object({ userId }))
+      .mutation(({ ctx, input }) => {
+        if (!ctx.browser)
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Factor recovery requires the browser.",
+          });
+        return resetSecondFactor(
+          { ...ctx, gateway: ctx.adminAuth },
+          ctx.admin,
+          input
+        );
+      }),
     revokeSessions: adminDestructiveProcedure
       .input(z.object({ userId }))
       .mutation(({ ctx, input }) =>

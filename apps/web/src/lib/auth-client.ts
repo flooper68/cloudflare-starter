@@ -1,4 +1,6 @@
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
+import { passkeyClient } from "@better-auth/passkey/client";
+import { twoFactorClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 import { authErrorForCode, nextPath } from "./auth-links";
@@ -12,7 +14,7 @@ export { nextPath } from "./auth-links";
  * continues that authorization.
  */
 export const authClient = createAuthClient({
-  plugins: [oauthProviderClient()],
+  plugins: [oauthProviderClient(), twoFactorClient(), passkeyClient()],
 });
 
 export function authErrorMessage(
@@ -38,6 +40,8 @@ export function authErrorMessage(
  * sign-in continues an OAuth authorization (MCP clients), else `?next=`, else the app.
  */
 export function afterSignIn(data: unknown, search = ""): string {
+  if ((data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect)
+    return `/two-factor${search || ""}`;
   const url = (data as { url?: unknown } | null)?.url;
   if (typeof url === "string" && url) return url;
   return nextPath(search) ?? "/app/dashboard";

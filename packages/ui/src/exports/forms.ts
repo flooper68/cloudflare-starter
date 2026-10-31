@@ -50,6 +50,10 @@ export {
 } from "../components/multi-select";
 export { NumberInput, type NumberInputProps } from "../components/number-input";
 export {
+  OneTimeCodeInput,
+  type OneTimeCodeInputProps,
+} from "../components/one-time-code-input";
+export {
   PercentageInput,
   type PercentageInputProps,
 } from "../components/percentage-input";

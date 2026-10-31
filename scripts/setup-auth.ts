@@ -16,6 +16,7 @@
  */
 import { parseArgs } from "node:util";
 
+import { securitySettingsSchema } from "../packages/features/src/accounts/domain/security-policy";
 import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 import {
@@ -43,6 +44,19 @@ interface Setting {
 }
 
 const SETTINGS: readonly Setting[] = [
+  {
+    name: "TWO_FACTOR",
+    prompt: "Second factor: off, optional, required-for-admins or required",
+  },
+  {
+    name: "TWO_FACTOR_EMAIL_OTP",
+    prompt: "Email recovery codes: on or off (requires configured email)",
+  },
+  {
+    name: "TWO_FACTOR_TRUSTED_DEVICE_DAYS",
+    prompt: "Remembered device days, 0 to 30; 0 disables",
+  },
+  { name: "PASSKEYS", prompt: "Passkey sign-in: on or off" },
   {
     name: "WORKSPACE_MODE",
     prompt:
@@ -131,6 +145,11 @@ for (const env of environments) {
       `${env}: ${billing.error.issues.map((issue) => issue.message).join("; ")}`
     );
   }
+  const security = securitySettingsSchema.safeParse(next);
+  if (!security.success)
+    fail(
+      `${env}: ${security.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ")}`
+    );
   // The same refusals as apps/web/src/server/auth.ts at startup.
   const unverified =
     vars.AUTH_EMAIL_PASSWORD !== "false" &&

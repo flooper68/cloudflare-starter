@@ -1,0 +1,11 @@
+---
+import { env } from "cloudflare:workers";
+import { TwoFactorChallenge } from "@/components/auth/TwoFactorChallenge";
+import { SecurityFactors } from "@/components/settings/SecurityFactors";
+import Layout from "@/layouts/Layout.astro";
+import { buildRequiredConfig } from "@/lib/env";
+
+const { security } = buildRequiredConfig(env);
+if (security.mode === "off") return Astro.redirect("/sign-in");
+---
+<Layout title="Account security"><main class="mx-auto flex min-h-[80vh] max-w-xl items-center justify-center px-6 py-10">{Astro.locals.user ? <SecurityFactors client:load search={Astro.url.search} /> : <TwoFactorChallenge client:load emailOtp={security.emailOtp} trustedDays={security.trustedDeviceDays} search={Astro.url.search} />}</main></Layout>

@@ -30,6 +30,9 @@
   //   platform admin once verified
   // - ADMIN_PORTAL: on | off (required): the admin portal for role=admin users
   //   (docs/guides/how-to-use-admin-portal.md)
+  // - TWO_FACTOR: off | optional | required-for-admins | required (required)
+  // - TWO_FACTOR_EMAIL_OTP: on | off; TWO_FACTOR_TRUSTED_DEVICE_DAYS: 0..30
+  // - PASSKEYS: on | off (required); docs/guides/how-to-configure-account-security.md
   // - BILLING: off | manual | provider (required; docs/guides/how-to-configure-plans-and-billing.md)
   // Local dev and the API tests get them from .dev.vars.example / apps/web/vitest.config.ts.
   // FEATURE_FLAGS is required (no default): d1 (flags in the DB, managed by admins) | none

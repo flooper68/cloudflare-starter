@@ -4,6 +4,7 @@ import type { AdminAuthGateway, PlatformRole } from "../src";
 
 /** One call the use case made, in order. */
 export type GatewayCall =
+  | { readonly op: "resetSecondFactor"; readonly userId: string }
   | { readonly op: "setRole"; readonly userId: string; readonly role: string }
   | {
       readonly op: "ban";
@@ -37,6 +38,12 @@ export function memoryAdminAuthGateway(
       .run();
   return {
     calls,
+    async resetSecondFactor(userId) {
+      calls.push({ op: "resetSecondFactor", userId });
+      await run("DELETE FROM session WHERE user_id = ?", userId);
+      await run("DELETE FROM two_factor WHERE user_id = ?", userId);
+      await run("UPDATE user SET two_factor_enabled = 0 WHERE id = ?", userId);
+    },
     async setRole(userId: string, role: PlatformRole) {
       calls.push({ op: "setRole", userId, role });
       await run("UPDATE user SET role = ? WHERE id = ?", role, userId);
