@@ -13,6 +13,8 @@ export interface AuthContextValue {
   readonly methods: { readonly emailPassword: boolean };
   /** WORKSPACE_MODE: which workspace UI the app shows (switcher, members). */
   readonly workspace: { readonly mode: "personal" | "single" | "multi" };
+  /** BILLING: the billing page and upgrade prompts show unless it is off. */
+  readonly billing: { readonly mode: "off" | "manual" | "provider" };
   /** May open the admin portal (role admin, ADMIN_PORTAL=on): shows the Admin entry. */
   readonly admin: boolean;
   /** The impersonating admin's id while an admin acts as this user (the banner). */

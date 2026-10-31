@@ -1,8 +1,8 @@
 # How To Configure Plans And Billing
 
-Plans, add-ons, gated features and usage limits per workspace, and how a project sells them: the catalog in code, the `BILLING` setting, trials, admin overrides, the daily expiry cron, and how to plug in a payment provider (a Stripe adapter is sketched below; the starter ships none). Use when you define or change plans, gate a feature or limit something, choose a billing mode for an environment, write a provider adapter, or debug a `limit_reached` error.
+Plans, add-ons, gated features and usage limits per workspace, and how a project sells them: the catalog in code, the `BILLING` setting, trials, admin overrides, the daily expiry cron, the billing page and upgrade prompts in the app, the admin portal's billing panel, and how to plug in a payment provider (a Stripe adapter is sketched below; the starter ships none). Use when you define or change plans, gate a feature or limit something, choose a billing mode for an environment, change or add an upgrade prompt, write a provider adapter, or debug a `limit_reached` error.
 
-The rules (permission, entitlement, flag) are in [overview.md](../architecture/overview.md#plans-features-and-limits). The admin UI and the billing page come later; today everything is reachable through tRPC and MCP.
+The rules (permission, entitlement, flag) are in [overview.md](../architecture/overview.md#plans-features-and-limits). Everything is reachable through tRPC and MCP, and in the browser ([In the app](#in-the-app-billing-page-upgrade-prompts-trial-banner), [Admin](#admin-plans-add-ons-and-overrides)).
 
 ## The catalog
 
@@ -20,6 +20,8 @@ The rules (permission, entitlement, flag) are in [overview.md](../architecture/o
 | `PAST_DUE_GRACE_DAYS`   | How long an unpaid subscription keeps its plan after its period ended                                                                    |
 
 The shipped plans (`free`, `pro` with a 14-day trial, `unlimited`) and add-ons (`extra_storage`, `extra_seats`, `direct_uploads`) are examples: replace them. `validateCatalog` (run by `catalog.test.ts` and `test/architecture/entitlements.test.ts`) refuses duplicate ids, a fallback that does not exist or has a trial of its own, a plan without a limit for some metric, unknown feature or metric keys in plans and add-ons, and a metric without a source.
+
+The browser keeps its own copy of what it shows: plan and add-on names, which plans have a trial or are internal, and the words for each feature and metric, in `apps/web/src/lib/billing-catalog.ts` (so the SPA bundle does not pull in the server package). `billing-catalog.test.ts` fails when it drifts from the catalog: change both together.
 
 Metrics:
 
@@ -67,6 +69,35 @@ The gate throws `LimitReachedError` (code `LIMIT_REACHED`) or `FeatureNotInclude
 | MCP tool error | `{ error: { code: "FORBIDDEN", httpStatus: 403, message, appCode, domain: { kind, details } } }`                                 |
 | `/api/files`   | 403 Problem Details (`application/problem+json`, title `Limit Reached`) with `kind`, `code` and the details as extension members |
 
+## In the app: billing page, upgrade prompts, trial banner
+
+With `BILLING` other than `off` (the SPA reads the mode from the page's bootstrap, `billing.mode` in `apps/web/src/server/spa-bootstrap.ts`):
+
+| Where                                                          | What                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Billing** in the sidebar, `/app/billing` (`BillingPage.tsx`) | The plan (`PlanCard`: name, state, trial days left, key limits, features and add-ons) and a `UsageMeter` per metric, from `workspace.billing.summary`. Provider mode: owners get **Switch to …** (checkout) and **Manage billing** (customer portal); manual mode: "contact your admin" |
+| Uploads (`/app/upload-demo`, both paths)                       | A refused upload shows the upgrade prompt instead of an error: the binding path from the 403 Problem Details body, the presigned path from the tRPC error                                                                                                                               |
+| Invitations (`/app/members`)                                   | No free seat: the invite dialog closes and the upgrade prompt opens as a dialog                                                                                                                                                                                                         |
+| The app shell (`TrialBanner.tsx`)                              | A banner while a trial ends within 7 days, and for 7 days after a trial ended on a known trial fallback plan; loading and failed checks show a skeleton or retryable error; dismissible per workspace until the next page load                                                          |
+
+With `BILLING=off` there is no Billing entry, `/app/billing` says billing is off, and no prompt renders. What a prompt offers depends on the mode and the person: in provider mode owners (`billing.manage`) get a button per upgrade option (the refusal's `upgrade.planIds`, then `upgrade.addonIds`; each opens `workspace.billing.checkoutUrl`, an add-on as one unit on the current plan) and members are told to ask an owner; in manual mode everyone is told to contact the admin.
+
+The pieces:
+
+- `packages/ui`: `UpgradePrompt` (`components/upgrade-prompt.tsx`; reasons `limit`, `feature`, `trial-ending`, `trial-ended`; variants `callout`, `banner`, `dialog`), `UsageMeter` (`components/usage-meter.tsx`; amber from 80 % of the limit, red at and past it, no bar when unlimited) and `PlanCard` (`components/patterns/plan-card.tsx`), with a story per state (Storybook: Feedback/UpgradePrompt, Data display/UsageMeter, Patterns/Billing/PlanCard).
+- `apps/web/src/lib/billing-prompts.ts` (unit-tested): `limitRefusalOf(error)` reads a refusal from a tRPC error (`data.appCode`, `data.domain`) or a Problem Details body and returns null for anything else; `upgradePromptFor(refusal)` turns it into the prompt's reason and options; `trialNotice(summary, now)` decides the trial banner.
+- `apps/web/src/components/app/billing/`: `BillingLimitPrompt` (a refusal → the prompt, with a link to the billing page), `TrialBanner`, and `useUpgrade` (mode, who may buy, the checkout).
+
+The billing page is self-contained (`BillingPage` loads its own data), so a settings area can mount it as one of its sections.
+
+### Customise the prompts
+
+- **Words for plans, add-ons, features and metrics**: `apps/web/src/lib/billing-catalog.ts` (`subject` is the lower-case word inside sentences, "You've reached the storage limit"; `label` the title-case one on meters).
+- **Sentences and tone**: `title`, `situation` and `nextStep` in `packages/ui/src/components/upgrade-prompt.tsx`; update its stories with them.
+- **Which options a refusal offers**: the server's `upgradeOptions` (`billing/domain/upgrade.ts`); the prompt shows them in that order, plans first.
+- **When the trial banner shows**: `TRIAL_NOTICE_DAYS` and `trialNotice` in `billing-prompts.ts`.
+- **A prompt for a new limit or feature**: once the use case asks the `BillingGate` (above), catch the call's error where the action runs and render `<BillingLimitPrompt refusal={refusal} />` when `limitRefusalOf(error)` is not null (`variant="dialog"` when the action ran in a dialog). Add the new key's words to `billing-catalog.ts`.
+
 ## Billing modes
 
 `BILLING` is required and has no default. `bun run setup:auth --env <env>` asks for it with the workspace settings and writes it into the environment's vars in `wrangler.jsonc`; `apps/web/src/lib/config.ts` refuses to start without a valid value; `bun run doctor` checks it. Locally it comes from `apps/web/.dev.vars` (`.dev.vars.example` has `manual`).
@@ -103,6 +134,8 @@ Platform admins (`adminProcedure`: role admin with `ADMIN_PORTAL=on`, else `NOT_
 | `admin.billing.setOverride` | `admin_set_override`          | Grants or revokes a feature, or sets a limit (`null` = unlimited), with a required reason; `override: null` removes it |
 
 Overrides win over plan and add-ons; use them for exceptions (a pilot customer, a paused feature). Every change records a `billing.*` audit event ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)).
+
+In the portal, a workspace's page (`/admin/workspaces/<id>`) has a **Billing** panel (`AdminBillingPanel` in `packages/ui/src/components/patterns/admin-billing-panel.tsx`, loaded by `apps/web/src/components/admin/WorkspaceBilling.tsx`): the plan and its state, usage against every limit (overridden limits marked **Override**), and forms to assign a plan (active, or a trial until a day), set add-on quantities, and set or remove an override with its reason (byte limits are entered in MB). Hidden with `BILLING=off`; in provider mode it warns that the provider's next event replaces an assigned plan.
 
 Members see their workspace's plan with `workspace.billing.summary` (MCP `get_billing_summary`, permission `billing.read`); owners (`billing.manage`) get `workspace.billing.checkoutUrl` and `workspace.billing.portalUrl` (MCP `get_checkout_url`, `get_billing_portal_url`, both `outward`).
 

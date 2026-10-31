@@ -3,6 +3,7 @@ import { createRoute, createRouter, redirect } from "@tanstack/react-router";
 import { adminLayoutRoute, adminRoutes } from "@/components/admin/routes";
 
 import { AppLayout } from "./components/AppLayout";
+import { BillingPage } from "./pages/BillingPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { EmailDemoPage } from "./pages/EmailDemoPage";
 import { MembersPage } from "./pages/MembersPage";
@@ -46,6 +47,13 @@ const membersRoute = createRoute({
   component: MembersPage,
 });
 
+// The workspace's plan and usage; a settings area may later mount BillingPage as a section.
+const billingRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/app/billing",
+  component: BillingPage,
+});
+
 const uploadDemoRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/app/upload-demo",
@@ -82,6 +90,7 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     profileRoute,
     membersRoute,
+    billingRoute,
     uploadDemoRoute,
     queueDemoRoute,
     emailDemoRoute,
