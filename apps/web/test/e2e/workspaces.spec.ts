@@ -110,6 +110,8 @@ test("the invitee signs up from the link, joins and opens the shared file", asyn
   await page.getByRole("button", { name: "Create account" }).click();
 
   await expect(page).toHaveURL(new RegExp(`${invitationPath}$`));
+  // The redirect can show SSR markup before the invitation's click handler hydrates.
+  await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
   await page.getByRole("button", { name: "Accept and join" }).click();
   await expect(page).toHaveURL(/\/app\/dashboard$/);
   await expect(
