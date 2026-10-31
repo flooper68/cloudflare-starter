@@ -1,0 +1,11 @@
+[
+  {
+    "timestamp": "2026-10-31T15:00:22.255Z",
+    "outcome": "completed",
+    "type": "privacy.build-export",
+    "messageId": "ba31771be885209aab50dc55676a9d6a",
+    "eventId": "3b572cc2-739a-4224-ae1a-541bcd946599",
+    "attempts": 1,
+    "durationMs": 36
+  }
+]

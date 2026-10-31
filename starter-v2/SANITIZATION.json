@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-31",
+  "redactions": [
+    {
+      "path": "wave1/mcp-and-job-results.jsonl",
+      "record": 7,
+      "field": "arguments.token",
+      "reason": "Invitation credential omitted from public evidence"
+    },
+    {
+      "path": "wave1/mcp-and-job-results.jsonl",
+      "record": 8,
+      "field": "arguments.token",
+      "reason": "Invitation credential omitted from public evidence"
+    }
+  ],
+  "excluded_categories": [
+    "credentials and session/account fixtures",
+    "raw logs",
+    "private reproduction scripts",
+    "unfiltered/failed videos"
+  ],
+  "media_notes": [
+    "Reusable enrollment/recovery secrets are masked.",
+    "Verification inputs in the security video are short-lived synthetic values.",
+    "Supplemental original settings/billing captures are feature-stage snapshots; current settled shell states are identified in wave1/README.md."
+  ]
+}

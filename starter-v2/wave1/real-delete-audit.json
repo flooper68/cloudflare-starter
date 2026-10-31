@@ -1,0 +1,83 @@
+{
+  "events": [
+    {
+      "id": "39267a5b-e0ea-4f74-a29e-f226e0a211c4",
+      "occurredAt": "2026-10-31T14:05:08.625Z",
+      "action": "storage.reconciliation_page",
+      "outcome": "success",
+      "actor": {
+        "kind": "system",
+        "userId": null,
+        "impersonatorUserId": null
+      },
+      "target": {
+        "type": "storage",
+        "id": "1d8fb5b3-1459-4517-a4fc-ffeeae9da099"
+      },
+      "workspaceId": null,
+      "traceId": "49639c669afe48f1b2a8786bee8c753d",
+      "source": "queue",
+      "ip": null,
+      "metadata": {
+        "mode": "delete",
+        "prefix": "users/",
+        "scanned": 0,
+        "orphaned": 0,
+        "deleted": 0,
+        "continued": false,
+        "sampleKeys": []
+      }
+    },
+    {
+      "id": "d5da16b2-68e5-48d7-a9af-c70fbc6e946e",
+      "occurredAt": "2026-10-31T14:05:03.597Z",
+      "action": "storage.reconciliation_page",
+      "outcome": "success",
+      "actor": {
+        "kind": "system",
+        "userId": null,
+        "impersonatorUserId": null
+      },
+      "target": {
+        "type": "storage",
+        "id": "1d8fb5b3-1459-4517-a4fc-ffeeae9da099"
+      },
+      "workspaceId": null,
+      "traceId": "49639c669afe48f1b2a8786bee8c753d",
+      "source": "queue",
+      "ip": null,
+      "metadata": {
+        "mode": "delete",
+        "prefix": "workspaces/",
+        "scanned": 0,
+        "orphaned": 0,
+        "deleted": 0,
+        "continued": true,
+        "sampleKeys": []
+      }
+    },
+    {
+      "id": "c0df2ca1-7079-457b-bff6-6eafa8094240",
+      "occurredAt": "2026-10-31T14:04:58.581Z",
+      "action": "storage.reconciliation_requested",
+      "outcome": "success",
+      "actor": {
+        "kind": "admin",
+        "userId": "bCA4al7r2CkPJ5FNVXoBDFQtwHuJ0pyQ",
+        "impersonatorUserId": null
+      },
+      "target": {
+        "type": "storage",
+        "id": "1d8fb5b3-1459-4517-a4fc-ffeeae9da099"
+      },
+      "workspaceId": null,
+      "traceId": "49639c669afe48f1b2a8786bee8c753d",
+      "source": "http",
+      "ip": "127.0.0.1",
+      "metadata": {
+        "mode": "delete"
+      }
+    }
+  ],
+  "nextCursor": null
+}

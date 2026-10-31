@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "entries": [
+    "manifest.json",
+    "data/user/000001.ndjson",
+    "data/account/000001.ndjson",
+    "data/session/000001.ndjson",
+    "data/workspaces/000001.ndjson",
+    "data/workspace_members/000001.ndjson",
+    "data/files/000001.ndjson",
+    "data/workspace_subscription/000001.ndjson",
+    "data/usage_counter/000001.ndjson",
+    "data/audit_events/000001.ndjson",
+    "data/data_requests/000001.ndjson",
+    "files/4b9c405f-2314-468c-86b1-24e0567be6a7"
+  ],
+  "recordCounts": {
+    "data/user/000001.ndjson": 1,
+    "data/account/000001.ndjson": 1,
+    "data/session/000001.ndjson": 1,
+    "data/workspaces/000001.ndjson": 1,
+    "data/workspace_members/000001.ndjson": 1,
+    "data/files/000001.ndjson": 1,
+    "data/workspace_subscription/000001.ndjson": 1,
+    "data/usage_counter/000001.ndjson": 1,
+    "data/audit_events/000001.ndjson": 5,
+    "data/data_requests/000001.ndjson": 1
+  },
+  "credentialColumnsExcluded": true,
+  "syntheticFileVerified": true,
+  "sha256": "8b61dc0d815650fa54ba856b226c50d4ad948e38b3256259a9fcb68370d129e1"
+}

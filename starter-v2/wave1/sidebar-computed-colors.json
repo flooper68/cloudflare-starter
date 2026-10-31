@@ -1,0 +1,10 @@
+{
+  "before": {
+    "foreground": "rgb(27, 28, 31)",
+    "background": "rgb(251, 251, 252)"
+  },
+  "after": {
+    "foreground": "rgb(89, 92, 98)",
+    "background": "rgb(251, 251, 252)"
+  }
+}

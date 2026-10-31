@@ -1,0 +1,6 @@
+{
+  "httpStatus": 403,
+  "code": "FORBIDDEN",
+  "appCode": "CANNOT_ERASE_SELF_AS_ADMIN",
+  "message": "Use account settings to delete your own account"
+}

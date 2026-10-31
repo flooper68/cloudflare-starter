@@ -1,0 +1,10 @@
+# Account-security evidence — 31 October 2026
+
+All accounts and data are synthetic. Current captures use the isolated security implementation at http://localhost:4580 with Chromium, local D1/R2/email and the development-only Turnstile simulation. Before captures use the preceding settings implementation at http://localhost:4783. No live Google account, physical authenticator, real email delivery or deployment is represented.
+
+- [before/](before/): sign-in, Security settings and administrator user detail, each in both themes, at 1440×1200. They show no passkey sign-in or factor management/reset controls. Source hashes and image provenance were checked against the frozen baseline.
+- [after/](after/): empty settings, enrollment, recovery-code confirmation, enrolled state, added virtual passkey, loading/error and sign-in challenge, each in both themes, at 1280×900. QR seeds, manual setup keys and recovery codes are masked; password fields remain hidden.
+- [admin/](admin/): administrator reset confirmation, forced fresh-factor challenge, invalid-code feedback and successful reset, each in both themes. These were captured after finite animations settled, with the corrected token styling.
+- [security-walkthrough.webm](security-walkthrough.webm): completed password sign-in followed by the authenticator challenge. Recording began only after enrollment and recovery secrets left the page. A short-lived synthetic verification code is visible while submitted; no reusable setup seed or recovery code is present.
+
+The before captures, admin states, representative enrollment/recovery images and video frames were visually inspected. These assets supplement real TOTP, virtual WebAuthn, synthetic provider-signature, OAuth refresh/revocation, stale-session and lockout regressions; they do not replace those tests. Reproduce the main flow with the repository security E2E tests. The forced-administrator test can export screenshots using `SECURITY_REVIEW_EVIDENCE_DIR=<outside-repository-directory>`.
