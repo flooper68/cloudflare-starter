@@ -1,6 +1,7 @@
-import { desc, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 
 import type { Database } from "../database";
+import { liveIn } from "../trash";
 import { type Actor, requirePermission } from "../workspaces";
 import { files } from "./files.schema";
 
@@ -12,7 +13,7 @@ export interface FileSummary {
   readonly createdAt: string;
 }
 
-/** The files of the actor's workspace, newest first. */
+/** The live files of the actor's workspace (not those in its trash), newest first. */
 export async function listWorkspaceFiles(
   deps: { readonly db: Database },
   actor: Actor,
@@ -20,7 +21,7 @@ export async function listWorkspaceFiles(
 ): Promise<readonly FileSummary[]> {
   requirePermission(actor, "files.read");
   const rows = await deps.db.query.files.findMany({
-    where: eq(files.workspaceId, actor.workspaceId),
+    where: liveIn(files, actor),
     orderBy: desc(files.createdAt),
     limit: input.limit ?? 50,
   });

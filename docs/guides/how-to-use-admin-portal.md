@@ -92,3 +92,9 @@ Append a route to `adminRoutes` in `apps/web/src/components/admin/routes.tsx` (p
 ## Not built
 
 Jobs or queue pages (use Cloudflare Queues metrics and Workers Logs), product analytics and Analytics Engine charts, two-factor for admins, editing settings from the portal.
+
+### Storage maintenance
+
+Settings includes report-only storage inspection (`admin.storage.reconcile`, MCP `admin_reconcile_storage`) and a separately confirmed cleanup when `STORAGE_RECONCILE=delete` (`admin.storage.deleteOrphans`, destructive/recent-sign-in). Status is `admin.storage.status` / `admin_storage_status`. Results are queue-run ids; inspect `storage.reconciliation_page` in the audit log. [Storage guide](how-to-use-trash.md#optional-storage-reconciliation).
+
+Storage maintenance browser coverage submits a real local report and checks its returned run/job ids, hides deletion while off, and covers confirmation cancellation and success/failure UI outcomes in delete mode. Evidence fixtures are documented separately from the real local job capture.

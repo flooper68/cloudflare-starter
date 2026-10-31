@@ -222,6 +222,12 @@ export {
   type SettingsSectionProps,
 } from "../components/patterns/settings-page";
 export {
+  TrashList,
+  type TrashListItem,
+  type TrashListProps,
+  TrashListSkeleton,
+} from "../components/patterns/trash-list";
+export {
   UnsubscribeCard,
   type UnsubscribeCardProps,
   type UnsubscribeState,

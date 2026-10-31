@@ -7,6 +7,8 @@
 # development, the only environment where auth links (which carry tokens) may be
 # logged when email is off.
 APP_ENV=local
+# Optional storage orphan maintenance: off | report | delete. Report is always safe on demand.
+STORAGE_RECONCILE=off
 APP_URL=http://localhost:4321
 # At least 32 characters. Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=local-dev-secret-change-me-0000000000

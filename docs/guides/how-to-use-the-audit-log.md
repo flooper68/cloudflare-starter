@@ -52,6 +52,9 @@ The audit log is not the application log. Logs ([how-to-setup-logging.md](how-to
 The catalog is `auditEventSchema` in `packages/features/src/audit/domain/audit-event.ts`. The admin actions are recorded by the admin portal's use cases (`packages/features/src/admin/`, actor kind `admin`; [how-to-use-admin-portal.md](how-to-use-admin-portal.md)), except a `user.role_changed` by `BOOTSTRAP_ADMIN_EMAIL` verification or `bun run setup:admin`, whose actor is `system`; an admin's impersonation session is not recorded as a sign-in; the workspace actions are recorded by the workspace use cases (`packages/features/src/workspaces/`), with the user acting as actor and the workspace as `workspace_id`. Switching the current workspace is not recorded (it grants or removes nothing). A sign-up that opens a session records both `auth.sign_up` and `auth.sign_in` (`method: sign_up`). The session a password change re-issues is not a sign-in: it is recorded as `auth.password_changed`. Any other endpoint that opens a session records `auth.sign_in` with `method: other`. Sign-in and sign-up hooks fail open: if the insert fails, the error is reported ([how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)) and the sign-in still succeeds.
 
 Each row: `id`, `occurred_at` (ms), `action`, `outcome` (`success` or `failure`), `actor_user_id`, `actor_kind` (`user`, `admin`, `system`), `impersonator_user_id`, `target_type`, `target_id`, `workspace_id`, `trace_id`, `source` (`http`, `queue`, `cron`, `script` for `bun run setup:admin`), `ip`, `metadata` (JSON). There are no foreign keys: events outlive the users and workspaces they name. Indexes: `(occurred_at)`, `(actor_user_id, occurred_at)`, `(target_type, target_id)`, `(workspace_id, occurred_at)`.
+| `trash.item_trashed` | an entity's "move to trash" use case (`files/trash-file.ts`) | `file` | `entityType` |
+| `trash.item_restored` | trash `restoreItems` | `file` | `entityType` |
+| `trash.item_purged` | trash `purgeItems` (`manual`), `emptyTrash` (`empty_trash`), `purgeExpiredTrash` (`retention`, system actor) | `file` | `entityType`, `reason` |
 
 ## Recording an event from a use case
 
@@ -163,3 +166,8 @@ Fields follow the [Open Cybersecurity Schema Framework](https://schema.ocsf.io/)
 | `feature_flag.updated`, `feature_flag.rules_changed`               | Entity Management (3004)      | 3 Update; `entity` the flag                                              |
 | `notifications.preferences_changed`, `notifications.unsubscribed`  | Account Change (3001)         | 99 Other (notification settings)                                         |
 | `billing.*`                                                        | Entity Management (3004)      | 3 Update (`billing.trial_started`: 1 Create)                             |
+| `trash.item_trashed`, `trash.item_restored`, `trash.item_purged`   | Entity Management (3004)      | 3 Update, 3 Update, 4 Delete; `entity` the trashed item                  |
+
+### Storage maintenance events
+
+`storage.reconciliation_requested`: platform admin, target `storage:<runId>`, mode report/delete. `storage.reconciliation_page`: system, same target, mode, prefix, scanned/orphaned/deleted counts, continuation flag and at most five sample keys. Page counts can repeat on retry and should not be summed as an exactly-once billing measure. Keys are application-generated identifiers, never object contents or credentials.

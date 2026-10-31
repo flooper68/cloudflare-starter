@@ -42,4 +42,5 @@ Domain tests cover Intl parameters, image signatures and workspace permissions. 
 
 Avatar and logo upload refusals use the common HTTP rate-limit response: 429 Problem Details with Retry-After, RateLimit and RateLimit-Policy. Concurrent replacement tests release two real R2 writes in both publication orders and verify the final image and other owners remain intact. Removing a custom avatar reloads the bootstrap so the provider image returns consistently in the page and shell.
 
+
 The shared pre-deletion helper preserves the last-active-platform-admin invariant for administrative deletion before removing any workspace or image. Self-service deletion is deferred until its serialized privacy pipeline is present; no nonfunctional deletion button is exposed.

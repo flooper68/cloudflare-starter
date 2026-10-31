@@ -32,6 +32,7 @@ How to set up or do something; read while doing it.
 | [how-to-setup-container.md](guides/how-to-setup-container.md)                         | you run or deploy the Container demo                                                                                                                                                 |
 | [how-to-define-branding.md](guides/how-to-define-branding.md)                         | you give a project its own name, logo, accent, fonts or radius                                                                                                                       |
 | [how-to-use-storybook.md](guides/how-to-use-storybook.md)                             | you build or review components in Storybook, write their tests, or change who can open `/_storybook/`                                                                                |
+| [how-to-use-trash.md](guides/how-to-use-trash.md)                                     | you make a table trashable, read one, change a trash retention, debug a missing or restored item, or erase data for good (GDPR)                                                      |
 
 ## Architecture
 

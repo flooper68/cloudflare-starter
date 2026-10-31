@@ -21,6 +21,7 @@ import {
   LogOut,
   Mail,
   ShieldCheck,
+  Trash2,
   Upload,
   UserRound,
   Users,
@@ -43,7 +44,8 @@ async function signOut() {
 
 /**
  * The app's navigation: workspace menu (switch and create in multi mode), pages, demos,
- * and the signed-in user. "Members" shows in modes with shared workspaces.
+ * and the signed-in user. "Members" shows in modes with shared workspaces; "Trash" is the
+ * active workspace's deleted files.
  */
 export function AppSidebar() {
   const { pathname } = useLocation();
@@ -115,6 +117,13 @@ export function AppSidebar() {
               <Link to="/app/billing">Billing</Link>
             </SidebarItem>
           ) : null}
+          <SidebarItem
+            asChild
+            icon={<Trash2 />}
+            active={pathname === "/app/trash"}
+          >
+            <Link to="/app/trash">Trash</Link>
+          </SidebarItem>
           <SidebarItem
             asChild
             icon={<UserRound />}

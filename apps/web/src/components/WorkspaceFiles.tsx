@@ -1,14 +1,17 @@
 import {
+  Button,
   Card,
   CardDescription,
   CardTitle,
   DataState,
   EmptyState,
   SkeletonListRow,
+  toast,
 } from "@cloudflare-starter/ui";
-import { FileText } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
 
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
+import { trpc } from "@/lib/trpc/client";
 import type { AsyncState } from "@/lib/use-async";
 
 export interface WorkspaceFileItem {
@@ -18,14 +21,46 @@ export interface WorkspaceFileItem {
   readonly createdAt: string;
 }
 
-/** The active workspace's files: every member sees and opens the same list. */
+/**
+ * The active workspace's files: every member sees and opens the same list. "Move to trash"
+ * takes a file out at once, with an undo in the toast; the trash page restores it later.
+ */
 export function WorkspaceFiles({
   files,
 }: {
   readonly files: AsyncState<{ readonly items: readonly WorkspaceFileItem[] }>;
 }) {
   const { active } = useWorkspace();
-  const query = new URLSearchParams({ workspaceId: active?.id ?? "" });
+  const workspaceId = active?.id ?? "";
+  const query = new URLSearchParams({ workspaceId });
+
+  async function moveToTrash(file: WorkspaceFileItem) {
+    try {
+      await trpc.storage.deleteFile.mutate({ workspaceId, fileId: file.id });
+      await files.refetch();
+      toast.success(`Moved ${file.filename} to the trash`, {
+        action: {
+          label: "Undo",
+          onClick: () => void undo(file),
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Delete failed");
+    }
+  }
+
+  async function undo(file: WorkspaceFileItem) {
+    try {
+      await trpc.trash.restore.mutate({
+        workspaceId,
+        items: [{ type: "file", id: file.id }],
+      });
+      await files.refetch();
+      toast.success(`Restored ${file.filename}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Restore failed");
+    }
+  }
 
   return (
     <Card className="space-y-4">
@@ -71,8 +106,19 @@ export function WorkspaceFiles({
                 >
                   {file.filename}
                 </a>
-                <span className="shrink-0 text-xs text-fg-muted">
-                  {(file.sizeBytes / 1024).toFixed(1)} KB
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="text-xs text-fg-muted">
+                    {(file.sizeBytes / 1024).toFixed(1)} KB
+                  </span>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    icon={<Trash2 />}
+                    onClick={() => void moveToTrash(file)}
+                  >
+                    Move to trash
+                    <span className="sr-only"> {file.filename}</span>
+                  </Button>
                 </span>
               </li>
             ))}

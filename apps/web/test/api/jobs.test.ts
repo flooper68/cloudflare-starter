@@ -85,10 +85,12 @@ function setup(jobs = catalog) {
     jobQueue,
     metrics,
     tracer,
+    storageReconcile: "off",
   };
   const deps: QueueDeps = {
     ...queueDeps(env as AppEnv),
     db: getDb(env as AppEnv),
+    bucket: (env as AppEnv).FILES,
     catalog: jobs,
     random: { next: () => 0.5 },
     maxRetries: JOB_MAX_RETRIES,

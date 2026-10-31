@@ -46,6 +46,7 @@ function context(overrides: Partial<Context> = {}): Context {
       AUTH_EMAIL_PASSWORD: true,
       AUTH_REQUIRE_EMAIL_VERIFICATION: false,
       APP_ENV: "local",
+      STORAGE_RECONCILE: "off",
       workspaces: {
         mode: "multi",
         signUp: "open",

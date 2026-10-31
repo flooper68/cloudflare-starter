@@ -1,6 +1,6 @@
 # How To Setup R2 Storage
 
-The web app can reach R2 two ways. Both are wired up and share the same `files` table, key layout (`workspaces/{workspaceId}/uploads/{yyyy}/{mm}/{fileId}`), 10 MB limit and access rule (a file belongs to a workspace; its members may read and upload, everyone else gets 404), so a feature picks the one that fits and the other can be deleted. The routes take `?workspaceId=` (else the user's current workspace); a presigned URL is signed only after the file was found in the caller's workspace. Deleting a workspace's data removes its objects with `deleteWorkspaceFiles`.
+The web app can reach R2 two ways. Both are wired up and share the same `files` table, key layout (`workspaces/{workspaceId}/uploads/{yyyy}/{mm}/{fileId}`), 10 MB limit and access rule (a file belongs to a workspace; its members may read and upload, everyone else gets 404), so a feature picks the one that fits and the other can be deleted. The routes take `?workspaceId=` (else the user's current workspace); a presigned URL is signed only after the file was found in the caller's workspace. Deleting a workspace's data removes its objects with `deleteWorkspaceFiles`. Deleting a file moves it to the workspace's trash: the object stays in R2 until it is restored or purged ([how-to-use-trash.md](how-to-use-trash.md)).
 
 |             | Binding (`env.FILES`)                                                            | Presigned URL (S3 API)                                                   |
 | ----------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -182,3 +182,7 @@ Adding presigned URLs:
 4. Add a CORS policy on the bucket for your web origin(s)
 
 Profile avatars/logos use capped PNG/JPEG/WebP uploads, current-reference checks and private versioned reads under users/<id>/avatar/ and workspaces/<id>/logo/. See [settings](how-to-use-settings.md) for ownership, cleanup and reconciliation.
+
+## Orphaned storage
+
+Optional daily maintenance and on-demand admin reports use `STORAGE_RECONCILE=off|report|delete` (required; explicitly off in the starter). `bun run setup:storage --env all --dry-run` previews source configuration; `doctor` checks it. Start with a report; deletion is permanent and only touches registered application key shapes older than 24 hours with no live, trashed, avatar/logo or pending-upload reference. See [storage reconciliation](how-to-use-trash.md#optional-storage-reconciliation) for the cursor job, admin actions, audit results and safety contract.

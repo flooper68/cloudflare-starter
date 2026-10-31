@@ -1,6 +1,8 @@
 import {
   type BillingSettings,
   billingSettingsSchema,
+  STORAGE_RECONCILE_MODES,
+  type StorageReconcileMode,
   type WorkspaceSettings,
   workspaceSettingsSchema,
 } from "@cloudflare-starter/features";
@@ -47,6 +49,7 @@ export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
   readonly billing: BillingSettings;
   readonly ADMIN_PORTAL: AdminPortalSetting;
+  readonly STORAGE_RECONCILE: StorageReconcileMode;
 };
 
 export type RequiredAppConfig = Omit<
@@ -78,6 +81,11 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       "(bun run setup:auth writes it into each environment's vars; .dev.vars for local)"
     ),
     billing: billingSettingsSchema.parse(env),
+    STORAGE_RECONCILE: requiredChoice(
+      env,
+      "STORAGE_RECONCILE",
+      STORAGE_RECONCILE_MODES
+    ),
   };
 }
 
@@ -106,6 +114,7 @@ export interface PlatformConfig {
   readonly FEATURE_FLAGS: (typeof FEATURE_FLAG_PROVIDERS)[number];
   readonly METRICS: (typeof METRICS_BACKENDS)[number];
   readonly TRACING: (typeof TRACING_BACKENDS)[number];
+  readonly STORAGE_RECONCILE: StorageReconcileMode;
 }
 
 /** A required setting is missing or invalid; the message names it and the allowed values. */
@@ -154,6 +163,11 @@ export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
     FEATURE_FLAGS: requiredChoice(env, "FEATURE_FLAGS", FEATURE_FLAG_PROVIDERS),
     METRICS: requiredChoice(env, "METRICS", METRICS_BACKENDS),
     TRACING: requiredChoice(env, "TRACING", TRACING_BACKENDS),
+    STORAGE_RECONCILE: requiredChoice(
+      env,
+      "STORAGE_RECONCILE",
+      STORAGE_RECONCILE_MODES
+    ),
   };
 }
 

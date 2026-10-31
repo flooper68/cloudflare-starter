@@ -1,7 +1,9 @@
 import { env } from "cloudflare:workers";
 import { createMcpHandler } from "@modelcontextprotocol/server";
+import type { APIContext } from "astro";
 import { describe, expect, it } from "vitest";
 
+import { POST } from "@/pages/api/files/index";
 import { handleMcp } from "@/server/mcp/handler";
 import { buildMcpServer } from "@/server/mcp/server";
 import { buildPlatform } from "@/server/platform";
@@ -189,6 +191,104 @@ describe("/mcp", () => {
     );
   });
 
+  it("trash tools: move to trash, list, restore, delete permanently, empty", async () => {
+    const user = await signUp("Margaret Hamilton", "margaret@example.test");
+    const caller = callerFor(user);
+    const call = async (name: string, args: Record<string, unknown> = {}) => {
+      const response = await rpc(caller, "tools/call", {
+        name,
+        arguments: args,
+      });
+      expect(response.result.isError, JSON.stringify(response)).toBeFalsy();
+      return response.result.structuredContent;
+    };
+    const form = new FormData();
+    form.set(
+      "file",
+      new File(["Apollo 11"], "guidance.txt", { type: "text/plain" })
+    );
+    const uploaded = await POST({
+      request: new Request(`${APP_URL}/api/files`, {
+        method: "POST",
+        body: form,
+        headers: { origin: APP_URL },
+      }),
+      url: new URL(`${APP_URL}/api/files`),
+      params: {},
+      locals: {
+        user: { id: user.id, email: user.email, name: user.name },
+        requestContext: testRequestContext(),
+      },
+    } as unknown as APIContext);
+    const { fileId } = (await uploaded.json()) as { fileId: string };
+
+    expect(await call("delete_file", { fileId })).toMatchObject({
+      type: "file",
+      id: fileId,
+    });
+    expect((await call("list_files")).items).toEqual([]);
+    const trash = await call("list_trash");
+    expect(trash.items).toEqual([
+      expect.objectContaining({
+        type: "file",
+        id: fileId,
+        label: "guidance.txt",
+      }),
+    ]);
+    expect(
+      await call("restore_from_trash", {
+        items: [{ type: "file", id: fileId }],
+      })
+    ).toEqual({ restored: [{ type: "file", id: fileId }] });
+    expect((await call("list_files")).items).toHaveLength(1);
+
+    await call("delete_file", { fileId });
+    expect(
+      await call("delete_from_trash_permanently", {
+        items: [{ type: "file", id: fileId }],
+      })
+    ).toEqual({ purged: [{ type: "file", id: fileId }] });
+    expect(await call("empty_trash")).toEqual({
+      purged: 0,
+      remaining: false,
+    });
+  });
+
+  it("storage tools expose status, queue a report, and refuse deletion while disabled", async () => {
+    const admin = await signUp(
+      "Reconciliation admin",
+      "reconciliation-admin@example.test"
+    );
+    await env.DB.prepare("UPDATE user SET role = 'admin' WHERE id = ?")
+      .bind(admin.id)
+      .run();
+    const caller = callerFor(admin);
+    const status = await rpc(caller, "tools/call", {
+      name: "admin_storage_status",
+      arguments: {},
+    });
+    expect(status.result.isError).toBeFalsy();
+    expect(status.result.structuredContent).toEqual({
+      mode: "off",
+      graceHours: 24,
+    });
+    const report = await rpc(caller, "tools/call", {
+      name: "admin_reconcile_storage",
+      arguments: {},
+    });
+    expect(report.result.isError).toBeFalsy();
+    expect(report.result.structuredContent).toMatchObject({
+      mode: "report",
+      runId: expect.any(String),
+      jobId: expect.any(String),
+    });
+    const deletion = await rpc(caller, "tools/call", {
+      name: "admin_delete_storage_orphans",
+      arguments: {},
+    });
+    expect(deletion.result.isError).toBe(true);
+  });
+
   it("marks tools that remove access as destructive and invitations as outward", async () => {
     const user = await signUp("Ken Thompson", "ken@example.test");
     const listed = await rpc(callerFor(user), "tools/list");
@@ -198,9 +298,13 @@ describe("/mcp", () => {
       "remove_member",
       "leave_workspace",
       "revoke_invitation",
+      "delete_from_trash_permanently",
+      "empty_trash",
     ]) {
       expect(tool(name).annotations.destructiveHint).toBe(true);
     }
+    // Restorable from the trash: not destructive.
+    expect(tool("delete_file").annotations.destructiveHint).toBe(false);
     expect(tool("invite_member").annotations.openWorldHint).toBe(true);
     expect(tool("switch_workspace").inputSchema.required).toEqual([
       "workspaceId",

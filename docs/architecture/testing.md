@@ -67,6 +67,7 @@ Commands: `bun run test` (all Vitest projects in Node and workerd), `bun run tes
 | New admin procedure                                     | API test in `apps/web/test/api/admin.test.ts` as an admin and through `/mcp`; the NOT_FOUND loop there covers non-admins and anonymous callers; a destructive one also a stale-sign-in case; `admin-procedures.test.ts` passes                                                                                      |
 | New permission action or role                           | Domain test in `workspaces/domain/permissions.test.ts`                                                                                                                                                                                                                                                              |
 | Change to sign-up rules or modes                        | Domain case in `sign-up-policy.test.ts` and an API test through Better Auth's handler in the affected mode (`envWith`)                                                                                                                                                                                              |
+| New trashable entity or a read of a trashable table     | Integration tests of the entity (`summarize`, `purge` removes what it owns and is idempotent) and of its move-to-trash use case (gone from every live read, audit event); `test/architecture/trash.test.ts` passes ([how-to-use-trash.md](../guides/how-to-use-trash.md))                                           |
 
 A required test must fail when the change is reverted. A test that passes either way does not count.
 
@@ -113,5 +114,9 @@ What exists: unit tests (domain, helpers), integration tests on real D1/R2, API 
 Performance checks (D1 query budgets, bundle budgets, Web Vitals, load tests) are not a layer of their own: each fits next to a layer above or runs against a deployment. The starter ships none; which a project adopts, and how, is in [performance.md](performance.md).
 
 Settings journeys also cover profile/avatar changes, saved formatting/theme, own session revocation, confirmed shared-workspace rename/deletion. `settings.test.ts` covers both browser and MCP session revocation, no token disclosure, image size/type/origin guards and cross-workspace refusals.
+
+Storage reconciliation requires pure cutoff/mode-policy tests, real D1/R2 tests preserving live/trashed/pending references and cleaning an orphan from a failed purge, fail-closed lookup failures, short-page cursor continuations, repeated deletion, disabled/downgraded jobs, admin permission/recent-sign-in checks and MCP parity. Browser evidence covers report and confirmed delete controls in both themes, plus the existing trash states and journeys.
+
+Review regressions also gate concurrent avatar/logo replacements in both publication orders on real D1/R2, profile mutation 429 quota headers and Problem Details, provider-avatar fallback after reloading, and admin storage report/confirmation/outcome journeys. The reconciliation E2E report reaches the real local queue; delete-mode UI outcomes use controlled browser responses while the default remains off. Separate local delete-mode evidence exercises the real job.
 
 Settings regressions cover concurrent avatar/logo writes in both completion orders, upload/auth quota headers, provider-image fallback after reload, indexed reference lookups, the shared last-admin preflight, and a real Better Auth refusal while the native self-deletion endpoint is disabled.

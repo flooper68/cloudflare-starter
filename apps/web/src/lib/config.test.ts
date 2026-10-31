@@ -10,12 +10,33 @@ import {
 } from "./config";
 
 const core = {
+  STORAGE_RECONCILE: "off",
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "local-dev-secret-change-me-0000000000",
   APP_ENV: "local",
 };
 
 describe("web config", () => {
+  it("requires an explicit storage reconciliation mode", () => {
+    const settings = {
+      APP_ENV: "local",
+      LOG_SINK: "none",
+      ERROR_REPORTER: "none",
+      FEATURE_FLAGS: "none",
+      METRICS: "none",
+      TRACING: "none",
+    };
+    expect(() => parsePlatformConfig(settings)).toThrow(
+      /STORAGE_RECONCILE is not set/
+    );
+    expect(() =>
+      parsePlatformConfig({ ...settings, STORAGE_RECONCILE: "true" })
+    ).toThrow(/STORAGE_RECONCILE/);
+    expect(
+      parsePlatformConfig({ ...settings, STORAGE_RECONCILE: "report" })
+        .STORAGE_RECONCILE
+    ).toBe("report");
+  });
   it("returns a disabled feature result when optional parsing fails", () => {
     const result = parseOptionalFeature("R2", () => {
       throw new Error("Missing one or more R2 environment variables");
@@ -97,6 +118,7 @@ describe("platform config", () => {
         FEATURE_FLAGS: "d1",
         METRICS: "analytics-engine",
         TRACING: "workers",
+        STORAGE_RECONCILE: "off",
       })
     ).toEqual({
       APP_ENV: "staging",
@@ -105,6 +127,7 @@ describe("platform config", () => {
       FEATURE_FLAGS: "d1",
       METRICS: "analytics-engine",
       TRACING: "workers",
+      STORAGE_RECONCILE: "off",
     });
   });
 
@@ -152,6 +175,7 @@ describe("platform config", () => {
       ERROR_REPORTER: "none",
       METRICS: "none",
       TRACING: "none",
+      STORAGE_RECONCILE: "off",
     };
     expect(() => parsePlatformConfig(rest)).toThrow(
       new ConfigError(

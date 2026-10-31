@@ -44,7 +44,7 @@ Lint keeps the rest of the code off the queue: `lint/rules/no-direct-queue-send.
    Keep the payload small (ids, not records: a message is at most 128 KB) and let the handler load current data. The user, workspace, time and trace travel in the envelope, not the payload.
 
 2. Write the handler as a use case with explicit deps, e.g. `billing/send-invoice.ts`: `sendInvoice(deps: { db; email; logger }, payload, job)`. It gets `job.id`, `job.attempts`, `job.time` and `job.context` (the request context: trace, user, workspace). Throw a `DomainError` for failures no retry can fix (see [Retries](#retries-and-failures)).
-3. Register it in `packages/features/src/job-catalog.ts`: `registerJob(sendInvoiceJob, sendInvoice)`. If the handler needs a dependency `JobDeps` lacks (`packages/features/src/jobs/run-job.ts`), add it there and in the consumer (`apps/web/src/server/queue.ts`).
+3. Register it in `packages/features/src/job-catalog.ts`: `registerJob(sendInvoiceJob, sendInvoice)`. If the handler needs a dependency `JobDeps` lacks (`packages/features/src/jobs/run-job.ts`), add it there and in the consumer (`apps/web/src/server/queue.ts`). Today it has `db`, `clock`, `ids`, `logger`, `jobQueue` and `bucket` (`FILES`, for purges that delete objects).
 4. Enqueue it from a use case:
 
    ```ts
@@ -108,8 +108,10 @@ A job without a key is not deduplicated: make its handler safe to run twice (ups
 ## Add a cron entry
 
 1. Add `{ name, schedule, run }` to `packages/features/src/cron-catalog.ts`. `run(deps, { scheduledTime, context })` should only enqueue jobs (fan out); the queue then retries each piece on its own. `scheduledTime` is the run's "now"; pass it in the payload when the job must compute the same thing on every retry (`audit.purge-events` sends it as `asOf`, so a retry purges against the same cutoff). Today the catalog has `audit.purge-events`, `jobs.purge-idempotency-keys`, `billing.expire-trials` and `notifications.purge` on the daily `17 3 * * *`, and `notifications.plan-digests` on `0 8 * * *` (the notification digest, [how-to-send-notifications.md](how-to-send-notifications.md#digest)).
-2. Add the schedule to `triggers.crons` in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc` (UTC). Several entries may share a schedule; `scheduled` runs every entry whose schedule equals `controller.cron` exactly, so write it identically in both places. The architecture test `test/architecture/jobs.test.ts` fails when `triggers.crons` and the catalog differ, or when an entry's name appears in no test.
-3. Test it by name in `apps/web/src/server/cron.test.ts` (what it enqueues).
+
+1. Add `{ name, schedule, run }` to `packages/features/src/cron-catalog.ts`. `run(deps, { scheduledTime, context })` should only enqueue jobs (fan out); the queue then retries each piece on its own. `scheduledTime` is the run's "now"; pass it in the payload when the job must compute the same thing on every retry (`audit.purge-events` sends it as `asOf`, so a retry purges against the same cutoff). Today the catalog has `audit.purge-events`, `jobs.purge-idempotency-keys`, `billing.expire-trials` and `trash.purge-expired`, all on the daily `17 3 * * *`. A job with more work than one run should do drains it in batches and enqueues itself again with the same payload while a batch comes back full (`trash.purge-expired`: 500 items per entity per run, same `asOf`; [how-to-use-trash.md](how-to-use-trash.md#retention)), rather than looping for minutes in one delivery.
+1. Add the schedule to `triggers.crons` in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc` (UTC). Several entries may share a schedule; `scheduled` runs every entry whose schedule equals `controller.cron` exactly, so write it identically in both places. The architecture test `test/architecture/jobs.test.ts` fails when `triggers.crons` and the catalog differ, or when an entry's name appears in no test.
+1. Test it by name in `apps/web/src/server/cron.test.ts` (what it enqueues).
 
 A failing entry is reported (`app.cron.name`) and the other entries of the trigger still run; the run then fails, so it shows as failed under the Worker's Cron Events. A trigger with no entry is reported too. Cron changes take up to 15 minutes to reach Cloudflare's network after a deploy.
 
@@ -187,3 +189,7 @@ The queue must exist for the environment before the first deploy: `bun run setup
 ### The cron run fails with "No cron catalog entry has the schedule"
 
 `triggers.crons` in `wrangler.jsonc` lists a schedule the cron catalog does not have (or writes it differently). The architecture test catches this before deploy.
+
+### Storage maintenance jobs
+
+`trash.purge-expired` shares the daily 03:17 UTC schedule and drains expired trash in 500-row batches, with guarded rows-before-R2 deletion. `storage.reconcile` shares that schedule but enqueues nothing when `STORAGE_RECONCILE=off`; report/delete modes scan registered storage key namespaces, 100 objects per delivery, retaining the original cutoff across cursor continuations. The latter records page counts and bounded samples in audit/logs. [Configuration and safety](how-to-use-trash.md#optional-storage-reconciliation).

@@ -35,6 +35,8 @@ function deps(iso = "2026-10-28T12:00:00.000Z"): JobDeps {
     email: noopEmail,
     metrics: noopMetrics,
     app: testApp,
+    bucket: env.FILES,
+    storageReconcile: "off",
   };
 }
 

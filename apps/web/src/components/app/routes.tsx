@@ -14,6 +14,7 @@ import { NotificationPreferencesPage } from "./pages/NotificationPreferencesPage
 import { NotificationsPage } from "./pages/NotificationsPage";
 
 import { QueueDemoPage } from "./pages/QueueDemoPage";
+import { TrashPage } from "./pages/TrashPage";
 import { UploadDemoPage } from "./pages/UploadDemoPage";
 import { rootRoute } from "./root-route";
 
@@ -45,11 +46,16 @@ const membersRoute = createRoute({
   component: MembersPage,
 });
 
-// The workspace's plan and usage; a settings area may later mount BillingPage as a section.
 const billingRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/app/billing",
   component: BillingPage,
+});
+
+const trashRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/app/trash",
+  component: TrashPage,
 });
 
 const uploadDemoRoute = createRoute({
@@ -90,6 +96,7 @@ const routeTree = rootRoute.addChildren([
     profileRoute,
     membersRoute,
     billingRoute,
+    trashRoute,
     uploadDemoRoute,
     queueDemoRoute,
     emailDemoRoute,

@@ -19,6 +19,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - R2 two ways: through the Worker with the `FILES` binding, or direct with presigned URLs
 - Cloudflare Email Service through the `send_email` binding (simulated in local dev), behind an Email port
 - Notifications: a typed catalog, `notify` from any use case, an in-app inbox with an unread badge, per-user preferences per type and channel, email at once or as a daily digest, RFC 8058 one-click unsubscribe, security notices that cannot be turned off, retention, and MCP tools
+- Soft delete with a workspace trash: deleted files can be restored for 30 days, owners delete for good sooner, a daily job purges the rest with their R2 objects, a generic trash any table can join, and an architecture test that no live read sees trashed rows
 - Append-only audit log in D1 (sign-in, failed sign-in, sign-up, password reset and change; admin and workspace actions in the catalog): typed actions with strict metadata, the request's trace id on every event, OCSF-aligned fields, daily retention purge, and an architecture test that every state change is audited
 - OpenTelemetry-shaped logs and error reports in Workers Logs (exportable over OTLP) behind swappable ports (Logger, ErrorReporter), W3C Trace Context across HTTP and background jobs, and a reference (the trace id) users can quote instead of a stack trace
 - Metrics and tracing behind ports shaped on the OpenTelemetry API: a typed metric catalog with semantic-convention names (OpenMetrics when exported), request, procedure, queue and cron latency in Workers Analytics Engine (queryable from Grafana), and spans for every request, procedure, MCP tool, message and cron run on the same trace
@@ -174,3 +175,5 @@ See [docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md) f
 - [How to define the brand](docs/guides/how-to-define-branding.md)
 
 Account and workspace settings: profile/avatar, verified email changes, linked accounts, own session revocation, locale/time zone/theme, and confirmed workspace deletion. Self-service account deletion arrives with the privacy pipeline. See [the settings guide](docs/guides/how-to-use-settings.md).
+
+Storage cleanup is optional: `bun run setup:storage --env all --dry-run` previews `STORAGE_RECONCILE=off|report|delete`. Admin Settings can queue a report without deleting; explicit delete mode enables confirmed cleanup. See [trash and storage reconciliation](docs/guides/how-to-use-trash.md#optional-storage-reconciliation).
