@@ -53,6 +53,6 @@ Closes #
 
 ## Process changes
 
-- [ ] No AI agent is credited in the commits or this description (AGENTS.md rule 9)
+- [ ] No AI agent is credited in the commits or this description ([attribution policy](../docs/processes/development.md#authorship-and-attribution))
 
 - [ ] This PR changes `docs/processes/` or `AGENTS.md` (describe the change above)

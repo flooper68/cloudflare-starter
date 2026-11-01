@@ -1,7 +1,8 @@
 /**
  * `bun scripts/check-attribution.ts [<base-ref>]` — fails if any commit since <base-ref>
  * (default origin/main) names an AI agent as author or co-author, or carries a
- * "Generated with <agent>" line. Rule 9 in AGENTS.md; run by CI on pull requests.
+ * "Generated with <agent>" line. See docs/processes/development.md#authorship-and-attribution;
+ * run by CI on pull requests.
  */
 import { spawnSync } from "node:child_process";
 
@@ -36,7 +37,9 @@ for (const entry of log.stdout.split("\x1e")) {
 }
 
 if (problems.length > 0) {
-  console.error("Commits must not credit AI agents (AGENTS.md rule 9):");
+  console.error(
+    "Commits must not credit AI agents (docs/processes/development.md#authorship-and-attribution):"
+  );
   for (const problem of problems) console.error(`  ${problem}`);
   console.error("Reword the commits (e.g. git rebase -i) to drop these lines.");
   process.exit(1);

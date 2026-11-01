@@ -59,7 +59,11 @@ Per [code-review.md](code-review.md): pick the risk tier, run the six checklists
 
 ### 7. Ship
 
-Commit, push, open a PR, run a deploy, create Cloudflare resources or set secrets only on the owner's explicit yes for that action. Dry-run first (`--dry-run` on the setup scripts). The PR uses [the template](../../.github/pull_request_template.md).
+Commit, push, open a PR, run a deploy, change the owner's Cloudflare account, create resources, set secrets or change GitHub settings only on the owner's explicit yes for that action. Dry-run first (`--dry-run` on the setup scripts). The PR uses [the template](../../.github/pull_request_template.md).
+
+## Authorship and attribution
+
+The person who asked for the work is the author. Never credit an AI agent as author or co-author in commits, PR descriptions or code: no agent `Co-Authored-By` trailers or "Generated with …" lines. CI checks commits with `scripts/check-attribution.ts`.
 
 ## Unexpected-problem gate
 
