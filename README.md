@@ -83,7 +83,7 @@ Packages:
 
 ## Working on this repo (people and agents)
 
-Rules live in [AGENTS.md](AGENTS.md). The one that shapes every change: anything the app can do over HTTP, an MCP client can do too ([docs/guides/how-to-setup-mcp.md](docs/guides/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
+[AGENTS.md](AGENTS.md) points agents to the [documentation index](docs/README.md). The [development process](docs/processes/development.md) covers how work is done; [architecture principles](docs/architecture/overview.md#principles) define the system's contracts, including MCP coverage for APIs ([MCP guide](docs/guides/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
 
 ## Why one Worker
 
