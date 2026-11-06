@@ -3,7 +3,7 @@
  * A new tRPC procedure needs a tool (tools.ts) or an MCP_EXEMPT_PROCEDURES entry with
  * a reason; a new non-tRPC endpoint needs a NON_TRPC_ROUTES entry with a reason.
  */
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -17,6 +17,20 @@ import {
 } from "./tools";
 
 const PAGES = fileURLToPath(new URL("../../pages", import.meta.url));
+const REPO = fileURLToPath(new URL("../../../../..", import.meta.url));
+
+/** Markdown files under dir (relative to the repository root), skipping node_modules. */
+function markdownFiles(dir: string): string[] {
+  return readdirSync(join(REPO, dir)).flatMap((name) => {
+    if (name === "node_modules") return [];
+    const path = join(dir, name);
+    if (statSync(join(REPO, path)).isDirectory()) return markdownFiles(path);
+    return name.endsWith(".md") ? [path] : [];
+  });
+}
+
+/** `admin_*` names in the docs that are not MCP tools (the cookie Better Auth sets). */
+const NOT_TOOLS = new Set(["admin_session"]);
 
 /** Endpoint files (.ts) under src/pages; .astro pages render HTML and are not API. */
 function endpointFiles(dir: string): string[] {
@@ -94,5 +108,25 @@ describe("MCP parity", () => {
         Object.keys(procedureInput(path as string).shape)
       );
     }
+  });
+
+  it("names only existing admin tools in the docs", () => {
+    const tools = new Set(MCP_TOOLS.map((tool) => tool.name));
+    const docs = [
+      "README.md",
+      ...markdownFiles("docs"),
+      ...markdownFiles(".claude/skills"),
+      ...markdownFiles("apps/web"),
+    ];
+    const unknown = docs.flatMap((path) =>
+      [...readFileSync(join(REPO, path), "utf8").matchAll(/`(admin_[a-z_]+)`/g)]
+        .map((match) => match[1] as string)
+        .filter((name) => !tools.has(name) && !NOT_TOOLS.has(name))
+        .map((name) => `${path}: ${name}`)
+    );
+    expect(
+      unknown,
+      "a doc names an admin MCP tool that does not exist"
+    ).toEqual([]);
   });
 });
