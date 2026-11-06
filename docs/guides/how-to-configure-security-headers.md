@@ -171,6 +171,19 @@ To check a deployed environment by hand:
 curl -sI https://<your-app>/ | grep -i -E 'content-security|strict-transport|x-frame|x-content|referrer|permissions|cross-origin'
 ```
 
+## Edge-injected Web Analytics
+
+Cloudflare can inject its Web Analytics (RUM) beacon into HTML at the edge, after the Worker answered: a zone or site with "automatic setup" adds `<script src="https://static.cloudflareinsights.com/beacon.min.js/…">` to every page, whatever `WEB_ANALYTICS` says. The page policy allows that script only with `WEB_ANALYTICS=cloudflare`, so with `WEB_ANALYTICS=none` and automatic setup on, every page view reports a blocked `script-src-elem` from `static.cloudflareinsights.com` and the beacon does not run. Pick one, per environment:
+
+- Keep analytics off: turn automatic setup off for the hostname (Cloudflare dashboard, Web Analytics, the site, Manage site), so nothing is injected.
+- Keep analytics on: set `WEB_ANALYTICS=cloudflare` with the site's token (`bun run setup:analytics --env <env>`) and turn automatic setup off, so the app loads the beacon itself (and skips it on pages whose URL carries a token).
+
+Check what the edge serves with a browser user agent, since the injection only happens for browsers:
+
+```bash
+curl -s -H 'Accept: text/html' -H 'User-Agent: Mozilla/5.0' https://<your-app>/ | grep -o 'cloudflareinsights[^"]*'
+```
+
 ## Troubleshooting
 
 - **"Refused to load the script … because it violates … script-src"** for a new library or service: [add the third party](#adding-a-third-party). For the app's own code: it is not under `/_astro/` or is an un-hashed inline script ([inline scripts](#inline-scripts-and-styles)).
