@@ -1,0 +1,52 @@
+$ curl -sI http://localhost:4519/docs/
+HTTP/1.1 200 OK
+cache-control: public, max-age=0, must-revalidate
+content-type: text/html; charset=utf-8
+etag: "7ae864267a4089355c875eecefa313e8"
+
+$ curl -sI http://localhost:4519/docs/guides/how-to-setup-d1/
+HTTP/1.1 200 OK
+cache-control: public, max-age=0, must-revalidate
+content-type: text/html; charset=utf-8
+etag: "ea3e1d35bc059a653cd0275966001ec6"
+
+$ curl -sI http://localhost:4519/_astro/DocsSearch.astro_astro_type_script_index_0_lang.D1JLOc68.js
+HTTP/1.1 200 OK
+cache-control: public, max-age=31536000, immutable
+content-type: text/javascript; charset=utf-8
+etag: "eece5dd45a850dd61a0bedd86f4923de"
+
+$ curl -sI http://localhost:4519/pagefind/pagefind.js
+HTTP/1.1 200 OK
+cache-control: public, max-age=300
+content-type: text/javascript; charset=utf-8
+etag: "a546b2a8e7f4a83f0fa33ea05f6d13f8"
+
+$ curl -sI http://localhost:4519/pagefind/pagefind-entry.json
+HTTP/1.1 200 OK
+cache-control: public, max-age=300
+content-type: application/json
+etag: "8edd90ccd3d0b14aa6e11906999f0bf6"
+
+$ curl -sI http://localhost:4519/pagefind/wasm.en.pagefind
+HTTP/1.1 200 OK
+cache-control: public, max-age=300
+etag: "0680352e8d9481c4cde86baaa82071ad"
+
+$ curl -sI http://localhost:4519/pagefind/fragment/en_1845a81.pf_fragment
+HTTP/1.1 200 OK
+cache-control: public, max-age=31536000, immutable
+etag: "a8cb1abeface038e2ca57dbc24154f53"
+
+$ curl -sI http://localhost:4519/robots.txt
+HTTP/1.1 200 OK
+cache-control: public, max-age=0, must-revalidate
+content-type: text/plain; charset=utf-8
+etag: "988779df28c701481999b838ac0121b9"
+
+$ curl -sI http://localhost:4519/sitemap-index.xml
+HTTP/1.1 200 OK
+cache-control: public, max-age=0, must-revalidate
+content-type: application/xml
+etag: "8d55a5570e31e4e57de07189ba9cbe7e"
+
