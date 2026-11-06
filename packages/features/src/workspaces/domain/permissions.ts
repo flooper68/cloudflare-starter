@@ -26,6 +26,10 @@ export const ACTIONS = {
   "files.read": ["owner", "member"],
   "files.write": ["owner", "member"],
   "files.delete": ["owner", "member"],
+  // The placeholder Notes app: every member writes, comments and trashes notes.
+  "notes.read": ["owner", "member"],
+  "notes.write": ["owner", "member"],
+  "notes.delete": ["owner", "member"],
   "trash.read": ["owner", "member"],
   "trash.restore": ["owner", "member"],
   "trash.purge": ["owner"],

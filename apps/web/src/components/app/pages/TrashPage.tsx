@@ -68,8 +68,8 @@ export function TrashPage() {
         </p>
         <h2 className="text-3xl font-semibold text-fg">Trash</h2>
         <p className="max-w-3xl text-sm leading-6 text-fg-muted">
-          Deleted files stay here for 30 days, then they are deleted for good.
-          Members restore them; owners can delete them sooner.
+          Deleted files and notes stay here for 30 days, then they are deleted
+          for good. Members restore them; owners can delete them sooner.
         </p>
       </div>
 
@@ -85,7 +85,7 @@ export function TrashPage() {
               variant="compact"
               icon={<Trash2 />}
               title="Trash is empty"
-              description="Files you delete stay here for 30 days before they are deleted for good."
+              description="Files and notes you delete stay here for 30 days before they are deleted for good."
             />
           }
         >

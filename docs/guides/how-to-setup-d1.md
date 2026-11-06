@@ -33,7 +33,7 @@ bunx wrangler d1 execute DB --local --command "select id, email from user"
 2. Generate the migration: `bun run db:generate`. Commit the `.sql` file and the `meta/` snapshot together.
 3. Apply locally: `bun run db:migrate:local`.
 
-In the starter itself (before a project built from it deploys for real), the whole schema stays in one `0000_init`, regenerated in place instead of adding numbered migrations: in `packages/features`, delete `migrations/` and run `bunx drizzle-kit generate --name init`. Wrangler records applied migrations by name, so a database that already applied an older `0000_init` skips the new one and lacks the new tables: locally, delete `apps/web/.wrangler/state/v3/d1` and run `bun run db:migrate:local`; a remote database created from an older `0000_init` is recreated, or the new `CREATE` statements are applied to it by hand. A project starts numbered migrations (the steps above) from its first real deploy.
+The starter itself is deployed (production at <https://starter.flooper.me>), so it adds numbered migrations like any project: `0000_init` is the schema of the first deploy and is never edited; `0001_notes` (the placeholder Notes app) is the first additive one. The deploy workflow applies them before the new code. Locally, `bun run db:migrate:local` applies whatever is new; if a local database applied an older, since-regenerated `0000_init`, delete `apps/web/.wrangler/state/v3/d1` and migrate again.
 
 Rules that keep deploys safe (SQLite has limited `ALTER TABLE` and D1 has no migration lock):
 

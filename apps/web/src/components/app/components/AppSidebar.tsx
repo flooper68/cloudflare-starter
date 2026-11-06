@@ -20,7 +20,9 @@ import {
   ListTodo,
   LogOut,
   Mail,
+  NotebookPen,
   ShieldCheck,
+  SquareKanban,
   Trash2,
   Upload,
   UserRound,
@@ -45,7 +47,7 @@ async function signOut() {
 /**
  * The app's navigation: workspace menu (switch and create in multi mode), pages, demos,
  * and the signed-in user. "Members" shows in modes with shared workspaces; "Trash" is the
- * active workspace's deleted files.
+ * active workspace's deleted files and notes.
  */
 export function AppSidebar() {
   const { pathname } = useLocation();
@@ -130,6 +132,23 @@ export function AppSidebar() {
             active={pathname.startsWith("/app/settings")}
           >
             <Link to="/app/settings/account">Settings</Link>
+          </SidebarItem>
+        </SidebarSection>
+        {/* Placeholder apps: where a project's own product goes. */}
+        <SidebarSection label="Product · placeholder">
+          <SidebarItem
+            asChild
+            icon={<NotebookPen />}
+            active={pathname.startsWith("/app/notes")}
+          >
+            <Link to="/app/notes">Notes</Link>
+          </SidebarItem>
+          <SidebarItem
+            asChild
+            icon={<SquareKanban />}
+            active={pathname === "/app/tasks"}
+          >
+            <Link to="/app/tasks">Tasks</Link>
           </SidebarItem>
         </SidebarSection>
         {admin ? (

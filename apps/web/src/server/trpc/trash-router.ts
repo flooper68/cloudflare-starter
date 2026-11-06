@@ -11,7 +11,7 @@ import {
 import { router, workspaceProcedure } from "./init";
 
 /**
- * The workspace's trash: every trashable entity of TRASH_CATALOG (files today). Moving
+ * The workspace's trash: every trashable entity of TRASH_CATALOG (files and notes). Moving
  * something to the trash is its own feature's procedure (`storage.deleteFile`); the
  * daily `trash.purge-expired` job deletes what is past retention.
  */

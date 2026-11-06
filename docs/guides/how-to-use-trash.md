@@ -38,16 +38,16 @@ The trash list orders items by `deletedAt` (newest first), then type and id; the
 
 ## How it is built
 
-| Piece             | Where                                                                                                                                                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Columns and index | `deleted_at` (timestamp ms, null while live), `deleted_by` (FK `user`, `ON DELETE SET NULL`), `INDEX (workspace_id, deleted_at) WHERE deleted_at IS NOT NULL`                   |
-| Scope helpers     | `liveIn(table, actor)` and `trashedIn(table, actor)` in `packages/features/src/trash/`: workspace filter plus `deleted_at IS NULL` / `IS NOT NULL`                              |
-| Contract          | `TrashableEntity` (`trash/define-trashable-entity.ts`): `type`, `table`, `retentionDays`, `permission`, `summarize(row)`, `checkRestore(deps, actor, rows)`, `purge(deps, ids)` |
-| Generic use cases | `listTrash`, `restoreItems`, `purgeItems`, `emptyTrash`, `purgeExpiredTrash` (`trash/`)                                                                                         |
-| Catalog           | `TRASH_CATALOG` in `packages/features/src/trash-catalog.ts` (today `fileTrash` from `files/trash.ts`); the trash feature never imports the features it holds                    |
-| Moving to trash   | the owning feature's use case (`files/trash-file.ts`, `trashFile`), which records `trash.item_trashed`                                                                          |
-| Purge job         | cron entry and job `trash.purge-expired` on the daily schedule ([how-to-add-background-jobs.md](how-to-add-background-jobs.md))                                                 |
-| Enforcement       | `test/architecture/trash.test.ts`                                                                                                                                               |
+| Piece             | Where                                                                                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Columns and index | `deleted_at` (timestamp ms, null while live), `deleted_by` (FK `user`, `ON DELETE SET NULL`), `INDEX (workspace_id, deleted_at) WHERE deleted_at IS NOT NULL`                                      |
+| Scope helpers     | `liveIn(table, actor)` and `trashedIn(table, actor)` in `packages/features/src/trash/`: workspace filter plus `deleted_at IS NULL` / `IS NOT NULL`                                                 |
+| Contract          | `TrashableEntity` (`trash/define-trashable-entity.ts`): `type`, `table`, `retentionDays`, `permission`, `summarize(row)`, `checkRestore(deps, actor, rows)`, `purge(deps, ids)`                    |
+| Generic use cases | `listTrash`, `restoreItems`, `purgeItems`, `emptyTrash`, `purgeExpiredTrash` (`trash/`)                                                                                                            |
+| Catalog           | `TRASH_CATALOG` in `packages/features/src/trash-catalog.ts` (today `fileTrash` from `files/trash.ts` and `noteTrash` from `notes/trash.ts`); the trash feature never imports the features it holds |
+| Moving to trash   | the owning feature's use case (`files/trash-file.ts`, `trashFile`), which records `trash.item_trashed`                                                                                             |
+| Purge job         | cron entry and job `trash.purge-expired` on the daily schedule ([how-to-add-background-jobs.md](how-to-add-background-jobs.md))                                                                    |
+| Enforcement       | `test/architecture/trash.test.ts`                                                                                                                                                                  |
 
 **Why columns and not a trash table or views.** A generic trash table holding JSON snapshots would need every restore to re-insert rows that other rows may reference, lose foreign keys and indexes while trashed, and keep two copies of a schema in step. SQL views (`files_live`) would need a view per table that Drizzle does not type as a table, and writes still have to go to the base table, so the filter would live in two places. Columns plus one helper per read keep the row, its foreign keys and its R2 object where they are, and the architecture test catches a read that forgets the filter.
 
@@ -64,7 +64,7 @@ const rows = await deps.db.query.files.findMany({
 });
 ```
 
-`test/architecture/trash.test.ts` fails when a feature file reads a table of `TRASH_CATALOG` (`db.query.<table>`, `.from(<table>)`, `<table>.workspaceId`) without `liveIn` or `trashedIn`, unless the file is in its `UNSCOPED_READS` list with a reason. Listed today: the post-upload reference check (`files/store-file.ts`), the storage reconciliation lookup (`files/find-referenced-file-keys.ts`), account erasure (`files/delete-workspace-files.ts`) and the storage metric (`files/measure-workspace-storage.ts`, see [Billing](#billing)).
+`test/architecture/trash.test.ts` fails when a feature file reads a table of `TRASH_CATALOG` (`db.query.<table>`, `.from(<table>)`, `<table>.workspaceId`) without `liveIn` or `trashedIn`, unless the file is in its `UNSCOPED_READS` list with a reason. Listed today: the post-upload reference check (`files/store-file.ts`), the storage reconciliation lookup (`files/find-referenced-file-keys.ts`), account erasure (`files/delete-workspace-files.ts`) the storage metric (`files/measure-workspace-storage.ts`, see [Billing](#billing)) and the notes metric (`notes/count-workspace-notes.ts`, which counts only live notes itself).
 
 **Unique columns.** A trashable table that needs a unique value (a slug, a name per workspace) makes it a partial unique index over live rows, so a trashed row does not block a new one: `uniqueIndex("projects_workspace_slug_idx").on(t.workspaceId, t.slug).where(sql\`${t.deletedAt} IS NULL\`)`. Restoring such a row can then collide with a live one: the entity's `checkRestore`throws a`conflict` DomainError for it.
 

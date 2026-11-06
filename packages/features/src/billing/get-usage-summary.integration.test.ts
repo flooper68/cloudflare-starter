@@ -33,6 +33,7 @@ describe("getUsageSummary", () => {
           limit: 100,
         },
         { metric: "seats", kind: "current", unit: "count", used: 1, limit: 3 },
+        { metric: "notes", kind: "current", unit: "count", used: 0, limit: 50 },
       ],
     });
   });
