@@ -1,7 +1,8 @@
 /**
  * The body of src/middleware.ts, kept here so API tests can run it without Astro: the
  * request context and x-request-id for every on-demand request, then the cookie session
- * and the /app guard.
+ * and the /app guard, and the security headers on every response it returns
+ * (server/security-headers.ts).
  */
 import {
   getSecurityState,
@@ -9,12 +10,23 @@ import {
   systemClock,
 } from "@cloudflare-starter/features";
 import type { APIContext } from "astro";
-import { buildRequiredConfig } from "@/lib/env";
+import { buildR2Feature, buildRequiredConfig } from "@/lib/env";
 import { AUTH_BASE_PATH, getAuth, MCP_PATH } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { isHealthPath } from "@/server/health";
-import { domainErrorResponse, withRequestContext } from "@/server/http";
+import {
+  domainErrorResponse,
+  withHeaders,
+  withRequestContext,
+} from "@/server/http";
+import { buildPlatform } from "@/server/platform";
+import {
+  CSP_REPORT_PATH,
+  presignedUploadOrigin,
+  type SecurityHeaderSettings,
+  securityHeadersFor,
+} from "@/server/security-headers";
 
 const PROTECTED_PREFIX = "/app";
 
@@ -31,7 +43,77 @@ export type MiddlewareContext = Pick<
   // The matched route template, the `http.route` of the request's span and metric.
   Partial<Pick<APIContext, "routePattern">>;
 
+export interface AppRequestOptions {
+  /** `astro dev` (import.meta.env.DEV): the page policy allows Vite's inline modules. */
+  readonly dev?: boolean;
+}
+
+const DEPLOYED_ENVS: readonly (string | undefined)[] = [
+  "develop",
+  "staging",
+  "production",
+];
+
+/** The settings the security headers depend on, read once per env object. */
+const headerSettings = new WeakMap<
+  AppEnv,
+  Omit<SecurityHeaderSettings, "dev">
+>();
+
+function securitySettings(env: AppEnv, dev: boolean): SecurityHeaderSettings {
+  let settings = headerSettings.get(env);
+  if (!settings) {
+    const deployed = DEPLOYED_ENVS.includes(env.APP_ENV);
+    let platform: ReturnType<typeof buildPlatform>;
+    try {
+      platform = buildPlatform(env);
+    } catch {
+      // Misconfigured: the strictest page policy, no third parties. Not cached, so a
+      // fixed setting takes effect with the next request.
+      return {
+        cspMode: null,
+        deployed,
+        dev,
+        turnstile: false,
+        webAnalytics: false,
+        uploadOrigin: null,
+      };
+    }
+    const r2 = buildR2Feature(env);
+    settings = {
+      cspMode: platform.cspMode,
+      deployed,
+      turnstile: platform.turnstile !== null,
+      webAnalytics: platform.webAnalytics !== null,
+      uploadOrigin: r2.value ? presignedUploadOrigin(r2.value) : null,
+    };
+    headerSettings.set(env, settings);
+  }
+  return { ...settings, dev };
+}
+
+/**
+ * Serves one on-demand request through the app's middleware and adds the security
+ * headers to whatever it answers: pages, redirects, API, /mcp, auth, health and errors.
+ */
 export async function handleAppRequest(
+  context: MiddlewareContext,
+  env: AppEnv,
+  next: () => Promise<Response>,
+  options: AppRequestOptions = {}
+): Promise<Response> {
+  const response = await routeAppRequest(context, env, next);
+  return withHeaders(
+    response,
+    securityHeadersFor(
+      context.request,
+      response,
+      securitySettings(env, options.dev ?? false)
+    )
+  );
+}
+
+async function routeAppRequest(
   context: MiddlewareContext,
   env: AppEnv,
   next: () => Promise<Response>
@@ -69,13 +151,15 @@ export async function handleAppRequest(
     async (scope) => {
       context.locals.requestContext = scope.context;
 
-      // The auth handler, OAuth discovery and /mcp (bearer tokens, not cookies) never need
-      // the cookie session. /mcp sets the user on its context itself.
+      // The auth handler, OAuth discovery, /mcp (bearer tokens, not cookies) and the
+      // anonymous CSP reports never need the cookie session. /mcp sets the user on its
+      // context itself.
       const { pathname } = context.url;
       if (
         pathname.startsWith(AUTH_BASE_PATH) ||
         pathname.startsWith("/.well-known/") ||
-        pathname === MCP_PATH
+        pathname === MCP_PATH ||
+        pathname === CSP_REPORT_PATH
       ) {
         return next();
       }

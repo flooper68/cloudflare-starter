@@ -1,4 +1,4 @@
-import { expect, type Route, test } from "@playwright/test";
+import { expect, type Route, test } from "./fixtures";
 import { open, readAdminAccounts, signIn } from "./helpers";
 
 // Independent browser client: unrelated sign-in journeys must not consume this spec's quota.
