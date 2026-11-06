@@ -1,16 +1,27 @@
 /**
- * `bun run setup:cloudflare [--env develop|staging|production|all] [--jurisdiction eu] [--dry-run]`
+ * `bun run setup:cloudflare [--env develop|staging|production|all] [--jurisdiction eu] [--namespace-base <n>] [--dry-run]`
  *
  * Creates the web Worker's Cloudflare resources for an environment, named as in
  * apps/web/wrangler.jsonc: the D1 database (its id is written back into the config),
- * the R2 bucket, the queue and its dead-letter queue (with the maximum message retention,
- * 14 days, set again on every run). The Analytics Engine metrics dataset needs no step (the
- * first write creates it); it is listed. Re-runnable: existing resources are kept. Needs
- * `bunx wrangler login` (or CLOUDFLARE_API_TOKEN) first.
+ * the R2 bucket (with `--jurisdiction`, also written into its binding), the queue and its
+ * dead-letter queue (with the maximum message retention, 14 days, set again on every run).
+ * The Analytics Engine metrics dataset needs no step (the first write creates it); it is
+ * listed. Workers Rate Limiting needs no resource, but its namespace_ids are account-wide:
+ * the script gives the environment ids from the project's own block when they are still
+ * the starter's (cloudflare-plan.ts; `--namespace-base` picks the block). Re-runnable:
+ * existing resources are kept. Needs `bunx wrangler login` (or CLOUDFLARE_API_TOKEN) first.
  */
 import { parseArgs } from "node:util";
 
 import {
+  bucketJurisdictionPlan,
+  describeIds,
+  planNamespaceIds,
+  R2_JURISDICTIONS,
+  type RateLimitBinding,
+} from "./cloudflare-plan";
+import {
+  ENVIRONMENTS,
   type Environment,
   envBlock,
   envPath,
@@ -27,13 +38,36 @@ const { values } = parseArgs({
   options: {
     env: { type: "string" },
     jurisdiction: { type: "string" },
+    "namespace-base": { type: "string" },
     "dry-run": { type: "boolean", default: false },
   },
 });
 const dryRun = values["dry-run"] ?? false;
+if (
+  values.jurisdiction &&
+  !(R2_JURISDICTIONS as readonly string[]).includes(values.jurisdiction)
+) {
+  fail(
+    `Unknown jurisdiction "${values.jurisdiction}" (${R2_JURISDICTIONS.join(" | ")})`
+  );
+}
 const jurisdiction = values.jurisdiction
   ? ["--jurisdiction", values.jurisdiction]
   : [];
+const namespaceBase =
+  values["namespace-base"] === undefined
+    ? undefined
+    : Number(values["namespace-base"]);
+if (
+  namespaceBase !== undefined &&
+  !(
+    Number.isSafeInteger(namespaceBase) &&
+    namespaceBase > 0 &&
+    namespaceBase + 1000 < 2 ** 31
+  )
+) {
+  fail("--namespace-base must be a positive integer below 2147482647");
+}
 
 interface D1Entry {
   readonly database_name: string;
@@ -77,17 +111,94 @@ function setupD1(env: Environment, entry: D1Entry) {
   }
 }
 
-function setupBucket(name: string) {
+interface R2Entry {
+  readonly bucket_name: string;
+  readonly jurisdiction?: string;
+}
+
+function setupBucket(env: Environment, index: number, entry: R2Entry) {
+  const name = entry.bucket_name;
   console.log(`R2 ${name}`);
-  if (!dryRun && wrangler(["r2", "bucket", "info", name]).ok) {
+  const plan = bucketJurisdictionPlan(entry, values.jurisdiction);
+  if (plan.action === "conflict") fail(`${name}: ${plan.message}`);
+  // The bucket's own jurisdiction: a jurisdictional bucket is invisible without it.
+  const where =
+    (plan.action === "write" ? plan.jurisdiction : undefined) ??
+    entry.jurisdiction;
+  const scope = where ? ["--jurisdiction", where] : [];
+  if (!dryRun && wrangler(["r2", "bucket", "info", name, ...scope]).ok) {
     console.log("  = exists");
+  } else {
+    const created = wrangler(["r2", "bucket", "create", name, ...scope], {
+      dryRun,
+    });
+    if (!created.ok) fail(created.stderr || created.stdout);
+    if (!dryRun) console.log("  + created");
+  }
+  if (plan.action === "write") {
+    setWranglerValue(
+      envPath(env, "r2_buckets", index, "jurisdiction"),
+      plan.jurisdiction,
+      dryRun
+    );
+    if (!dryRun)
+      console.log(
+        `  ✓ jurisdiction "${plan.jurisdiction}" written to wrangler.jsonc`
+      );
+  }
+}
+
+/**
+ * namespace_ids are account-wide: two Workers whose bindings share an id share counters.
+ * Keeps the environment's ids when they are the project's own, else writes ids from the
+ * project's block (cloudflare-plan.ts).
+ */
+function setupRateLimits(env: Environment) {
+  const current = readWranglerConfig();
+  const bindings =
+    (envBlock(current, env).ratelimits as RateLimitBinding[] | undefined) ?? [];
+  if (bindings.length === 0) return;
+  const otherIds = ENVIRONMENTS.filter((other) => other !== env).flatMap(
+    (other) =>
+      (
+        (envBlock(current, other).ratelimits as
+          | RateLimitBinding[]
+          | undefined) ?? []
+      ).map((binding) => binding.namespace_id ?? "")
+  );
+  const plan = planNamespaceIds({
+    workerName: String(current.name ?? ""),
+    env,
+    bindings,
+    otherIds,
+    base: namespaceBase,
+    force: namespaceBase !== undefined,
+  });
+  const ids = plan.ids.map((entry) => entry.id);
+  console.log(`Rate limiting namespaces (${bindings.length} bindings)`);
+  if (plan.action === "keep") {
+    console.log(
+      `  = ${describeIds(ids)} kept (must be unused by every other Worker in the account)`
+    );
     return;
   }
-  const created = wrangler(["r2", "bucket", "create", name, ...jurisdiction], {
-    dryRun,
+  console.log(`  ~ ${plan.reasons.join("; ")}`);
+  if (ids.some((id) => otherIds.includes(id)))
+    fail(
+      `the new ids ${describeIds(ids)} collide with another environment: pick a block with --namespace-base`
+    );
+  plan.ids.forEach((entry, index) => {
+    if (bindings[index]?.namespace_id === entry.id) return;
+    setWranglerValue(
+      envPath(env, "ratelimits", index, "namespace_id"),
+      entry.id,
+      dryRun
+    );
   });
-  if (!created.ok) fail(created.stderr || created.stdout);
-  if (!dryRun) console.log("  + created");
+  if (!dryRun)
+    console.log(
+      `  ✓ namespace_ids ${describeIds(ids)} written to wrangler.jsonc`
+    );
 }
 
 function setupQueue(queue: PlannedQueue) {
@@ -136,16 +247,17 @@ for (const env of parseEnvironments(values.env)) {
   for (const entry of (block.d1_databases as D1Entry[] | undefined) ?? []) {
     setupD1(env, entry);
   }
-  for (const bucket of (block.r2_buckets as
-    | { bucket_name: string }[]
-    | undefined) ?? []) {
-    setupBucket(bucket.bucket_name);
-  }
+  ((block.r2_buckets as R2Entry[] | undefined) ?? []).forEach(
+    (bucket, index) => {
+      setupBucket(env, index, bucket);
+    }
+  );
   for (const queue of queuePlan(block as Parameters<typeof queuePlan>[0])) {
     setupQueue(queue);
   }
 
-  // Workers Rate Limiting needs no resource: the namespace_id in wrangler.jsonc is enough.
+  // Workers Rate Limiting needs no resource, only account-wide unique namespace_ids.
+  setupRateLimits(env);
   const vars = (block.vars as Record<string, string> | undefined) ?? {};
   if (vars.TURNSTILE === "on") {
     console.log(
