@@ -1,4 +1,4 @@
-# How To Setup Email (Cloudflare Email Service)
+# How to set up email (Cloudflare Email Service)
 
 The web Worker sends mail through [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) with the `EMAIL` `send_email` binding. There is no API key: the binding is the permission. Callers use the Email port, `EmailService` in [packages/features/src/platform/ports/email.ts](../../packages/features/src/platform/ports/email.ts) (`enabled`, `send({ to, subject, text, html, headers? })`), so another provider is a new adapter, not a change to callers. Adapters: `cloudflare` (the binding), `noop` (email off) and `memory` (tests); each passes the port's contract suite, which also refuses header injection (a line break in a subject or header value) and headers the adapter sets itself (From, To, Subject).
 

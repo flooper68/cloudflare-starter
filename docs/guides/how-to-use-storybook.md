@@ -1,4 +1,4 @@
-# How To Use Storybook
+# How to use Storybook
 
 Storybook documents the component library (`packages/ui`) and is the place to build and review
 components in isolation, in both themes.
@@ -11,6 +11,8 @@ components in isolation, in both themes.
   ../web/public/_storybook` first, and Astro ships `public/` as static assets, so the
   Worker's static-asset handling serves it without running app code. The folder is
   gitignored.
+- Linked from the header of the public pages (docs site, 404), next to the repository
+  ([how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md)).
 
 ## Develop
 

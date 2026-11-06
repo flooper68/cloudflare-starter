@@ -3,6 +3,7 @@
 @import "./styles/tokens.css";
 @import "./brand/brand.css";
 @import "./styles/theme.css";
+@import "./styles/prose.css";
 
 /* Scan this package for class names too (apps import it from node_modules). */
 @source "./";

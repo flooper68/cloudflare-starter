@@ -203,9 +203,14 @@ Mail: **[production] Starter kit test email**.
 
 ## Landing, docs and search
 
+Guide: [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md).
+
 1. `/` signed out: the hero, the demo cards and the Sign in / Sign up links.
 2. `/_storybook/` opens the component library.
-3. Docs and search: pending the docs PR; until it ships, N/A.
+3. `/docs/`: the docs index with the navigation; open a guide from the navigation, follow a link in its text to another doc (it opens on the site, at the heading), "On this page" jumps to a section, "Edit this page on GitHub" opens the file on GitHub.
+4. The theme switch in the docs header changes the theme and keeps it after a reload.
+5. `/docs/no-such-page/`: the 404 page with "Go home" and "Read the docs".
+6. Search: pending the search PR; until it ships, N/A.
 
 Expected: no console errors (DevTools); signed in, `/` redirects to the dashboard.
 Mail: none.

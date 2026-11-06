@@ -1,4 +1,4 @@
-# How to Use the Admin Portal
+# How to use the admin portal
 
 The admin portal lets platform admins run the app: find and inspect users, suspend and reinstate them, sign them out, reset their passwords, change their platform role, delete accounts, impersonate a user to see what they see, rescue and delete workspaces, read the audit log, and see an overview and the deployment's settings. It is served at `/admin` and as the `admin_*` MCP tools. Use when you turn the portal on or off, make someone an admin, act on a user or workspace, add an admin page, or change what an admin may do.
 

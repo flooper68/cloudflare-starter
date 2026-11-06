@@ -1,4 +1,4 @@
-# How To Setup Authentication (Better Auth)
+# How to set up authentication (Better Auth)
 
 The web app signs users in with [Better Auth](https://www.better-auth.com). Users, sessions and accounts live in the same D1 database as the app data ([how-to-setup-d1.md](./how-to-setup-d1.md)), so there is no external auth provider to run. Better Auth is also the OAuth server that MCP clients such as Claude sign in through ([how-to-setup-mcp.md](./how-to-setup-mcp.md)).
 

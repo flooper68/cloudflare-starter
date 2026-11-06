@@ -21,8 +21,10 @@ import {
 src/
 ├── brand/        brand.tsx (name, logo) + brand.css (accent, fonts, radius): edit per project
 ├── styles/       tokens.css (neutrals, status, elevation; dark + light) + theme.css (Tailwind names)
+│                 + prose.css (Shiki code colours per theme)
 ├── lib/          cn() and shared class recipes (controls, menus, overlays, focus)
 ├── components/   one component per file, stories next to it; patterns/ for app-level pieces
+│                 (site group: DocsNav, TableOfContents, Prose for the public docs site)
 ├── exports/      barrels per group, re-exported by index.ts
 └── stories/      foundations (brand, colours, type, elevation) and the intro page
 ```

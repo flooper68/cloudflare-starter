@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
+    "@astrojs/markdown-satteri": "0.4.5",
     "@axe-core/playwright": "4.14.0",
     "@better-auth/utils": "0.5.1",
     "@cloudflare/vitest-plugin": "1.6.0",

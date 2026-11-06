@@ -23,6 +23,11 @@ Every on-demand request gets a request context in [src/middleware.ts](src/middle
 
 ## Route layout
 
+Public, prerendered at build time (no session; [how-to-publish-docs-and-landing.md](../../docs/guides/how-to-publish-docs-and-landing.md)):
+
+- `/docs/*` (the docs site, from the repository's Markdown: `src/content.config.ts`, `src/docs/`, `src/pages/docs/[...slug].astro`)
+- the 404 page for unknown paths (`src/pages/404.astro`)
+
 Public, SSR:
 
 - `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/two-factor`, `/consent`
