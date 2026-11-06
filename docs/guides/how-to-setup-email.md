@@ -38,7 +38,7 @@ bun run setup:email --domain example.com --from noreply@example.com --env produc
 bun run setup:email --domain example.com --from noreply@example.com --env production
 ```
 
-The script runs `wrangler email sending enable`, prints the DNS records (SPF, DKIM, bounce), and writes into `apps/web/wrangler.jsonc` for that environment:
+The script checks `wrangler email sending list <domain>` and runs `wrangler email sending enable` only when the domain is not onboarded yet (an already-enabled domain, including Wrangler's "Subdomain already exists [code 2040]", counts as done, so the script can be re-run for another environment or sender), prints the DNS records (SPF, DKIM, bounce), and writes into `apps/web/wrangler.jsonc` for that environment:
 
 - `vars.EMAIL_FROM` (and `EMAIL_FROM_NAME` with `--name`)
 - `send_email: [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@example.com"] }]`

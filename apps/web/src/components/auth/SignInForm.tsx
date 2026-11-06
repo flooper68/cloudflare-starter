@@ -102,7 +102,7 @@ export function SignInForm({
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
         <Logo className="mb-3" />
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle level={1}>Sign in</CardTitle>
         <p className="text-sm text-fg-muted">
           {emailPassword
             ? "Sign in with your email and password to enter the app."
@@ -153,7 +153,7 @@ export function SignInForm({
               <div className="flex items-center justify-between gap-4">
                 <Label htmlFor="password">Password</Label>
                 <a
-                  className="text-xs font-medium text-accent underline underline-offset-4"
+                  className="text-xs font-medium text-accent-text underline underline-offset-4"
                   href="/forgot-password"
                 >
                   Forgot password?
@@ -209,7 +209,7 @@ export function SignInForm({
         <p className="text-sm text-fg-muted">
           Don&apos;t have an account?{" "}
           <a
-            className="font-medium text-accent underline underline-offset-4"
+            className="font-medium text-accent-text underline underline-offset-4"
             href={`/sign-up${search}`}
           >
             Sign up

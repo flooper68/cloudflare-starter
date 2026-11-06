@@ -34,7 +34,7 @@ export function HomePage({ signedIn }: HomePageProps) {
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-12 px-6 py-10">
       <header className="rounded-xl border border-line bg-surface p-8 shadow-raised backdrop-blur">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent-text">
           Personal Cloudflare Starter
         </p>
         <div className="mt-4 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
@@ -65,12 +65,12 @@ export function HomePage({ signedIn }: HomePageProps) {
       <section className="grid gap-5 md:grid-cols-3">
         {demos.map((demo) => (
           <Card key={demo.title} className="flex flex-col gap-4">
-            <CardTitle>{demo.title}</CardTitle>
+            <CardTitle level={2}>{demo.title}</CardTitle>
             <CardDescription className="grow leading-6">
               {demo.description}
             </CardDescription>
             <a
-              className="text-sm font-semibold text-accent hover:text-accent-hover"
+              className="text-sm font-semibold text-accent-text hover:text-accent-hover"
               href={signedIn ? demo.href : "/sign-in"}
             >
               {signedIn ? "Open demo" : "Sign in to use"}
