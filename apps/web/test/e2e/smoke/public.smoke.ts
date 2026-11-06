@@ -164,18 +164,55 @@ test.describe("security headers", () => {
 });
 
 test.describe("docs", () => {
-  // TODO(docs PR, not yet opened): the public docs and their search. Replace the fixme
-  // with: /docs answers 200 with a heading, and a search for "workspace" lists a result.
-  test.fixme(
-    "/docs renders and search finds a page (pending: docs PR)",
+  test(
+    "/docs/ renders the index with its navigation",
     smoke,
-    () => {}
+    async ({ page }) => {
+      const response = await page.goto("/docs/");
+      expect(response?.status()).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Docs");
+      await expect(
+        page
+          .getByRole("navigation", { name: "Docs", exact: true })
+          .getByRole("link", { name: "Set up the D1 database" })
+      ).toBeVisible();
+    }
   );
+
+  test("search finds a page", smoke, async ({ page }) => {
+    await page.goto("/docs/");
+    await page.getByRole("button", { name: "Search docs" }).click();
+    await page.getByRole("combobox", { name: "Search docs" }).fill("workspace");
+    await expect(
+      page.getByRole("listbox", { name: "Results" }).getByRole("option").first()
+    ).toBeVisible();
+  });
+
+  test("robots.txt answers with crawler rules", smoke, async ({ request }) => {
+    const response = await request.get("/robots.txt");
+    expect(response.status()).toBe(200);
+    const body = await response.text();
+    expect(body).toMatch(/^User-agent: \*/);
+    // `--env <name>` (scripts/smoke.ts) says which rules to expect: only production
+    // lets crawlers in (src/pages/robots.txt.ts). With a bare --base-url, either.
+    if (process.env.SMOKE_ENV === "production") {
+      expect(body).toContain("Disallow: /app\n");
+      expect(body).not.toMatch(/^Disallow: \/$/m);
+    } else if (process.env.SMOKE_ENV) {
+      expect(body).toMatch(/^Disallow: \/$/m);
+    }
+  });
 });
 
 test.describe("accessibility", () => {
   for (const colorScheme of ["dark", "light"] as const) {
-    for (const path of ["/", "/sign-in", "/sign-up", "/forgot-password"]) {
+    for (const path of [
+      "/",
+      "/docs/",
+      "/sign-in",
+      "/sign-up",
+      "/forgot-password",
+    ]) {
       test(
         `${path} passes axe in the ${colorScheme} theme`,
         smoke,

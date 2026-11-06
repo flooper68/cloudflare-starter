@@ -96,7 +96,7 @@ jobs:
   # No Cloudflare account: D1, R2, queues and email are Miniflare's local implementations.
   e2e:
     runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
@@ -110,6 +110,11 @@ jobs:
         # ci-reap stops a workerd or astro it leaves behind, which would keep the step open.
         timeout-minutes: 10
         run: bun scripts/ci-reap.ts bun run test:e2e
+      # The prerendered pages as deployed: astro build + astro preview (search, axe on the
+      # public pages in both themes). Playwright builds and serves it (E2E_STATIC=1).
+      - name: Static pages
+        timeout-minutes: 8
+        run: bun scripts/ci-reap.ts bun run test:e2e:static
       - name: Upload the Playwright report
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -128,6 +133,9 @@ jobs:
       - uses: ./.github/actions/setup
       # Web app and Storybook production builds.
       - run: bun run build
+      # First-load JS per prerendered page and Pagefind file sizes against the budgets
+      # in docs/architecture/performance.md#targets (scripts/check-bundle-budget.ts).
+      - run: bun run budget
 
   # Builds and packages the web Worker for each environment without deploying: catches
   # broken wrangler.jsonc entries, missing bindings and bundling errors. Needs no

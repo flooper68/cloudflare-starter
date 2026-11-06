@@ -1,6 +1,6 @@
 # Performance
 
-The approach a project built from this starter takes to performance: which targets it defines, which checks exist and where each fits next to the [test layers](testing.md#layers), how the Cloudflare platform shapes the design, and how a regression is handled. The starter itself ships no performance tooling, no targets and no budgets; a project adopts this approach, records its targets below and implements the checks it needs, cheapest first. Use when you define performance targets, add a performance check, review a change that touches queries, bundles or request paths, or handle a regression.
+The approach a project built from this starter takes to performance: which targets it defines, which checks exist and where each fits next to the [test layers](testing.md#layers), how the Cloudflare platform shapes the design, and how a regression is handled. The starter ships one check, the bundle budget of its public pages (`bun run budget`); a project adopts this approach, records its targets below and implements the checks it needs, cheapest first. Use when you define performance targets, add a performance check, review a change that touches queries, bundles or request paths, or handle a regression.
 
 ## Where to start
 
@@ -24,9 +24,10 @@ Each project defines user-facing targets and records them in this section (repla
 
 Project targets:
 
-| Target                    | Threshold | Conditions | Checked by |
-| ------------------------- | --------- | ---------- | ---------- |
-| _none set in the starter_ |           |            |            |
+| Target                                                                                   | Threshold                | Conditions                                                                    | Checked by                                                          |
+| ---------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| First-load JS per prerendered public page (`/docs/*`, the 404, and `/` once prerendered) | at most 50 KB gzip       | the page's scripts and their static imports; lazily imported modules excluded | `bun run budget` (`scripts/check-bundle-budget.ts`), CI `build` job |
+| Pagefind index and client files (docs search)                                            | at most 100 KB gzip each | each file the search dialog may load lazily                                   | `bun run budget`, CI `build` job                                    |
 
 Targets are stated at a data volume, because most regressions on this stack come from queries that grow with the data. Server latency is a production percentile, never a local timing.
 
@@ -59,7 +60,7 @@ A query that only ever reads a small slice of a big table gets a **partial index
 
 ### Bundle budgets
 
-After `bun run build`, the client assets for each page are measured (gzip size) and compared with the budget in [Targets](#targets). The Worker bundle size is also bounded by Cloudflare's script size limit; `wrangler deploy --dry-run` reports it.
+After `bun run build`, the client assets for each page are measured (gzip size) and compared with the budget in [Targets](#targets). `bun run budget` does this for the prerendered pages in `apps/web/dist/client` (scripts, module preloads and their static imports) and for each Pagefind file; pages rendered on request (`/app`, sign-in) are not measured yet. The Worker bundle size is also bounded by Cloudflare's script size limit; `wrangler deploy --dry-run` reports it.
 
 ### Lab Web Vitals
 

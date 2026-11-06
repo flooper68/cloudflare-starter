@@ -1,0 +1,21 @@
+# Cache-Control of static assets (Workers static assets, _headers syntax). The Astro
+# Cloudflare adapter appends the /_astro/* rule (hashed files, immutable) at build time.
+# docs/guides/how-to-publish-docs-and-landing.md#caching
+
+# Prerendered pages: always revalidate, so a deploy shows at once (the ETag keeps it cheap).
+/docs/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Pagefind: index chunks and fragments are content-hashed, so they never change.
+/pagefind/*
+  Cache-Control: public, max-age=31536000, immutable
+# Files with fixed names (entry, client, worker, UI) change with a build: five minutes.
+/pagefind/pagefind.js
+  ! Cache-Control
+  Cache-Control: public, max-age=300
+/pagefind/pagefind-*
+  ! Cache-Control
+  Cache-Control: public, max-age=300
+/pagefind/wasm.*
+  ! Cache-Control
+  Cache-Control: public, max-age=300

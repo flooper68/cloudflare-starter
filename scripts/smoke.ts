@@ -23,12 +23,15 @@ import { deployedURL, parseSmokeArgs } from "./smoke-args";
 const argv = process.argv.slice(2);
 const envIndex = argv.indexOf("--env");
 let fromEnvironment: string | undefined;
+// The environment named with --env, for checks that differ by environment (robots.txt).
+let smokeEnvironment: string | undefined;
 if (envIndex !== -1) {
   const env = argv[envIndex + 1];
   if (!ENVIRONMENTS.includes(env as Environment)) {
     fail(`--env must be one of ${ENVIRONMENTS.join(", ")}`);
   }
   argv.splice(envIndex, 2);
+  smokeEnvironment = env;
   fromEnvironment = deployedURL(
     envBlock(readWranglerConfig(), env as Environment)
   );
@@ -55,7 +58,11 @@ const result = spawnSync(
   {
     cwd: WEB,
     stdio: "inherit",
-    env: { ...process.env, E2E_BASE_URL: args.baseURL },
+    env: {
+      ...process.env,
+      E2E_BASE_URL: args.baseURL,
+      ...(smokeEnvironment ? { SMOKE_ENV: smokeEnvironment } : {}),
+    },
   }
 );
 process.exit(result.status ?? 1);
