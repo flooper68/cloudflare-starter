@@ -1,0 +1,45 @@
+$ curl -si http://localhost:4683/health/live
+HTTP/1.1 200 OK
+Vary: Origin
+cache-control: no-store
+content-length: 17
+content-type: application/health+json
+ratelimit-policy: "health.ip";q=120;w=60
+traceparent: 00-a2f1901274934e6e95d3d68c2c05bab6-9f7604b4246e1d7f-01
+x-request-id: a2f1901274934e6e95d3d68c2c05bab6
+Date: Fri, 06 Nov 2026 19:39:55 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"status":"pass"}
+
+$ curl -si http://localhost:4683/health/ready
+HTTP/1.1 503 Service Unavailable
+Vary: Origin
+cache-control: no-store
+content-length: 1086
+content-type: application/health+json
+ratelimit-policy: "health.ip";q=120;w=60
+traceparent: 00-7b474ebc57ac4365942ca9b7fc07ccbf-be788b7f0aed05ca-01
+x-request-id: 7b474ebc57ac4365942ca9b7fc07ccbf
+Date: Fri, 06 Nov 2026 19:39:55 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"status":"fail","version":"1","releaseId":"b6098663-42e9-4bca-94a5-3384f74ae994","serviceId":"cloudflare-starter-web","description":"Readiness of cloudflare-starter-web","output":"1 of 7 checks failed","checks":{"d1:responseTime":[{"componentType":"datastore","status":"pass","time":"2026-11-06T19:39:55.538Z","observedValue":20,"observedUnit":"ms"}],"r2:responseTime":[{"componentType":"datastore","status":"pass","time":"2026-11-06T19:39:55.535Z","observedValue":17,"observedUnit":"ms"}],"queue:binding":[{"componentType":"component","status":"pass","time":"2026-11-06T19:39:55.521Z"}],"email:configuration":[{"componentType":"component","status":"fail","time":"2026-11-06T19:39:55.521Z","output":"not configured"}],"settings:configuration":[{"componentType":"system","status":"pass","time":"2026-11-06T19:39:55.521Z"}],"rate-limits:bindings":[{"componentType":"component","status":"pass","time":"2026-11-06T19:39:55.521Z"}],"analytics-engine:bindings":[{"componentType":"component","status":"pass","time":"2026-11-06T19:39:55.521Z"}]},"reference":"7b474ebc57ac4365942ca9b7fc07ccbf"}
+
+$ curl -sI http://localhost:4683/health/live
+HTTP/1.1 200 OK
+Vary: Origin
+cache-control: no-store
+content-type: application/health+json
+ratelimit-policy: "health.ip";q=120;w=60
+traceparent: 00-da8eae0a950e45fbbad8b0f66d4b5692-ae320e29f43cb216-01
+x-request-id: da8eae0a950e45fbbad8b0f66d4b5692
+Date: Fri, 06 Nov 2026 19:39:55 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+$ curl -s -o /dev/null -w '%{http_code} %{content_type}
+' http://localhost:4683/health
+503 application/health+json

@@ -1,0 +1,11 @@
+HTTP/1.1 429 Too Many Requests
+cache-control: no-store
+content-length: 321
+content-type: application/problem+json
+ratelimit: "health.ip";r=0;t=60
+ratelimit-policy: "health.ip";q=120;w=60
+retry-after: 60
+traceparent: 00-c16a2c6de8e64857b9a752c10d0c15bf-b5210189e6938029-01
+x-request-id: c16a2c6de8e64857b9a752c10d0c15bf
+
+{"type":"https://iana.org/assignments/http-problem-types#quota-exceeded","title":"Too Many Requests","status":429,"detail":"Too many requests. Try again in 60 seconds.","instance":"/health/live","code":"RATE_LIMITED","violated-policies":["health.ip"],"retryAfterSeconds":60,"reference":"c16a2c6de8e64857b9a752c10d0c15bf"}
