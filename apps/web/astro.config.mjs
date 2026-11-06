@@ -44,10 +44,16 @@ export default defineConfig({
   //
   // csp: Astro hashes the inline scripts it renders into each page and sends them in a
   // Content-Security-Policy header; server/security-headers.ts keeps the script hashes
-  // and replaces the rest with the app's full policy (`astro dev` sends none).
+  // and replaces the rest with the app's full policy (`astro dev` sends none). Prerendered
+  // pages (/docs) carry Astro's policy as a <meta> instead: styleDirective keeps it to
+  // the pages' style-src ('unsafe-inline', no hashes, which would cancel it), since Shiki
+  // colours code with style attributes (server/security-headers.ts, PRERENDERED_PAGE_CSP).
   security: {
     checkOrigin: false,
-    csp: { algorithm: "SHA-256" },
+    csp: {
+      algorithm: "SHA-256",
+      styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
+    },
   },
   // The port of APP_URL in .dev.vars (4321 by default): Better Auth trusts only that origin.
   server: { port: devPort() },

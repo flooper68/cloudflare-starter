@@ -43,7 +43,7 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 
 ## Theme
 
-The public pages follow the OS setting until the visitor picks a theme with the switch in the header; the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head. It is an external file, not inline code, so a strict Content-Security-Policy (`script-src 'self'`) allows it without `'unsafe-inline'` or a nonce. The `/app` theme is a user setting and separate.
+The public pages follow the OS setting until the visitor picks a theme with the switch in the header; the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head. It is an external file, not inline code, so the pages' Content-Security-Policy allows it without `'unsafe-inline'`, a hash or a nonce. The docs pages are static assets; their policy is a `_headers` rule plus Astro's `<meta>` policy ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)). The `/app` theme is a user setting and separate.
 
 ## Check it locally
 

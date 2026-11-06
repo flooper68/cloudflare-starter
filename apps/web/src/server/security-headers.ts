@@ -142,6 +142,41 @@ export interface PagePolicyInput {
 export const PAGE_STYLE_SRC = "'self' 'unsafe-inline'";
 
 /**
+ * The public pages Astro prerenders (`prerender = true`: the docs site and the 404),
+ * served as static assets without running the Worker, so their policy is a fixed
+ * `_headers` rule instead of the per-request page policy. Astro also writes its own
+ * `<meta http-equiv="content-security-policy">` into each prerendered page (script
+ * hashes; style-src from `security.csp.styleDirective`); the browser enforces both.
+ * The pages run no inline script (`bun run budget` and the architecture tests refuse
+ * it), only files from this origin: no path can be pinned without knowing the origin,
+ * so script-src is 'self' (the pages hold no user content that could point a script
+ * at /api/files). Styles may be inline: Shiki colours code with `style` attributes.
+ * The Web Analytics origins are always allowed here, because the rule is the same in
+ * every environment while WEB_ANALYTICS differs.
+ */
+export const PRERENDERED_PAGE_PATHS = ["/docs/*"] as const;
+
+export const PRERENDERED_PAGE_CSP = [
+  "default-src 'self'",
+  `script-src 'self' ${WEB_ANALYTICS_SCRIPT_ORIGIN}`,
+  "script-src-attr 'none'",
+  `style-src ${PAGE_STYLE_SRC}`,
+  "img-src 'self' data:",
+  "font-src 'self'",
+  `connect-src 'self' ${WEB_ANALYTICS_REPORT_ORIGIN}`,
+  "frame-src 'none'",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "media-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
+  `report-uri ${CSP_REPORT_PATH}`,
+].join("; ");
+
+/**
  * The Content-Security-Policy of an HTML page: default-src 'self', scripts only from our
  * bundles and the hashed inline scripts (no 'unsafe-inline', no 'unsafe-eval'), third
  * parties only when their setting is on, no plugins, no framing, reports to
@@ -323,6 +358,12 @@ export function renderStaticHeaders(): string {
       "# docs/guides/how-to-configure-security-headers.md#static-assets",
     ].join("\n"),
     block("/*", base),
+    ...PRERENDERED_PAGE_PATHS.map((path) =>
+      block(path, [
+        "! Content-Security-Policy",
+        `Content-Security-Policy: ${PRERENDERED_PAGE_CSP}`,
+      ])
+    ),
     block("/_storybook/*", [
       "! Content-Security-Policy",
       "! X-Frame-Options",
