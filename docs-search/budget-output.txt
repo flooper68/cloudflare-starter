@@ -1,0 +1,14 @@
+$ bun scripts/check-bundle-budget.ts
+First-load JS per prerendered page (gzip, budget 50.0 KB): 48 pages
+     2.3 KB  /404.html  [/site-theme.js, /_astro/DocsSearch.astro_astro_type_script_index_0_lang.D1JLOc68.js]
+     2.3 KB  /docs/index.html  [/site-theme.js, /_astro/DocsSearch.astro_astro_type_script_index_0_lang.D1JLOc68.js]
+     2.3 KB  /docs/processes/documentation/index.html  [/site-theme.js, /_astro/DocsSearch.astro_astro_type_script_index_0_lang.D1JLOc68.js]
+     2.3 KB  /docs/processes/development/index.html  [/site-theme.js, /_astro/DocsSearch.astro_astro_type_script_index_0_lang.D1JLOc68.js]
+     2.3 KB  /docs/processes/code-review/index.html  [/site-theme.js, /_astro/DocsSearch.astro_astro_type_script_index_0_lang.D1JLOc68.js]
+Pagefind files (gzip, budget 100.0 KB each): 68 files
+    71.1 KB  /pagefind/wasm.en.pagefind
+    66.6 KB  /pagefind/wasm.unknown.pagefind
+    38.5 KB  /pagefind/pagefind-component-ui.js
+    34.6 KB  /pagefind/index/en_1e5f9d1.pf_index
+    34.4 KB  /pagefind/index/en_1d19f03.pf_index
+Bundle budgets: pass
