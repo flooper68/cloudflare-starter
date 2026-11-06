@@ -130,7 +130,7 @@ What went wrong goes to the logs: each check that did not pass is one record (`h
 
 ## Rate limit
 
-`health.ip` (120 requests a minute per IP, binding `RL_HEALTH`) counts all three endpoints together, before any check runs: monitors probe every 30 to 60 s per region, so it never bites them, while a flood cannot turn into D1 and R2 calls. Past it, the answer is the usual 429 Problem Details with `Retry-After` and `RateLimit` ([how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md)), also `no-store`. When the settings are invalid there is no rate limiter to ask, and the endpoints answer unlimited.
+`health.ip` (120 requests a minute per IP, binding `RL_HEALTH`) counts all three endpoints together, before any check runs: monitors probe every 30 to 60 s per region, so it never bites them, while a flood cannot turn into D1 and R2 calls. Past it, the answer is the usual 429 Problem Details with `Retry-After` and `RateLimit` ([how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md)), also `no-store`. When the platform settings are invalid there is no rate limiter, logger or tracer to use: the endpoints answer unlimited, and the failed checks are not logged or traced.
 
 ## Tracing and metrics
 
@@ -164,10 +164,10 @@ Status pages (Better Stack, UptimeRobot, Atlassian Statuspage via a monitor inte
 
 ## Troubleshooting
 
-| Symptom                                          | Look at                                                                                                                                                     |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `503` with `settings:configuration` failed       | the logs under the `reference` (`app.health.detail` names the setting), or `bun run doctor`; every other route answers `500 Server Misconfigured` meanwhile |
-| `d1:responseTime` or `r2:responseTime` `timeout` | the Cloudflare status page for D1 or R2 and the Worker's Observability → Traces (time per binding call)                                                     |
-| `email:configuration` `warn`                     | `EMAIL_FROM` and the `EMAIL` binding ([how-to-setup-email.md](how-to-setup-email.md)); a `fail` means verification is required but mail is off              |
-| `429` on the health endpoints                    | many monitors behind one IP: raise `health.ip` in `packages/features/src/abuse/domain/policies.ts` and `RL_HEALTH` in every environment of `wrangler.jsonc` |
-| The monitor sees a stale `pass`                  | a cache in front of the Worker ignoring `no-store`: exempt `/health*` from caching rules                                                                    |
+| Symptom                                          | Look at                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `503` with `settings:configuration` failed       | when only the app config is invalid, the logs under the `reference` (`app.health.detail` names it); when a platform setting is (the logger itself may be the broken setting) nothing is logged: run `bun run doctor`, or open any other route, whose `500 Server Misconfigured` names the setting |
+| `d1:responseTime` or `r2:responseTime` `timeout` | the Cloudflare status page for D1 or R2 and the Worker's Observability → Traces (time per binding call)                                                                                                                                                                                           |
+| `email:configuration` `warn`                     | `EMAIL_FROM` and the `EMAIL` binding ([how-to-setup-email.md](how-to-setup-email.md)); a `fail` means verification is required but mail is off                                                                                                                                                    |
+| `429` on the health endpoints                    | many monitors behind one IP: raise `health.ip` in `packages/features/src/abuse/domain/policies.ts` and `RL_HEALTH` in every environment of `wrangler.jsonc`                                                                                                                                       |
+| The monitor sees a stale `pass`                  | a cache in front of the Worker ignoring `no-store`: exempt `/health*` from caching rules                                                                                                                                                                                                          |
