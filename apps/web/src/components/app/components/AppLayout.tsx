@@ -4,15 +4,18 @@ import {
   EmptyState,
   ErrorState,
   ImpersonationBanner,
+  OfflineNotice,
   SkeletonCard,
   Toaster,
   toast,
 } from "@cloudflare-starter/ui";
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { FolderX } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
 
 import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
+import { connectivity } from "@/lib/connectivity";
 import { trpc } from "@/lib/trpc/client";
 
 import { TrialBanner } from "../billing/TrialBanner";
@@ -30,6 +33,7 @@ const titles: Record<string, string> = {
   "/app/members": "Members",
   "/app/billing": "Billing",
   "/app/trash": "Trash",
+  "/app/demos": "Developer demos",
   "/app/upload-demo": "Upload demo",
   "/app/queue-demo": "Queue demo",
   "/app/email-demo": "Email demo",
@@ -87,11 +91,41 @@ function Impersonation() {
   );
 }
 
+/**
+ * While the browser is offline or the app's requests get no response: says so, and
+ * "Try again" sends one cheap request (any answer clears the notice).
+ */
+function Offline() {
+  const online = useSyncExternalStore(
+    connectivity.subscribe,
+    connectivity.getSnapshot,
+    () => true
+  );
+  const [checking, setChecking] = useState(false);
+  if (online) return null;
+  return (
+    <OfflineNotice
+      retrying={checking}
+      onRetry={async () => {
+        setChecking(true);
+        try {
+          await trpc.public.hello.query();
+        } catch {
+          // Still unreachable: the notice stays.
+        } finally {
+          setChecking(false);
+        }
+      }}
+    />
+  );
+}
+
 export function AppLayout() {
   const { pathname } = useLocation();
 
   return (
     <AppShell sidebar={<AppSidebar />}>
+      <Offline />
       <Impersonation />
       <TrialBanner />
       <AppTopBar

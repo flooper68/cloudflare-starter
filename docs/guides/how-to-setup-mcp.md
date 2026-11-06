@@ -33,7 +33,7 @@ Because tools call the same procedures with the same context, validation, auth c
 
 1. Deploy, so `APP_URL` is a public HTTPS origin.
 2. In Claude, add a custom connector with the URL `<APP_URL>/mcp`.
-3. Sign in and click Allow on the consent page.
+3. Sign in and click Allow on the consent page. It names the client, your address and the host it returns to, and lists the requested scopes in plain words (`describeScopes` in [lib/oauth-scopes.ts](../../apps/web/src/lib/oauth-scopes.ts); a new scope gets a line there, an unknown one is shown as it is).
 
 Tokens are bound to `/mcp` and to the browser session that approved them (`starter_session_id`); the user and that session are reloaded from D1 on every request, so deleting the user, or signing out or revoking that session, cuts access at once and the client must reconnect ([how-to-configure-account-security.md](how-to-configure-account-security.md#assurance-and-mcp)).
 

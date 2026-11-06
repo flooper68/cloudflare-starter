@@ -20,7 +20,11 @@ export async function getSecurityState(
   const { passkey } = authSchema;
   const [users, sessions, accounts, keys] = await deps.db.batch([
     deps.db
-      .select({ role: user.role, enrolled: user.twoFactorEnabled })
+      .select({
+        role: user.role,
+        enrolled: user.twoFactorEnabled,
+        emailVerified: user.emailVerified,
+      })
       .from(user)
       .where(eq(user.id, input.userId))
       .limit(1),
@@ -75,6 +79,8 @@ export async function getSecurityState(
     sessionValid: Boolean(evidence),
     secondFactorAt: evidence?.secondFactorAt?.toISOString() ?? null,
     hasPassword: accounts.some((row) => row.provider === "credential"),
+    /** Whether the address is verified (Google verifies it at sign-up). */
+    emailVerified: current?.emailVerified === true,
     passkeys: keys.map((key) => ({
       ...key,
       createdAt: key.createdAt?.toISOString() ?? null,
