@@ -13,6 +13,7 @@ import { buildRequiredConfig } from "@/lib/env";
 import { AUTH_BASE_PATH, getAuth, MCP_PATH } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
+import { isHealthPath } from "@/server/health";
 import { domainErrorResponse, withRequestContext } from "@/server/http";
 
 const PROTECTED_PREFIX = "/app";
@@ -40,6 +41,26 @@ export async function handleAppRequest(
 
   // Prerendered pages are built once, not served per request: no context, no session.
   if (context.isPrerendered) return next();
+
+  // The health endpoints (server/health.ts) need no session and answer even when a
+  // setting is invalid: liveness still passes, readiness reports the setting as failed.
+  if (isHealthPath(context.url.pathname)) {
+    return withRequestContext(
+      context.request,
+      env,
+      async (scope) => {
+        context.locals.requestContext = scope.context;
+        return next();
+      },
+      {
+        route: context.routePattern,
+        onMisconfigured: async (requestContext) => {
+          context.locals.requestContext = requestContext;
+          return next();
+        },
+      }
+    );
+  }
 
   // Every response gets x-request-id; unhandled errors become a 500 with a reference.
   return withRequestContext(

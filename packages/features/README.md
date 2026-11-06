@@ -38,6 +38,7 @@ src/
 ├── storage-reconciliation/  optional cleanup of orphaned R2 objects
 ├── trash/              soft delete: liveIn/trashedIn, restore, permanent delete, retention purge
 ├── files/              file records and R2 storage (binding and presigned URLs), per workspace
+├── health/             readiness check rules and probes for /health/ready
 ├── greetings/          the job demo (greetings.hello)
 ├── notifications/      notify, dispatch, inbox, preferences, digest, unsubscribe, retention
 └── workspaces/         tenancy: workspaces, members, invitations, roles, sign-up policy

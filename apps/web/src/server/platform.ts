@@ -181,6 +181,14 @@ function buildProductAnalytics(
     });
 }
 
+/**
+ * Whether the APP_QUEUE producer is bound, for the readiness check (server/health.ts):
+ * it looks, it never sends. Only this file and the jobs feature touch the binding.
+ */
+export function isJobQueueBound(env: AppEnv): boolean {
+  return env.APP_QUEUE !== undefined;
+}
+
 /** Per-isolate cache, like the database client. A config error is not cached. */
 let cache: { readonly env: AppEnv; readonly platform: Platform } | undefined;
 

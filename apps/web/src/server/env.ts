@@ -23,6 +23,7 @@ export interface AppEnv {
   readonly RL_TOKEN_LOOKUP?: RateLimit;
   readonly RL_UNSUBSCRIBE?: RateLimit;
   readonly RL_ANALYTICS?: RateLimit;
+  readonly RL_HEALTH?: RateLimit;
   /** Workers Analytics Engine dataset of product events (ANALYTICS=analytics-engine). */
   readonly ANALYTICS_EVENTS?: AnalyticsEngineDataset;
   readonly APP_ENV?: string;

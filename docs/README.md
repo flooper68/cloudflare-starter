@@ -34,6 +34,7 @@ How to set up or do something; read while doing it.
 | [how-to-use-storybook.md](guides/how-to-use-storybook.md)                             | you build or review components in Storybook, write their tests, or change who can open `/_storybook/`                                                                                |
 | [how-to-use-trash.md](guides/how-to-use-trash.md)                                     | you make a table trashable, read one, change a trash retention, debug a missing or restored item, or set up storage reconciliation of orphaned R2 objects                            |
 | [how-to-handle-data-privacy.md](guides/how-to-handle-data-privacy.md)                 | you add a table or stored object, handle a data export or deletion request, set up export expiry, or restore a database after an erasure                                             |
+| [how-to-monitor-health.md](guides/how-to-monitor-health.md)                           | you point an uptime monitor, load balancer or status page at the app, add or change a health check, or investigate a failing `/health/ready`                                         |
 
 ## Architecture
 

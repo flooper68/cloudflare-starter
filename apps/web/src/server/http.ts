@@ -153,6 +153,13 @@ export interface HttpEdgeOptions {
    * raw path.
    */
   readonly route?: string;
+  /**
+   * Answers instead of the "Server Misconfigured" 500 when the platform cannot be built
+   * (a missing or invalid setting): the health endpoints still answer liveness and report
+   * the setting as a failed readiness check. Gets the request's context; its response
+   * gets the trace headers.
+   */
+  readonly onMisconfigured?: (context: RequestContext) => Promise<Response>;
 }
 
 export async function withRequestContext(
@@ -176,6 +183,9 @@ export async function withRequestContext(
         traceparent: request.headers.get(TRACEPARENT_HEADER),
       }
     );
+    if (options.onMisconfigured) {
+      return withTraceHeaders(await options.onMisconfigured(context), context);
+    }
     const message =
       error instanceof ConfigError
         ? error.message
