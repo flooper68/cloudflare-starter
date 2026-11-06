@@ -7,7 +7,7 @@ The web app stores its data, including Better Auth's users and sessions, in [Clo
 | Schema     | `<feature>/<feature>.schema.ts` in [packages/features/src/](../../packages/features/src/), composed in `database.ts`; adapter tables in `platform/adapters/<vendor>/*.schema.ts` (the D1 feature-flag provider) |
 | Migrations | [packages/features/migrations/](../../packages/features/migrations/)                                                                                                                                            |
 | Binding    | `DB` in [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), one database per environment                                                                                                                  |
-| Client     | `createDb(env.DB)` from `@cloudflare-starter/features`, cached per isolate in [apps/web/src/server/db.ts](../../apps/web/src/server/db.ts)                                                                      |
+| Client     | `createDatabase(env.DB)` from `@cloudflare-starter/features`, cached per isolate by `getDb` in [apps/web/src/server/db.ts](../../apps/web/src/server/db.ts)                                                     |
 
 ## Local Development
 

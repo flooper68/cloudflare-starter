@@ -25,17 +25,18 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), `METRICS_DATASET` (Workers Analytics Engine, the metrics), the Workers Rate Limiting bindings `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_BILLING_WEBHOOK`, `RL_UNSUBSCRIBE` (`ratelimits`, nothing to create), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `METRICS` (required, `analytics-engine` or `none`) and `TRACING` (required, `workers` or `none`; [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md)), `AUTH_EMAIL_PASSWORD`, `AUTH_REQUIRE_EMAIL_VERIFICATION`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, and the required abuse-protection settings `RATE_LIMITING` (`cloudflare`|`none`), `TURNSTILE` (`on`|`off`), `TURNSTILE_SITE_KEY` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
+Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), `METRICS_DATASET` (Workers Analytics Engine, the metrics), the Workers Rate Limiting bindings `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_BILLING_WEBHOOK`, `RL_ANALYTICS`, `RL_UNSUBSCRIBE` (`ratelimits`, nothing to create), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `METRICS` (required, `analytics-engine` or `none`) and `TRACING` (required, `workers` or `none`; [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md)), `STORAGE_RECONCILE` (required, `off`, `report` or `delete`, shipped `off`; [storage reconciliation](how-to-use-trash.md#optional-storage-reconciliation)), `AUTH_EMAIL_PASSWORD` and `AUTH_REQUIRE_EMAIL_VERIFICATION` (required, `true` or `false`, shipped `true` and `false`; [how-to-setup-auth.md](how-to-setup-auth.md#sign-in-methods)), `EMAIL_FROM`, `EMAIL_FROM_NAME`, and the required abuse-protection settings `RATE_LIMITING` (`cloudflare`|`none`), `TURNSTILE` (`on`|`off`), `TURNSTILE_SITE_KEY` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
 
 Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config.ts):
 
-| Name                                       | Required            | Notes                               |
-| ------------------------------------------ | ------------------- | ----------------------------------- |
-| `APP_URL`                                  | yes                 | Public origin, no trailing slash    |
-| `BETTER_AUTH_SECRET`                       | yes                 | 32+ characters, one per environment |
-| `TURNSTILE_SECRET_KEY`                     | with `TURNSTILE=on` | The Turnstile widget's secret key   |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no                  | Enables Google sign-in              |
-| `R2_*`                                     | no                  | Presigned R2 URLs                   |
+| Name                                       | Required                          | Notes                                               |
+| ------------------------------------------ | --------------------------------- | --------------------------------------------------- |
+| `APP_URL`                                  | yes                               | Public origin, no trailing slash                    |
+| `BETTER_AUTH_SECRET`                       | yes                               | 32+ characters, one per environment                 |
+| `TURNSTILE_SECRET_KEY`                     | with `TURNSTILE=on`               | The Turnstile widget's secret key                   |
+| `ANALYTICS_ID_SECRET`                      | with `ANALYTICS=analytics-engine` | 32+ characters; keys the pseudonymous analytics ids |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no                                | Enables Google sign-in                              |
+| `R2_*`                                     | no                                | Presigned R2 URLs                                   |
 
 `bun run doctor` checks the local setup and points out what is missing for each environment.
 
@@ -54,7 +55,7 @@ Open `APP_URL` (`http://localhost:4321` from `.dev.vars.example`; `bun run setup
 Queue and cron run in the same dev server:
 
 - `/app/queue-demo` enqueues a `greetings.hello` job; the consumer logs a `body: 'greetings.hello'` record in the dev output, with the `trace_id` of the request that queued it.
-- `curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"` runs the cron entries of that schedule (the daily audit and idempotency-key purges), which log `cron.completed` and enqueue their jobs ([how-to-add-background-jobs.md](how-to-add-background-jobs.md#run-it-locally)).
+- `curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"` runs the cron entries of that schedule (the daily purges of audit events, idempotency keys, notifications and trash, trial expiry and storage reconciliation), which log `cron.completed` and enqueue their jobs ([how-to-add-background-jobs.md](how-to-add-background-jobs.md#run-it-locally)).
 
 Every response has `traceparent` and `x-request-id` headers; the trace id in them is the `trace_id` of that request's log records.
 
@@ -75,7 +76,7 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    bun run setup:email --domain example.com --env production
    ```
 
-4. Workspaces and sign-up: the starter ships no choice, and the Worker refuses to start without one ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md)):
+4. Sign-in, account security, workspaces, sign-up, billing and the admin portal: the starter ships no choice for most of them, and the Worker refuses to start without one ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md), [how-to-configure-account-security.md](./how-to-configure-account-security.md)):
 
    ```bash
    bun run setup:auth --env production --dry-run
@@ -87,6 +88,12 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    ```bash
    bun run setup:analytics --env production --dry-run
    bun run setup:analytics --env production
+   ```
+
+   Data exports: add the R2 lifecycle rule that expires export archives ([how-to-handle-data-privacy.md](./how-to-handle-data-privacy.md#storage-expiry-setup)); it changes the bucket, so run it for real only after the owner agrees:
+
+   ```bash
+   bun run setup:privacy-storage --env production --dry-run
    ```
 
 5. Turnstile, while `TURNSTILE=on` (the default in every environment): create a Managed widget for the environment's hostname in the Cloudflare dashboard and put its site key in that environment's `TURNSTILE_SITE_KEY` in `wrangler.jsonc` (the shipped value is Cloudflare's test key; `setup:cloudflare` prints these steps). Its secret key is set in step 7. Details: [how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#deployed-environments).

@@ -13,19 +13,30 @@ src/
 ├── job-catalog.ts      composition root: every background job type and its handler
 ├── cron-catalog.ts     composition root: every cron entry (name, schedule, run)
 ├── notification-catalog.ts  composition root: every notification type
+├── analytics-events.ts composition root: every product analytics event
+├── trash-catalog.ts    composition root: every trashable entity
+├── data-catalog.ts     composition root: every table's export projection and erasure treatment
+├── erasure-catalog.ts  composition root: buildErasureHandlers, the owning features' erasure steps
+├── storage-reference-catalog.ts  composition root: each feature's R2 key shapes and reference lookups
 ├── kernel/             pure shared building blocks: DomainError, Clock, Ids, Random, RequestContext,
 │                       BillingGate, defineJob and the job envelope type, defineNotification
 │                       and Notify, html
 ├── platform/           shared infrastructure: Drizzle client, clock, ids, random,
 │                       request context; ports/ (Logger, ErrorReporter, JobQueue, FeatureFlags,
-│                       RateLimiter, HumanVerifier, Metrics, Tracer, BillingProvider, Email), adapters/<vendor>/
+│                       RateLimiter, HumanVerifier, Metrics, Tracer, BillingProvider, Email, ProductAnalytics,
+│                       Zip), adapters/<vendor>/
 │                       and the metric catalog
 ├── abuse/              the rate-limit catalog (RATE_LIMIT_POLICIES), limitKey, enforceRateLimit, verifyHuman
 ├── jobs/               background jobs: envelope, backoff, retry policy, idempotency keys, enqueueJob, runJob
-├── accounts/           Better Auth tables (generated) and user lookups
+├── accounts/           Better Auth tables (generated), user settings, avatars, own sessions, security state
+├── admin/              the admin portal: admin-policy rules, user and workspace administration
 ├── audit/              the append-only audit log: event catalog, record, list, purge
 ├── feature-flags/      the flag catalog, evaluateFlag, the flag admin use cases
 ├── billing/            plans, add-ons, features and limits: catalog, entitlements, usage, trials
+├── privacy/            data exports (streamed ZIP through the Zip port) and account erasure
+├── product-analytics/  event rules, client batches, trackEvent, identifyUser
+├── storage-reconciliation/  optional cleanup of orphaned R2 objects
+├── trash/              soft delete: liveIn/trashedIn, restore, permanent delete, retention purge
 ├── files/              file records and R2 storage (binding and presigned URLs), per workspace
 ├── greetings/          the job demo (greetings.hello)
 ├── notifications/      notify, dispatch, inbox, preferences, digest, unsubscribe, retention

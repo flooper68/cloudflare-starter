@@ -84,7 +84,7 @@ bun run dev:container
 In another terminal:
 
 ```bash
-curl 'http://127.0.0.1:8787/pi?digits=20'
+curl 'http://127.0.0.1:8790/pi?digits=20'
 ```
 
 Expected shape of the response:
@@ -203,7 +203,7 @@ Fix:
 2. `docker info`
 3. `bunx wrangler login`
 4. `bun run dev:container`
-5. `curl 'http://127.0.0.1:8787/pi?digits=20'`
+5. `curl 'http://127.0.0.1:8790/pi?digits=20'`
 6. `cd apps/container`
 7. `bunx wrangler deploy`
 8. `bunx wrangler containers list`

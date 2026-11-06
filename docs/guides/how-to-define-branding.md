@@ -124,3 +124,5 @@ The default theme follows the OS; the app can force one with `<html data-theme="
 - [ ] Contrast checked in both themes: `bun run test:components` passes
 - [ ] Email sender name (`EMAIL_FROM_NAME` in `apps/web/wrangler.jsonc`) and Better Auth
   `appName` (`apps/web/src/server/auth.ts`) use the new name
+- [ ] The authenticator `issuer` and passkey `rpName` in `apps/web/src/server/auth-security.ts`
+  (shown in authenticator apps and passkey prompts) use the new name
