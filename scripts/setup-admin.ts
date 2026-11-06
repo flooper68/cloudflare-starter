@@ -8,12 +8,14 @@
  * suspended. The
  * local D1 by default; `--remote` changes the environment's deployed database. The admin
  * portal must be on (ADMIN_PORTAL=on) for the role to open it. The person signs in again
- * (or waits a minute for the cached session) to see the change.
+ * (or waits a minute for the cached session) to see the change. `--dry-run` is offline: it
+ * prints the commands and SQL without reading or changing any database.
  * docs/guides/how-to-use-admin-portal.md
  */
 import { randomBytes, randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
 
+import { lookupSql, roleChangeSql, userIdSubquery } from "./admin-sql";
 import {
   type Environment,
   envFlag,
@@ -44,32 +46,52 @@ const env = environments[0] as Environment;
 const role = values.demote ? "user" : "admin";
 const dryRun = values["dry-run"] ?? false;
 const target = values.remote ? ["--remote"] : ["--local"];
+const where = `${values.remote ? "remote" : "local"} ${env}`;
 
-/** A SQL string literal (the address is validated as an email above). */
-const literal = (value: string) => `'${value.replaceAll("'", "''")}'`;
+const d1Args = (command: string) => [
+  "d1",
+  "execute",
+  "DB",
+  ...target,
+  ...envFlag(env),
+  "--json",
+  "--command",
+  command,
+];
 
-function d1(command: string, options: { readonly dryRun?: boolean } = {}) {
-  const result = wrangler(
-    [
-      "d1",
-      "execute",
-      "DB",
-      ...target,
-      ...envFlag(env),
-      "--json",
-      "--command",
-      command,
-    ],
-    options
-  );
+function d1(command: string) {
+  const result = wrangler(d1Args(command));
   if (!result.ok) {
     fail(`wrangler d1 execute failed:\n${result.stderr || result.stdout}`);
   }
   return result;
 }
 
-const where = `lower(email) = ${literal(email.data)}`;
-const lookup = d1(`SELECT id, role, banned FROM user WHERE ${where}`);
+if (dryRun) {
+  // Offline: nothing is read from or written to any database, local or remote.
+  const promote = role === "admin";
+  console.log(
+    [
+      `Dry run, ${where} database: nothing is read or changed.`,
+      "1. Look the account up:",
+      `  wrangler ${d1Args(lookupSql(email.data)).join(" ")}`,
+      `2. If its role is not ${role}${promote ? " or it is suspended" : ""}, one batch (ids and time are generated then; only the audit rows that apply):`,
+      `  ${roleChangeSql({
+        userId: { sql: userIdSubquery(email.data) },
+        role,
+        previousRole: promote ? "user" : "admin",
+        unban: promote,
+        now: Date.now(),
+        traceId: "<trace id>",
+        auditIds: ["<audit id>", "<audit id>"],
+      })}`,
+      "\nDry run: nothing was changed.",
+    ].join("\n")
+  );
+  process.exit(0);
+}
+
+const lookup = d1(lookupSql(email.data));
 const rows = (
   JSON.parse(lookup.stdout || "[]") as {
     results?: { id: string; role: string | null; banned: number | null }[];
@@ -77,9 +99,7 @@ const rows = (
 )[0]?.results;
 const user = rows?.[0];
 if (!user) {
-  fail(
-    `No account with ${email.data} in the ${values.remote ? "remote" : "local"} ${env} database: sign up first`
-  );
+  fail(`No account with ${email.data} in the ${where} database: sign up first`);
 }
 const previousRole = (user.role ?? "user").split(",").includes("admin")
   ? "admin"
@@ -93,31 +113,18 @@ if (previousRole === role && !unban) {
   process.exit(0);
 }
 
-const now = Date.now();
-const traceId = randomBytes(16).toString("hex");
-/** An audit row as recordAuditEvent writes it (packages/features/src/audit), actor system. */
-const auditRow = (action: string, metadata: Record<string, unknown>) =>
-  [
-    "INSERT INTO audit_events (id, occurred_at, action, outcome, actor_user_id, actor_kind, impersonator_user_id, target_type, target_id, workspace_id, trace_id, source, ip, metadata)",
-    `VALUES (${literal(randomUUID())}, ${now}, ${literal(action)}, 'success', NULL, 'system', NULL, 'user', ${literal(user.id)}, NULL, ${literal(traceId)}, 'script', NULL, ${literal(JSON.stringify(metadata))});`,
-  ].join(" ");
-
-// One statement batch: the change and its audit events.
 d1(
-  [
-    `UPDATE user SET role = ${literal(role)},${unban ? " banned = 0, ban_reason = NULL, ban_expires = NULL," : ""} updated_at = ${now} WHERE id = ${literal(user.id)};`,
-    previousRole === role
-      ? ""
-      : auditRow("user.role_changed", { previousRole, role }),
-    unban ? auditRow("user.unbanned", {}) : "",
-  ]
-    .filter(Boolean)
-    .join(" "),
-  { dryRun }
+  roleChangeSql({
+    userId: { literal: user.id },
+    role,
+    previousRole,
+    unban,
+    now: Date.now(),
+    traceId: randomBytes(16).toString("hex"),
+    auditIds: [randomUUID(), randomUUID()],
+  })
 );
 
 console.log(
-  dryRun
-    ? "\nDry run: nothing was changed."
-    : `✓ ${email.data} is now ${role === "admin" ? "an active admin" : "a regular user"} (${values.remote ? "remote" : "local"} ${env}); they sign in again to see it.`
+  `✓ ${email.data} is now ${role === "admin" ? "an active admin" : "a regular user"} (${where}); they sign in again to see it.`
 );

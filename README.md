@@ -70,6 +70,8 @@ This repository is a template, not a framework. When you start a project from it
 
    If the web Worker ends up with only `fetch`, point `main` in `apps/web/wrangler.jsonc` back at the adapter's default entry or keep `src/worker.ts` with `fetch` alone. Then remove the demo pages and rename `cloudflare-starter-*` resources.
 
+4. **Give the project its own rate-limit namespace block, domain and sender.** Workers Rate Limiting `namespace_id`s are account-wide: a project that keeps the starter's ids (7001–7010, 8001–8010, 9001–9010) shares its limits with every other project in the account that did. After renaming the Worker, `bun run setup:cloudflare --env all --dry-run` shows the block it will assign (from a hash of the Worker name, or `--namespace-base <n>`), and the same command without `--dry-run` writes it; `bun run doctor` fails until then ([docs/guides/how-to-configure-abuse-protection.md](docs/guides/how-to-configure-abuse-protection.md#namespace-ids)). Replace the starter's production hostname in `routes` (`starter.flooper.me`) with the project's, and pick its `EMAIL_FROM` ([docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md#deploy)).
+
 ## Workspace
 
 Apps:
@@ -140,7 +142,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                                                                   |
 | `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                                                                 |
 | `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                                                               |
-| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id into the config                                                                                         |
+| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id, R2 jurisdiction and rate-limit namespace_ids into the config                                           |
 | `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                                                         |
 | `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                                                            |
 | `bun run setup:auth`                     | Asks for the sign-in switches, two-factor and passkey policy, workspace mode, sign-up policy, billing mode and `ADMIN_PORTAL` and writes them into `wrangler.jsonc` |

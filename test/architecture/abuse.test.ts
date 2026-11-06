@@ -11,7 +11,6 @@ import { parse } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
 
 import { appRouter } from "@/server/trpc/router";
-
 import {
   mutationPolicy,
   PROCEDURE_POLICIES,
@@ -20,6 +19,10 @@ import {
   type RateLimitPolicy,
   ROUTE_POLICIES,
 } from "../../packages/features/src";
+import {
+  STARTER_SHIPPED_NAMESPACE_IDS,
+  STARTER_WORKER_NAME,
+} from "../../scripts/cloudflare-plan";
 import { ROOT, read } from "./repo";
 
 const procedures = appRouter._def.procedures as unknown as Record<
@@ -165,5 +168,18 @@ describe("rate-limit bindings in wrangler.jsonc", () => {
     );
     expect(ids.every((id) => /^[1-9]\d*$/.test(id))).toBe(true);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  // namespace_ids are account-wide; uniqueness against other Workers cannot be checked
+  // here, but a project must at least not keep the starter's ids (setup:cloudflare
+  // replaces them; docs/guides/how-to-configure-abuse-protection.md#namespace-ids).
+  it("keeps the starter's namespace_ids only in the starter's own Worker", () => {
+    const ids = environments.flatMap(([, block]) =>
+      ratelimitsOf(block).map((b) => b.namespace_id)
+    );
+    if (config.name === STARTER_WORKER_NAME) return;
+    expect(ids.filter((id) => STARTER_SHIPPED_NAMESPACE_IDS.has(id))).toEqual(
+      []
+    );
   });
 });

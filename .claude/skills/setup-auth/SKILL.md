@@ -24,7 +24,7 @@ Plain vars in `wrangler.jsonc` (`vars`, per environment) or `.dev.vars` locally:
 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` | secrets; both set adds "Continue with Google"                                                |
 | `AUTH_REQUIRE_EMAIL_VERIFICATION`           | `true` blocks sign-in until the email is verified; needs email (setup-email skill); required |
 
-Both vars are required (`true` or `false`, no default; `wrangler.jsonc` ships `true` and `false`, and `setup:auth` asks for them). At least one method must be on, or the app refuses to start. For Google, the user creates a "Web application" OAuth client and adds `<APP_URL>/api/auth/callback/google` per environment; you cannot do that for them.
+Both vars are required (`true` or `false`, no default; `wrangler.jsonc` ships `true` and `false`, verification `true` in production, and `setup:auth` asks for them). At least one method must be on, or the app refuses to start. For Google, the user creates a "Web application" OAuth client and adds `<APP_URL>/api/auth/callback/google` per environment; you cannot do that for them.
 
 ## Workspaces and sign-up
 

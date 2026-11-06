@@ -53,7 +53,7 @@ Plain vars, per environment in `apps/web/wrangler.jsonc` (`vars`) and in `.dev.v
 | `AUTH_EMAIL_PASSWORD`             | `true`  | Email + password sign-up, sign-in, reset and change password. `false` hides the forms, redirects the password pages to `/sign-in`, and the API refuses them. |
 | `AUTH_REQUIRE_EMAIL_VERIFICATION` | `false` | Users must open the verification link before they can sign in. Needs email ([how-to-setup-email.md](./how-to-setup-email.md)).                               |
 
-Both are required in every environment (`true` or `false`, no default: a missing or other value fails with an error naming the var); `wrangler.jsonc` ships the values above, and `bun run setup:auth` asks for them. Google is on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. With Google only, `/sign-up` offers just the Google button; the first sign-in creates the account.
+Both are required in every environment (`true` or `false`, no default: a missing or other value fails with an error naming the var); `wrangler.jsonc` ships the values above (`AUTH_REQUIRE_EMAIL_VERIFICATION` is `true` in production, which sends mail), and `bun run setup:auth` asks for them. Google is on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. With Google only, `/sign-up` offers just the Google button; the first sign-in creates the account.
 
 At least one method must be on. If none is, or verification is required without email, the app refuses to start with an error naming the setting.
 

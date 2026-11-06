@@ -25,7 +25,7 @@ Official references:
 
 ## Runtime Values
 
-Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), `METRICS_DATASET` (Workers Analytics Engine, the metrics), the Workers Rate Limiting bindings `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_BILLING_WEBHOOK`, `RL_ANALYTICS`, `RL_UNSUBSCRIBE` (`ratelimits`, nothing to create), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `METRICS` (required, `analytics-engine` or `none`) and `TRACING` (required, `workers` or `none`; [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md)), `STORAGE_RECONCILE` (required, `off`, `report` or `delete`, shipped `off`; [storage reconciliation](how-to-use-trash.md#optional-storage-reconciliation)), `AUTH_EMAIL_PASSWORD` and `AUTH_REQUIRE_EMAIL_VERIFICATION` (required, `true` or `false`, shipped `true` and `false`; [how-to-setup-auth.md](how-to-setup-auth.md#sign-in-methods)), `EMAIL_FROM`, `EMAIL_FROM_NAME`, and the required abuse-protection settings `RATE_LIMITING` (`cloudflare`|`none`), `TURNSTILE` (`on`|`off`), `TURNSTILE_SITE_KEY` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
+Bindings come from [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), repeated per environment: `DB` (D1), `FILES` (R2), `EMAIL` (send_email), `APP_QUEUE` (producer, and this Worker is also the consumer), `CF_VERSION_METADATA` (version metadata, logged as `release`), `METRICS_DATASET` (Workers Analytics Engine, the metrics), the Workers Rate Limiting bindings `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_BILLING_WEBHOOK`, `RL_ANALYTICS`, `RL_UNSUBSCRIBE` (`ratelimits`, nothing to create), Cron Triggers, and `observability` (Workers Logs and traces). Plain vars there: `APP_ENV` (required, no default: `develop`, `staging`, `production`; `local` only in `.dev.vars`), `LOG_SINK` and `ERROR_REPORTER` (required, `workers-logs` or `none`; [how-to-setup-logging.md](how-to-setup-logging.md), [how-to-setup-error-reporting.md](how-to-setup-error-reporting.md)), `METRICS` (required, `analytics-engine` or `none`) and `TRACING` (required, `workers` or `none`; [how-to-setup-metrics-and-tracing.md](how-to-setup-metrics-and-tracing.md)), `STORAGE_RECONCILE` (required, `off`, `report` or `delete`, shipped `off`; [storage reconciliation](how-to-use-trash.md#optional-storage-reconciliation)), `AUTH_EMAIL_PASSWORD` and `AUTH_REQUIRE_EMAIL_VERIFICATION` (required, `true` or `false`; shipped `true`, and `false` except `true` in production; [how-to-setup-auth.md](how-to-setup-auth.md#sign-in-methods)), `EMAIL_FROM`, `EMAIL_FROM_NAME`, and the required abuse-protection settings `RATE_LIMITING` (`cloudflare`|`none`), `TURNSTILE` (`on`|`off`), `TURNSTILE_SITE_KEY` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md)). Code reads them with `import { env } from "cloudflare:workers"`. Locally `.dev.vars` sets `APP_ENV=local`, overriding `develop`: it marks local development, the only environment where auth links may be logged when email is off ([how-to-setup-auth.md](how-to-setup-auth.md)).
 
 Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config.ts):
 
@@ -67,14 +67,28 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
 2. Create D1, R2 and the queues (with dead-letter queues, kept 14 days), and write the D1 id into `wrangler.jsonc`:
 
    ```bash
+   bun run setup:cloudflare --env production --dry-run  # the plan
    bun run setup:cloudflare --env production            # add --jurisdiction eu to keep data in the EU
    ```
 
-3. Email, if the environment sends mail ([how-to-setup-email.md](./how-to-setup-email.md)):
+   With `--jurisdiction eu` the script also writes `"jurisdiction": "eu"` into the environment's `r2_buckets` entry. It also gives the Workers Rate Limiting bindings `namespace_id`s from the project's own block when they are still the starter's: the ids are account-wide, so a project that kept the starter's would share its rate-limit counters with every other one that did ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#namespace-ids)).
+
+3. Domain: the environment's hostname goes into `routes` of its block in `wrangler.jsonc` as a [Custom Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), and `"workers_dev": false` turns off the `*.workers.dev` URL. The zone must be in the same account and the hostname must have no DNS record yet; the deploy creates the record and the certificate. `APP_URL` (step 7) is then `https://<hostname>`. The starter's own production uses `starter.flooper.me`:
+
+   ```jsonc
+   "routes": [{ "pattern": "starter.flooper.me", "custom_domain": true }],
+   "workers_dev": false,
+   ```
+
+   A project replaces that hostname with its own (or removes both lines to stay on `workers.dev`). `wrangler deploy --dry-run` lists bindings, not routes: after `CLOUDFLARE_ENV=production bun run deploy:dry-run` in `apps/web`, the route is in `routes` of the built `dist/server/wrangler.json`.
+
+   Email, if the environment sends mail ([how-to-setup-email.md](./how-to-setup-email.md#choosing-the-sender)). The sender's domain must be onboarded to Email Service; it can differ from the app's hostname (the starter's production sends as `starter@flooper.me`):
 
    ```bash
-   bun run setup:email --domain example.com --env production
+   bun run setup:email --domain example.com --from noreply@example.com --env production
    ```
+
+   A `BOOTSTRAP_ADMIN_EMAIL` needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` (the starter's production sets it), and that needs `EMAIL_FROM`: the Worker refuses to start with verification on and no sender.
 
 4. Sign-in, account security, workspaces, sign-up, billing and the admin portal: the starter ships no choice for most of them, and the Worker refuses to start without one ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md), [how-to-configure-account-security.md](./how-to-configure-account-security.md)):
 
