@@ -15,6 +15,7 @@ import {
   type FeatureFlags,
   findAdminAccess,
   getSecurityState,
+  type HealthResponseBody,
   type Ids,
   isRecentSignIn,
   type JobQueue,
@@ -87,6 +88,11 @@ export interface Context {
   /** The admin portal's way into Better Auth (server/admin-auth-gateway.ts). */
   readonly adminAuth: AdminAuthGateway;
   readonly accountAuth: AccountAuthGateway;
+  /**
+   * Runs the readiness checks of this deployment now, with the admin detail
+   * (server/health.ts): a live check, nothing stored.
+   */
+  readonly readiness: () => Promise<HealthResponseBody>;
 }
 
 /** What procedures read from the Better Auth session. */
