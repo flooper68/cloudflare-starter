@@ -121,7 +121,7 @@ export function SignUpForm({
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
         <Logo className="mb-3" />
-        <CardTitle>Create an account</CardTitle>
+        <CardTitle level={1}>Create an account</CardTitle>
         <p className="text-sm text-fg-muted">
           {checkEmail
             ? `We sent a verification link to ${email}. Open it to finish signing up.`
@@ -217,7 +217,7 @@ export function SignUpForm({
         <p className="text-sm text-fg-muted">
           Already have an account?{" "}
           <a
-            className="font-medium text-accent underline underline-offset-4"
+            className="font-medium text-accent-text underline underline-offset-4"
             href={`/sign-in${search}`}
           >
             Sign in

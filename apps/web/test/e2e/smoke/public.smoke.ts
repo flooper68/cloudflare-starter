@@ -1,0 +1,201 @@
+/**
+ * Production smoke: what a signed-out visitor sees on a deployed app, checked with GET
+ * requests only. Run with `bun run test:smoke -- --base-url https://starter.flooper.me`;
+ * the deploy workflow runs it after every deploy. Features that need an account are in
+ * the scripted checklist, docs/guides/how-to-qa-a-deployment.md.
+ */
+import AxeBuilder from "@axe-core/playwright";
+
+import { expect, hydrated, test } from "./fixtures";
+
+const smoke = { tag: "@smoke" };
+
+test.describe("public pages", () => {
+  test("landing page answers 200 with its content", smoke, async ({ page }) => {
+    const response = await page.goto("/");
+    expect(response?.status()).toBe(200);
+    await hydrated(page);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Sign in" }).first()
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Sign up" }).first()
+    ).toBeVisible();
+  });
+
+  for (const { path, heading } of [
+    { path: "/sign-in", heading: /sign in/i },
+    { path: "/sign-up", heading: /create|sign up/i },
+  ]) {
+    test(
+      `${path} renders its form and the Turnstile widget`,
+      smoke,
+      async ({ page }) => {
+        const widgetScript = page.waitForRequest((request) =>
+          request
+            .url()
+            .startsWith("https://challenges.cloudflare.com/turnstile/")
+        );
+        const response = await page.goto(path);
+        expect(response?.status()).toBe(200);
+        await hydrated(page);
+        await expect(page).toHaveTitle(heading);
+        await expect(page.getByLabel("Email")).toBeVisible();
+        await expect(page.getByLabel("Password")).toBeVisible();
+        // The HumanCheck container (packages/ui human-check.tsx) and the widget script it
+        // loads; with TURNSTILE=off neither exists.
+        await expect(
+          page.getByRole("group", { name: "Human check" })
+        ).toBeVisible();
+        await widgetScript;
+      }
+    );
+  }
+});
+
+test.describe("signed-out access", () => {
+  for (const path of ["/app", "/app/dashboard"]) {
+    test(`${path} redirects to sign-in`, smoke, async ({ request }) => {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status()).toBeGreaterThanOrEqual(300);
+      expect(response.status()).toBeLessThan(400);
+      expect(
+        new URL(response.headers().location ?? "", response.url()).pathname
+      ).toBe("/sign-in");
+    });
+  }
+
+  test("/admin is a 404 when signed out", smoke, async ({ request }) => {
+    const response = await request.get("/admin", { maxRedirects: 0 });
+    expect(response.status()).toBe(404);
+  });
+});
+
+test.describe("HTTP endpoints", () => {
+  test("/_storybook/ answers 200", smoke, async ({ request }) => {
+    const response = await request.get("/_storybook/");
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("text/html");
+  });
+
+  test("/api/hello answers 200", smoke, async ({ request }) => {
+    const response = await request.get("/api/hello");
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ message: "hello world" });
+  });
+
+  // Health endpoints arrive with the health PR (#35); until it is deployed they are 404.
+  test("/health/live passes", smoke, async ({ request }) => {
+    const response = await request.get("/health/live");
+    test.skip(
+      response.status() === 404,
+      "/health/live is 404: the health endpoints (PR #35) are not deployed yet"
+    );
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toMatchObject({ status: "pass" });
+  });
+
+  test("/health/ready passes or warns", smoke, async ({ request }) => {
+    const response = await request.get("/health/ready");
+    test.skip(
+      response.status() === 404,
+      "/health/ready is 404: the health endpoints (PR #35) are not deployed yet"
+    );
+    expect(response.status()).toBe(200);
+    expect((await response.json()).status).toMatch(/^(pass|warn)$/);
+  });
+});
+
+/**
+ * Security headers on the landing page. A row with `pending` names the PR that adds the
+ * header; it is `test.fixme` until that PR is deployed, then drop `pending`.
+ */
+const securityHeaders: readonly {
+  readonly name: string;
+  readonly expected: RegExp;
+  readonly pending?: string;
+}[] = [
+  // TODO(security-headers PR, not yet opened): drop `pending` once it is deployed.
+  {
+    name: "strict-transport-security",
+    expected: /max-age=\d{7,}/,
+    pending: "security-headers PR",
+  },
+  {
+    name: "x-content-type-options",
+    expected: /^nosniff$/,
+    pending: "security-headers PR",
+  },
+  {
+    name: "referrer-policy",
+    expected: /strict-origin-when-cross-origin|no-referrer/,
+    pending: "security-headers PR",
+  },
+  {
+    name: "content-security-policy",
+    expected: /frame-ancestors/,
+    pending: "security-headers PR",
+  },
+  {
+    name: "permissions-policy",
+    expected: /camera=\(\)/,
+    pending: "security-headers PR",
+  },
+  {
+    name: "cross-origin-opener-policy",
+    expected: /same-origin/,
+    pending: "security-headers PR",
+  },
+];
+
+test.describe("security headers", () => {
+  for (const header of securityHeaders) {
+    const title = `${header.name} is set`;
+    if (header.pending) {
+      test.fixme(`${title} (pending: ${header.pending})`, smoke, () => {});
+      continue;
+    }
+    test(title, smoke, async ({ request }) => {
+      const response = await request.get("/");
+      expect(response.headers()[header.name] ?? "").toMatch(header.expected);
+    });
+  }
+});
+
+test.describe("docs", () => {
+  // TODO(docs PR, not yet opened): the public docs and their search. Replace the fixme
+  // with: /docs answers 200 with a heading, and a search for "workspace" lists a result.
+  test.fixme(
+    "/docs renders and search finds a page (pending: docs PR)",
+    smoke,
+    () => {}
+  );
+});
+
+test.describe("accessibility", () => {
+  for (const colorScheme of ["dark", "light"] as const) {
+    for (const path of ["/", "/sign-in", "/sign-up", "/forgot-password"]) {
+      test(
+        `${path} passes axe in the ${colorScheme} theme`,
+        smoke,
+        async ({ page }) => {
+          await page.emulateMedia({ colorScheme });
+          const response = await page.goto(path);
+          expect(response?.status()).toBe(200);
+          await hydrated(page);
+          const results = await new AxeBuilder({ page })
+            // Turnstile's cross-origin iframe is Cloudflare's markup, not the app's.
+            .exclude('iframe[src^="https://challenges.cloudflare.com"]')
+            .analyze();
+          expect(
+            results.violations.map(
+              (violation) =>
+                `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`
+            )
+          ).toEqual([]);
+        }
+      );
+    }
+  }
+});

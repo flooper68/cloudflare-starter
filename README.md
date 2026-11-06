@@ -142,6 +142,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run test:unit` / `test:integration` | One layer only                                                                                                                                                      |
 | `bun run test:components`                | Every Storybook story in Chromium, dark and light theme: renders, passes axe, runs its `play` interaction test                                                      |
 | `bun run test:e2e`                       | Playwright journeys ([the list](docs/architecture/testing.md#layers)) against `astro dev`; needs `.dev.vars` and `db:migrate:local`                                 |
+| `bun run test:smoke -- --base-url <url>` | Read-only production smoke suite against a deployed app (`--env production` reads the URL from `wrangler.jsonc`)                                                    |
 | `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                                                                   |
 | `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                                                                 |
 | `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                                                               |

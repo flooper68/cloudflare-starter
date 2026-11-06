@@ -9,6 +9,7 @@
  */
 import { parseArgs } from "node:util";
 
+import { enableOutcome, planEnable } from "./email-plan";
 import {
   envPath,
   fail,
@@ -35,10 +36,24 @@ if (!from.endsWith(`@${domain}`) && !from.endsWith(`.${domain}`)) {
 }
 
 console.log(`Email Sending for ${domain}`);
-const enabled = wrangler(["email", "sending", "enable", domain], { dryRun });
-if (!enabled.ok) fail(enabled.stderr || enabled.stdout);
+// An onboarded domain makes `enable` fail with "Subdomain already exists [code 2040]":
+// check the list first, and treat that error as done too (email-plan.ts).
+const listed = wrangler(["email", "sending", "list", domain], { dryRun });
+if (!dryRun && planEnable(listed, domain) === "already-enabled") {
+  console.log(`✓ Email Sending is already enabled for ${domain}`);
+} else {
+  const outcome = enableOutcome(
+    wrangler(["email", "sending", "enable", domain], { dryRun })
+  );
+  if (outcome.status === "failed") fail(outcome.message);
+  if (!dryRun)
+    console.log(
+      outcome.status === "already-enabled"
+        ? `✓ Email Sending is already enabled for ${domain}`
+        : `✓ Email Sending enabled for ${domain}`
+    );
+}
 if (!dryRun) {
-  console.log(enabled.stdout.trim());
   const dns = wrangler(["email", "sending", "dns", "get", domain]);
   console.log(dns.ok ? `\nDNS records:\n${dns.stdout.trim()}` : dns.stderr);
 }

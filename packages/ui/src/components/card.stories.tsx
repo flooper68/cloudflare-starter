@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ArrowUpRight } from "lucide-react";
+import { expect, within } from "storybook/test";
 
 import { Button } from "./button";
 import {
@@ -52,6 +53,25 @@ export const WithFooter: Story = {
       </CardFooter>
     </Card>
   ),
+};
+
+/** A card that is the page's main content titles it with `level={1}`. */
+export const PageHeading: Story = {
+  render: () => (
+    <Card className="w-80">
+      <CardHeader>
+        <CardTitle level={1}>Sign in</CardTitle>
+        <CardDescription>Use your email and password.</CardDescription>
+      </CardHeader>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const heading = within(canvasElement).getByRole("heading", {
+      name: "Sign in",
+      level: 1,
+    });
+    await expect(heading).toBeVisible();
+  },
 };
 
 export const Interactive: Story = {

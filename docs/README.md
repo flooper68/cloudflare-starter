@@ -35,6 +35,7 @@ How to set up or do something; read while doing it.
 | [how-to-use-trash.md](guides/how-to-use-trash.md)                                     | you make a table trashable, read one, change a trash retention, debug a missing or restored item, or set up storage reconciliation of orphaned R2 objects                            |
 | [how-to-handle-data-privacy.md](guides/how-to-handle-data-privacy.md)                 | you add a table or stored object, handle a data export or deletion request, set up export expiry, or restore a database after an erasure                                             |
 | [how-to-monitor-health.md](guides/how-to-monitor-health.md)                           | you point an uptime monitor, load balancer or status page at the app, add or change a health check, or investigate a failing `/health/ready`                                         |
+| [how-to-qa-a-deployment.md](guides/how-to-qa-a-deployment.md)                         | you release to staging or production, run the production smoke suite, or run the scripted feature QA in a real browser with QA accounts and clean them up                            |
 
 ## Architecture
 
