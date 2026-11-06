@@ -3,6 +3,8 @@
 # docs/guides/how-to-publish-docs-and-landing.md#caching
 
 # Prerendered pages: always revalidate, so a deploy shows at once (the ETag keeps it cheap).
+/
+  Cache-Control: public, max-age=0, must-revalidate
 /docs/*
   Cache-Control: public, max-age=0, must-revalidate
 

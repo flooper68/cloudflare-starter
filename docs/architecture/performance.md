@@ -24,10 +24,10 @@ Each project defines user-facing targets and records them in this section (repla
 
 Project targets:
 
-| Target                                                                                   | Threshold                | Conditions                                                                    | Checked by                                                          |
-| ---------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| First-load JS per prerendered public page (`/docs/*`, the 404, and `/` once prerendered) | at most 50 KB gzip       | the page's scripts and their static imports; lazily imported modules excluded | `bun run budget` (`scripts/check-bundle-budget.ts`), CI `build` job |
-| Pagefind index and client files (docs search)                                            | at most 100 KB gzip each | each file the search dialog may load lazily                                   | `bun run budget`, CI `build` job                                    |
+| Target                                                              | Threshold                | Conditions                                                                    | Checked by                                                          |
+| ------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| First-load JS per prerendered public page (`/`, `/docs/*`, the 404) | at most 50 KB gzip       | the page's scripts and their static imports; lazily imported modules excluded | `bun run budget` (`scripts/check-bundle-budget.ts`), CI `build` job |
+| Pagefind index and client files (docs search)                       | at most 100 KB gzip each | each file the search dialog may load lazily                                   | `bun run budget`, CI `build` job                                    |
 
 Targets are stated at a data volume, because most regressions on this stack come from queries that grow with the data. Server latency is a production percentile, never a local timing.
 

@@ -6,6 +6,12 @@ export {
   type DocsNavProps,
   type DocsNavSection,
 } from "../components/docs-nav";
+export {
+  type Feature,
+  FeatureGrid,
+  type FeatureGridProps,
+} from "../components/feature-grid";
+export { Hero, type HeroProps } from "../components/hero";
 export { Prose, type ProseProps } from "../components/prose";
 export {
   TableOfContents,

@@ -138,7 +138,7 @@ Background jobs, the queue consumer, retries, the dead-letter queue and the cron
 
 1. `curl https://<your-worker-url>/api/hello` returns a JSON hello.
 2. Sign up (the Turnstile widget appears and passes), sign out, sign in.
-3. Signed-in visits to `/` land on `/app/dashboard`; signed-out visits to `/app/*` land on `/sign-in`.
+3. `/` shows the landing page (signed in or out); its "Open app" opens `/app/dashboard` when signed in, and signed-out visits to `/app/*` land on `/sign-in`.
 4. Try the demos you configured.
 5. `/docs/` shows the docs index and a guide opens from its navigation.
 6. `curl -i https://<your-worker-url>/health/ready` answers 200 with `"status":"pass"`; point an uptime monitor at it ([how-to-monitor-health.md](how-to-monitor-health.md)).

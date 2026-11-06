@@ -4,7 +4,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 
 ## Highlights
 
-- Astro 7 + React 19 on Cloudflare Workers, SSR public pages and a client-routed SPA under `/app/*`
+- Astro 7 + React 19 on Cloudflare Workers: a prerendered landing page and docs site (the repository's Markdown at `/docs`, with search), SSR auth pages and a client-routed SPA under `/app/*`
 - Better Auth: email + password and/or Google, switched by env; optional email verification; users and sessions in D1
 - Account security: authenticator two-factor with recovery codes and optional emailed codes, passkey sign-in, enrollment policy per environment (off, optional, required for admins, required), and MCP access bound to the browser session that granted it; destructive admin actions need a fresh second factor
 - Account and workspace settings: profile and avatar, verified email changes, linked accounts, own sessions, locale, time zone and theme, workspace name and logo, confirmed workspace and account deletion; tRPC procedures and MCP tools
@@ -73,7 +73,9 @@ This repository is a template, not a framework. When you start a project from it
 
    If the web Worker ends up with only `fetch`, point `main` in `apps/web/wrangler.jsonc` back at the adapter's default entry or keep `src/worker.ts` with `fetch` alone. Then remove the demo pages and rename `cloudflare-starter-*` resources.
 
-4. **Give the project its own rate-limit namespace block, domain and sender.** Workers Rate Limiting `namespace_id`s are account-wide: a project that keeps the starter's ids (7001–7011, 8001–8011, 9001–9011) shares its limits with every other project in the account that did. After renaming the Worker, `bun run setup:cloudflare --env all --dry-run` shows the block it will assign (from a hash of the Worker name, or `--namespace-base <n>`), and the same command without `--dry-run` writes it; `bun run doctor` fails until then ([docs/guides/how-to-configure-abuse-protection.md](docs/guides/how-to-configure-abuse-protection.md#namespace-ids)). Replace the starter's production hostname in `routes` (`starter.flooper.me`) with the project's, and pick its `EMAIL_FROM` ([docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md#deploy)).
+4. **Decide what the starter's own pages become.** The landing page at `/` and the docs site at `/docs` describe the starter. Replace the landing with the product's (copy in `apps/web/src/landing/content.ts`, sections in `apps/web/src/pages/index.astro`), and either keep publishing the repository's docs (the guides then serve the project's developers), turn `/docs` into product docs by pointing `DOCS.sources` at them, or remove it. Steps for each: [docs/guides/how-to-publish-docs-and-landing.md](docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page). Set the production `SITE_URL` in `apps/web/package.json` (`deploy:production`) to the project's domain.
+
+5. **Give the project its own rate-limit namespace block, domain and sender.** Workers Rate Limiting `namespace_id`s are account-wide: a project that keeps the starter's ids (7001–7011, 8001–8011, 9001–9011) shares its limits with every other project in the account that did. After renaming the Worker, `bun run setup:cloudflare --env all --dry-run` shows the block it will assign (from a hash of the Worker name, or `--namespace-base <n>`), and the same command without `--dry-run` writes it; `bun run doctor` fails until then ([docs/guides/how-to-configure-abuse-protection.md](docs/guides/how-to-configure-abuse-protection.md#namespace-ids)). Replace the starter's production hostname in `routes` (`starter.flooper.me`) with the project's, and pick its `EMAIL_FROM` ([docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md#deploy)).
 
 ## Workspace
 
