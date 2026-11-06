@@ -31,6 +31,7 @@ function memoryPlatform() {
     metrics,
     tracer,
     storageReconcile: "off",
+    cspMode: "enforce",
     email: noopEmail,
     flags: noopFeatureFlags,
     flagStore: null,

@@ -109,6 +109,15 @@ export const TRACING_BACKENDS = ["workers", "none"] as const;
  */
 export const FEATURE_FLAG_PROVIDERS = ["d1", "none"] as const;
 
+/**
+ * How the HTML pages' Content-Security-Policy is delivered: `enforce` (blocks and reports
+ * violations) or `report-only` (reports them, blocks nothing; for rolling out a policy
+ * change). Non-HTML responses always get an enforced policy. Required, no default
+ * (docs/guides/how-to-configure-security-headers.md).
+ */
+export const CSP_MODES = ["enforce", "report-only"] as const;
+export type CspMode = (typeof CSP_MODES)[number];
+
 /** Which deployment this is: `local` only in .dev.vars, the others in wrangler.jsonc. */
 export const APP_ENVS = ["local", "develop", "staging", "production"] as const;
 
@@ -120,6 +129,7 @@ export interface PlatformConfig {
   readonly METRICS: (typeof METRICS_BACKENDS)[number];
   readonly TRACING: (typeof TRACING_BACKENDS)[number];
   readonly STORAGE_RECONCILE: StorageReconcileMode;
+  readonly CSP_MODE: CspMode;
 }
 
 /** A required setting is missing or invalid; the message names it and the allowed values. */
@@ -178,6 +188,7 @@ export function parsePlatformConfig(env: PartialEnv): PlatformConfig {
       "STORAGE_RECONCILE",
       STORAGE_RECONCILE_MODES
     ),
+    CSP_MODE: requiredChoice(env, "CSP_MODE", CSP_MODES),
   };
 }
 
