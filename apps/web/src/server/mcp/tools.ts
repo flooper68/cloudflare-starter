@@ -559,6 +559,13 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, and workspace counts and sizes."
   ),
   direct(
+    "admin_get_health",
+    "read",
+    "admin.health.get",
+    "Admin: health",
+    "Platform admins only. Runs the readiness checks of this deployment now (D1, R2, queue binding, email configuration, settings, rate-limit and Analytics Engine bindings) and returns them in the IETF health check format: overall status pass, warn or fail, the release, and per check its status, latency in ms and, when it did not pass, what went wrong. The same checks as the public /health/ready, with the failure details the public body leaves out."
+  ),
+  direct(
     "admin_get_settings",
     "read",
     "admin.settings.get",
@@ -702,6 +709,12 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
     "one-click unsubscribe from a mail link (RFC 8058), authorized by its signed token, not a user; MCP clients use update_notification_preferences",
   "api/billing/webhook.ts":
     "the billing provider's webhook (signed server-to-server events); people and agents use get_billing_summary",
+  "health/index.ts":
+    "public health check for uptime monitors (IETF application/health+json, alias of /health/ready); platform admins' agents use admin_get_health",
+  "health/live.ts":
+    "public liveness probe for uptime monitors; touches no dependency, nothing for an agent to do",
+  "health/ready.ts":
+    "public readiness check for uptime monitors (IETF application/health+json); platform admins' agents use admin_get_health",
 };
 
 export function annotationsOf(tool: ToolDefinition) {

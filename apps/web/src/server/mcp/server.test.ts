@@ -88,6 +88,9 @@ function context(overrides: Partial<Context> = {}): Context {
     browser: null,
     adminAuth: {} as Context["adminAuth"],
     accountAuth: { revokeSession: async () => {} },
+    readiness: async () => {
+      throw new Error("not used by these tests");
+    },
     ...overrides,
   };
 }

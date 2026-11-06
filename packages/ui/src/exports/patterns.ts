@@ -31,6 +31,14 @@ export {
   type AdminFlagCardProps,
 } from "../components/patterns/admin-flag-card";
 export {
+  AdminHealth,
+  type AdminHealthCheck,
+  type AdminHealthData,
+  type AdminHealthProps,
+  AdminHealthSkeleton,
+  type AdminHealthStatus,
+} from "../components/patterns/admin-health";
+export {
   type AdminDailyCount,
   AdminOverview,
   type AdminOverviewData,

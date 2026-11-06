@@ -122,6 +122,8 @@ describe("abuse protection coverage", () => {
       const source = [read(`${PAGES}${file}`)];
       if (file === "mcp.ts")
         source.push(read("apps/web/src/server/mcp/handler.ts"));
+      if (file.startsWith("health/"))
+        source.push(read("apps/web/src/server/health.ts"));
       for (const id of ids) expect(source.join("\n")).toContain(`"${id}"`);
     }
   );

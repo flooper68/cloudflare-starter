@@ -14,6 +14,7 @@ export { buildErasureHandlers } from "./erasure-catalog";
 export * from "./feature-flags";
 export * from "./files";
 export * from "./greetings";
+export * from "./health";
 export { jobCatalog } from "./job-catalog";
 export * from "./jobs";
 export * from "./kernel";

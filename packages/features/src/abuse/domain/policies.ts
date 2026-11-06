@@ -215,6 +215,16 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "Client analytics batches (analytics.track), per user; kept apart from mutation.user so telemetry never uses up a user's mutations",
   },
+  "health.ip": {
+    // Generous: uptime monitors probe every 30-60 s per region, often from shared IPs.
+    limit: 120,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_HEALTH",
+    description:
+      "The public health endpoints (/health, /health/live, /health/ready), per IP: anonymous, and readiness queries D1 and R2 on each call",
+  },
 } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
 
 export type RateLimitPolicyId = keyof typeof RATE_LIMIT_POLICIES;
@@ -248,6 +258,9 @@ export const ROUTE_POLICIES: Readonly<
   "invite/[token].astro": ["token.lookup"],
   "api/notifications/unsubscribe.ts": ["notifications.unsubscribe"],
   "unsubscribe.astro": ["token.lookup"],
+  "health/index.ts": ["health.ip"],
+  "health/live.ts": ["health.ip"],
+  "health/ready.ts": ["health.ip"],
 };
 
 /**

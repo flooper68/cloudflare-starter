@@ -119,6 +119,7 @@ Background jobs, the queue consumer, retries, the dead-letter queue and the cron
 2. Sign up (the Turnstile widget appears and passes), sign out, sign in.
 3. Signed-in visits to `/` land on `/app/dashboard`; signed-out visits to `/app/*` land on `/sign-in`.
 4. Try the demos you configured.
+5. `curl -i https://<your-worker-url>/health/ready` answers 200 with `"status":"pass"`; point an uptime monitor at it ([how-to-monitor-health.md](how-to-monitor-health.md)).
 
 ## Common Problems
 

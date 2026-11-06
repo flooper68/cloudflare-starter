@@ -34,6 +34,7 @@ Public, SSR:
 - `/api/files`, `/api/files/:id` (R2 binding upload and download)
 - `/api/billing/webhook` (the billing provider's events; 404 unless `BILLING=provider`)
 - `/api/notifications/unsubscribe` (RFC 8058 one-click unsubscribe from notification mail) and `/unsubscribe` (its confirmation page)
+- `/health/live`, `/health/ready` and `/health` (health endpoints for uptime monitors, `application/health+json`: [how-to-monitor-health.md](../../docs/guides/how-to-monitor-health.md))
 
 Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
 

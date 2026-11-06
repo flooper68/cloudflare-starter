@@ -113,6 +113,11 @@ export const adminRouter = router({
     ),
   }),
 
+  health: router({
+    // A live readiness check with each failure's detail; nothing is stored.
+    get: adminProcedure.query(({ ctx }) => ctx.readiness()),
+  }),
+
   settings: router({
     get: adminProcedure.query(({ ctx }) =>
       deploymentSettings({
