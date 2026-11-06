@@ -1,0 +1,31 @@
+$ curl -s /robots.txt   (CLOUDFLARE_ENV=production SITE_URL=https://starter.flooper.me build)
+User-agent: *
+Disallow: /app
+Disallow: /api
+Disallow: /admin
+Disallow: /_storybook
+Disallow: /health
+
+Sitemap: https://starter.flooper.me/sitemap-index.xml
+
+$ curl -s /sitemap-index.xml
+<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://starter.flooper.me/sitemap-0.xml</loc></sitemap></sitemapindex>
+
+$ head of /sitemap-0.xml locs
+<loc>https://starter.flooper.me/</loc>
+<loc>https://starter.flooper.me/docs/</loc>
+<loc>https://starter.flooper.me/docs/apps/container/</loc>
+<loc>https://starter.flooper.me/docs/apps/storybook/</loc>
+<loc>https://starter.flooper.me/docs/apps/web/</loc>
+<loc>https://starter.flooper.me/docs/architecture/overview/</loc>
+
+$ <head> of /docs/guides/how-to-setup-d1/
+<title>How to set up the D1 database · Cloudflare Starter docs</title>
+<meta name="description" content="The web app stores its data, including Better Auth's users and sessions, in Cloudflare D1 (SQLite). The schema is Drizzle; migrations are plain SQL generated…">
+<link rel="canonical" href="https://starter.flooper.me/docs/guides/how-to-setup-d1/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Cloudflare Starter">
+<meta property="og:title" content="How to set up the D1 database · Cloudflare Starter docs">
+<meta property="og:description" content="The web app stores its data, including Better Auth's users and sessions, in Cloudflare D1 (SQLite). The schema is Drizzle; migrations are plain SQL generated…">
+<meta property="og:url" content="https://starter.flooper.me/docs/guides/how-to-setup-d1/">
+<meta name="twitter:card" content="summary">
