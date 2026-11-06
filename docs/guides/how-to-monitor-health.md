@@ -116,6 +116,11 @@ Checks run in parallel; each has a deadline of 2 s (`HEALTH_CHECK_TIMEOUT_MS`), 
 | `rate-limits:bindings`      | with `RATE_LIMITING=cloudflare`, every binding of the rate-limit catalog is bound                       | one is missing                                                                |                                                | none                      |
 | `analytics-engine:bindings` | `METRICS_DATASET` with `METRICS=analytics-engine`, `ANALYTICS_EVENTS` with `ANALYTICS=analytics-engine` | one is missing                                                                |                                                | none                      |
 
+Deliberately not checked, because no cheap live read exists:
+
+- **Queue backlog and dead letters.** A Worker's queue binding can only send; backlog and dead-letter counts come from the Cloudflare API with an account token, which the Worker does not hold and a public endpoint must not use. Watch them in the dashboard (Queues → the queue → Metrics) or alert on them there.
+- **Last cron runs.** No job or cron history is stored ([how-to-add-background-jobs.md](how-to-add-background-jobs.md)); recording one only for health would add a D1 write per run. Failing cron entries are reported to the error reporter and visible in Workers Logs (`cron.completed` per entry, an error report on failure).
+
 At one probe every 30 s from three regions that is about 260,000 readiness calls a month: well inside D1's and R2's free tiers, plus the Worker invocations themselves.
 
 ## What the public sees, and what it does not
@@ -138,7 +143,7 @@ Each check is a span `health.check <check>` (internal, a child of the request's 
 
 ## Platform admins
 
-The admin portal's Overview runs the same checks live when it opens (and on **Check again**) and shows each failure's detail next to its output (`missing binding: not bound: APP_QUEUE`). Over tRPC it is `admin.health.get`, over MCP `admin_get_health` (an `adminProcedure`: `NOT_FOUND` for everyone else). It is a live check, not stored data, so it is the same answer the monitor would get at that moment, with the detail the public body leaves out.
+The admin portal's Overview runs the same checks live when it opens (and on **Check again**), shows when they ran, and shows each failure's detail next to its output (`missing binding: not bound: APP_QUEUE`). Over tRPC it is `admin.health.get`, over MCP `admin_get_health` (an `adminProcedure`: `NOT_FOUND` for everyone else). It is a live check, not stored data, so it is the same answer the monitor would get at that moment, with the detail the public body leaves out.
 
 ## Wiring an uptime monitor
 

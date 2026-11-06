@@ -66,6 +66,10 @@ export const Pass: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getAllByText("Pass")).toHaveLength(8);
     await expect(canvas.getByText("18 ms")).toBeVisible();
+    await expect(canvas.getByText("10:00:00 UTC")).toHaveAttribute(
+      "datetime",
+      TIME
+    );
   },
 };
 

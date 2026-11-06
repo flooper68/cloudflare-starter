@@ -43,13 +43,30 @@ const STATUS: Record<
   fail: { label: "Fail", tone: "danger" },
 };
 
+const clock = new Intl.DateTimeFormat("en", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+  timeZone: "UTC",
+});
+
+/** When the checks finished: the latest `time` of any check. */
+function checkedAt(health: AdminHealthData): Date | null {
+  const times = Object.values(health.checks)
+    .flat()
+    .map((entry) => Date.parse(entry.time))
+    .filter((time) => !Number.isNaN(time));
+  return times.length > 0 ? new Date(Math.max(...times)) : null;
+}
+
 function StatusBadge({ status }: { readonly status: AdminHealthStatus }) {
   return <Badge tone={STATUS[status].tone}>{STATUS[status].label}</Badge>;
 }
 
 /**
- * The deployment's readiness, checked live when the page opens: the overall status, the
- * release, and each dependency check with its status, latency and, when it did not pass,
+ * The deployment's readiness, checked live when the page opens: the overall status, when
+ * it was checked, the release, and each dependency check with its status, latency and, when it did not pass,
  * what went wrong. The same checks as the public `/health/ready`, with the detail the
  * public body leaves out.
  */
@@ -58,6 +75,7 @@ export function AdminHealth({
   onRefresh,
   refreshing = false,
 }: AdminHealthProps) {
+  const checked = checkedAt(health);
   const checks = Object.entries(health.checks).flatMap(([name, entries]) =>
     entries.map((entry, index) => ({ key: `${name}:${index}`, name, entry }))
   );
@@ -74,17 +92,27 @@ export function AdminHealth({
             <span className="text-xs text-fg-muted">{health.output}</span>
           ) : null}
         </div>
-        {onRefresh ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={<RefreshCw />}
-            loading={refreshing}
-            onClick={onRefresh}
-          >
-            Check again
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-3">
+          {checked ? (
+            <span className="text-xs text-fg-muted">
+              Checked{" "}
+              <time dateTime={checked.toISOString()}>
+                {clock.format(checked)} UTC
+              </time>
+            </span>
+          ) : null}
+          {onRefresh ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<RefreshCw />}
+              loading={refreshing}
+              onClick={onRefresh}
+            >
+              Check again
+            </Button>
+          ) : null}
+        </div>
       </div>
       <ul className="flex flex-col divide-y divide-line text-sm">
         {checks.map(({ key, name, entry }) => (
