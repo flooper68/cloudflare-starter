@@ -1,9 +1,20 @@
-import { expect, takeCspViolations, test } from "../e2e/fixtures";
-import { open } from "../e2e/helpers";
+import { expect, type Page, takeCspViolations, test } from "../e2e/fixtures";
+import { newAccount } from "../e2e/helpers";
 
 // The built app (playwright.build.config.ts): Astro's hashes, the page policy, the static
 // assets' public/_headers and Storybook's own policy, in Chromium. Every test also fails
-// on any CSP violation (the guard in ../e2e/fixtures.ts).
+// on any CSP violation in any page or frame (the guard in ../e2e/fixtures.ts).
+//
+// Unlike the dev journeys, this loads Cloudflare's real Turnstile widget with its
+// always-pass test keys (TURNSTILE_SITE_KEY in wrangler.jsonc, the secret in
+// .dev.vars.example), so the script-src and frame-src allowances meet the real api.js and
+// its iframe. That needs the network to challenges.cloudflare.com, never an account.
+
+/** Opens a page and waits for its React islands to hydrate. */
+async function visit(page: Page, path: string) {
+  await page.goto(path);
+  await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
+}
 
 const PAGES = ["/", "/sign-in", "/sign-up", "/forgot-password"];
 
@@ -13,26 +24,92 @@ for (const path of PAGES) {
     const policy = response.headers()["content-security-policy"] ?? "";
     expect(policy).toMatch(/script-src \S+\/_astro\/ 'sha256-/);
     expect(policy).toContain("frame-ancestors 'none'");
-    expect(policy).not.toContain("unsafe-inline");
+    expect(policy).not.toMatch(/script-src[^;]*unsafe-inline/);
     expect(response.headers()["x-frame-options"]).toBe("DENY");
-    await open(page, path);
+    await visit(page, path);
   });
 }
 
-test("the Turnstile widget renders on sign-up without a violation", async ({
-  page,
+test("a signed-up user's journey: the real Turnstile widget, dialogs, a select, toasts and a passkey", async ({
+  browser,
 }) => {
-  await open(page, "/sign-up");
-  await expect(page.getByRole("group", { name: "Human check" })).toBeVisible();
-  await expect(page.getByText("Verified (local test)")).toBeVisible();
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const device = await context.newCDPSession(page);
+  await device.send("WebAuthn.enable");
+  await device.send("WebAuthn.addVirtualAuthenticator", {
+    options: {
+      protocol: "ctap2",
+      transport: "internal",
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true,
+    },
+  });
+  try {
+    const account = newAccount("csp-build");
+    await visit(page, "/sign-up");
+    // The widget's challenge iframe (in a shadow root) loaded from Cloudflare.
+    await expect
+      .poll(
+        () =>
+          page
+            .frames()
+            .some((frame) =>
+              frame.url().startsWith("https://challenges.cloudflare.com/")
+            ),
+        { timeout: 20_000 }
+      )
+      .toBe(true);
+    await page.getByLabel("Name").fill(account.name);
+    await page.getByLabel("Email").fill(account.email);
+    await page.getByLabel("Password").fill(account.password);
+    const submit = page.getByRole("button", { name: "Create account" });
+    await expect(submit).toBeEnabled({ timeout: 20_000 });
+    await submit.click();
+    await expect(page).toHaveURL(/\/app\/dashboard$/);
+    await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
+
+    // A modal dialog: Radix locks scrolling with a <style> computed at runtime.
+    await page.getByRole("button", { name: /workspace menu/ }).click();
+    await page.getByRole("menuitem", { name: "Create workspace" }).click();
+    const create = page.getByRole("dialog", { name: "Create workspace" });
+    await expect(create).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(create).toHaveCount(0);
+
+    // A Radix Select and a sonner toast.
+    await page.getByRole("link", { name: "Settings" }).click();
+    await page.getByRole("link", { name: "Appearance & language" }).click();
+    await page.getByRole("combobox", { name: "Theme" }).click();
+    await expect(page.getByRole("option", { name: "Dark" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("link", { name: "Account" }).click();
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await expect(page.getByText("Profile saved")).toBeVisible();
+
+    // A passkey ceremony (WebAuthn through the virtual authenticator).
+    await page.getByRole("link", { name: "Security" }).click();
+    await page
+      .getByLabel("Password for security changes")
+      .fill(account.password);
+    await page.getByLabel("Passkey name").fill("Build laptop");
+    await page
+      .getByRole("button", { name: "Add passkey", exact: true })
+      .click();
+    await expect(page.getByText("Build laptop", { exact: true })).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });
 
 test("an injected inline script is blocked and reported", async ({ page }) => {
-  await open(page, "/sign-in");
+  await visit(page, "/sign-in");
   await page.evaluate(() => {
     const script = document.createElement("script");
     script.textContent = "window.__injected = true;";
-    document.body.append(script);
+    document.body.appendChild(script);
   });
   await expect
     .poll(() => takeCspViolations().map((v) => v.directive))

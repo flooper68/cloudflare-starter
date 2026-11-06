@@ -6,7 +6,7 @@
  *
  * HTML pages get a Content-Security-Policy Level 3 built per request from the settings
  * (TURNSTILE, WEB_ANALYTICS, presigned uploads, CSP_MODE) plus the hashes of the inline
- * scripts and styles Astro rendered into the page (`security.csp` in astro.config.mjs).
+ * scripts Astro rendered into the page (`security.csp` in astro.config.mjs).
  * Every other response gets a policy that loads nothing. Guide:
  * docs/guides/how-to-configure-security-headers.md.
  */
@@ -114,8 +114,8 @@ export interface PagePolicyInput {
   readonly origin: string;
   /**
    * `astro dev`: Vite serves modules from /src and /node_modules and injects inline
-   * scripts and styles, so script-src and style-src are relaxed to 'self' 'unsafe-inline'
-   * (every other directive stays as deployed). Never true in a build.
+   * scripts, so script-src is relaxed to 'self' 'unsafe-inline' (every other directive
+   * stays as deployed). Never true in a build.
    */
   readonly dev: boolean;
   /** Deployed over HTTPS: adds upgrade-insecure-requests. */
@@ -131,9 +131,15 @@ export interface PagePolicyInput {
   readonly uploadOrigin: string | null;
   /** Hashes Astro computed for the page's inline scripts (`'sha256-…'`, quoted). */
   readonly scriptHashes: readonly string[];
-  /** Hashes Astro computed for the page's inline styles. */
-  readonly styleHashes: readonly string[];
 }
+
+/**
+ * Styles may be inline: Radix's modal primitives (Dialog, Sheet, menus, Select) append a
+ * `<style>` computed from the measured scrollbar width at runtime, which no build-time
+ * hash can match, and sonner injects its stylesheet. Hashes would switch 'unsafe-inline'
+ * off, so there are none. Injected CSS cannot run script; script-src stays strict.
+ */
+export const PAGE_STYLE_SRC = "'self' 'unsafe-inline'";
 
 /**
  * The Content-Security-Policy of an HTML page: default-src 'self', scripts only from our
@@ -152,10 +158,6 @@ export function pagePolicy(input: PagePolicyInput): string {
   if (input.turnstile) script.push(TURNSTILE_ORIGIN);
   if (input.webAnalytics) script.push(WEB_ANALYTICS_SCRIPT_ORIGIN);
 
-  const style = input.dev
-    ? ["'self'", "'unsafe-inline'"]
-    : ["'self'", ...input.styleHashes];
-
   const connect = ["'self'"];
   if (input.uploadOrigin) connect.push(input.uploadOrigin);
   if (input.webAnalytics) connect.push(WEB_ANALYTICS_REPORT_ORIGIN);
@@ -167,7 +169,7 @@ export function pagePolicy(input: PagePolicyInput): string {
     `script-src ${script.join(" ")}`,
     // No inline event handlers (onclick=…) anywhere.
     "script-src-attr 'none'",
-    `style-src ${style.join(" ")}`,
+    `style-src ${PAGE_STYLE_SRC}`,
     // The TOTP QR code is a data: SVG; avatars and logos come from our own routes.
     "img-src 'self' data:",
     "font-src 'self'",
@@ -194,7 +196,7 @@ export function pagePolicy(input: PagePolicyInput): string {
  */
 export function hashesOf(
   policy: string | null,
-  directive: "script-src" | "style-src"
+  directive: "script-src"
 ): string[] {
   if (!policy) return [];
   for (const part of policy.split(";")) {
@@ -286,7 +288,6 @@ export function securityHeadersFor(
     webAnalytics: settings.webAnalytics,
     uploadOrigin: settings.uploadOrigin,
     scriptHashes: hashesOf(astroPolicy, "script-src"),
-    styleHashes: hashesOf(astroPolicy, "style-src"),
   });
   return {
     ...headers,

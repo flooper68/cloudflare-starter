@@ -18,7 +18,7 @@ test("pages send the policy and the guard sees what it blocks", async ({
   await page.evaluate(() => {
     const image = document.createElement("img");
     image.src = "https://images.example.invalid/pixel.png";
-    document.body.append(image);
+    document.body.appendChild(image);
   });
   await expect
     .poll(() => takeCspViolations().map((violation) => violation.directive))

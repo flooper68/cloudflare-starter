@@ -116,7 +116,7 @@ describe("HTML pages", () => {
       `script-src ${APP_URL}/_astro/ 'sha256-island=' https://challenges.cloudflare.com`
     );
     expect(directive(response, "style-src")).toBe(
-      "style-src 'self' 'sha256-css='"
+      "style-src 'self' 'unsafe-inline'"
     );
     expect(directive(response, "frame-src")).toBe(
       "frame-src https://challenges.cloudflare.com"
@@ -131,9 +131,7 @@ describe("HTML pages", () => {
     expect(response.headers.get("reporting-endpoints")).toBe(
       `csp-endpoint="${APP_URL}/api/csp-report"`
     );
-    expect(response.headers.get("content-security-policy")).not.toContain(
-      "unsafe-inline"
-    );
+    expect(directive(response, "script-src")).not.toContain("unsafe-inline");
     // Local over plain HTTP: no HSTS, no upgrade.
     expect(response.headers.get("strict-transport-security")).toBeNull();
     expect(directive(response, "upgrade-insecure-requests")).toBeUndefined();

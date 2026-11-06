@@ -27,7 +27,6 @@ const deployed: PagePolicyInput = {
   webAnalytics: false,
   uploadOrigin: null,
   scriptHashes: ["'sha256-script='"],
-  styleHashes: ["'sha256-style='"],
 };
 
 /** The directive `name` of a policy as its list of sources. */
@@ -48,9 +47,10 @@ describe("page policy", () => {
       "'sha256-script='",
     ]);
     expect(directive(policy, "script-src-attr")).toEqual(["'none'"]);
+    // Styles: inline allowed (Radix computes them at runtime), so no hashes.
     expect(directive(policy, "style-src")).toEqual([
       "'self'",
-      "'sha256-style='",
+      "'unsafe-inline'",
     ]);
     expect(directive(policy, "object-src")).toEqual(["'none'"]);
     expect(directive(policy, "base-uri")).toEqual(["'self'"]);
@@ -64,7 +64,9 @@ describe("page policy", () => {
       `${ORIGIN}/api/csp-report`,
     ]);
     expect(directive(policy, "report-to")).toEqual([CSP_REPORT_GROUP]);
-    expect(policy).not.toContain("unsafe-inline");
+    expect(directive(policy, "script-src")?.join(" ")).not.toContain(
+      "unsafe-inline"
+    );
     expect(policy).not.toContain("unsafe-eval");
     expect(policy).not.toContain("*");
   });
@@ -111,7 +113,7 @@ describe("page policy", () => {
     );
   });
 
-  it("relaxes only script and style for Vite under astro dev", () => {
+  it("relaxes only script-src for Vite under astro dev", () => {
     const dev = pagePolicy({
       ...deployed,
       origin: "http://localhost:4321",
@@ -138,7 +140,6 @@ describe("hashesOf", () => {
       "'sha256-a+b/c='",
       "'sha384-d'",
     ]);
-    expect(hashesOf(astro, "style-src")).toEqual(["'sha512-e='"]);
   });
 
   it("takes nothing but hashes, and nothing without a policy", () => {
@@ -149,7 +150,7 @@ describe("hashesOf", () => {
       )
     ).toEqual(["'sha256-ok='"]);
     expect(hashesOf(null, "script-src")).toEqual([]);
-    expect(hashesOf("img-src 'self'", "style-src")).toEqual([]);
+    expect(hashesOf("img-src 'self'", "script-src")).toEqual([]);
   });
 });
 
@@ -230,8 +231,9 @@ describe("securityHeadersFor", () => {
       `script-src ${ORIGIN}/_astro/ 'sha256-island=' https://challenges.cloudflare.com`
     );
     expect(headers["Content-Security-Policy"]).toContain(
-      "style-src 'self' 'sha256-css='"
+      "style-src 'self' 'unsafe-inline';"
     );
+    expect(headers["Content-Security-Policy"]).not.toContain("sha256-css");
     expect(headers["Strict-Transport-Security"]).toBeDefined();
   });
 

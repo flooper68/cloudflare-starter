@@ -2,7 +2,7 @@
 
 Every response of the web Worker carries the headers the [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/) recommends, and every HTML page a [Content Security Policy Level 3](https://www.w3.org/TR/CSP3/) built per request: scripts only from the app's own bundles and the inline code Astro hashed at build time, third parties only when their setting is on, violations reported to `/api/csp-report`. This guide covers what is sent where, the `CSP_MODE` setting, the reports, static assets and Storybook, how to allow something new, the exceptions and why they exist, and the tests. Use when you add a third-party script, frame, font or API, add an inline script or style, see a CSP violation (in the console, an E2E failure or the logs), roll out a policy change, or consider HSTS preload.
 
-The code: `apps/web/src/server/security-headers.ts` (the policies, pure), `apps/web/src/server/app-middleware.ts` (applies them to every response the Worker serves), `apps/web/public/_headers` (generated from the module, for static assets), `apps/web/csp-hashes.mjs` and `security.csp` in `apps/web/astro.config.mjs` (the hashes), `apps/web/src/server/csp-report.ts` (the report endpoint).
+The code: `apps/web/src/server/security-headers.ts` (the policies, pure), `apps/web/src/server/app-middleware.ts` (applies them to every response the Worker serves), `apps/web/public/_headers` (generated from the module, for static assets), `security.csp` in `apps/web/astro.config.mjs` (the script hashes), `apps/web/src/server/csp-report.ts` (the report endpoint).
 
 ## Headers
 
@@ -33,7 +33,7 @@ What an HTML page of the app (`/`, `/sign-in`, `/app/*`, `/admin/*`, `/consent`,
 default-src 'self';
 script-src https://<origin>/_astro/ 'sha256-…' … https://challenges.cloudflare.com;
 script-src-attr 'none';
-style-src 'self' 'sha256-…' …;
+style-src 'self' 'unsafe-inline';
 img-src 'self' data:;
 font-src 'self';
 connect-src 'self';
@@ -49,7 +49,7 @@ report-to csp-endpoint
 ```
 
 - **Scripts.** Only the app's bundles (`<origin>/_astro/`, not all of `'self'`: `/api/files` serves user uploads from the same origin, and a `<script src>` pointing at an upload must not run) and the inline scripts whose SHA-256 hash Astro computed at build (`security.csp`: the island hydration code). No `'unsafe-inline'`, no `'unsafe-eval'`, no inline event handlers (`script-src-attr 'none'`). The SPA's bootstrap is `<script type="application/json">`: data, which CSP does not run.
-- **Styles.** Our stylesheets plus Astro's hashes and the hash of the stylesheet sonner (the toasts) injects at runtime, computed from the installed package by `csp-hashes.mjs` on every build.
+- **Styles.** Our stylesheets and inline styles (`'self' 'unsafe-inline'`, no hashes, [an exception](#exceptions)): Radix's modal primitives (Dialog, Sheet, menus, Select) append a `<style>` computed from the measured scrollbar width at runtime, which no build-time hash can match, and sonner injects its toast stylesheet. A hash in `style-src` would switch `'unsafe-inline'` off, so Astro's style hashes are dropped. Injected CSS cannot run script.
 - **Third parties, only when their setting is on:**
 
   | Setting                            | Adds                                                                                                                 |
@@ -64,7 +64,7 @@ report-to csp-endpoint
 - **`upgrade-insecure-requests`** only in deployed environments over HTTPS.
 - **The settings cannot be read** (a missing setting: the 500 Server Misconfigured case): the page policy is enforced without third parties.
 
-Under `astro dev` Astro computes no hashes and Vite injects inline modules and styles, so `script-src` and `style-src` become `'self' 'unsafe-inline'` (and `connect-src` gets Vite's `ws://` socket); every other directive is as deployed. The middleware knows it from `import.meta.env.DEV`; a build never gets the dev policy.
+Under `astro dev` Astro computes no hashes and Vite injects inline modules, so `script-src` becomes `'self' 'unsafe-inline'` (and `connect-src` gets Vite's `ws://` socket); every other directive is as deployed. The middleware knows it from `import.meta.env.DEV`; a build never gets the dev policy. This is why the build journeys exist: only they see the hashed `script-src`.
 
 ## CSP_MODE
 
@@ -119,11 +119,11 @@ with `X-Frame-Options: SAMEORIGIN`, because the manager frames the preview (`ifr
 
 ## Inline scripts and styles
 
-No inline code runs on the app's pages unless its hash is in the policy:
+No inline script runs on the app's pages unless its hash is in the policy (inline styles are allowed, see [Page policy](#page-policy)):
 
 - **Astro renders it** (an island, a `<script>` in a `.astro` file that Astro bundles or hashes): nothing to do; Astro hashes it at build.
 - **`is:inline` scripts** are not hashed: only data (`type="application/json"`) or an external file (`src=`) may be `is:inline`. Move code into a bundled `<script>` or a React component.
-- **A library injects a `<style>` or `<script>` at runtime** (like sonner): add a function to `csp-hashes.mjs` that reads the exact text from the installed package and returns its hash, so an upgrade recomputes it, and have it throw when the package changes how it injects. Prefer a library that ships a stylesheet you can import.
+- **A library injects a `<script>` at runtime**: it is blocked. Load it as a bundled module instead, or, when its text is fixed, add its hash to `security.csp.scriptDirective.hashes` in `astro.config.mjs`, computed from the installed package at build time so an upgrade cannot leave a stale hash. Libraries that inject `<style>` need nothing.
 - **Never** `dangerouslySetInnerHTML`, inline event handlers (`onclick=`) or `set:html` outside a JSON data block.
 
 `test/architecture/security-headers.test.ts` checks the last three rules for every `.astro` file and component.
@@ -137,14 +137,16 @@ No inline code runs on the app's pages unless its hash is in the policy:
 
 ## Exceptions
 
-| Exception                                               | Where            | Why                                                                                                                                                                                                                       |
-| ------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `'unsafe-inline'` for scripts and styles                | `/_storybook/*`  | Storybook's built pages carry inline scripts and styles that change every build, with no hash or nonce support; static, no user data, same-origin framing only                                                            |
-| `'unsafe-inline'` for scripts and styles                | `astro dev` only | Vite injects inline modules and styles; Astro computes no hashes in dev. Builds never get it                                                                                                                              |
-| Hashes, not nonces                                      | page policy      | Astro 7's built-in CSP (`security.csp`) is hash-based; hashes are as strict (CSP Level 3) and keep pages cacheable. No HTML rewriting to add nonces                                                                       |
-| No `'strict-dynamic'`                                   | page policy      | The pages load parser-inserted scripts (Astro's bundles, the beacon) that `'strict-dynamic'` would block, since it makes `'self'` and host sources ignored; the bundle path and the named hosts are the allowlist instead |
-| `frame-ancestors 'self'`, `X-Frame-Options: SAMEORIGIN` | `/_storybook/*`  | the manager frames its preview iframe                                                                                                                                                                                     |
-| No COEP                                                 | everywhere       | would block Turnstile and the beacon                                                                                                                                                                                      |
+| Exception                                               | Where             | Why                                                                                                                                                                                                                                             |
+| ------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'unsafe-inline'` for scripts and styles                | `/_storybook/*`   | Storybook's built pages carry inline scripts and styles that change every build, with no hash or nonce support; static, no user data, same-origin framing only                                                                                  |
+| `'unsafe-inline'` for scripts                           | `astro dev` only  | Vite injects inline modules; Astro computes no hashes in dev. Builds never get it                                                                                                                                                               |
+| `'unsafe-inline'` for styles                            | page policy       | Radix computes its scroll-lock `<style>` at runtime (no hash can match) and sonner injects its stylesheet; CSS cannot run script, `script-src` stays strict. Revisit if the UI library offers a nonce hook (`get-nonce`) and Astro gains nonces |
+| Better Auth's HTML error page unstyled                  | `/api/auth/error` | Under `/api/`, so it gets the policy that loads nothing; its inline `<style>` is blocked (and not reported). Users see it only on a broken OAuth authorize request. Point Better Auth's `onAPIError.errorURL` at an app page to change it       |
+| Hashes, not nonces                                      | page policy       | Astro 7's built-in CSP (`security.csp`) is hash-based; hashes are as strict (CSP Level 3) and keep pages cacheable. No HTML rewriting to add nonces                                                                                             |
+| No `'strict-dynamic'`                                   | page policy       | The pages load parser-inserted scripts (Astro's bundles, the beacon) that `'strict-dynamic'` would block, since it makes `'self'` and host sources ignored; the bundle path and the named hosts are the allowlist instead                       |
+| `frame-ancestors 'self'`, `X-Frame-Options: SAMEORIGIN` | `/_storybook/*`   | the manager frames its preview iframe                                                                                                                                                                                                           |
+| No COEP                                                 | everywhere        | would block Turnstile and the beacon                                                                                                                                                                                                            |
 
 ## HSTS and preload
 
@@ -152,16 +154,16 @@ No inline code runs on the app's pages unless its hash is in the policy:
 
 ## Tests
 
-| Test                                                  | Covers                                                                                                                                                                                      |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web/src/server/security-headers.test.ts` (unit) | the page policy per setting (Turnstile, Web Analytics, presigned uploads, dev, deployed), `CSP_MODE`, the non-HTML policy, `_headers` is current                                            |
-| `apps/web/src/server/csp-report.test.ts` (unit)       | both report formats, URL reduction and redaction                                                                                                                                            |
-| `apps/web/test/api/security-headers.test.ts` (API)    | headers on pages, redirects, `/api/hello`, `/api/auth/*`, `/mcp` (OPTIONS, POST), `/health/live`, misconfigured 500s, uploads served as HTML; the report endpoint (204, 400, 413, 415, 429) |
-| `apps/web/test/e2e/fixtures.ts` (every E2E journey)   | any CSP violation in any page or frame fails the journey: sign-up with the Turnstile widget, passkeys, uploads, settings, admin, billing                                                    |
-| `apps/web/test/e2e-build/` (`bun run test:e2e:build`) | the built app under `astro preview`: hashed policy on public pages, the Turnstile widget, an injected inline script blocked, framing refused, Storybook, assets                             |
-| `test/architecture/security-headers.test.ts`          | no un-hashed inline scripts, `set:html` only for data, no inline handlers or `dangerouslySetInnerHTML`; specs use the guarded `test`                                                        |
+| Test                                                  | Covers                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/server/security-headers.test.ts` (unit) | the page policy per setting (Turnstile, Web Analytics, presigned uploads, dev, deployed), `CSP_MODE`, the non-HTML policy, `_headers` is current                                                                                                                                                  |
+| `apps/web/src/server/csp-report.test.ts` (unit)       | both report formats, URL reduction and redaction                                                                                                                                                                                                                                                  |
+| `apps/web/test/api/security-headers.test.ts` (API)    | headers on pages, redirects, `/api/hello`, `/api/auth/*`, `/mcp` (OPTIONS, POST), `/health/live`, misconfigured 500s, uploads served as HTML; the report endpoint (204, 400, 413, 415, 429)                                                                                                       |
+| `apps/web/test/e2e/fixtures.ts` (every E2E journey)   | any CSP violation in any page or frame fails the journey. Under `astro dev` scripts and styles may be inline, so the dev journeys prove the other directives (connect, img, frame, form, framing) for sign-up, passkeys, uploads, settings, admin, billing; the build journeys prove `script-src` |
+| `apps/web/test/e2e-build/` (`bun run test:e2e:build`) | the built app under `astro preview`: hashed policy on public pages; a signed-up user with the real Turnstile widget (Cloudflare's test keys, needs the network), a Radix dialog and select, a toast and a passkey ceremony; an injected inline script blocked; framing refused; Storybook; assets |
+| `test/architecture/security-headers.test.ts`          | no un-hashed inline scripts, `set:html` only for data, no inline handlers or `dangerouslySetInnerHTML`; specs use the guarded `test`                                                                                                                                                              |
 
-Run the build journeys after `bun run build` (they need `apps/web/.dev.vars` and a migrated local D1, like `test:e2e`); CI runs them in the `build` job. They serve on the port after `APP_URL`'s.
+Run the build journeys after `bun run build` (they need `apps/web/.dev.vars` and a migrated local D1, like `test:e2e`, and reach challenges.cloudflare.com for the real widget); CI runs them in the `build` job. They serve on `APP_URL`'s port (Better Auth trusts only that origin), so stop `bun run dev:web` first.
 
 To check a deployed environment by hand:
 
@@ -172,7 +174,7 @@ curl -sI https://<your-app>/ | grep -i -E 'content-security|strict-transport|x-f
 ## Troubleshooting
 
 - **"Refused to load the script … because it violates … script-src"** for a new library or service: [add the third party](#adding-a-third-party). For the app's own code: it is not under `/_astro/` or is an un-hashed inline script ([inline scripts](#inline-scripts-and-styles)).
-- **"Applying inline style violates … style-src"** after a dependency upgrade: a library now injects a `<style>`; give it a hash in `csp-hashes.mjs`.
+- **A script blocked after a dependency upgrade** (`script-src-elem`, `inline`): the library now injects a `<script>`; see [inline scripts](#inline-scripts-and-styles).
 - **An E2E journey fails with "Content-Security-Policy violations"**: the attached `csp-violations.json` names the page, directive and blocked URL.
 - **Works under `astro dev`, blocked in the build**: inline code; dev allows it, builds do not. `bun run test:e2e:build` reproduces it.
 - **A page embedded elsewhere is blank**: framing is refused on purpose; allow a named origin in `frame-ancestors` for that route only if embedding is a product decision.
