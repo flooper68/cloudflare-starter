@@ -194,11 +194,25 @@ Guide: [how-to-setup-mcp.md](how-to-setup-mcp.md).
 Expected: the tools answer as A with A's workspaces only; A's audit log shows the tool calls' changes, none for reads.
 Mail: possibly **New sign-in to your account** for the consent sign-in.
 
+## Placeholder apps: Notes and Tasks
+
+Guide: [how-to-add-a-feature.md](how-to-add-a-feature.md).
+
+1. As A in `QA <run> shared`, sidebar → **Notes**: the Placeholder badge and notice show; with no notes, **No notes yet** with **New note**.
+2. Create a note `QA <run> note`, edit its body, add a comment.
+3. As B (a member), open the note and comment too; search the list for its title.
+4. Move it to the trash: it leaves the list; Trash lists it as `QA <run> note`; restore it: it is back with both comments.
+5. Sidebar → **Tasks**: the sample board; switch to the list; reload: the sample data starts over.
+6. Admin portal → audit log: `note.created`, `note.updated`, `note.commented`, `trash.item_trashed`, `trash.item_restored` for the note, without its text.
+
+Expected: the dashboard's "Write your first note" step is done after step 2; Billing → Usage shows Notes against the plan's limit (Free 50, Pro unlimited).
+Mail: none.
+
 ## Dashboard and system screens
 
 Guides: [how-to-configure-workspaces.md](how-to-configure-workspaces.md), [how-to-configure-account-security.md](how-to-configure-account-security.md).
 
-1. As A, `/app/dashboard`: **Get started** lists Verify your email (done), Invite a teammate, Turn on two-factor authentication, each open step with its button; the count matches.
+1. As A, `/app/dashboard`: **Get started** lists Verify your email (done), Invite a teammate, Turn on two-factor authentication, Write your first note, each open step with its button; the count matches.
 2. After the workspace steps above (B joined, A has an authenticator), the list shows those steps done.
 3. As B (a member of `QA <run> shared`), open `/app/settings/workspace`: **You don't have access to this**, naming A as the owner, and **Back to dashboard**.
 4. Open `/app/no-such-page`: **Page not found** inside the app shell.
@@ -297,6 +311,7 @@ Copy into the PR or release notes:
 | Privacy                  |        |       |
 | Admin portal             |        |       |
 | MCP                      |        |       |
+| Notes and Tasks          |        |       |
 | Dashboard and system     |        |       |
 | Demos                    |        |       |
 | Landing, docs and search |        |       |

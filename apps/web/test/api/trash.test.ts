@@ -171,7 +171,7 @@ describe("trash procedures", () => {
       callerFor(user).trash.restore({ items: [] })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(
-      callerFor(user).trash.list({ type: "note" })
+      callerFor(user).trash.list({ type: "invoice" as "file" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 

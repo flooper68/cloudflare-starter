@@ -199,6 +199,17 @@ export {
   type RoleOption,
 } from "../components/patterns/members-table";
 export {
+  type NoteDraft,
+  NoteEditor,
+  type NoteEditorProps,
+} from "../components/patterns/note-editor";
+export {
+  NoteList,
+  type NoteListItem,
+  type NoteListProps,
+  NoteListSkeleton,
+} from "../components/patterns/note-list";
+export {
   NotificationBell,
   type NotificationBellProps,
 } from "../components/patterns/notification-bell";
@@ -231,6 +242,10 @@ export {
   type PasskeyListProps,
 } from "../components/patterns/passkey-list";
 export {
+  PlaceholderNotice,
+  type PlaceholderNoticeProps,
+} from "../components/patterns/placeholder-notice";
+export {
   PlanCard,
   type PlanCardProps,
   PlanCardSkeleton,
@@ -253,6 +268,10 @@ export {
   type SettingsSectionProps,
 } from "../components/patterns/settings-page";
 
+export {
+  TaskBoard,
+  type TaskBoardProps,
+} from "../components/patterns/task-board";
 export {
   TotpSetup,
   type TotpSetupProps,
