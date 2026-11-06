@@ -8,10 +8,10 @@ How to set up or do something; read while doing it.
 
 | Guide                                                                                 | Use when …                                                                                                                                                                           |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------                                  |
 | [how-to-setup-web-app.md](guides/how-to-setup-web-app.md)                             | you run the app locally for the first time or deploy it                                                                                                                              |
 | [how-to-add-background-jobs.md](guides/how-to-add-background-jobs.md)                 | you add a background job or cron entry, debug a failed job, inspect or replay the dead-letter queue, or weigh jobs vs Workflows                                                      |
 | [how-to-setup-auth.md](guides/how-to-setup-auth.md)                                   | you set secrets, change sign-in methods, add Google, or regenerate the auth tables                                                                                                   |
+| [how-to-configure-account-security.md](guides/how-to-configure-account-security.md)   | you choose the two-factor or passkey policy, recover someone's access, debug a refused MCP token or step-up, or upgrade Better Auth's security plugins                               |
 | [how-to-use-settings.md](guides/how-to-use-settings.md)                               | you manage profiles, sessions, preferences, avatars or workspace settings, or add a settings section                                                                                 |
 | [how-to-configure-workspaces.md](guides/how-to-configure-workspaces.md)               | you choose the workspace mode, who may sign up, invitations, replace the roles or strip the workspace UI                                                                             |
 | [how-to-configure-abuse-protection.md](guides/how-to-configure-abuse-protection.md)   | you set up Turnstile or rate limits for an environment, tune a limit, give a new mutation or route a policy, or debug a 429 or a failed human check                                  |
@@ -22,7 +22,7 @@ How to set up or do something; read while doing it.
 | [how-to-setup-mcp.md](guides/how-to-setup-mcp.md)                                     | you add an MCP tool or connect Claude to an environment                                                                                                                              |
 | [how-to-setup-logging.md](guides/how-to-setup-logging.md)                             | you change `LOG_SINK`, add log lines, look up a request's logs by its id, or connect Datadog or OpenTelemetry                                                                        |
 | [how-to-setup-error-reporting.md](guides/how-to-setup-error-reporting.md)             | you change `ERROR_REPORTER`, handle an unexpected error in server code, find a report from a user's reference, or connect Sentry                                                     |
-| [how-to-use-admin-portal.md](guides/how-to-use-admin-portal.md)                       | you turn the admin portal on or off, make someone a platform admin, suspend, impersonate or delete users, rescue a workspace, or add an admin action or page                         |
+| [how-to-use-admin-portal.md](guides/how-to-use-admin-portal.md)                       | you turn the admin portal on or off, make someone a platform admin, suspend, impersonate or erase users, rescue a workspace, or add an admin action or page                          |
 | [how-to-setup-metrics-and-tracing.md](guides/how-to-setup-metrics-and-tracing.md)     | you change `METRICS` or `TRACING`, add a metric or span, query latency or error rates, or connect Prometheus or Grafana                                                              |
 | [how-to-configure-plans-and-billing.md](guides/how-to-configure-plans-and-billing.md) | you define plans, add-ons, gated features or usage limits, choose `BILLING`, set upgrade prompts, write a payment provider adapter, or debug `limit_reached`                         |
 | [how-to-use-the-audit-log.md](guides/how-to-use-the-audit-log.md)                     | you add a use case that changes state, add an audit action, look up who did what, change audit retention, or plan an export or archive                                               |
@@ -32,12 +32,11 @@ How to set up or do something; read while doing it.
 | [how-to-setup-container.md](guides/how-to-setup-container.md)                         | you run or deploy the Container demo                                                                                                                                                 |
 | [how-to-define-branding.md](guides/how-to-define-branding.md)                         | you give a project its own name, logo, accent, fonts or radius                                                                                                                       |
 | [how-to-use-storybook.md](guides/how-to-use-storybook.md)                             | you build or review components in Storybook, write their tests, or change who can open `/_storybook/`                                                                                |
-| [how-to-use-trash.md](guides/how-to-use-trash.md)                                     | you make a table trashable, read one, change a trash retention, debug a missing or restored item, or erase data for good (GDPR)                                                      |
+| [how-to-use-trash.md](guides/how-to-use-trash.md)                                     | you make a table trashable, read one, change a trash retention, debug a missing or restored item, or set up storage reconciliation of orphaned R2 objects                            |
+| [how-to-handle-data-privacy.md](guides/how-to-handle-data-privacy.md)                 | you add a table or stored object, handle a data export or deletion request, set up export expiry, or restore a database after an erasure                                             |
 | [how-to-monitor-health.md](guides/how-to-monitor-health.md)                           | you point an uptime monitor, load balancer or status page at the app, add or change a health check, or investigate a failing `/health/ready`                                         |
 | [how-to-qa-a-deployment.md](guides/how-to-qa-a-deployment.md)                         | you release to staging or production, run the production smoke suite, or run the scripted feature QA in a real browser with QA accounts and clean them up                            |
 
-
-Privacy exports and erasure: [how-to-handle-data-privacy.md](guides/how-to-handle-data-privacy.md) — use when adding data, handling a data request, configuring export expiry or restoring after erasure.
 ## Architecture
 
 Contracts and principles that hold regardless of the current code.
@@ -76,6 +75,3 @@ How work is planned, reviewed, documented and decided, and how dependencies are 
 | [../packages/ui/README.md](../packages/ui/README.md)           | you need the UI package layout and imports                                                |
 | [../apps/web/README.md](../apps/web/README.md)                 | you work in the web app                                                                   |
 | [../.claude/skills/](../.claude/skills/)                       | you are an agent setting up auth (`setup-auth`), D1 (`setup-d1`) or email (`setup-email`) |
-
-
-Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](guides/how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

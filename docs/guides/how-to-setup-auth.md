@@ -10,7 +10,8 @@ The web app signs users in with [Better Auth](https://www.better-auth.com). User
 - Middleware: [middleware.ts](../../apps/web/src/middleware.ts) resolves the session cookie into `Astro.locals.user` / `Astro.locals.session` and redirects anonymous `/app/*` requests to `/sign-in`.
 - Browser client: [lib/auth-client.ts](../../apps/web/src/lib/auth-client.ts), with the OAuth provider plugin so a sign-in started by an MCP client continues its authorization.
 - tRPC: `protectedProcedure` refuses requests without a user (`UNAUTHORIZED`); `workspaceProcedure` also resolves the user's workspace and role.
-- Database hooks: `user.create.before` applies the sign-up policy (`enforceSignUpPolicy`), `user.create.after` gives the new user their workspace, `user.delete.before` deletes or leaves their workspaces ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md)).
+- Database hooks: `user.create.before` applies the sign-up policy (`enforceSignUpPolicy`), `user.create.after` gives the new user their workspace; deletion (`user.deleteUser.beforeDelete` and `user.delete.before`) runs the common privacy preflight, including the last-owner and sole-active-admin rules, before any cleanup, and the after-delete hook completes the minimal erasure ledger ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md), [erasure rules](how-to-handle-data-privacy.md#erasure-and-retained-data)).
+- Account security: the two-factor and passkey plugins and the session-assurance plugin in [server/auth-security.ts](../../apps/web/src/server/auth-security.ts) ([how-to-configure-account-security.md](how-to-configure-account-security.md)).
 
 Pages:
 
@@ -20,6 +21,7 @@ Pages:
 | `/sign-in`                | The enabled methods: email + password and/or "Continue with Google"                                                                                             |
 | `/forgot-password`        | Sends a reset link (only with email + password on)                                                                                                              |
 | `/reset-password?token=…` | Sets a new password and revokes other sessions                                                                                                                  |
+| `/two-factor`             | Second-factor challenge, required enrollment, and admin step-up (`?stepUp=1&next=…`)                                                                            |
 | `/consent`                | Lets the user allow or deny an MCP client                                                                                                                       |
 | `/invite/<token>`         | Shows a workspace invitation and accepts it (signing in or up first)                                                                                            |
 | `/app/profile`            | Redirects to `/app/settings/account`; account, appearance, security, workspace and privacy settings                                                             |
@@ -46,18 +48,18 @@ Setting Worker secrets deploys a new version of the Worker.
 
 Plain vars, per environment in `apps/web/wrangler.jsonc` (`vars`) and in `.dev.vars` locally:
 
-| Var                               | Default | Effect                                                                                                                                                       |
+| Var                               | Shipped | Effect                                                                                                                                                       |
 | --------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `AUTH_EMAIL_PASSWORD`             | `true`  | Email + password sign-up, sign-in, reset and change password. `false` hides the forms, redirects the password pages to `/sign-in`, and the API refuses them. |
 | `AUTH_REQUIRE_EMAIL_VERIFICATION` | `false` | Users must open the verification link before they can sign in. Needs email ([how-to-setup-email.md](./how-to-setup-email.md)).                               |
 
-Google is on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. With Google only, `/sign-up` offers just the Google button; the first sign-in creates the account.
+Both are required in every environment (`true` or `false`, no default: a missing or other value fails with an error naming the var); `wrangler.jsonc` ships the values above (`AUTH_REQUIRE_EMAIL_VERIFICATION` is `true` in production, which sends mail), and `bun run setup:auth` asks for them. Google is on when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. With Google only, `/sign-up` offers just the Google button; the first sign-in creates the account.
 
 At least one method must be on. If none is, or verification is required without email, the app refuses to start with an error naming the setting.
 
 ## Who May Sign Up
 
-`SIGN_UP` (`open` or `invite`), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL` and `WORKSPACE_MODE` are vars per environment (the first two required, none shipped: a deploy refuses to start until they are set), set with `bun run setup:auth` (`--dry-run` first), which also asks for the required `BILLING` mode ([how-to-configure-plans-and-billing.md](./how-to-configure-plans-and-billing.md)). A bootstrap admin needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` unless email + password is off; once verified, that account becomes a platform admin. `ADMIN_PORTAL` (`on` | `off`, required, also written by `setup:auth`) opens the admin portal to platform admins ([how-to-use-admin-portal.md](./how-to-use-admin-portal.md)). With `SIGN_UP=invite` only invitees, the listed domains and the bootstrap admin can create an account, by any method: a refused Google sign-up lands on `/sign-in?error=SIGN_UP_INVITE_ONLY` with a message. Details, modes and invitations: [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
+`SIGN_UP` (`open` or `invite`), `SIGN_UP_DOMAINS`, `BOOTSTRAP_ADMIN_EMAIL` and `WORKSPACE_MODE` are vars per environment (the first two required, none shipped: a deploy refuses to start until they are set), set with `bun run setup:auth` (`--dry-run` first), which also asks for the sign-in switches above, the required `BILLING` mode ([how-to-configure-plans-and-billing.md](./how-to-configure-plans-and-billing.md)) and the account-security policy (`TWO_FACTOR`, `TWO_FACTOR_EMAIL_OTP`, `TWO_FACTOR_TRUSTED_DEVICE_DAYS`, `PASSKEYS`; [how-to-configure-account-security.md](how-to-configure-account-security.md)). A bootstrap admin needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` unless email + password is off; once verified, that account becomes a platform admin. `ADMIN_PORTAL` (`on` | `off`, required, also written by `setup:auth`) opens the admin portal to platform admins ([how-to-use-admin-portal.md](./how-to-use-admin-portal.md)). With `SIGN_UP=invite` only invitees, the listed domains and the bootstrap admin can create an account, by any method: a refused Google sign-up lands on `/sign-in?error=SIGN_UP_INVITE_ONLY` with a message. Details, modes and invitations: [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
 
 ## Auth Mail
 
@@ -78,7 +80,7 @@ When email is on, a verification mail is sent on sign-up even if verification is
 
 ## Changing The Auth Tables
 
-[packages/features/src/accounts/accounts.schema.ts](../../packages/features/src/accounts/accounts.schema.ts) is generated by the Better Auth CLI from the real auth config (core tables, JWT keys, OAuth clients/tokens/consents, rate limits). Regenerate it after upgrading Better Auth or changing plugins:
+[packages/features/src/accounts/accounts.schema.ts](../../packages/features/src/accounts/accounts.schema.ts) is generated by the Better Auth CLI from the real auth config (core tables, JWT keys, OAuth clients/tokens/consents, two-factor, passkeys, rate limits). Regenerate it after upgrading Better Auth or changing plugins:
 
 ```bash
 cd apps/web
@@ -91,12 +93,7 @@ Replace `accounts.schema.ts` with the result (keep its header comment), delete `
 ## Not Included
 
 - Platform admins: Better Auth's admin plugin supplies the `role`, ban and impersonation columns and refuses suspended users at sign-in; its HTTP endpoints are closed and the admin portal acts through our use cases ([how-to-use-admin-portal.md](./how-to-use-admin-portal.md)). Upgrading Better Auth means re-checking `apps/web/src/server/admin-auth-gateway.ts`.
-- API keys, self-service account-deletion UI: not built yet. Workspace roles are in [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
-- Passkeys and two-factor authentication are configured by [the account security guide](how-to-configure-account-security.md). Other methods, such as magic links, use additional Better Auth plugins.
+- API keys: not built. Workspace roles are in [how-to-configure-workspaces.md](./how-to-configure-workspaces.md).
+- Other sign-in methods, such as magic links, use additional Better Auth plugins. Two-factor and passkeys are built: [how-to-configure-account-security.md](how-to-configure-account-security.md).
 
-Account management options and session/image security are documented in [settings](how-to-use-settings.md). Self-deletion is enabled with password or a session fresh within 15 minutes; email changes always require verification and linked accounts must share the same email.
-
-
-Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.
-
-Account deletion now uses the common privacy preflight before any cleanup, including the sole-active-platform-admin rule. Both before-delete hooks call it; the after-delete hook completes the minimal erasure ledger. [Erasure rules and retained data](how-to-handle-data-privacy.md#erasure-and-retained-data).
+Account management (profile, verified email changes, linked accounts, own sessions, self-deletion with a password or a session fresh within 15 minutes) is in [settings](how-to-use-settings.md); email changes always require verification and linked accounts must share the same email.

@@ -168,6 +168,13 @@ test("privacy export finishes, notifies and downloads a valid archive", async ()
 });
 
 test("privacy settings deletes the account after confirmation", async () => {
+  // auth.delete-user allows 3 deletions an hour per IP, fewer than the runs an hour can
+  // make. A documentation-range client IP per minute keeps the real limit and gives each
+  // run (at most one a minute, see helpers.ts) its own quota.
+  const minute = Math.floor(Date.now() / 60_000) % 250;
+  await page.setExtraHTTPHeaders({
+    "cf-connecting-ip": `203.0.113.${minute + 1}`,
+  });
   await open(page, "/app/settings/privacy");
   await page.getByLabel("Confirm your email").fill(account.email);
   await page.getByLabel("Current password").fill(newPassword);

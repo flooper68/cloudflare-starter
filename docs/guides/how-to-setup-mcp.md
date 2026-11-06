@@ -14,7 +14,7 @@ Enforced by [apps/web/src/server/mcp/parity.test.ts](../../apps/web/src/server/m
 
 Reviews treat a new exemption as a design decision: it needs a reason a reviewer would accept, not "later".
 
-Exempt today: `admin.impersonation.start` and `admin.impersonation.stop`, because they create a browser cookie session (impersonation swaps the browser's session cookie; an MCP client has none). Every other admin procedure has an `admin_*` tool: `admin_get_overview`, `admin_get_settings`, `admin_list_users`, `admin_get_user`, `admin_ban_user`, `admin_unban_user`, `admin_revoke_user_sessions`, `admin_set_user_role`, `admin_remove_user`, `admin_send_password_reset` (outward), `admin_list_workspaces`, `admin_get_workspace`, `admin_assign_workspace_owner`, `admin_delete_workspace`, `admin_list_audit_events`, and the feature-flag tools `list_feature_flags`, `update_feature_flag`, `set_feature_flag_rules`. They answer `NOT_FOUND` unless the token's user is a platform admin and `ADMIN_PORTAL=on`; the destructive ones need the admin's newest sign-in to the web app to be at most 15 minutes old ([how-to-use-admin-portal.md](how-to-use-admin-portal.md#recent-sign-in-for-destructive-actions)).
+Exempt today (`MCP_EXEMPT_PROCEDURES` in [server/mcp/tools.ts](../../apps/web/src/server/mcp/tools.ts)): `admin.impersonation.start` and `admin.impersonation.stop` (they create a browser cookie session; an MCP client has none), `admin.users.resetSecondFactor`, `admin.privacy.eraseUser` and its legacy alias `admin.users.remove` (account recovery and permanent erasure are browser-only, with fresh administrator assurance), and `analytics.track` (client telemetry, not an agent capability). Every other admin procedure has an `admin_*` tool: `admin_get_overview`, `admin_get_health`, `admin_get_settings`, `admin_list_users`, `admin_get_user`, `admin_ban_user`, `admin_unban_user`, `admin_revoke_user_sessions`, `admin_set_user_role`, `admin_send_password_reset` (outward), `admin_list_workspaces`, `admin_get_workspace`, `admin_assign_workspace_owner`, `admin_delete_workspace`, `admin_list_audit_events`, the billing tools `admin_get_workspace_billing`, `admin_get_workspace_usage`, `admin_assign_plan`, `admin_set_addons`, `admin_set_override`, the data-request tools `admin_list_data_requests`, `admin_request_data_export`, the storage tools `admin_storage_status`, `admin_reconcile_storage`, `admin_delete_storage_orphans`, and the feature-flag tools `list_feature_flags`, `update_feature_flag`, `set_feature_flag_rules`. They answer `NOT_FOUND` unless the token's user is a platform admin and `ADMIN_PORTAL=on`; the destructive ones need the admin's newest sign-in to the web app to be at most 15 minutes old and, for an admin enrolled in two-factor, a recent explicit factor verification on the browser session that granted the token ([how-to-use-admin-portal.md](how-to-use-admin-portal.md#recent-sign-in-for-destructive-actions)).
 
 ## How It Works
 
@@ -35,7 +35,7 @@ Because tools call the same procedures with the same context, validation, auth c
 2. In Claude, add a custom connector with the URL `<APP_URL>/mcp`.
 3. Sign in and click Allow on the consent page.
 
-Tokens are bound to `/mcp`, and the user is reloaded from D1 on every request, so deleting a user cuts access at once.
+Tokens are bound to `/mcp` and to the browser session that approved them (`starter_session_id`); the user and that session are reloaded from D1 on every request, so deleting the user, or signing out or revoking that session, cuts access at once and the client must reconnect ([how-to-configure-account-security.md](how-to-configure-account-security.md#assurance-and-mcp)).
 
 ## Adding A Tool
 
@@ -48,6 +48,3 @@ A tool may compose several procedures with a custom `run`; list them all in `pro
 ## Testing
 
 MCP is used against deployed environments only: Claude connects from Anthropic's servers and cannot reach `localhost`, and there is no local MCP setup. Locally, `bun run test` covers the tool layer (`server.test.ts` calls the MCP server in-process) and the parity rule; connect Claude to the develop environment to try the full flow.
-
-
-Account security: [authenticators, passkeys, required enrollment and session-bound MCP assurance](how-to-configure-account-security.md). Verify factor setup/challenge/recovery, stale or unrelated session refusal, last-factor removal, and browser-only administrative reset when changing authentication.

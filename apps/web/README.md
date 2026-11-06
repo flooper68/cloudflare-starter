@@ -25,22 +25,28 @@ Every on-demand request gets a request context in [src/middleware.ts](src/middle
 
 Public, SSR:
 
-- `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/consent`
+- `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/two-factor`, `/consent`
 - `/invite/:token` (accept a workspace invitation)
 - `/api/hello` (REST example)
 - `/api/trpc/*` (typed API)
 - `/api/auth/*` (Better Auth) and `/.well-known/*` (OAuth discovery)
 - `/mcp` (MCP server, OAuth bearer tokens)
 - `/api/files`, `/api/files/:id` (R2 binding upload and download)
+- `/api/account/avatar`, `/api/account/avatar/:version` (upload and read the signed-in user's avatar)
+- `/api/workspaces/:workspaceId/logo`, `/api/workspaces/:workspaceId/logo/:version` (workspace logo)
+- `/api/privacy/exports/:id` (signed, expiring data-export download for the signed-in requester)
 - `/api/billing/webhook` (the billing provider's events; 404 unless `BILLING=provider`)
 - `/api/notifications/unsubscribe` (RFC 8058 one-click unsubscribe from notification mail) and `/unsubscribe` (its confirmation page)
 - `/health/live`, `/health/ready` and `/health` (health endpoints for uptime monitors, `application/health+json`: [how-to-monitor-health.md](../../docs/guides/how-to-monitor-health.md))
 
 Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
 
-- `/app/dashboard`, `/app/profile`, `/app/members` (single and multi mode)
+- `/app/dashboard`, `/app/members` (single and multi mode), `/app/billing`, `/app/trash`
+- `/app/settings/account`, `/app/settings/appearance`, `/app/settings/security`, `/app/settings/workspace`, `/app/settings/privacy` (`/app/profile` redirects to the first)
 - `/app/upload-demo`, `/app/queue-demo`, `/app/email-demo`
 - `/app/notifications`, `/app/notifications/preferences` (inbox and notification settings; the bell in the top bar opens the inbox)
+
+Admin portal, same SPA (`src/pages/admin/[...path].astro`, platform admins with `ADMIN_PORTAL=on`, 404 otherwise): `/admin/overview`, `/admin/users`, `/admin/workspaces`, `/admin/audit`, `/admin/flags`, `/admin/data-requests`, `/admin/settings`.
 
 Direct loads to `/app/*` hit Astro and middleware first; subsequent navigation stays inside the SPA.
 

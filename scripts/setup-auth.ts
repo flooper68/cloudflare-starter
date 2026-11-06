@@ -1,8 +1,12 @@
 /**
  * `bun run setup:auth [--env develop|staging|production|all] [--dry-run]`
  *
- * Asks for the workspace and sign-up settings and writes them as vars into
- * apps/web/wrangler.jsonc for the chosen environments (none of them is a secret):
+ * Asks for the sign-in, account-security, workspace and sign-up settings and writes them as
+ * vars into apps/web/wrangler.jsonc for the chosen environments (none of them is a secret):
+ *  - AUTH_EMAIL_PASSWORD, AUTH_REQUIRE_EMAIL_VERIFICATION: true | false (shipped as true and
+ *    false; required, no default)
+ *  - TWO_FACTOR, TWO_FACTOR_EMAIL_OTP, TWO_FACTOR_TRUSTED_DEVICE_DAYS, PASSKEYS
+ *    (docs/guides/how-to-configure-account-security.md)
  *  - WORKSPACE_MODE: personal | single | multi
  *  - SIGN_UP: open | invite
  *  - SIGN_UP_DOMAINS: email domains that may sign up without an invitation
@@ -44,6 +48,15 @@ interface Setting {
 }
 
 const SETTINGS: readonly Setting[] = [
+  {
+    name: "AUTH_EMAIL_PASSWORD",
+    prompt: "Email + password sign-up and sign-in: true or false",
+  },
+  {
+    name: "AUTH_REQUIRE_EMAIL_VERIFICATION",
+    prompt:
+      "Users must verify their email before signing in: true or false (true needs email)",
+  },
   {
     name: "TWO_FACTOR",
     prompt: "Second factor: off, optional, required-for-admins or required",
@@ -91,11 +104,16 @@ const SETTINGS: readonly Setting[] = [
 
 /** ADMIN_PORTAL is required and checked on its own; the rest by workspaceSettingsSchema. */
 const ADMIN_PORTAL_VALUES = ["on", "off"];
+/** Required true | false settings (apps/web/src/lib/config.ts parseAppConfig), no defaults. */
+const BOOLEAN_SETTINGS = [
+  "AUTH_EMAIL_PASSWORD",
+  "AUTH_REQUIRE_EMAIL_VERIFICATION",
+] as const;
 
 const config = readWranglerConfig();
 for (const env of environments) {
   const vars = (envBlock(config, env).vars ?? {}) as Record<string, string>;
-  console.log(`\nWorkspaces and sign-up for ${env}:`);
+  console.log(`\nSign-in, security, workspaces and sign-up for ${env}:`);
   const next: Record<string, string> = {};
   for (const setting of SETTINGS) {
     const current = vars[setting.name] ?? "";
@@ -123,7 +141,16 @@ for (const env of environments) {
   if (!ADMIN_PORTAL_VALUES.includes(next.ADMIN_PORTAL ?? "")) {
     fail(`${env}: ADMIN_PORTAL must be on or off (no default)`);
   }
-  const { ADMIN_PORTAL: _portal, ...workspaceVars } = next;
+  for (const name of BOOLEAN_SETTINGS) {
+    if (next[name] !== "true" && next[name] !== "false")
+      fail(`${env}: ${name} must be true or false (no default)`);
+  }
+  const {
+    ADMIN_PORTAL: _portal,
+    AUTH_EMAIL_PASSWORD: _emailPassword,
+    AUTH_REQUIRE_EMAIL_VERIFICATION: _verification,
+    ...workspaceVars
+  } = next;
   const parsed = workspaceSettingsSchema.safeParse(
     Object.fromEntries(
       Object.entries(workspaceVars).map(([key, value]) => [
@@ -152,11 +179,11 @@ for (const env of environments) {
     );
   // The same refusals as apps/web/src/server/auth.ts at startup.
   const unverified =
-    vars.AUTH_EMAIL_PASSWORD !== "false" &&
-    vars.AUTH_REQUIRE_EMAIL_VERIFICATION !== "true";
+    next.AUTH_EMAIL_PASSWORD === "true" &&
+    next.AUTH_REQUIRE_EMAIL_VERIFICATION === "false";
   if (unverified && parsed.data.bootstrapAdminEmail) {
     fail(
-      `${env}: BOOTSTRAP_ADMIN_EMAIL needs AUTH_REQUIRE_EMAIL_VERIFICATION=true in wrangler.jsonc (or email + password off)`
+      `${env}: BOOTSTRAP_ADMIN_EMAIL needs AUTH_REQUIRE_EMAIL_VERIFICATION=true (or AUTH_EMAIL_PASSWORD=false)`
     );
   }
   if (
@@ -165,7 +192,7 @@ for (const env of environments) {
     parsed.data.signUpDomains.length > 0
   ) {
     fail(
-      `${env}: SIGN_UP_DOMAINS in single mode needs AUTH_REQUIRE_EMAIL_VERIFICATION=true in wrangler.jsonc`
+      `${env}: SIGN_UP_DOMAINS in single mode needs AUTH_REQUIRE_EMAIL_VERIFICATION=true (or AUTH_EMAIL_PASSWORD=false)`
     );
   }
 

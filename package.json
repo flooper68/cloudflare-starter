@@ -53,5 +53,9 @@
   },
   "engines": {
     "node": ">=24.14.1"
+  },
+  "overrides": {
+    "glob": "14.0.4",
+    "minimatch": "11.0.5"
   }
 }
