@@ -136,7 +136,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                               |
 | `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                             |
 | `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                           |
-| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id, R2 jurisdiction and rate-limit namespace_ids into the config      |
+| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id, R2 jurisdiction and rate-limit namespace_ids into the config       |
 | `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                     |
 | `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                        |
 | `bun run setup:auth`                     | Asks for the workspace mode, sign-up policy, billing mode and `ADMIN_PORTAL` and writes them into `wrangler.jsonc`              |
