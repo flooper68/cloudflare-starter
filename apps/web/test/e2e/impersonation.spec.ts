@@ -24,7 +24,9 @@ test("an admin impersonates a member and stops", async ({ page }) => {
     page.getByText(`You are signed in as ${member.name} (${member.email})`)
   ).toBeVisible();
   // The impersonated session is the member's: no admin portal.
-  await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Admin", exact: true })
+  ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Stop impersonating" }).click();
   await expect(page).toHaveURL(/\/admin\/users\//);
