@@ -163,7 +163,7 @@ No inline script runs on the app's pages unless its hash is in the policy (inlin
 | `apps/web/test/e2e-build/` (`bun run test:e2e:build`) | the built app under `astro preview`: hashed policy on public pages; a signed-up user with the real Turnstile widget (Cloudflare's test keys, needs the network), a Radix dialog and select, a profile save and a passkey ceremony; an injected inline script blocked; framing refused; Storybook; assets |
 | `test/architecture/security-headers.test.ts`          | no un-hashed inline scripts, `set:html` only for data, no inline handlers or `dangerouslySetInnerHTML`; specs use the guarded `test`                                                                                                                                                                     |
 
-Run the build journeys after `bun run build` (they need `apps/web/.dev.vars` and a migrated local D1, like `test:e2e`, and reach challenges.cloudflare.com for the real widget); CI runs them in the `build` job. They serve on `APP_URL`'s port (Better Auth trusts only that origin), so stop `bun run dev:web` first.
+Run the build journeys after `bun run build` (they need `apps/web/.dev.vars` before the build, which copies it next to the built Worker for `astro preview`, and a migrated local D1, like `test:e2e`, and reach challenges.cloudflare.com for the real widget); CI runs them in the `build` job. They serve on `APP_URL`'s port (Better Auth trusts only that origin), so stop `bun run dev:web` first.
 
 To check a deployed environment by hand:
 
