@@ -11,7 +11,39 @@ const port = devPort();
 const baseURL = `http://localhost:${port}`;
 const ci = Boolean(process.env.CI);
 
-export default defineConfig({
+// Production smoke: E2E_BASE_URL (set by `bun run test:smoke -- --base-url <url>`) points the
+// run at a deployed app instead. Only the `production` project exists then, it runs only the
+// `@smoke` specs in test/e2e/smoke/ (read-only GETs: no sign-up, no writes), and no local
+// server starts. docs/architecture/testing.md#production-smoke.
+const smokeBaseURL = process.env.E2E_BASE_URL;
+
+const smoke = defineConfig({
+  testDir: "./test/e2e/smoke",
+  testMatch: /\.smoke\.ts$/,
+  // Few, independent, read-only checks: parallel is fine and still gentle on the site.
+  workers: 2,
+  fullyParallel: true,
+  forbidOnly: ci,
+  // A deployed site can blip; one retry tells a blip from a regression.
+  retries: 1,
+  timeout: 30_000,
+  expect: { timeout: 10_000 },
+  reporter: [["list"], ["html", { open: "never" }]],
+  use: {
+    baseURL: smokeBaseURL,
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+  },
+  projects: [
+    {
+      name: "production",
+      grep: /@smoke/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
+});
+
+const local = defineConfig({
   testDir: "./test/e2e",
   // Sign-up is rate limited (5 per minute per IP, auth.sign-up in packages/features/src/abuse/domain/policies.ts) and the
   // journeys share one dev server: one worker, few sign-ups per run (see helpers.ts).
@@ -38,6 +70,8 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
+      // The production smoke specs run only against a deployed URL (`smoke` above).
+      testIgnore: /\/smoke\//,
     },
   ],
   webServer: {
@@ -57,3 +91,5 @@ export default defineConfig({
     stderr: "pipe",
   },
 });
+
+export default smokeBaseURL ? smoke : local;

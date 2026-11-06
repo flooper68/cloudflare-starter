@@ -38,7 +38,8 @@
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project features-integration --project web-api",
     "test:components": "bun run --filter @cloudflare-starter/storybook test",
-    "test:e2e": "bun run --filter @cloudflare-starter/web test:e2e"
+    "test:e2e": "bun run --filter @cloudflare-starter/web test:e2e",
+    "test:smoke": "bun scripts/smoke.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

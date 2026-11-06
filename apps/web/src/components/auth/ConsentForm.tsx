@@ -71,7 +71,7 @@ export function ConsentForm({
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
         <Logo className="mb-3" />
-        <CardTitle>Allow access?</CardTitle>
+        <CardTitle level={1}>Allow access?</CardTitle>
         <p className="text-sm text-fg-muted">
           <strong>{clientName ?? clientId}</strong> wants to use this app as
           you, with the same permissions you have.

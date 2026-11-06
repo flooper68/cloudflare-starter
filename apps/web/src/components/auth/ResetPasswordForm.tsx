@@ -75,7 +75,7 @@ export function ResetPasswordForm({
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
         <Logo className="mb-3" />
-        <CardTitle>Choose a new password</CardTitle>
+        <CardTitle level={1}>Choose a new password</CardTitle>
         {done ? (
           <p className="text-sm text-fg-muted">
             Password updated. Other sessions were signed out.
@@ -134,7 +134,7 @@ export function ResetPasswordForm({
 
       <CardFooter className="justify-center">
         <a
-          className="text-sm font-medium text-accent underline underline-offset-4"
+          className="text-sm font-medium text-accent-text underline underline-offset-4"
           href={done ? "/sign-in" : "/forgot-password"}
         >
           {done ? "Sign in" : "Request a new link"}
