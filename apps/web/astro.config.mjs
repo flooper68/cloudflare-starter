@@ -41,7 +41,14 @@ export default defineConfig({
   // Off because OAuth token requests from MCP clients (Claude's servers) are
   // cross-site form POSTs to /api/auth/oauth2/token. Better Auth checks origins
   // itself, tRPC requires the x-trpc-source header, and /api/files checks Origin.
-  security: { checkOrigin: false },
+  //
+  // csp: Astro hashes the inline scripts it renders into each page and sends them in a
+  // Content-Security-Policy header; server/security-headers.ts keeps the script hashes
+  // and replaces the rest with the app's full policy (`astro dev` sends none).
+  security: {
+    checkOrigin: false,
+    csp: { algorithm: "SHA-256" },
+  },
   // The port of APP_URL in .dev.vars (4321 by default): Better Auth trusts only that origin.
   server: { port: devPort() },
   vite: {

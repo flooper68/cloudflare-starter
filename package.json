@@ -39,6 +39,7 @@
     "test:integration": "vitest run --project features-integration --project web-api",
     "test:components": "bun run --filter @cloudflare-starter/storybook test",
     "test:e2e": "bun run --filter @cloudflare-starter/web test:e2e",
+    "test:e2e:build": "bun run --filter @cloudflare-starter/web test:e2e:build",
     "test:smoke": "bun scripts/smoke.ts"
   },
   "devDependencies": {

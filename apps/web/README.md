@@ -13,6 +13,7 @@ Related guides:
 - [docs/guides/how-to-setup-r2.md](../../docs/guides/how-to-setup-r2.md) — R2 binding and presigned URLs
 - [docs/guides/how-to-setup-email.md](../../docs/guides/how-to-setup-email.md) — Cloudflare Email Service
 - [docs/guides/how-to-setup-mcp.md](../../docs/guides/how-to-setup-mcp.md) — the MCP server and its parity rule
+- [docs/guides/how-to-configure-security-headers.md](../../docs/guides/how-to-configure-security-headers.md) — CSP, HSTS and the other response headers, `CSP_MODE`, `public/_headers`
 - [docs/guides/how-to-setup-logging.md](../../docs/guides/how-to-setup-logging.md) — OpenTelemetry log records, trace context, `LOG_SINK`
 - [docs/guides/how-to-setup-error-reporting.md](../../docs/guides/how-to-setup-error-reporting.md) — error reports and references, `ERROR_REPORTER`
 - [docs/guides/how-to-use-feature-flags.md](../../docs/guides/how-to-use-feature-flags.md) — the flag catalog, `useFlag`/`FlagGate` (`src/lib/feature-flags.tsx`), `FEATURE_FLAGS`

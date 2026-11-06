@@ -13,6 +13,7 @@ export const API_TEST_BINDINGS = {
   METRICS: "analytics-engine",
   TRACING: "workers",
   STORAGE_RECONCILE: "off",
+  CSP_MODE: "enforce",
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "api-test-secret-0123456789abcdefghij",
   AUTH_EMAIL_PASSWORD: "true",

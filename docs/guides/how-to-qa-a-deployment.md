@@ -225,6 +225,18 @@ Guide: [how-to-monitor-health.md](how-to-monitor-health.md).
 Expected: no error text, hostnames or binding names in the public body. (The smoke suite checks the same.)
 Mail: none.
 
+## Security headers
+
+Guide: [how-to-configure-security-headers.md](how-to-configure-security-headers.md).
+
+1. `curl -sI <url>/` and `curl -sI <url>/api/hello`: `Content-Security-Policy`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy` on both; the page's policy has `script-src <url>/_astro/ 'sha256-…'`, the API's is `default-src 'none'; …`.
+2. `curl -sI <url>/favicon.svg` and `<url>/_storybook/`: the same headers from `_headers`; Storybook's policy has `frame-ancestors 'self'`.
+3. During every section above, DevTools shows no "violates the following Content Security Policy directive" message; afterwards Workers Logs has no `csp.violation` for the app's own origin, Turnstile or the R2 bucket (browser extensions' are noise).
+4. With automatic Web Analytics injection on for the hostname, see [Edge-injected Web Analytics](how-to-configure-security-headers.md#edge-injected-web-analytics) first.
+
+Expected: `CSP_MODE=enforce` in production (`bun run doctor`).
+Mail: none.
+
 ## Themes and mobile width
 
 1. Repeat the landing, sign-in, dashboard, members, settings and admin overview pages in the dark and the light theme (Settings → Appearance, or the OS setting signed out).
@@ -276,6 +288,7 @@ Copy into the PR or release notes:
 | Demos                    |        |       |
 | Landing, docs and search |        |       |
 | Health                   |        |       |
+| Security headers         |        |       |
 | Themes and mobile width  |        |       |
 | Cleanup                  |        |       |
 

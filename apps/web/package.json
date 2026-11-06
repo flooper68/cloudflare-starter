@@ -16,7 +16,8 @@
     "cf-typegen": "wrangler types",
     "build:app": "astro build",
     "deploy:dry-run": "astro build && wrangler deploy --dry-run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:build": "playwright test -c playwright.build.config.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.4.6",
