@@ -89,6 +89,11 @@ EMAIL_FROM_NAME=Cloudflare Starter
 # TURNSTILE=off
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
+# Security headers (docs/guides/how-to-configure-security-headers.md). CSP_MODE
+# (enforce | report-only) is a required var set in apps/web/wrangler.jsonc; uncomment to
+# try a policy change in report-only locally (never leave it blank).
+# CSP_MODE=report-only
+
 # Metrics and tracing. METRICS (analytics-engine | none) and TRACING (workers | none) are
 # required vars in apps/web/wrangler.jsonc too, with the same rules: uncomment to override,
 # never leave blank. Locally the METRICS_DATASET Analytics Engine binding is simulated and
