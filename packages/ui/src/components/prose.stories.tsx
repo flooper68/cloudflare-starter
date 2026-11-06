@@ -47,7 +47,7 @@ function Guide() {
               {" "}
               run setup:auth --env production
             </span>
-            <span style={token("#59636e", "#9198a1")}>
+            <span style={token("#6e7781", "#8b949e")}>
               {" "}
               # asks, then writes wrangler.jsonc
             </span>

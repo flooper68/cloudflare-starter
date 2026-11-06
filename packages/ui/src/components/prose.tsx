@@ -23,7 +23,7 @@ const proseClasses = [
   // Inline code and code blocks (Shiki's colours: styles/prose.css).
   "[&_code]:font-mono [&_code]:text-[0.92em]",
   "[&_:not(pre)>code]:rounded-sm [&_:not(pre)>code]:bg-active [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-px",
-  "[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-line [&_pre]:bg-surface [&_pre]:p-3 [&_pre]:text-xs [&_pre]:leading-5",
+  "[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-line [&_pre]:bg-surface-raised [&_pre]:p-3 [&_pre]:text-xs [&_pre]:leading-5",
   "[&_pre:focus-visible]:outline-none [&_pre:focus-visible]:ring-2 [&_pre:focus-visible]:ring-focus",
   // Tables: a scroll box around each (see the JSDoc), quiet rows.
   "[&_[data-table-scroll]]:overflow-x-auto [&_[data-table-scroll]]:rounded-lg [&_[data-table-scroll]]:border [&_[data-table-scroll]]:border-line [&_[data-table-scroll]]:bg-surface-raised",
