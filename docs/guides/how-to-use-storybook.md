@@ -54,7 +54,9 @@ bun run test:components            # every story: renders, passes axe, runs its 
 `/_storybook/` is public like the rest of the static assets: it contains only components and
 sample data. If a project needs it private, protect the path with Cloudflare Access (a
 self-hosted application on `<domain>/_storybook*`), or remove the Storybook step from
-`apps/web`'s `build` script and run it only locally.
+`apps/web`'s `build` script and run it only locally. It has its own, looser
+Content-Security-Policy (inline scripts allowed, framed only by itself), set in
+`apps/web/public/_headers` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#storybook)).
 
 ## Removing It
 

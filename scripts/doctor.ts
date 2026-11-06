@@ -46,6 +46,8 @@ const PLATFORM_SETTINGS = {
   FEATURE_FLAGS: ["d1", "none"],
   METRICS: ["analytics-engine", "none"],
   TRACING: ["workers", "none"],
+  // The pages' Content-Security-Policy (docs/guides/how-to-configure-security-headers.md).
+  CSP_MODE: ["enforce", "report-only"],
 } as const;
 
 /** Analytics settings (apps/web/src/lib/config.ts parseAnalyticsConfig), no defaults. */
@@ -298,6 +300,10 @@ for (const env of ENVIRONMENTS) {
       error(`${env}: ${name} is "${value}" (${allowed.join(" | ")})`);
     else ok(`${env}: ${name}=${value}`);
   }
+  if (env === "production" && vars.CSP_MODE === "report-only")
+    warn(
+      "production: CSP_MODE=report-only blocks nothing; switch back to enforce once the reports are clean"
+    );
   // METRICS=analytics-engine writes to the METRICS_DATASET binding of this environment.
   const datasets =
     (block.analytics_engine_datasets as

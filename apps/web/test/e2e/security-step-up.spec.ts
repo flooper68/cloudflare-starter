@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { base32 } from "@better-auth/utils/base32";
 import { createOTP } from "@better-auth/utils/otp";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./fixtures";
 import { newAccount, open, readAdminAccounts, signUp } from "./helpers";
 
 const repo = fileURLToPath(new URL("../../../..", import.meta.url));

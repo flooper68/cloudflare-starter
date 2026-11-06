@@ -54,6 +54,9 @@
     "TRACING": "workers",
     // Optional daily orphan storage check; off | report | delete.
     "STORAGE_RECONCILE": "off",
+    // Content-Security-Policy of HTML pages: enforce | report-only. Required, no default
+    // (docs/guides/how-to-configure-security-headers.md).
+    "CSP_MODE": "enforce",
     "AUTH_EMAIL_PASSWORD": "true",
     "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
     "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -123,7 +126,7 @@
   // (test/architecture/abuse.test.ts). Periods are 10 or 60 s. namespace_id is a positive
   // integer that must be unique in the whole Cloudflare ACCOUNT, not just this file: every
   // Worker binding the same id shares its counters. No resource to create. These ids
-  // (7001–7011 develop, 8001–8011 staging, 9001–9011 production) are the starter's own; a
+  // (7001–7012 develop, 8001–8012 staging, 9001–9012 production) are the starter's own; a
   // project built from it gets its own block from `bun run setup:cloudflare` (or
   // --namespace-base). Simulated locally.
   "ratelimits": [
@@ -181,6 +184,11 @@
       "name": "RL_HEALTH",
       "namespace_id": "7011",
       "simple": { "limit": 120, "period": 60 }
+    },
+    {
+      "name": "RL_CSP_REPORT",
+      "namespace_id": "7012",
+      "simple": { "limit": 30, "period": 60 }
     }
   ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
@@ -203,6 +211,7 @@
         "TRACING": "workers",
         // Optional daily orphan storage check; off | report | delete.
         "STORAGE_RECONCILE": "off",
+        "CSP_MODE": "enforce",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "EMAIL_FROM_NAME": "Cloudflare Starter",
@@ -306,6 +315,11 @@
           "name": "RL_HEALTH",
           "namespace_id": "8011",
           "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_CSP_REPORT",
+          "namespace_id": "8012",
+          "simple": { "limit": 30, "period": 60 }
         }
       ],
       "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] }
@@ -331,6 +345,7 @@
         "TRACING": "workers",
         // Optional daily orphan storage check; off | report | delete.
         "STORAGE_RECONCILE": "report",
+        "CSP_MODE": "enforce",
         "AUTH_EMAIL_PASSWORD": "true",
         // Required by BOOTSTRAP_ADMIN_EMAIL; needs EMAIL_FROM (bun run setup:email).
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "true",
@@ -454,6 +469,11 @@
           "name": "RL_HEALTH",
           "namespace_id": "9011",
           "simple": { "limit": 120, "period": 60 }
+        },
+        {
+          "name": "RL_CSP_REPORT",
+          "namespace_id": "9012",
+          "simple": { "limit": 30, "period": 60 }
         }
       ],
       "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] }

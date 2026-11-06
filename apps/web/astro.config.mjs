@@ -3,6 +3,7 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, sessionDrivers } from "astro/config";
 
+import { injectedStyleHashes } from "./csp-hashes.mjs";
 import { devPort } from "./dev-port.mjs";
 import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
 
@@ -19,7 +20,18 @@ export default defineConfig({
   // Off because OAuth token requests from MCP clients (Claude's servers) are
   // cross-site form POSTs to /api/auth/oauth2/token. Better Auth checks origins
   // itself, tRPC requires the x-trpc-source header, and /api/files checks Origin.
-  security: { checkOrigin: false },
+  //
+  // csp: Astro hashes the inline scripts and styles it renders into each page and sends
+  // them in a Content-Security-Policy header; server/security-headers.ts keeps those
+  // hashes and replaces the rest with the app's full policy (`astro dev` sends none).
+  security: {
+    checkOrigin: false,
+    csp: {
+      algorithm: "SHA-256",
+      // Styles bundled libraries inject at runtime (sonner's toasts): csp-hashes.mjs.
+      styleDirective: { hashes: injectedStyleHashes() },
+    },
+  },
   // The port of APP_URL in .dev.vars (4321 by default): Better Auth trusts only that origin.
   server: { port: devPort() },
   vite: {
