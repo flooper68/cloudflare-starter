@@ -30,7 +30,7 @@ for (const path of PAGES) {
   });
 }
 
-test("a signed-up user's journey: the real Turnstile widget, dialogs, a select, toasts and a passkey", async ({
+test("a signed-up user's journey: the real Turnstile widget, a dialog, a select, a profile save and a passkey", async ({
   browser,
 }) => {
   const context = await browser.newContext();
@@ -79,15 +79,22 @@ test("a signed-up user's journey: the real Turnstile widget, dialogs, a select, 
     await page.keyboard.press("Escape");
     await expect(create).toHaveCount(0);
 
-    // A Radix Select and a sonner toast.
+    // A Radix Select, then a profile save.
     await page.getByRole("link", { name: "Settings" }).click();
     await page.getByRole("link", { name: "Appearance & language" }).click();
     await page.getByRole("combobox", { name: "Theme" }).click();
     await expect(page.getByRole("option", { name: "Dark" })).toBeVisible();
     await page.keyboard.press("Escape");
     await page.getByRole("link", { name: "Account" }).click();
+    await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+      account.name
+    );
+    await page.getByLabel("Name", { exact: true }).fill("CSP build user");
+    // Saving reloads the page; sonner's injected stylesheet is on every page anyway.
     await page.getByRole("button", { name: "Save profile" }).click();
-    await expect(page.getByText("Profile saved")).toBeVisible();
+    await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+      "CSP build user"
+    );
 
     // A passkey ceremony (WebAuthn through the virtual authenticator).
     await page.getByRole("link", { name: "Security" }).click();
