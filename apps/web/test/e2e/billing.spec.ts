@@ -55,7 +55,10 @@ test("a storage limit shows the upgrade prompt; the admin raises it and the uplo
   await signIn(admin, readAdminAccounts().admin);
   await open(admin, "/admin/workspaces");
   await admin.getByText(workspace).click();
-  await expect(admin.getByRole("heading", { name: "Billing" })).toBeVisible();
+  // exact: the workspace's own heading ("E2E Billing …") also contains the word.
+  await expect(
+    admin.getByRole("heading", { name: "Billing", exact: true })
+  ).toBeVisible();
   await expect(admin.getByText("Manual billing")).toBeVisible();
   await setStorageOverride(admin, "0", "E2E: a small test plan");
 

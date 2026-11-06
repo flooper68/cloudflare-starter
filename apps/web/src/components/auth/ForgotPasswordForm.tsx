@@ -68,7 +68,7 @@ export function ForgotPasswordForm({
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
         <Logo className="mb-3" />
-        <CardTitle>Reset password</CardTitle>
+        <CardTitle level={1}>Reset password</CardTitle>
         <p className="text-sm text-fg-muted">
           {sent
             ? `If an account exists for ${email}, a reset link is on its way.`
@@ -120,7 +120,7 @@ export function ForgotPasswordForm({
         <p className="text-sm text-fg-muted">
           Back to{" "}
           <a
-            className="font-medium text-accent underline underline-offset-4"
+            className="font-medium text-accent-text underline underline-offset-4"
             href="/sign-in"
           >
             sign in

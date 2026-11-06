@@ -212,7 +212,7 @@ The metrics dataset of the observability work (`METRICS_DATASET`) is a separate 
         data-cf-beacon='{"token":"<WEB_ANALYTICS_TOKEN>","spa":false}'></script>
 ```
 
-(`"spa":true` in the SPA shell, so client-side route changes count as page views). With `none` there is no script at all. Pages whose URL carries a credential, `/invite/<token>` and `/reset-password?token=…`, never load it (`<Layout analytics={false}>`); give any new page like them the same prop.
+(`"spa":true` in the SPA shell, so client-side route changes count as page views). With `none` there is no script at all. Pages whose URL carries a credential, `/invite/<token>`, `/reset-password?token=…` and `/unsubscribe?t=…`, never load it (`<Layout analytics={false}>`); `test/architecture/web-analytics.test.ts` fails when a page with a `[token]` segment or a `t`/`token` query parameter renders the beacon.
 
 Setup: Cloudflare dashboard → Analytics & Logs → Web Analytics → Add a site → the environment's hostname → copy the token from the JS snippet → `bun run setup:analytics --env <env>`. A site proxied through Cloudflare can instead turn on automatic injection in the dashboard; keep `WEB_ANALYTICS=none` then, so the beacon is not loaded twice. The beacon reports to `cloudflareinsights.com`; a Content Security Policy needs `script-src https://static.cloudflareinsights.com` and `connect-src https://cloudflareinsights.com` (the starter sets no CSP). Ad blockers may block it; Web Analytics numbers are a floor.
 

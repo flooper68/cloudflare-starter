@@ -1,11 +1,15 @@
 import { expect, test } from "./fixtures";
-import { open, sharedSession } from "./helpers";
+import { newAccount, open, signUp } from "./helpers";
 
-test.use({ storageState: sharedSession });
+// A dedicated account on its own documentation-range client IP: the shared user's uploads
+// in other journeys count against the same per-user upload.user quota, and its current
+// workspace changes while they run. Signing up here leaves the shared sign-up quota alone.
+test.use({ extraHTTPHeaders: { "cf-connecting-ip": "198.51.100.88" } });
 
 test("settings persists profile, image and preferences, then renames and deletes a workspace", async ({
   page,
 }) => {
+  await signUp(page, newAccount("settings"));
   await open(page, "/app/settings/account");
   const providerImage = new URL("/e2e-provider-avatar.png", page.url()).href;
   await page.route(providerImage, (route) =>
@@ -27,9 +31,27 @@ test("settings persists profile, image and preferences, then renames and deletes
     page.locator(`img[src="${providerImage}"]`).first()
   ).toBeVisible();
   await page.getByLabel("Name", { exact: true }).fill("Settings Example");
+  // Saving reloads the page; a file chosen before that reload is lost with the old page.
+  const profileSaved = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/auth/update-user" &&
+      response.request().method() === "POST"
+  );
+  const reloaded = page.waitForEvent(
+    "framenavigated",
+    (frame) => frame === page.mainFrame()
+  );
   await page.getByRole("button", { name: "Save profile" }).click();
+  expect((await profileSaved).ok()).toBe(true);
+  await reloaded;
+  await open(page, "/app/settings/account");
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
     "Settings Example"
+  );
+  const avatarUpload = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/account/avatar" &&
+      response.request().method() === "POST"
   );
   await page.getByLabel("Upload avatar").setInputFiles({
     name: "avatar.png",
@@ -39,6 +61,7 @@ test("settings persists profile, image and preferences, then renames and deletes
       "base64"
     ),
   });
+  expect((await avatarUpload).status()).toBe(200);
   await expect(
     page.getByRole("button", { name: "Remove avatar" })
   ).toBeVisible();

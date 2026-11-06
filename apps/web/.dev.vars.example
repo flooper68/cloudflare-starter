@@ -7,14 +7,17 @@
 # development, the only environment where auth links (which carry tokens) may be
 # logged when email is off.
 APP_ENV=local
-# Optional storage orphan maintenance: off | report | delete. Report is always safe on demand.
+# STORAGE_RECONCILE (required, no default): off | report | delete. off turns the optional
+# daily orphan maintenance off; admins can still run a report on demand.
 STORAGE_RECONCILE=off
 APP_URL=http://localhost:4321
 # At least 32 characters. Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=local-dev-secret-change-me-0000000000
 
-# Sign-in methods. Email + password is on unless set to false; Google turns on
-# when both keys are set. At least one method must be on.
+# Sign-in methods. AUTH_EMAIL_PASSWORD and AUTH_REQUIRE_EMAIL_VERIFICATION are required
+# (true | false, no default; wrangler.jsonc ships true and false, verification true in
+# production). Google turns on when
+# both keys are set. At least one method must be on.
 AUTH_EMAIL_PASSWORD=true
 AUTH_REQUIRE_EMAIL_VERIFICATION=false
 GOOGLE_CLIENT_ID=

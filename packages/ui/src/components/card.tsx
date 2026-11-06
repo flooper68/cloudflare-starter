@@ -28,12 +28,18 @@ export function CardHeader({
   return <div className={cn("flex flex-col gap-1", className)} {...props} />;
 }
 
+/**
+ * The card's heading, an `<h3>` by default. `level` keeps the page outline valid when the
+ * card is the page's main content (a sign-in card is the page's `<h1>`).
+ */
 export function CardTitle({
   className,
+  level = 3,
   ...props
-}: HTMLAttributes<HTMLHeadingElement>) {
+}: HTMLAttributes<HTMLHeadingElement> & { readonly level?: 1 | 2 | 3 }) {
+  const Heading = `h${level}` as const;
   return (
-    <h3
+    <Heading
       className={cn(
         "text-base font-semibold tracking-tight text-fg",
         className

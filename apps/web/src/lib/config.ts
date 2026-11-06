@@ -10,15 +10,6 @@ import {
 } from "@cloudflare-starter/features";
 import { z } from "zod";
 
-/** A boolean var: "true"/"false" in wrangler.jsonc or .dev.vars, unset means `fallback`. */
-const flag = (fallback: boolean) =>
-  z
-    .union([z.string(), z.boolean()])
-    .optional()
-    .transform((value) =>
-      value === undefined ? fallback : value === true || value === "true"
-    );
-
 const envSchema = z.object({
   APP_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
@@ -28,8 +19,6 @@ const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().min(1).optional(),
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   R2_FILES_BUCKET_NAME: z.string().min(1).optional(),
-  AUTH_EMAIL_PASSWORD: flag(true),
-  AUTH_REQUIRE_EMAIL_VERIFICATION: flag(false),
   EMAIL_FROM: z.email().optional(),
   EMAIL_FROM_NAME: z.string().min(1).optional(),
   // Required, no default (validated with a named error by parsePlatformConfig).
@@ -40,12 +29,17 @@ const envSchema = z.object({
 export const ADMIN_PORTAL_VALUES = ["on", "off"] as const;
 export type AdminPortalSetting = (typeof ADMIN_PORTAL_VALUES)[number];
 
+/** The values of a boolean setting: written out, never implied by an unset var. */
+export const BOOLEAN_SETTING_VALUES = ["true", "false"] as const;
+
 /**
  * The environment's config. `workspaces` holds WORKSPACE_MODE, SIGN_UP, SIGN_UP_DOMAINS and
  * BOOTSTRAP_ADMIN_EMAIL, required and without defaults (docs/guides/how-to-configure-workspaces.md).
  * `billing` holds BILLING (off | manual | provider), required and without a default
  * (docs/guides/how-to-configure-plans-and-billing.md). `ADMIN_PORTAL` (on | off) is
- * required too (docs/guides/how-to-use-admin-portal.md).
+ * required too (docs/guides/how-to-use-admin-portal.md), and so are the sign-in settings
+ * AUTH_EMAIL_PASSWORD and AUTH_REQUIRE_EMAIL_VERIFICATION, "true" or "false"
+ * (docs/guides/how-to-setup-auth.md).
  */
 export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
@@ -53,6 +47,8 @@ export type AppConfig = z.infer<typeof envSchema> & {
   readonly security: SecuritySettings;
   readonly ADMIN_PORTAL: AdminPortalSetting;
   readonly STORAGE_RECONCILE: StorageReconcileMode;
+  readonly AUTH_EMAIL_PASSWORD: boolean;
+  readonly AUTH_REQUIRE_EMAIL_VERIFICATION: boolean;
 };
 
 export type RequiredAppConfig = Omit<
@@ -76,6 +72,11 @@ export interface FeatureConfig<T> {
 export function parseAppConfig(env: PartialEnv): AppConfig {
   return {
     ...envSchema.parse(env),
+    AUTH_EMAIL_PASSWORD: requiredBoolean(env, "AUTH_EMAIL_PASSWORD"),
+    AUTH_REQUIRE_EMAIL_VERIFICATION: requiredBoolean(
+      env,
+      "AUTH_REQUIRE_EMAIL_VERIFICATION"
+    ),
     workspaces: workspaceSettingsSchema.parse(env),
     ADMIN_PORTAL: requiredChoice(
       env,
@@ -157,6 +158,11 @@ function requiredChoice<T extends string>(
     throw new ConfigError(name, `${name} is "${value}": ${hint}`);
   }
   return value as T;
+}
+
+/** A required "true" | "false" setting, without a default (same named error as a choice). */
+function requiredBoolean(env: PartialEnv, name: string): boolean {
+  return requiredChoice(env, name, BOOLEAN_SETTING_VALUES) === "true";
 }
 
 /**

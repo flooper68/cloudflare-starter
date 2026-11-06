@@ -18,6 +18,8 @@ const core = {
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "local-dev-secret-change-me-0000000000",
   APP_ENV: "local",
+  AUTH_EMAIL_PASSWORD: "true",
+  AUTH_REQUIRE_EMAIL_VERIFICATION: "false",
 };
 
 describe("web config", () => {
@@ -89,6 +91,40 @@ describe("web config", () => {
     expect(() =>
       parseAppConfig({ ...core, ...workspaces, ADMIN_PORTAL: "true" })
     ).toThrow(ConfigError);
+  });
+
+  it("requires the sign-in settings as true or false, without defaults", () => {
+    const rest = {
+      ...core,
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      ADMIN_PORTAL: "on",
+      BILLING: "off",
+    };
+    const parsed = parseAppConfig({
+      ...rest,
+      AUTH_EMAIL_PASSWORD: "false",
+      AUTH_REQUIRE_EMAIL_VERIFICATION: "true",
+    });
+    expect(parsed.AUTH_EMAIL_PASSWORD).toBe(false);
+    expect(parsed.AUTH_REQUIRE_EMAIL_VERIFICATION).toBe(true);
+    for (const name of [
+      "AUTH_EMAIL_PASSWORD",
+      "AUTH_REQUIRE_EMAIL_VERIFICATION",
+    ] as const) {
+      expect(() => parseAppConfig({ ...rest, [name]: undefined })).toThrow(
+        new ConfigError(
+          name,
+          `${name} is not set: set ${name} to one of true, false in the vars of apps/web/wrangler.jsonc for every environment`
+        )
+      );
+      expect(() => parseAppConfig({ ...rest, [name]: "" })).toThrow(
+        new RegExp(`^${name} is not set`)
+      );
+      expect(() => parseAppConfig({ ...rest, [name]: "yes" })).toThrow(
+        new RegExp(`^${name} is "yes"`)
+      );
+    }
   });
 
   it("refuses to start without WORKSPACE_MODE and SIGN_UP", () => {

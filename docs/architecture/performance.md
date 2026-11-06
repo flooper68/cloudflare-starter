@@ -9,7 +9,7 @@ A project picks which checks to implement and in what order. Recommended first s
 1. **D1 query budgets** in integration tests, for the use cases behind the key procedures.
 2. **Bundle-size budgets** checked after `bun run build`.
 
-Add the rest when the product has users or data volume that make them worth their cost. Each check, when implemented, follows the enabler rule in [testing.md](testing.md#enablers): its command goes into `package.json`, its documentation into this doc and [how-to-setup-ci.md](../guides/how-to-setup-ci.md) if CI runs it.
+Add the rest when the product has users or data volume that make them worth their cost. Each check, when implemented, follows the rule in [testing.md](testing.md#performance-checks): its command goes into `package.json`, its documentation into this doc and [how-to-setup-ci.md](../guides/how-to-setup-ci.md) if CI runs it.
 
 ## Targets
 

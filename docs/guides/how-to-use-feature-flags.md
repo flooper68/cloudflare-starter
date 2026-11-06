@@ -6,11 +6,11 @@ How feature flags work in this starter: the catalog in code, how a feature and t
 
 Three different questions, three different mechanisms. Mixing them up is a review finding ([code-review.md checklist 1](../processes/code-review.md#1-server-side-architecture)).
 
-| Concept      | Answers                                       | Lives                                                  | Lifetime                               |
-| ------------ | --------------------------------------------- | ------------------------------------------------------ | -------------------------------------- |
-| Feature flag | Is this release or operations switch on here? | The catalog (`FLAGS`) plus a provider (D1 or a vendor) | Temporary: every flag has `removeWhen` |
-| Entitlement  | What did this workspace's plan pay for?       | The plan and billing data (not built yet)              | As long as the plan exists             |
-| Permission   | May this user's role do this?                 | Roles and authorization checks in procedures           | As long as the role model exists       |
+| Concept      | Answers                                       | Lives                                                                                              | Lifetime                               |
+| ------------ | --------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Feature flag | Is this release or operations switch on here? | The catalog (`FLAGS`) plus a provider (D1 or a vendor)                                             | Temporary: every flag has `removeWhen` |
+| Entitlement  | What did this workspace's plan pay for?       | The plan and billing data (`billing/`, [plans and billing](how-to-configure-plans-and-billing.md)) | As long as the plan exists             |
+| Permission   | May this user's role do this?                 | Roles and authorization checks in procedures                                                       | As long as the role model exists       |
 
 A flag can be wrong for a moment (a cache, a vendor outage) and resolves to its catalog default when the provider fails. That is fine for a release switch and wrong for anything someone pays for or anything that protects data. So never gate a paid feature or an authorization check on a flag; a `plan` rule may target a rollout at a plan, but the plan's entitlement is still checked on its own.
 
@@ -109,7 +109,7 @@ A flag whose stored JSON does not parse (after hand-written SQL) resolves to its
 
 They are `adminProcedure`s of the admin portal (`apps/web/src/server/trpc/admin-router.ts`): platform admins only, with `ADMIN_PORTAL=on`; everyone else gets `NOT_FOUND` ([how-to-use-admin-portal.md](how-to-use-admin-portal.md)). Every write records an audit event with the admin as actor and no workspace: `feature_flag.updated` (`enabled`, `fallthrough`) and `feature_flag.rules_changed` (`ruleCount`, `ruleKinds`; rule targets stay out of the log) ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)). Admins manage them on the portal's Feature flags page (`/admin/flags`, `AdminFlagCard` with `FlagRuleEditor`).
 
-To change a flag before then, use SQL on the environment's D1 (`feature_flags`, `feature_flag_rules`; values are JSON):
+Without the portal (`ADMIN_PORTAL=off`, or from a script), change a flag with SQL on the environment's D1 (`feature_flags`, `feature_flag_rules`; values are JSON):
 
 ```bash
 cd apps/web && bunx wrangler d1 execute DB --local --command \

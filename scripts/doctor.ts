@@ -39,7 +39,10 @@ function checkSecurity(
     );
 }
 
-/** Required platform settings (apps/web/src/lib/config.ts parsePlatformConfig), no defaults. */
+/**
+ * Required settings shipped in every environment's vars, no defaults: the platform adapters
+ * (apps/web/src/lib/config.ts parsePlatformConfig) and the sign-in switches (parseAppConfig).
+ */
 const PLATFORM_SETTINGS = {
   LOG_SINK: ["workers-logs", "none"],
   ERROR_REPORTER: ["workers-logs", "none"],
@@ -48,6 +51,8 @@ const PLATFORM_SETTINGS = {
   TRACING: ["workers", "none"],
   // The pages' Content-Security-Policy (docs/guides/how-to-configure-security-headers.md).
   CSP_MODE: ["enforce", "report-only"],
+  AUTH_EMAIL_PASSWORD: ["true", "false"],
+  AUTH_REQUIRE_EMAIL_VERIFICATION: ["true", "false"],
 } as const;
 
 /** Analytics settings (apps/web/src/lib/config.ts parseAnalyticsConfig), no defaults. */
@@ -206,7 +211,17 @@ if (!existsSync(DEV_VARS)) {
   if (secret.length >= 32) ok("BETTER_AUTH_SECRET set");
   else error("BETTER_AUTH_SECRET is missing or shorter than 32 characters");
 
-  const emailPassword = value("AUTH_EMAIL_PASSWORD") !== "false";
+  for (const name of [
+    "AUTH_EMAIL_PASSWORD",
+    "AUTH_REQUIRE_EMAIL_VERIFICATION",
+  ]) {
+    const current = setting(name);
+    if (current !== "true" && current !== "false")
+      error(
+        `${name} is ${current ? `"${current}"` : "not set"} (true | false, no default)`
+      );
+  }
+  const emailPassword = setting("AUTH_EMAIL_PASSWORD") === "true";
   const google = Boolean(
     value("GOOGLE_CLIENT_ID") && value("GOOGLE_CLIENT_SECRET")
   );
@@ -233,7 +248,7 @@ if (!existsSync(DEV_VARS)) {
       "EMAIL_FROM empty and APP_ENV not local: password reset and verification requests will fail"
     );
   if (
-    value("AUTH_REQUIRE_EMAIL_VERIFICATION") === "true" &&
+    setting("AUTH_REQUIRE_EMAIL_VERIFICATION") === "true" &&
     !value("EMAIL_FROM")
   ) {
     error("AUTH_REQUIRE_EMAIL_VERIFICATION=true needs EMAIL_FROM");
