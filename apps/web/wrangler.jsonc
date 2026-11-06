@@ -322,7 +322,7 @@
         "METRICS": "analytics-engine",
         "TRACING": "workers",
         // Required, no default: off | report | delete (the daily orphan check itself is optional).
-        "STORAGE_RECONCILE": "off",
+        "STORAGE_RECONCILE": "report",
         "AUTH_EMAIL_PASSWORD": "true",
         // Required by BOOTSTRAP_ADMIN_EMAIL; needs EMAIL_FROM (bun run setup:email).
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "true",
@@ -330,14 +330,33 @@
         "RATE_LIMITING": "cloudflare",
         "TURNSTILE": "on",
         // Test key: replace with the production widget's site key (bun run doctor warns).
-        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
+        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+        "EMAIL_FROM": "starter@flooper.me",
+        "TWO_FACTOR": "optional",
+        "TWO_FACTOR_EMAIL_OTP": "on",
+        "TWO_FACTOR_TRUSTED_DEVICE_DAYS": "30",
+        "PASSKEYS": "on",
+        "WORKSPACE_MODE": "multi",
+        "SIGN_UP": "open",
+        "SIGN_UP_DOMAINS": "",
+        "BOOTSTRAP_ADMIN_EMAIL": "premysl.ciompa@gmail.com",
+        "ADMIN_PORTAL": "on",
+        "BILLING": "manual",
+        "ANALYTICS": "analytics-engine",
+        "WEB_ANALYTICS": "none",
+        "WEB_ANALYTICS_TOKEN": ""
       },
-      "send_email": [{ "name": "EMAIL" }],
+      "send_email": [
+        {
+          "name": "EMAIL",
+          "allowed_sender_addresses": ["starter@flooper.me"]
+        }
+      ],
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "cloudflare-starter-production",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "4f940521-26cd-4e54-a7fd-1d3470083c59",
           "migrations_dir": "../../packages/features/migrations"
         }
       ],
