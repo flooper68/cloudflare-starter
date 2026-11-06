@@ -107,7 +107,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "account.security.status",
     "Security status",
-    "Reads your factor enrollment and this connection's verification status, without secrets or recovery codes. Configure factors in the browser."
+    "Reads your factor enrollment, whether your email address is verified, and this connection's verification status, without secrets or recovery codes. Configure factors in the browser."
   ),
   direct(
     "request_data_export",

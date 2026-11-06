@@ -80,7 +80,7 @@ test("a signed-up user's journey: the real Turnstile widget, a dialog, a select,
     await expect(create).toHaveCount(0);
 
     // A Radix Select, then a profile save.
-    await page.getByRole("link", { name: "Settings" }).click();
+    await page.getByRole("link", { name: "Settings", exact: true }).click();
     await page.getByRole("link", { name: "Appearance & language" }).click();
     await page.getByRole("combobox", { name: "Theme" }).click();
     await expect(page.getByRole("option", { name: "Dark" })).toBeVisible();

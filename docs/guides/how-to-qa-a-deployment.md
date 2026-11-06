@@ -29,12 +29,15 @@ Before the run: the Deploy workflow's smoke job passed (or run `bun run test:smo
 Guides: [how-to-setup-auth.md](how-to-setup-auth.md), [how-to-configure-workspaces.md](how-to-configure-workspaces.md), [how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md), [how-to-setup-email.md](how-to-setup-email.md).
 
 1. Open `/sign-up`. The Human check (Turnstile) widget appears and passes.
-2. Sign up account A with name `QA <run> A`.
-3. Open the verification mail and follow its link.
-4. Repeat for account B in a separate browser profile or incognito window (keep it for B's steps below).
+2. Sign up account A with name `QA <run> A`: **Check your inbox** names A's address.
+3. Press **Resend link** once: "Sent." shows. (Pressing it four times within a minute shows the rate-limit wait; do not do that on production.)
+4. Sign in as A before opening the mail: the same **Check your inbox** card shows instead of an error.
+5. Open the newest verification mail and follow its link: **Email verified**, then **Continue to the app**.
+6. Open `/email-verified?error=INVALID_TOKEN`: **This link doesn't work** with **Send a new link**.
+7. Repeat steps 1, 2 and 5 for account B in a separate browser profile or incognito window (keep it for B's steps below).
 
-Expected: before verification, sign-in is refused with a "verify your email" message; after the link, the person lands in `/app/dashboard` with a personal workspace on a trial plan.
-Mail: **Verify your email** (to each account).
+Expected: before verification, sign-in shows the check-inbox card; after the link, the person lands in `/app/dashboard` with a personal workspace on a trial plan, and the dashboard's **Get started** list shows "Verify your email" done.
+Mail: **Verify your email** (to each account, once more after Resend).
 
 ## Sign-in and sign-out
 
@@ -184,19 +187,33 @@ Mail: **Your password was changed** or security notices only if those actions ar
 Guide: [how-to-setup-mcp.md](how-to-setup-mcp.md).
 
 1. In Claude (claude.ai → Settings → Connectors) add a custom connector `https://starter.flooper.me/mcp`.
-2. Sign in as A (not the owner's account) and click Allow on the consent page.
+2. Sign in as A (not the owner's account). The consent page names Claude, A's address and `claude.ai`, lists what it may do in plain words (use the tools as you, see your name and email, stay connected) and says where to revoke it; click Allow.
 3. Ask Claude to call `whoami`, then `list_workspaces` and `list_files` for `QA <run> shared`.
-4. Settings → Security (or connected apps): the client is listed; revoke it, and the next tool call fails until Claude reconnects. Remove the connector from Claude.
+4. Settings → Security → Active sessions: sign out the session that allowed Claude; the next tool call fails until Claude reconnects. Remove the connector from Claude.
 
 Expected: the tools answer as A with A's workspaces only; A's audit log shows the tool calls' changes, none for reads.
 Mail: possibly **New sign-in to your account** for the consent sign-in.
+
+## Dashboard and system screens
+
+Guides: [how-to-configure-workspaces.md](how-to-configure-workspaces.md), [how-to-configure-account-security.md](how-to-configure-account-security.md).
+
+1. As A, `/app/dashboard`: **Get started** lists Verify your email (done), Invite a teammate, Turn on two-factor authentication, each open step with its button; the count matches.
+2. After the workspace steps above (B joined, A has an authenticator), the list shows those steps done.
+3. As B (a member of `QA <run> shared`), open `/app/settings/workspace`: **You don't have access to this**, naming A as the owner, and **Back to dashboard**.
+4. Open `/app/no-such-page`: **Page not found** inside the app shell.
+5. DevTools → Network → Offline: the **You're offline.** strip appears at the top of the app; **Try again** keeps it; back online, it goes away.
+
+Expected: no blank areas, no raw errors; the 403 and 404 views keep the sidebar.
+Mail: none.
 
 ## Demos: queue and email
 
 Guides: [how-to-add-background-jobs.md](how-to-add-background-jobs.md), [how-to-setup-email.md](how-to-setup-email.md).
 
-1. `/app/queue-demo`: enqueue a hello job; it shows as processed.
-2. `/app/email-demo`: send the test email to A.
+1. Dashboard → **Developer demos** (`/app/demos`) lists Upload, Queue and Email.
+2. `/app/queue-demo`: enqueue a hello job; it shows as processed.
+3. `/app/email-demo`: send the test email to A.
 
 Expected: the job completes within a minute; the mail arrives.
 Mail: **[production] Starter kit test email**.
@@ -280,6 +297,7 @@ Copy into the PR or release notes:
 | Privacy                  |        |       |
 | Admin portal             |        |       |
 | MCP                      |        |       |
+| Dashboard and system     |        |       |
 | Demos                    |        |       |
 | Landing, docs and search |        |       |
 | Health                   |        |       |

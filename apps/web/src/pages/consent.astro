@@ -45,6 +45,7 @@ if (impersonating) {
           clientId={clientId}
           redirectUri={params.get("redirect_uri")}
           scope={params.get("scope") ?? ""}
+          accountEmail={Astro.locals.user.email}
         />
       )
     }

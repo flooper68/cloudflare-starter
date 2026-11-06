@@ -59,6 +59,17 @@ Then deploy the environment (`cd apps/web && bun run deploy:production`) and sen
 
 Once mail works in an environment, set `"AUTH_REQUIRE_EMAIL_VERIFICATION": "true"` in its `vars`. New users then get a verification link and cannot sign in until they open it; the link signs them in. The app refuses to start with the flag on and no email configured.
 
+The screens around it (`CheckInboxCard` and `EmailVerifiedCard` in `packages/ui`, stories under Patterns/VerifyEmail):
+
+| Screen                             | When                                                                                                                                                                        | What it does                                                                                                                                                           |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Check your inbox (in `SignUpForm`) | sign-up with the flag on: there is no session yet                                                                                                                           | names the address; **Resend link** (`/send-verification-email`, limited by `auth.verification-email`, a 429 shows the wait); **Use another email** returns to the form |
+| Check your inbox (in `SignInForm`) | a correct password for an unverified address (`EMAIL_NOT_VERIFIED`)                                                                                                         | the same card for the typed address                                                                                                                                    |
+| `/verify-email`                    | signed in and not verified (the dashboard's checklist links here; with the flag off, sign-up signs in at once and the address stays unverified until the link is opened)    | resend to the user's own address; **Use another email** opens Settings › Account; a verified user is sent on to the app                                                |
+| `/email-verified`                  | where every verification link lands (`callbackURL`, built by `verifiedCallbackURL` in `apps/web/src/lib/auth-links.ts`, keeping a same-site `?next=` such as an invitation) | **Email verified** and **Continue to the app**; Better Auth's `?error=` (expired or cut-off link) shows **This link doesn't work** with **Send a new link** (HTTP 400) |
+
+Links are stateless and valid for an hour (Better Auth's default `emailVerification.expiresIn`); a resend does not invalidate the earlier ones.
+
 ## Swapping The Provider
 
 Add an adapter in `packages/features/src/platform/adapters/<vendor>/` that implements `EmailService` and calls `assertEmailMessage` first, with a `<name>.contract.test.ts` running `describeEmailContract` ([overview.md](../architecture/overview.md#ports-and-adapters)). Return it from `buildEmailFeature` in [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts), and keep its keys as Worker secrets. Pass `headers` through: notification mail needs `List-Unsubscribe`.
