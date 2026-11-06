@@ -66,14 +66,28 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
 2. Create D1, R2 and the queues (with dead-letter queues, kept 14 days), and write the D1 id into `wrangler.jsonc`:
 
    ```bash
+   bun run setup:cloudflare --env production --dry-run  # the plan
    bun run setup:cloudflare --env production            # add --jurisdiction eu to keep data in the EU
    ```
 
-3. Email, if the environment sends mail ([how-to-setup-email.md](./how-to-setup-email.md)):
+   With `--jurisdiction eu` the script also writes `"jurisdiction": "eu"` into the environment's `r2_buckets` entry. It also gives the Workers Rate Limiting bindings `namespace_id`s from the project's own block when they are still the starter's: the ids are account-wide, so a project that kept the starter's would share its rate-limit counters with every other one that did ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#namespace-ids)).
+
+3. Domain: the environment's hostname goes into `routes` of its block in `wrangler.jsonc` as a [Custom Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), and `"workers_dev": false` turns off the `*.workers.dev` URL. The zone must be in the same account and the hostname must have no DNS record yet; the deploy creates the record and the certificate. `APP_URL` (step 7) is then `https://<hostname>`. The starter's own production uses `starter.flooper.me`:
+
+   ```jsonc
+   "routes": [{ "pattern": "starter.flooper.me", "custom_domain": true }],
+   "workers_dev": false,
+   ```
+
+   A project replaces that hostname with its own (or removes both lines to stay on `workers.dev`). `wrangler deploy --dry-run` lists bindings, not routes: after `CLOUDFLARE_ENV=production bun run deploy:dry-run` in `apps/web`, the route is in `routes` of the built `dist/server/wrangler.json`.
+
+   Email, if the environment sends mail ([how-to-setup-email.md](./how-to-setup-email.md#choosing-the-sender)). The sender's domain must be onboarded to Email Service; it can differ from the app's hostname (the starter's production sends as `starter@flooper.me`):
 
    ```bash
-   bun run setup:email --domain example.com --env production
+   bun run setup:email --domain example.com --from noreply@example.com --env production
    ```
+
+   A `BOOTSTRAP_ADMIN_EMAIL` needs `AUTH_REQUIRE_EMAIL_VERIFICATION=true` (the starter's production sets it), and that needs `EMAIL_FROM`: the Worker refuses to start with verification on and no sender.
 
 4. Workspaces and sign-up: the starter ships no choice, and the Worker refuses to start without one ([how-to-configure-workspaces.md](./how-to-configure-workspaces.md)):
 

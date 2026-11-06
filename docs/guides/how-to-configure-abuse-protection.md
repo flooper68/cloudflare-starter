@@ -74,7 +74,18 @@ Required in every environment, no defaults; a missing or wrong value fails the f
 | `TURNSTILE_SITE_KEY`   | var (public)                        | the widget's site key; required with `on`                                                   |
 | `TURNSTILE_SECRET_KEY` | secret (`.dev.vars`, Worker secret) | the widget's secret key; required with `on`                                                 |
 
-Bindings, in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc`: `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_BILLING_WEBHOOK`, `RL_ANALYTICS`, `RL_UNSUBSCRIBE`, `RL_HEALTH` (`ratelimits`). Their `limit` and `period` must equal the catalog's; `test/architecture/abuse.test.ts` checks it. `namespace_id` is any positive integer you pick, unique in the Cloudflare account; bindings sharing one share counters, so every environment uses its own ids (1001–1011, 2001–2011, 3001–3011). There is no resource to create.
+Bindings, in the top level, `env.staging` and `env.production` of `apps/web/wrangler.jsonc`: `RL_AUTH_IP`, `RL_MUTATION`, `RL_MCP_IP`, `RL_MCP_USER`, `RL_UPLOAD`, `RL_INVITE`, `RL_TOKEN_LOOKUP`, `RL_BILLING_WEBHOOK`, `RL_ANALYTICS`, `RL_UNSUBSCRIBE`, `RL_HEALTH` (`ratelimits`). Their `limit` and `period` must equal the catalog's; `test/architecture/abuse.test.ts` checks it. `namespace_id` is a positive integer unique in the whole Cloudflare account; there is no resource to create. See [Namespace ids](#namespace-ids).
+
+### Namespace Ids
+
+A `namespace_id` is account-wide, not per Worker: every binding with the same id, in any Worker of the account, counts against the same counters. Two projects that both ship `9001` lock each other's users out. Each project, and each environment in it, needs its own block.
+
+- The starter's own Worker (`cloudflare-starter-web`) uses 7001–7011 (develop), 8001–8011 (staging) and 9001–9011 (production). Earlier versions shipped 1001–1010, 2001–2010 and 3001–3010.
+- A project built from the starter picks its block when it renames the Worker: `bun run setup:cloudflare --env all --dry-run` shows the plan, and the same command without `--dry-run` writes it. While an environment still has the starter's ids (current or earlier) and the Worker has another name, or an id is missing or used twice in `wrangler.jsonc`, the script replaces them with ids from a block derived from a hash of the Worker's `name`: one of 900,000 blocks of 1000 ids between 100,000,000 and 999,999,999, with develop at `+1…`, staging at `+101…` and production at `+201…`. Ids that are already the project's own are kept.
+- `--namespace-base <n>` uses the block starting at `n` instead (for example one you keep track of for the account), for the environments passed with `--env`.
+- Residual risk: Cloudflare has no API or Wrangler command that lists the namespace ids in use, so neither the script nor `bun run doctor` can see other Workers. Two Worker names whose hashes fall into the same block, or a hand-picked id another Worker also uses, still collide. If you run several projects in one account, keep a list of their blocks (or use `--namespace-base` from it). Changing an id resets that limit's counters, which is harmless.
+
+`bun run doctor` prints the ids each environment uses, warns that they must be unique across the account, and fails while a renamed project still has the starter's ids; `test/architecture/abuse.test.ts` checks the same and that every id in the file is unique.
 
 ## Local Development
 
@@ -102,11 +113,11 @@ done | sort | uniq -c
 ## Deployed Environments
 
 1. Per environment, create a Turnstile widget: Cloudflare dashboard > Turnstile > Add widget, mode **Managed**, hostname the environment's domain (not localhost). `bun run setup:cloudflare --env <env>` prints these steps; it does not call the Turnstile API.
-2. Put the site key in `TURNSTILE_SITE_KEY` of that environment's `vars` in `apps/web/wrangler.jsonc` (the top level is develop). The starter ships the always-pass test key there; `bun run doctor` warns while staging or production still has it.
+2. Put the site key in `TURNSTILE_SITE_KEY` of that environment's `vars` in `apps/web/wrangler.jsonc` (the top level is develop). The starter ships the always-pass test key there; `bun run doctor` warns while staging or production still has it (for production: do not deploy with it).
 3. `bun run setup:secrets --env <env>` and enter `TURNSTILE_SECRET_KEY`. Setting a secret deploys a new version.
 4. Keep `RATE_LIMITING=cloudflare`. Workers Rate Limiting needs Wrangler 4.36 or later (the repository pins a newer one).
 
-`bun run doctor` checks the settings locally and in every environment, the `namespace_id`s for duplicates, and reminds you of the secret.
+`bun run doctor` checks the settings locally and in every environment, the `namespace_id`s for duplicates and leftover starter ids ([Namespace ids](#namespace-ids)), and reminds you of the secret.
 
 ## Limits Of The Edge Limiter
 

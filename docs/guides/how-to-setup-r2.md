@@ -34,7 +34,7 @@ bunx wrangler r2 bucket create cloudflare-starter-files-staging
 bunx wrangler r2 bucket create cloudflare-starter-files-production
 ```
 
-Add `--jurisdiction eu` if the data must stay in the EU, and set the same `jurisdiction` on the binding.
+Add `--jurisdiction eu` if the data must stay in the EU, and set the same `jurisdiction` on the binding. `bun run setup:cloudflare --env <env> --jurisdiction eu` does both: it creates the bucket there and writes `"jurisdiction": "eu"` into the environment's `r2_buckets` entry (a jurisdictional bucket is invisible to a binding without it).
 
 ## Presigned URLs
 

@@ -45,6 +45,15 @@ The script runs `wrangler email sending enable`, prints the DNS records (SPF, DK
 
 Then deploy the environment (`cd apps/web && bun run deploy:production`) and send a test from `/app/email-demo`. Test with addresses you control; bounces from made-up addresses hurt the domain's reputation.
 
+### Choosing The Sender
+
+`EMAIL_FROM` is the address every mail of the environment comes from (password resets, verification, invitations, notifications), so pick it once per environment:
+
+- Its domain must be onboarded to Email Service (DNS on Cloudflare, the SPF, DKIM and bounce records in place). It does not have to be the app's hostname: one onboarded domain can send for several projects.
+- Give each project its own local part on a shared domain (the starter's production, served at `starter.flooper.me`, sends as `starter@flooper.me`), so a recipient sees which product wrote, and complaints and bounces can be told apart. The domain's reputation is still shared: a project that sends badly hurts the others.
+- Use an address that exists or is routed (Email Routing), since replies go to it; no-reply addresses work, but users then answer into nothing.
+- `setup:email` writes the same address into `allowed_sender_addresses`; the binding refuses any other sender.
+
 ## Email Verification
 
 Once mail works in an environment, set `"AUTH_REQUIRE_EMAIL_VERIFICATION": "true"` in its `vars`. New users then get a verification link and cannot sign in until they open it; the link signs them in. The app refuses to start with the flag on and no email configured.

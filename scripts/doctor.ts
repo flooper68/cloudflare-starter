@@ -9,8 +9,14 @@ import { billingSettingsSchema } from "../packages/features/src/billing/domain/s
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 
 import {
+  describeIds,
+  STARTER_SHIPPED_NAMESPACE_IDS,
+  STARTER_WORKER_NAME,
+} from "./cloudflare-plan";
+import {
   DEV_VARS,
   ENVIRONMENTS,
+  type Environment,
   envBlock,
   PLACEHOLDER_ID,
   readDevVars,
@@ -279,6 +285,7 @@ const config = readWranglerConfig();
 /** Cloudflare's dummy site keys (always pass, always fail, forced challenge). */
 const TURNSTILE_TEST_SITE_KEYS = /^[123]x0{20}(AA|AB|BB|FF)$/;
 const namespaceIds: string[] = [];
+const namespaceIdsByEnv = new Map<Environment, string[]>();
 for (const env of ENVIRONMENTS) {
   const block = envBlock(config, env);
   const d1 = (block.d1_databases as { database_id: string }[] | undefined)?.[0];
@@ -351,8 +358,16 @@ for (const env of ENVIRONMENTS) {
     if (!vars.TURNSTILE_SITE_KEY)
       error(`${env}: TURNSTILE=on needs TURNSTILE_SITE_KEY`);
     else if (TURNSTILE_TEST_SITE_KEYS.test(vars.TURNSTILE_SITE_KEY)) {
-      const message = `${env}: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc`;
-      if (env === "staging" || env === "production") warn(message);
+      // A warning, not an error: local dev still works. Deployed with the always-pass
+      // test key, the human check stops nobody.
+      if (env === "production")
+        warn(
+          `${env}: TURNSTILE_SITE_KEY is a Cloudflare TEST key: do not deploy production with it (the human check would stop nobody, or block everyone); create the widget and put its site key in wrangler.jsonc`
+        );
+      else if (env === "staging")
+        warn(
+          `${env}: TURNSTILE_SITE_KEY is a Cloudflare test key: put the widget's own site key in wrangler.jsonc`
+        );
     }
     warn(
       `${env}: TURNSTILE=on needs the TURNSTILE_SECRET_KEY Worker secret (bun run setup:secrets --env ${env})`
@@ -364,6 +379,7 @@ for (const env of ENVIRONMENTS) {
     (block.ratelimits as { namespace_id: string }[] | undefined) ?? []
   ).map((binding) => binding.namespace_id);
   namespaceIds.push(...ids);
+  namespaceIdsByEnv.set(env, ids);
   checkStorageVar(env, vars.STORAGE_RECONCILE);
   if (vars.TWO_FACTOR) checkSecurity(env, vars);
   else
@@ -385,7 +401,28 @@ if (duplicates.length)
   error(
     `ratelimits namespace_id used twice: ${[...new Set(duplicates)].join(", ")} (each binding in each environment needs its own)`
   );
-else ok(`ratelimits: ${namespaceIds.length} bindings, unique namespace_ids`);
+else
+  ok(
+    `ratelimits: ${namespaceIds.length} bindings, namespace_ids unique in wrangler.jsonc`
+  );
+// namespace_ids are account-wide: this file cannot show what other Workers use.
+warn(
+  `ratelimits: namespace_ids must be unique across the whole Cloudflare account (a Worker binding the same id shares the counters); in use here: ${[
+    ...namespaceIdsByEnv,
+  ]
+    .map(([env, ids]) => `${env} ${describeIds(ids)}`)
+    .join(
+      ", "
+    )} (docs/guides/how-to-configure-abuse-protection.md#namespace-ids)`
+);
+const workerName = String(config.name ?? "");
+if (
+  workerName !== STARTER_WORKER_NAME &&
+  namespaceIds.some((id) => STARTER_SHIPPED_NAMESPACE_IDS.has(id))
+)
+  error(
+    "ratelimits: still the starter's namespace_ids, shared with every project that kept them: bun run setup:cloudflare --env all --dry-run, then without --dry-run"
+  );
 
 const who = wrangler(["whoami"]);
 if (who.ok && !/not authenticated/i.test(who.stdout))
