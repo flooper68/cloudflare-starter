@@ -43,6 +43,7 @@ If CI is green, these hold; reviewers do not check them manually:
 - Domain purity, tokens-only UI classes, no DB calls in adapters, no `console` in server code outside the Cloudflare adapters, no `AsyncLocalStorage` or `request-scope` import outside the Better Auth hook bridge, no direct queue sends outside the jobs feature (GritQL rules in `lint/rules/*.grit`)
 - Vendor SDKs only in `platform/adapters/<vendor>/`: packages/features imports only zod, drizzle-orm and aws4fetch elsewhere, `apps/web/src/server` imports none of the listed vendor SDKs (dependency-cruiser `vendor-sdks-only-in-adapters`, `vendor-sdks-not-in-app-server`)
 - Layer direction, pure domain and kernel imports, barrel-only imports between folders, ui↔features isolation (dependency-cruiser, `bun run deps:check`)
+- Web Analytics: no page whose URL carries a token (`[token]` segment, `t` or `token` query parameter) loads the beacon (`test/architecture/web-analytics.test.ts`)
 - Privacy catalog: every table in `DATA_CATALOG` with an erasure treatment and no secret column exported (`test/architecture/privacy.test.ts`)
 - `audit_events` append-only except constrained erasure redaction (only `recordAuditEvent` inserts, only `purgeAuditEvents` deletes, only `redactAuditSubject` updates subject identifiers) and every state-changing use case of an audited feature records an event or is exempt (`test/architecture/audit-coverage.test.ts`)
 - Every var and secret of `.dev.vars.example` and the top-level `vars` pinned for the API tests (`test/architecture/api-test-bindings.test.ts`)

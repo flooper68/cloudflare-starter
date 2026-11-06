@@ -45,7 +45,7 @@ Astro.response.headers.set("cache-control", "no-store");
 Astro.response.headers.set("referrer-policy", "no-referrer");
 ---
 
-<Layout title="Unsubscribe">
+<Layout title="Unsubscribe" analytics={false}>
   <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
     <Unsubscribe
       client:load
