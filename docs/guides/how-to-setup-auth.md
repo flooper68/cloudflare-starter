@@ -15,16 +15,18 @@ The web app signs users in with [Better Auth](https://www.better-auth.com). User
 
 Pages:
 
-| Route                     | What it does                                                                                                                                                    |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/sign-up`                | Name, email, password; signs in right away, or asks to verify the email first; refused with a message when sign-up is invite-only and the address is not let in |
-| `/sign-in`                | The enabled methods: email + password and/or "Continue with Google"                                                                                             |
-| `/forgot-password`        | Sends a reset link (only with email + password on)                                                                                                              |
-| `/reset-password?token=…` | Sets a new password and revokes other sessions                                                                                                                  |
-| `/two-factor`             | Second-factor challenge, required enrollment, and admin step-up (`?stepUp=1&next=…`)                                                                            |
-| `/consent`                | Lets the user allow or deny an MCP client                                                                                                                       |
-| `/invite/<token>`         | Shows a workspace invitation and accepts it (signing in or up first)                                                                                            |
-| `/app/profile`            | Redirects to `/app/settings/account`; account, appearance, security, workspace and privacy settings                                                             |
+| Route                     | What it does                                                                                                                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/sign-up`                | Name, email, password; signs in right away, or shows "Check your inbox" (resend, use another email) when verification is required; refused with a message when sign-up is invite-only and the address is not let in |
+| `/sign-in`                | The enabled methods: email + password and/or "Continue with Google"                                                                                                                                                 |
+| `/forgot-password`        | Sends a reset link (only with email + password on)                                                                                                                                                                  |
+| `/reset-password?token=…` | Sets a new password and revokes other sessions                                                                                                                                                                      |
+| `/two-factor`             | Second-factor challenge, required enrollment, and admin step-up (`?stepUp=1&next=…`)                                                                                                                                |
+| `/verify-email`           | "Check your inbox" for a signed-in user whose address is not verified: resend the link, or change the address in settings                                                                                           |
+| `/email-verified`         | Where verification links land: "Email verified", or "This link doesn't work" for Better Auth's `?error=` ([how-to-setup-email.md](how-to-setup-email.md#email-verification))                                        |
+| `/consent`                | Lets the user allow or deny an MCP client: who asks, as whom, the return host, the scopes in plain words (`apps/web/src/lib/oauth-scopes.ts`) and where to revoke                                                   |
+| `/invite/<token>`         | Shows a workspace invitation and accepts it (signing in or up first)                                                                                                                                                |
+| `/app/profile`            | Redirects to `/app/settings/account`; account, appearance, security, workspace and privacy settings                                                                                                                 |
 
 ## Secrets
 

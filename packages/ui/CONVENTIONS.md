@@ -67,7 +67,7 @@ shaped like the content (a spinner only for actions that take a moment, inside t
 that started them), **error** with `ErrorState` (a message that is safe to show and a way
 forward: retry or somewhere else), **empty** with `EmptyState` (why it is empty and the next
 step), and the content. `DataState` wires all four and requires each, so prefer it. Mutations
-report failure with a toast or an inline `ErrorState`, never silently.
+report failure with a toast or an inline `ErrorState`, never silently. A missing permission (FORBIDDEN, not a plan limit) is `NoAccessState`, naming who can grant access; an unknown page is `EmptyState` ("Page not found"); the app shell shows `OfflineNotice` while requests cannot reach the server.
 
 ## Stories
 

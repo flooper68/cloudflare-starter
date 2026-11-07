@@ -137,6 +137,12 @@ export {
   matchesFilters,
 } from "../components/patterns/filter-bar";
 export {
+  type ChecklistStep,
+  GettingStartedChecklist,
+  type GettingStartedChecklistProps,
+  GettingStartedChecklistSkeleton,
+} from "../components/patterns/getting-started-checklist";
+export {
   ImpersonationBanner,
   type ImpersonationBannerProps,
 } from "../components/patterns/impersonation-banner";
@@ -217,6 +223,10 @@ export {
   type NotificationPreferencesProps,
 } from "../components/patterns/notification-preferences";
 export {
+  OAuthConsentCard,
+  type OAuthConsentCardProps,
+} from "../components/patterns/oauth-consent-card";
+export {
   PasskeyList,
   type PasskeyListProps,
 } from "../components/patterns/passkey-list";
@@ -258,6 +268,14 @@ export {
   type UnsubscribeCardProps,
   type UnsubscribeState,
 } from "../components/patterns/unsubscribe-card";
+export {
+  CheckInboxCard,
+  type CheckInboxCardProps,
+  EmailVerifiedCard,
+  type EmailVerifiedCardProps,
+  type EmailVerifiedState,
+  type ResendResult,
+} from "../components/patterns/verify-email-card";
 export {
   type WorkspaceOption,
   WorkspaceSwitcher,

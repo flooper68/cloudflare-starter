@@ -5,6 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CheckInboxCard,
   FieldError,
   Input,
   Label,
@@ -12,7 +13,13 @@ import {
 } from "@cloudflare-starter/ui";
 import { type FormEvent, useState } from "react";
 
-import { afterSignIn, authClient, authErrorMessage } from "@/lib/auth-client";
+import {
+  afterSignIn,
+  authClient,
+  authErrorMessage,
+  nextPath,
+} from "@/lib/auth-client";
+import { resendVerification } from "./CheckInbox";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import {
   AuthGuardFields,
@@ -48,6 +55,7 @@ export function SignInForm({
   const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [unverified, setUnverified] = useState(false);
   const guard = useAuthGuard(humanCheck);
 
   function clearField(field: keyof FieldErrors) {
@@ -87,6 +95,13 @@ export function SignInForm({
     guard.settle();
 
     if (signInError) {
+      // The password was right but the address is not verified yet (only when
+      // AUTH_REQUIRE_EMAIL_VERIFICATION=true): offer the link again.
+      if (signInError.code === "EMAIL_NOT_VERIFIED") {
+        setUnverified(true);
+        setLoading(false);
+        return;
+      }
       // A 429 shows the rate-limit notice instead (useAuthGuard).
       if (signInError.status !== 429) {
         setError(authErrorMessage(signInError, "Unable to sign in."));
@@ -96,6 +111,19 @@ export function SignInForm({
     }
 
     window.location.href = afterSignIn(data, search);
+  }
+
+  if (unverified) {
+    return (
+      <CheckInboxCard
+        email={email}
+        onResend={() => resendVerification(email, nextPath(search))}
+        onUseAnotherEmail={() => {
+          setUnverified(false);
+          setPassword("");
+        }}
+      />
+    );
   }
 
   return (

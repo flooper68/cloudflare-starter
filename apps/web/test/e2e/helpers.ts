@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { expect, type Page } from "@playwright/test";
 
 /**
@@ -87,4 +88,46 @@ export async function signOut(page: Page) {
   await page.getByRole("button", { name: /workspace menu/ }).click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/$/);
+}
+
+/**
+ * The newest mail the local `send_email` simulation wrote that mentions `text`. Miniflare
+ * stores each message's text part under .wrangler/tmp/email/<instance>/email-text/.
+ */
+export function latestMailMentioning(text: string): string {
+  const mail = newestMails().find((body) => body.includes(text));
+  if (!mail) throw new Error(`no mail mentions ${text}`);
+  return mail;
+}
+
+/** Every mail's text part, newest first. */
+function newestMails(): string[] {
+  const root = join(process.cwd(), ".wrangler/tmp/email");
+  return readdirSync(root)
+    .flatMap((instance) => {
+      const dir = join(root, instance, "email-text");
+      try {
+        return readdirSync(dir).map((name) => join(dir, name));
+      } catch {
+        return [];
+      }
+    })
+    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
+    .map((file) => readFileSync(file, "utf8"));
+}
+
+/**
+ * The newest email verification link sent to `email`. The mail's text names no
+ * recipient; the link's token is a JWT whose payload carries the address.
+ */
+export function latestVerificationLink(email: string): string {
+  for (const mail of newestMails()) {
+    const link = /https?:\/\/\S+\/api\/auth\/verify-email\?\S+/.exec(mail)?.[0];
+    const token = link ? new URL(link).searchParams.get("token") : null;
+    const payload = token?.split(".")[1];
+    if (!payload) continue;
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString());
+    if (claims.email === email) return link as string;
+  }
+  throw new Error(`no verification link for ${email}`);
 }

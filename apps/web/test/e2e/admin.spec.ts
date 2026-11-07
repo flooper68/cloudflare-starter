@@ -18,7 +18,7 @@ test("an admin suspends a member; the member cannot sign in; the audit log shows
   await signOut(page);
 
   await signIn(page, admin);
-  await page.getByRole("link", { name: "Admin" }).click();
+  await page.getByRole("link", { name: "Admin", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/overview$/);
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
 

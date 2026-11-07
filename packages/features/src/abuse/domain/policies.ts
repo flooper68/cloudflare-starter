@@ -109,7 +109,7 @@ export const RATE_LIMIT_POLICIES = {
     enforcer: "better-auth",
     authPath: "/send-verification-email",
     description:
-      "Verification mails on request (anonymous, to any address; no human check: no form of ours sends it)",
+      "Verification mails on request (Resend link on the check-inbox screens). Anonymous callers may name any address, so it is limited per IP; no human check: our screens only resend to the address just signed up or signed in with (both behind the human check) or the signed-in user's own",
   },
   "auth.oauth-register": {
     limit: 5,

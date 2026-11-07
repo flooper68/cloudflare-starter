@@ -1,0 +1,23 @@
+---
+import { CheckInbox } from "@/components/auth/CheckInbox";
+import Layout from "@/layouts/Layout.astro";
+import { nextPath } from "@/lib/auth-links";
+
+// "Check your inbox" for a signed-in user whose address is not verified yet (the
+// dashboard's checklist links here). Right after a sign-up that requires verification
+// there is no session yet: SignUpForm shows the same card itself.
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect("/sign-in");
+}
+const next = nextPath(Astro.url.search);
+if (user.emailVerified) {
+  return Astro.redirect(next ?? "/app/dashboard");
+}
+---
+
+<Layout title="Check your inbox">
+  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+    <CheckInbox client:load email={user.email} next={next} />
+  </main>
+</Layout>
