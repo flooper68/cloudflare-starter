@@ -116,7 +116,7 @@ The pages Astro prerenders (`/docs/*`, and the 404 the Worker answers unknown pa
 
 The docs search runs in a Web Worker started from `/pagefind/`, and a worker runs under the policy of its own script's response: `/pagefind/*` gets `PAGEFIND_CSP` (`default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'`) instead of the asset policy.
 
-`test/e2e-build/docs.spec.ts` loads a docs page from the build under both policies with zero violations.
+`test/e2e-build/docs.spec.ts` loads a docs page and the 404 from the build under these policies with zero violations.
 
 ## Storybook
 

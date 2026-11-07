@@ -35,3 +35,16 @@ test("a docs page renders under the prerendered page policy", async ({
   await page.getByRole("button", { name: "Switch to the light theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
+
+test("an unknown path is the public 404 under the same policy", async ({
+  page,
+}) => {
+  const response = await page.goto("/docs/old-link/");
+  expect(response?.status()).toBe(404);
+  expect(response?.headers()["content-security-policy"]).toBe(
+    PRERENDERED_PAGE_CSP
+  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "This page doesn't exist"
+  );
+});
