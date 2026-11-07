@@ -1,4 +1,4 @@
-# How To Configure Workspaces, Sign-Up And Roles
+# How to configure workspaces, sign-up and roles
 
 The app's data belongs to workspaces, never to a single user: a user reaches data through a membership with a role, and the role's permissions come from one map in the code. This guide covers choosing the workspace mode, who may sign up, invitations, replacing the placeholder roles, and removing what a product does not need. The rules behind it are in [architecture/overview.md#tenancy-and-authorization](../architecture/overview.md#tenancy-and-authorization). Use when you start a project and decide how users are grouped, change who may sign up, add roles or actions, or strip the workspace UI.
 

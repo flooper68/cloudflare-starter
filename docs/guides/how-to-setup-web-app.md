@@ -1,4 +1,4 @@
-# How To Setup And Deploy The Web App
+# How to set up and deploy the web app
 
 This guide explains how to run and deploy the Astro web app in this repo.
 
@@ -128,7 +128,7 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
 
    On a brand-new Worker the first deploy answers 500 until the secrets are set a minute later; afterwards secrets persist across deploys.
 
-The environment is picked when building: `deploy:production` runs `CLOUDFLARE_ENV=production bun run build && wrangler deploy`, and `build` builds Storybook into the app first. Running `wrangler deploy --env production` on a bundle built without `CLOUDFLARE_ENV` would deploy the develop config. Use `bun run deploy` for develop and `deploy:staging` for staging. Storybook ships with the app at `/_storybook/` ([how-to-use-storybook.md](./how-to-use-storybook.md)).
+The environment is picked when building: `deploy:production` runs `CLOUDFLARE_ENV=production bun run build && wrangler deploy`, and `build` builds Storybook into the app first. Running `wrangler deploy --env production` on a bundle built without `CLOUDFLARE_ENV` would deploy the develop config. Use `bun run deploy` for develop and `deploy:staging` for staging. Storybook ships with the app at `/_storybook/` ([how-to-use-storybook.md](./how-to-use-storybook.md)), and the build prerenders the docs site at `/docs` from the repository's Markdown of the commit it builds ([how-to-publish-docs-and-landing.md](./how-to-publish-docs-and-landing.md)).
 
 ## Queues and Cron
 
@@ -140,7 +140,8 @@ Background jobs, the queue consumer, retries, the dead-letter queue and the cron
 2. Sign up (the Turnstile widget appears and passes), sign out, sign in.
 3. Signed-in visits to `/` land on `/app/dashboard`; signed-out visits to `/app/*` land on `/sign-in`.
 4. Try the demos you configured.
-5. `curl -i https://<your-worker-url>/health/ready` answers 200 with `"status":"pass"`; point an uptime monitor at it ([how-to-monitor-health.md](how-to-monitor-health.md)).
+5. `/docs/` shows the docs index and a guide opens from its navigation.
+6. `curl -i https://<your-worker-url>/health/ready` answers 200 with `"status":"pass"`; point an uptime monitor at it ([how-to-monitor-health.md](how-to-monitor-health.md)).
 
 ## Common Problems
 

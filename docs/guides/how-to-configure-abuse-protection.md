@@ -1,4 +1,4 @@
-# How To Configure Abuse Protection (Rate Limits And Turnstile)
+# How to configure abuse protection (rate limits and Turnstile)
 
 The web app limits how often each IP and each user may call it, and asks for a Cloudflare Turnstile check on sign-up, sign-in and password reset. This guide covers the settings, the Cloudflare setup per environment, how to change or add a limit, and how to swap in another limiter or verifier. The rules behind it are in [overview.md#abuse-protection](../architecture/overview.md#abuse-protection). Use when you set up an environment, tune a limit, give a new procedure or route a policy, or debug a 429 or a failed human check.
 

@@ -2,17 +2,21 @@
 /**
  * Cloudflare Web Analytics: the cookieless beacon, only with WEB_ANALYTICS=cloudflare
  * (docs/guides/how-to-setup-product-analytics.md#web-analytics). `spa` makes it report
- * client-side route changes of the /app SPA as page views.
+ * client-side route changes of the /app SPA as page views. A prerendered page decides at
+ * build time from the plain vars alone (the build has no secrets for buildPlatform).
  */
 import { env } from "cloudflare:workers";
 
+import { prerenderedWebAnalytics } from "@/lib/web-analytics";
 import { buildPlatform } from "@/server/platform";
 
 interface Props {
   spa?: boolean;
 }
 
-const { webAnalytics } = buildPlatform(env);
+const webAnalytics = Astro.isPrerendered
+  ? prerenderedWebAnalytics(env)
+  : buildPlatform(env).webAnalytics;
 const beacon = webAnalytics
   ? JSON.stringify({ token: webAnalytics.token, spa: Astro.props.spa ?? false })
   : null;

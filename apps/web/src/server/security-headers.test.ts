@@ -8,6 +8,8 @@ import {
   isAppPage,
   NON_HTML_CSP,
   type PagePolicyInput,
+  PRERENDERED_PAGE_CSP,
+  PRERENDERED_PAGE_PATHS,
   pagePolicy,
   pagePolicyHeaders,
   presignedUploadOrigin,
@@ -310,6 +312,18 @@ describe("public/_headers", () => {
       "utf8"
     );
     expect(file).toBe(renderStaticHeaders());
+  });
+
+  it("gives the prerendered pages a page policy instead of the asset one", () => {
+    const rules = renderStaticHeaders().split("\n\n");
+    for (const path of PRERENDERED_PAGE_PATHS) {
+      const rule = rules.find((candidate) => candidate.startsWith(`${path}\n`));
+      expect(rule, path).toContain("! Content-Security-Policy");
+      expect(rule, path).toContain(PRERENDERED_PAGE_CSP);
+    }
+    expect(PRERENDERED_PAGE_CSP).not.toMatch(/script-src[^;]*'unsafe-inline'/);
+    expect(PRERENDERED_PAGE_CSP).toContain("frame-ancestors 'none'");
+    expect(PRERENDERED_PAGE_CSP).toContain("object-src 'none'");
   });
 
   it("gives Storybook its own policy instead of the asset one", () => {

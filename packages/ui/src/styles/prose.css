@@ -1,0 +1,25 @@
+/*
+ * Shiki code blocks in Prose (Astro renders them as `pre.astro-code`). The Markdown
+ * pipeline renders both themes as CSS variables (shikiConfig.defaultColor: false);
+ * this picks one with the same rule as tokens.css: dark by default and with
+ * data-theme="dark", light with data-theme="light" or, without the attribute, when the
+ * OS prefers light. The block's background stays a token (Prose: the raised surface,
+ * on which both themes' token colours reach 4.5:1), so only the token colours come
+ * from the Shiki theme.
+ */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-dark);
+}
+
+[data-theme="light"] .astro-code,
+[data-theme="light"] .astro-code span {
+  color: var(--shiki-light);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .astro-code,
+  :root:not([data-theme]) .astro-code span {
+    color: var(--shiki-light);
+  }
+}

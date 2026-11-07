@@ -1,0 +1,67 @@
+---
+/**
+ * Header of the public pages. `docs` adds the Docs badge and full-width layout of the
+ * docs site; the `search` slot holds the docs search trigger. Links point at the
+ * repository, the docs and Storybook; nothing depends on a session.
+ */
+import { Badge, buttonVariants, cn, LogoMark } from "@cloudflare-starter/ui";
+import { GitBranch, Layers } from "lucide-react";
+
+import { DOCS } from "@/docs/docs.config";
+
+import ThemeToggle from "./ThemeToggle.astro";
+
+interface Props {
+  variant?: "site" | "docs";
+}
+
+const { variant = "site" } = Astro.props;
+const docs = variant === "docs";
+const link =
+  "rounded-sm font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
+---
+
+<header class="border-b border-line bg-canvas">
+  <div
+    class={cn(
+      "mx-auto flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 sm:px-6",
+      docs ? "max-w-[1360px]" : "max-w-6xl"
+    )}
+  >
+    <a
+      href="/"
+      class="inline-flex items-center gap-2.5 rounded-md font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+    >
+      <LogoMark className="size-6" />
+      <span>{DOCS.siteName}</span>
+      {docs && <Badge>Docs</Badge>}
+    </a>
+    {
+      !docs && (
+        <nav aria-label="Site" class="flex items-center gap-5 text-sm">
+          <a class={link} href="/docs/">
+            Docs
+          </a>
+        </nav>
+      )
+    }
+    <slot name="search" />
+    <span class="flex-1"></span>
+    <div class="flex items-center gap-2">
+      <a
+        class={buttonVariants({ variant: "ghost", size: "sm" })}
+        href="/_storybook/"
+      >
+        <Layers aria-hidden="true" />Storybook
+      </a>
+      <a
+        class={buttonVariants({ variant: "secondary", size: "sm" })}
+        href={DOCS.repoUrl}
+      >
+        <GitBranch aria-hidden="true" />GitHub
+      </a>
+      <slot name="actions" />
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

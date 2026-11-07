@@ -1,0 +1,42 @@
+---
+/**
+ * The document shell of the public, prerendered pages (docs, 404): no session is read,
+ * so the HTML is the same for everyone and is built once. The theme comes from
+ * public/site-theme.js (saved choice, else the OS setting). The header is the page's
+ * own (SiteHeader in its variant), passed in the `header` slot.
+ */
+import "@cloudflare-starter/ui/globals.css";
+import "@/styles/globals.css";
+
+import WebAnalytics from "@/components/WebAnalytics.astro";
+
+interface Props {
+  /** The whole <title>. */
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline src="/site-theme.js"></script>
+  </head>
+  <body class="flex min-h-screen flex-col bg-canvas text-fg">
+    <a
+      href="#main"
+      class="sr-only rounded-md bg-surface-raised px-3 py-2 text-sm text-fg shadow-overlay focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+      >Skip to content</a
+    >
+    <slot name="header" />
+    <slot />
+    <WebAnalytics />
+  </body>
+</html>

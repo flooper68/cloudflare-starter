@@ -1,4 +1,4 @@
-# How To Monitor Health (Uptime Monitors And Status Pages)
+# How to monitor health (uptime monitors and status pages)
 
 The web Worker answers three public health endpoints for uptime monitors, load balancers and status pages: liveness, readiness, and `/health` as an alias of readiness. Readiness checks every dependency with a deadline and answers in the [IETF health check response format](https://datatracker.ietf.org/doc/draft-inadarei-api-health-check/) (`application/health+json`). This guide covers the endpoints, the body, what each check does and costs, what the public can see, how platform admins see more, and how to wire Cloudflare Health Checks, UptimeRobot or Better Stack and a status page. Use when you set up monitoring for an environment, add or change a check, or investigate a failing check.
 
