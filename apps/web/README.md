@@ -28,6 +28,7 @@ Public, prerendered at build time (no session; [how-to-publish-docs-and-landing.
 
 - `/docs/*` (the docs site, from the repository's Markdown: `src/content.config.ts`, `src/docs/`, `src/pages/docs/[...slug].astro`)
 - the 404 page for unknown paths (`src/pages/404.astro`)
+- `/robots.txt` (`src/pages/robots.txt.ts`), `/sitemap-index.xml` (with `SITE_URL`), `/pagefind/*` (the docs search index, written after the build)
 
 Public, SSR:
 
@@ -71,6 +72,7 @@ bun run dev:web
 ```bash
 bun run test --project web-api   # API tests in workerd (from the repo root)
 bun run test:e2e                 # Playwright journeys in test/e2e against astro dev
+bun run build && bun run test:e2e:build   # test/e2e-build against astro preview of the build (headers, CSP, docs search, axe)
 ```
 
 The E2E run needs the same `.dev.vars` and migrated local D1 as `dev:web`, and Chromium once (`bunx playwright install chromium` in `apps/web`). Playwright starts and stops the dev server itself. See [docs/architecture/testing.md](../../docs/architecture/testing.md#e2e-tests).

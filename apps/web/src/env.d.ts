@@ -8,6 +8,11 @@ declare namespace Cloudflare {
   interface Env extends AppEnvBindings {}
 }
 
+interface ImportMetaEnv {
+  /** True in a production build (CLOUDFLARE_ENV=production): robots.txt allows crawling. */
+  readonly SITE_INDEXABLE: boolean;
+}
+
 declare namespace App {
   interface Locals {
     user: import("./server/auth").AuthSession["user"] | null;

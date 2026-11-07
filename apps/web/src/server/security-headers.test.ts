@@ -7,6 +7,7 @@ import {
   hashesOf,
   isAppPage,
   NON_HTML_CSP,
+  PAGEFIND_CSP,
   type PagePolicyInput,
   PRERENDERED_PAGE_CSP,
   PRERENDERED_PAGE_PATHS,
@@ -323,7 +324,26 @@ describe("public/_headers", () => {
     }
     expect(PRERENDERED_PAGE_CSP).not.toMatch(/script-src[^;]*'unsafe-inline'/);
     expect(PRERENDERED_PAGE_CSP).toContain("frame-ancestors 'none'");
+    // Pagefind's WebAssembly, never eval of JavaScript.
+    expect(PRERENDERED_PAGE_CSP).toMatch(/script-src[^;]*'wasm-unsafe-eval'/);
+    expect(PRERENDERED_PAGE_CSP).not.toMatch(/'unsafe-eval'/);
     expect(PRERENDERED_PAGE_CSP).toContain("object-src 'none'");
+  });
+
+  it("lets the docs search worker fetch its index and run its WebAssembly", () => {
+    const rules = renderStaticHeaders().split("\n\n");
+    const pagefind = rules.find((rule) => rule.startsWith("/pagefind/*\n"));
+    expect(pagefind).toContain(`Content-Security-Policy: ${PAGEFIND_CSP}`);
+    expect(PAGEFIND_CSP).toContain("connect-src 'self'");
+    expect(PAGEFIND_CSP).not.toMatch(/'unsafe-(eval|inline)'/);
+  });
+
+  it("has one block per path, so no rule replaces another's headers", () => {
+    const paths = renderStaticHeaders()
+      .split("\n\n")
+      .slice(1)
+      .map((rule) => rule.split("\n")[0]);
+    expect(new Set(paths).size).toBe(paths.length);
   });
 
   it("gives Storybook its own policy instead of the asset one", () => {

@@ -14,6 +14,7 @@
     "storybook": "bun run --filter @cloudflare-starter/storybook dev",
     "build-storybook": "bun run --filter @cloudflare-starter/storybook build",
     "build": "bun run --filter @cloudflare-starter/web build",
+    "budget": "bun scripts/check-bundle-budget.ts",
     "verify": "bun run typecheck && bun run lint && bun run test",
     "typecheck": "bun run --filter './packages/*' typecheck && bun run --filter './apps/*' typecheck && tsc --noEmit -p scripts/tsconfig.json",
     "lint": "biome check . && bun run deps:check",

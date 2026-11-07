@@ -1,0 +1,81 @@
+---
+/**
+ * Docs search: a trigger in the header (also ⌘K / Ctrl+K) that opens a modal <dialog>
+ * searching the Pagefind index of the docs (src/docs/search-integration.ts). The
+ * behaviour is the <docs-search> custom element in src/docs/search.ts, a small
+ * bundled module; Pagefind itself loads only when the dialog first opens.
+ */
+import { cn, controlBase, Kbd } from "@cloudflare-starter/ui";
+import { Search } from "lucide-react";
+---
+
+<docs-search class="contents">
+  <button
+    type="button"
+    data-search-open=""
+    aria-haspopup="dialog"
+    class={cn(
+      controlBase,
+      "flex h-8 max-w-90 flex-[1_1_13rem] cursor-pointer items-center gap-2 px-2.5 text-left text-fg-subtle"
+    )}
+  >
+    <Search className="size-4 shrink-0" aria-hidden="true" />
+    <span class="flex-1 truncate">Search docs</span>
+    <span class="hidden items-center gap-1 sm:flex" aria-hidden="true">
+      <Kbd>⌘</Kbd><Kbd>K</Kbd>
+    </span>
+  </button>
+  <dialog
+    aria-label="Search docs"
+    class="m-auto mt-[12vh] w-[min(40rem,calc(100vw-2rem))] rounded-xl bg-overlay p-0 text-fg shadow-overlay backdrop:bg-backdrop open:animate-pop-in"
+  >
+    <div class="flex items-center gap-2.5 border-b border-line px-3.5 py-3">
+      <Search className="size-4 shrink-0 text-fg-muted" aria-hidden="true" />
+      <input
+        type="text"
+        data-search-input=""
+        role="combobox"
+        aria-label="Search docs"
+        aria-expanded="false"
+        aria-controls="docs-search-results"
+        aria-autocomplete="list"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Search the docs"
+        class="h-6 min-w-0 flex-1 bg-transparent text-base text-fg outline-none placeholder:text-fg-subtle"
+      />
+      <button
+        type="button"
+        data-search-close=""
+        class="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      >
+        <Kbd>esc</Kbd><span class="sr-only"> to close the search</span>
+      </button>
+    </div>
+    <ul
+      id="docs-search-results"
+      role="listbox"
+      aria-label="Results"
+      class="flex max-h-[min(26rem,60vh)] flex-col gap-0.5 overflow-y-auto p-1.5 empty:hidden"
+    >
+    </ul>
+    <p
+      data-search-status=""
+      role="status"
+      class="px-4 py-6 text-center text-sm text-fg-muted empty:hidden"
+    >
+      Type to search the guides, architecture and process docs.
+    </p>
+    <div
+      class="flex items-center gap-3.5 border-t border-line px-3.5 py-2.5 text-xs text-fg-muted"
+      aria-hidden="true"
+    >
+      <span class="flex items-center gap-1"><Kbd>↑</Kbd><Kbd>↓</Kbd> to move</span>
+      <span class="flex items-center gap-1"><Kbd>↵</Kbd> to open</span>
+    </div>
+  </dialog>
+</docs-search>
+
+<script>
+  import "@/docs/search";
+</script>

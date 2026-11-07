@@ -227,7 +227,8 @@ Guide: [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md).
 3. `/docs/`: the docs index with the navigation; open a guide from the navigation, follow a link in its text to another doc (it opens on the site, at the heading), "On this page" jumps to a section, "Edit this page on GitHub" opens the file on GitHub.
 4. The theme switch in the docs header changes the theme and keeps it after a reload.
 5. `/docs/no-such-page/`: the 404 page with "Go home" and "Read the docs".
-6. Search: pending the search PR; until it ships, N/A.
+6. Search: ⌘K (Ctrl+K) or the header's "Search docs" opens the dialog; "workspace" lists results; ↓ and Enter open one; Esc closes. Also from the 404 page.
+7. `GET /robots.txt` lists the disallowed paths and the sitemap in production, `Disallow: /` elsewhere; `GET /sitemap-index.xml` answers 200 in production.
 
 Expected: no console errors (DevTools); signed in, `/` redirects to the dashboard.
 Mail: none.

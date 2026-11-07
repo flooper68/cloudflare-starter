@@ -1,10 +1,11 @@
 ---
-import { getCollection, render } from "astro:content";
 /**
  * The docs site: one prerendered page per published repository file (DOCS.sources),
- * with the navigation built from docs/README.md, an "On this page" list and an edit
- * link. docs/guides/how-to-publish-docs-and-landing.md
+ * with the navigation built from docs/README.md, an "On this page" list, an edit link
+ * and the search dialog. The rendered Markdown is what Pagefind indexes
+ * (`data-pagefind-body`). docs/guides/how-to-publish-docs-and-landing.md
  */
+import { getCollection, render } from "astro:content";
 import {
   Breadcrumbs,
   DocsNav,
@@ -13,9 +14,11 @@ import {
 } from "@cloudflare-starter/ui";
 import { ArrowLeft, ArrowRight, Menu, SquarePen } from "lucide-react";
 
+import DocsSearch from "@/components/site/DocsSearch.astro";
 import SiteHeader from "@/components/site/SiteHeader.astro";
 import { DOCS } from "@/docs/docs.config";
 import { editUrl, routeFor, slugFor } from "@/docs/links";
+import { docDescription } from "@/docs/meta";
 import { buildNav, docTitle, locate } from "@/docs/nav";
 import PublicLayout from "@/layouts/PublicLayout.astro";
 
@@ -38,6 +41,7 @@ const { entry, nav, title } = Astro.props;
 const { Content, headings } = await render(entry);
 const href = routeFor(entry.id);
 const { section, previous, next } = locate(nav, entry.id);
+const description = docDescription(entry.body ?? "");
 // The index is the root of the trail; other pages show their section.
 const crumbs =
   href === "/docs/"
@@ -49,8 +53,14 @@ const crumbs =
       ];
 ---
 
-<PublicLayout title={`${title} · ${DOCS.siteName} docs`}>
-  <SiteHeader slot="header" variant="docs" />
+<PublicLayout
+  title={`${title} · ${DOCS.siteName} docs`}
+  description={description}
+  type={href === "/docs/" ? "website" : "article"}
+>
+  <SiteHeader slot="header" variant="docs">
+    <DocsSearch slot="search" />
+  </SiteHeader>
   <div class="mx-auto flex w-full max-w-[1360px] flex-1">
     <aside
       class="hidden w-62 shrink-0 border-r border-line px-4 py-6 lg:block"
@@ -72,7 +82,10 @@ const crumbs =
           </div>
         </details>
         {crumbs.length > 0 && <Breadcrumbs items={crumbs} />}
-        <Prose>
+        <Prose
+          data-pagefind-body=""
+          data-pagefind-meta={`section:${section?.title ?? "Docs"}`}
+        >
           <Content />
         </Prose>
         <footer

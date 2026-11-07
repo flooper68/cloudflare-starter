@@ -8,12 +8,17 @@ import {
   docsLinksPlugin,
   docsTablesPlugin,
 } from "./src/docs/markdown-plugins.ts";
+import { siteIntegrations } from "./src/docs/site-integrations.ts";
 import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
 
 const REPO_ROOT = new URL("../../", import.meta.url);
+// The public origin (https://starter.flooper.me), set by the deploy scripts at build
+// time: canonical and og:url, the sitemap and its robots.txt line. Unset: left out.
+const SITE_URL = process.env.SITE_URL || undefined;
 
 export default defineConfig({
   output: "server",
+  site: SITE_URL,
   devToolbar: { enabled: false },
   // No Cloudflare Images binding: images are served as they are. Switch to the
   // adapter's default to resize with Cloudflare Images (a paid feature).
@@ -21,7 +26,8 @@ export default defineConfig({
   // Better Auth owns sessions; an in-memory driver keeps Astro from
   // provisioning its default SESSION KV namespace.
   session: { driver: sessionDrivers.lruCache() },
-  integrations: [react()],
+  // Docs search index (Pagefind) and the sitemap: src/docs/site-integrations.ts.
+  integrations: [react(), ...siteIntegrations(SITE_URL)],
   // The docs site (/docs) renders the repository's Markdown (src/content.config.ts):
   // links written for GitHub are rewritten for the site and tables scroll in their own
   // box (src/docs/markdown-plugins.ts); code blocks carry both Shiki themes as CSS
@@ -53,11 +59,26 @@ export default defineConfig({
     csp: {
       algorithm: "SHA-256",
       styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
+      // Pagefind's WebAssembly on the docs pages. Only the prerendered pages' <meta>
+      // keeps it: the per-request page policy takes only the hashes from Astro.
+      scriptDirective: { resources: ["'self'", "'wasm-unsafe-eval'"] },
     },
   },
   // The port of APP_URL in .dev.vars (4321 by default): Better Auth trusts only that origin.
   server: { port: devPort() },
   vite: {
+    // Only a production build may be crawled (src/pages/robots.txt.ts).
+    define: {
+      "import.meta.env.SITE_INDEXABLE": JSON.stringify(
+        process.env.CLOUDFLARE_ENV === "production"
+      ),
+    },
+    // Page scripts stay files under /_astro/, never inline <script> code, so a strict
+    // Content-Security-Policy (script-src 'self') needs no 'unsafe-inline' or nonce for
+    // the prerendered pages. Other assets keep Vite's default (undefined).
+    build: {
+      assetsInlineLimit: (file) => (file.endsWith(".js") ? false : undefined),
+    },
     plugins: [
       tailwindcss(),
       ...localTurnstilePlugins(process.env.E2E_LOCAL_TURNSTILE === "1"),
