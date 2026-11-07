@@ -1,0 +1,33 @@
+---
+import { EmailVerifiedCard } from "@cloudflare-starter/ui";
+
+import Layout from "@/layouts/Layout.astro";
+import { nextPath, verificationFailed } from "@/lib/auth-links";
+
+// Where an email verification link lands (the callbackURL our forms give Better Auth):
+// on success Better Auth has marked the address verified and signed the user in; a link
+// that expired, was used or was cut off comes back with ?error=.
+const failed = verificationFailed(Astro.url.search);
+const user = Astro.locals.user;
+const next = nextPath(Astro.url.search);
+
+if (!failed && !user) {
+  return Astro.redirect("/sign-in");
+}
+if (!failed && user && !user.emailVerified) {
+  return Astro.redirect("/verify-email");
+}
+if (failed) {
+  Astro.response.status = 400;
+}
+---
+
+<Layout title={failed ? "Link doesn't work" : "Email verified"}>
+  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+    <EmailVerifiedCard
+      state={failed ? "invalid" : "verified"}
+      continueHref={next ?? "/app/dashboard"}
+      newLinkHref={user ? "/verify-email" : "/sign-in"}
+    />
+  </main>
+</Layout>

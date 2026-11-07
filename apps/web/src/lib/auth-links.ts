@@ -41,3 +41,19 @@ export function nextPath(search: string): string | null {
   if (url.origin !== SAME_SITE) return null;
   return `${url.pathname}${url.search}${url.hash}`;
 }
+
+/** Where a verification link lands: `/email-verified`, keeping a same-site `next`. */
+export function verifiedCallbackURL(next: string | null): string {
+  const safe = next ? nextPath(`?next=${encodeURIComponent(next)}`) : null;
+  return safe
+    ? `/email-verified?next=${encodeURIComponent(safe)}`
+    : "/email-verified";
+}
+
+/**
+ * Whether `/email-verified` was reached through a link that did not work: Better Auth
+ * appends `?error=` (TOKEN_EXPIRED, INVALID_TOKEN, USER_NOT_FOUND, INVALID_USER).
+ */
+export function verificationFailed(search: string): boolean {
+  return new URLSearchParams(search).has("error");
+}

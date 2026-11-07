@@ -1,5 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { FolderKanban, Inbox, Plus, SearchX, Upload } from "lucide-react";
+import {
+  FileQuestion,
+  FolderKanban,
+  Inbox,
+  Plus,
+  SearchX,
+  Upload,
+} from "lucide-react";
 import { Button } from "./button";
 import { Card, CardHeader, CardTitle } from "./card";
 import { EmptyState } from "./empty-state";
@@ -97,4 +104,19 @@ export const InCard: Story = {
       />
     </Card>
   ),
+};
+
+/** The in-app 404: an unknown `/app` path, or a page the user cannot see. */
+export const PageNotFound: Story = {
+  args: {
+    icon: <FileQuestion />,
+    title: "Page not found",
+    description: "The page you opened doesn't exist, or you can't see it.",
+    primaryAction: (
+      <Button asChild variant="secondary">
+        <a href="/app/dashboard">Back to dashboard</a>
+      </Button>
+    ),
+    secondaryAction: undefined,
+  },
 };
