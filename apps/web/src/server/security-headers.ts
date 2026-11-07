@@ -156,8 +156,14 @@ export const PAGE_STYLE_SRC = "'self' 'unsafe-inline'";
  * The Web Analytics origins are always allowed here, because the rule is the same in
  * every environment while WEB_ANALYTICS differs.
  */
-// /404: the Worker answers an unknown path with this prerendered asset and its headers.
-export const PRERENDERED_PAGE_PATHS = ["/docs/*", "/404", "/404.html"] as const;
+// /: the landing page. /404: the Worker answers an unknown path with this prerendered
+// asset and its headers.
+export const PRERENDERED_PAGE_PATHS = [
+  "/",
+  "/docs/*",
+  "/404",
+  "/404.html",
+] as const;
 
 /**
  * `/pagefind/*` (the docs search index and its client, written by the build): Pagefind

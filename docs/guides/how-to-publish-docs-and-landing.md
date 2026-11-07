@@ -1,6 +1,6 @@
-# How to publish the docs and the public pages
+# How to publish the docs and the landing page
 
-The web Worker serves a public docs site at `/docs` built from the repository's own Markdown, and a public 404 page. Both are prerendered at build time: the HTML is the same for every visitor, needs no session and is served as a static asset. Use when you add, move or rename a doc, change what the site publishes or how its navigation is built, fix a broken docs link, change the docs search, page metadata, `robots.txt`, the sitemap or the cache headers of the public pages, or the bundle budget fails.
+The web Worker serves a landing page at `/`, a public docs site at `/docs` built from the repository's own Markdown, and a public 404 page. All three are prerendered at build time: the HTML is the same for every visitor, needs no session and is served as a static asset. Use when you change or replace the landing page, add, move or rename a doc, change what the site publishes or how its navigation is built, fix a broken docs link, change the docs search, page metadata, `robots.txt`, the sitemap or the cache headers of the public pages, or the bundle budget fails.
 
 ## What is published
 
@@ -39,7 +39,26 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 
 - **Docs page:** the header (site name, the Docs badge, [search](#search), Storybook, GitHub, theme switch), the navigation (`DocsNav`), the breadcrumb, the rendered Markdown (`Prose`), previous and next page, "Edit this page on GitHub", and "On this page" (`TableOfContents`, the page's second- and third-level headings, on wide screens). Under 1024 px the navigation is a "Docs menu" disclosure above the page. The components are in `packages/ui` (group `site`) with stories.
 - **404:** `apps/web/src/pages/404.astro`, prerendered, for every unknown path outside the SPA, with links home and to the docs, and the search in its header. It is `noindex`.
+- **Landing page:** see [below](#the-landing-page).
 - **Layout:** `apps/web/src/layouts/PublicLayout.astro` is the document shell of these pages. It reads no session, so the HTML can be built once.
+
+## The landing page
+
+`apps/web/src/pages/index.astro`, prerendered on `PublicLayout`: the starter's own page, built from `packages/ui` components (`Hero`, `FeatureGrid`, `Badge`, button styles) and the header with search, Storybook, GitHub, **Sign in** and **Open app**. All copy and links are in `apps/web/src/landing/content.ts`; the feature cards summarise the README's Highlights, so change both together. The hero's app picture is `apps/web/src/components/site/LandingPreview.astro` (decorative, `aria-hidden`).
+
+The page reads no session, so it is the same for everyone: a signed-in visitor sees "Open app" (`/app/dashboard`), and a signed-out one who clicks it lands on `/sign-in`. It ships no React; its only scripts are the theme and search ones.
+
+### Replace the landing page
+
+A product built from the starter replaces this page with its own:
+
+1. Rewrite `apps/web/src/landing/content.ts` (or delete it) and the sections of `index.astro`. Keep `export const prerender = true` and `PublicLayout` unless the page must know who is signed in; a page that reads the session is rendered per request, and its `Cache-Control` must then not be `public` (remove `/` from `PRERENDERED_PAGE_PATHS` in `apps/web/src/server/security-headers.ts` and from `STATIC_CACHE_RULES` in `static-cache.ts`, then regenerate `_headers`).
+2. Set `DOCS.siteName` (`apps/web/src/docs/docs.config.ts`) to the product's name; it is the header and the page titles.
+3. Decide whether the product publishes the repository's docs. To publish product docs instead, point `DOCS.sources`, `navSource` and `start` at them. To drop the docs site:
+   - delete `src/pages/docs/`, `src/content.config.ts`, `components/site/DocsSearch.astro` and its uses, and in `src/docs/` the docs-only modules (`links.ts`, `nav.ts`, `meta.ts`, `markdown-plugins.ts`, `search*.ts` and their tests); keep `docs.config.ts` (`siteName` and `repoUrl` are used by the header, the layout, the landing and the 404; drop its other fields), `robots.ts` and `site-integrations.ts` without `docsSearch()` (the sitemap);
+   - remove `markdown` and the Pagefind import from `apps/web/astro.config.mjs`, the `/pagefind/*` and `/docs/*` entries of `PRERENDERED_PAGE_PATHS`, `PAGEFIND_CSP` and `STATIC_CACHE_RULES` (then regenerate `_headers`), and the Pagefind budget from `scripts/check-bundle-budget.ts`;
+   - remove the Docs links (header, landing, 404), `test/architecture/docs.test.ts`, `test/e2e/docs.spec.ts`, `test/e2e-build/search.spec.ts` and `docs.spec.ts`, the `/docs/` paths in `test/e2e-build/a11y.spec.ts` and `landing.spec.ts`, and the docs rows of the smoke suite.
+4. Run `bun run build`, `bun run budget` and `bun run test:e2e:build` (landing, its policy, axe in both themes, phone width).
 
 ## Theme
 
@@ -71,9 +90,9 @@ The header's "Search docs" button (or ⌘K / Ctrl+K) opens a dialog that searche
 | `/_astro/*`                                                                   | `public, max-age=31536000, immutable` | content-hashed file names (added by the adapter) |
 | `/pagefind/*`                                                                 | `public, max-age=31536000, immutable` | index chunks and fragments are content-hashed    |
 | `/pagefind/pagefind.js`, `/pagefind/pagefind-*` (entry, worker, UI), `wasm.*` | `public, max-age=300`                 | fixed names that change with every build         |
-| `/docs/*`                                                                     | `public, max-age=0, must-revalidate`  | a deploy shows at once; the ETag makes it cheap  |
+| `/`, `/docs/*`                                                                | `public, max-age=0, must-revalidate`  | a deploy shows at once; the ETag makes it cheap  |
 
-The rules apply only to responses served from the static assets, not to pages the Worker renders on request (`/` today, sign-in, `/app`). Check them with `curl -I` against `bunx astro preview` (it serves the build like Cloudflare does) or a deployment.
+The rules apply only to responses served from the static assets, not to pages the Worker renders on request (sign-in, `/app`, the API). Check them with `curl -I` against `bunx astro preview` (it serves the build like Cloudflare does) or a deployment.
 
 ## Bundle budget
 
@@ -86,7 +105,7 @@ bun run dev:web                     # /docs renders on request in dev
 cd apps/web && bun run build:app    # prerenders every page into dist/client/docs/
 ```
 
-`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
+`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the landing page (static, its links, the cache header), the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes, and no sideways scrolling at 375 px. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
 
 ## Common problems
 

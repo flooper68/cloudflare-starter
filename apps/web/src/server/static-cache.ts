@@ -19,6 +19,11 @@ export interface StaticCacheRule {
 
 export const STATIC_CACHE_RULES: readonly StaticCacheRule[] = [
   {
+    path: "/",
+    cacheControl: REVALIDATE,
+    why: "the prerendered landing page: a deploy shows at once",
+  },
+  {
     path: "/docs/*",
     cacheControl: REVALIDATE,
     why: "prerendered pages: a deploy shows at once; the ETag keeps revalidation cheap",

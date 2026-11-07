@@ -14,13 +14,12 @@ test.describe("public pages", () => {
   test("landing page answers 200 with its content", smoke, async ({ page }) => {
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
-    await hydrated(page);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const header = page.getByRole("banner");
+    await expect(header.getByRole("link", { name: "Sign in" })).toBeVisible();
+    await expect(header.getByRole("link", { name: "Open app" })).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Sign in" }).first()
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Sign up" }).first()
+      page.getByRole("main").getByRole("link", { name: "Read the docs" })
     ).toBeVisible();
   });
 

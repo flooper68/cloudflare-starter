@@ -16,7 +16,9 @@ async function visit(page: Page, path: string) {
   await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
 }
 
-const PAGES = ["/", "/sign-in", "/sign-up", "/forgot-password"];
+// Pages rendered per request; the prerendered ones (/, /docs) are in docs.spec.ts and
+// landing.spec.ts under PRERENDERED_PAGE_CSP.
+const PAGES = ["/sign-in", "/sign-up", "/forgot-password"];
 
 for (const path of PAGES) {
   test(`${path} renders under the enforced page policy`, async ({ page }) => {

@@ -26,13 +26,14 @@ Every on-demand request gets a request context in [src/middleware.ts](src/middle
 
 Public, prerendered at build time (no session; [how-to-publish-docs-and-landing.md](../../docs/guides/how-to-publish-docs-and-landing.md)):
 
+- `/` (the landing page: `src/pages/index.astro`, copy in `src/landing/content.ts`)
 - `/docs/*` (the docs site, from the repository's Markdown: `src/content.config.ts`, `src/docs/`, `src/pages/docs/[...slug].astro`)
 - the 404 page for unknown paths (`src/pages/404.astro`)
 - `/robots.txt` (`src/pages/robots.txt.ts`), `/sitemap-index.xml` (with `SITE_URL`), `/pagefind/*` (the docs search index, written after the build)
 
 Public, SSR:
 
-- `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/two-factor`, `/consent`
+- `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/two-factor`, `/consent`
 - `/invite/:token` (accept a workspace invitation)
 - `/api/hello` (REST example)
 - `/api/trpc/*` (typed API)

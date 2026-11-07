@@ -1,14 +1,179 @@
 ---
-import { HomePage } from "@/components/HomePage";
-import Layout from "@/layouts/Layout.astro";
+/**
+ * The landing page, prerendered: the same HTML for everyone, no session read. Signed-in
+ * visitors reach the app with "Open app" (/app/dashboard; signed out it leads to
+ * sign-in). Copy and links: src/landing/content.ts. A project replaces this page with
+ * its own: docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page.
+ */
+import {
+  Badge,
+  buttonVariants,
+  FeatureGrid,
+  Hero,
+  LogoMark,
+} from "@cloudflare-starter/ui";
+import {
+  Activity,
+  Bell,
+  BookOpen,
+  Bot,
+  CreditCard,
+  Files,
+  Flag,
+  GitBranch,
+  Layers,
+  Palette,
+  ScrollText,
+  ShieldCheck,
+  Timer,
+  UserCog,
+  Users,
+} from "lucide-react";
 
-const signedIn = Boolean(Astro.locals.user);
+import { createElement } from "react";
 
-if (signedIn) {
-  return Astro.redirect("/app/dashboard");
-}
+import DocsSearch from "@/components/site/DocsSearch.astro";
+import LandingPreview from "@/components/site/LandingPreview.astro";
+import SiteHeader from "@/components/site/SiteHeader.astro";
+import { DOCS } from "@/docs/docs.config";
+import {
+  BUILT_ON,
+  FEATURES,
+  type FeatureIcon,
+  HERO,
+  LINKS,
+  STEPS,
+} from "@/landing/content";
+import PublicLayout from "@/layouts/PublicLayout.astro";
+
+export const prerender = true;
+
+const ICONS: Record<FeatureIcon, typeof Activity> = {
+  shield: ShieldCheck,
+  users: Users,
+  card: CreditCard,
+  admin: UserCog,
+  bot: Bot,
+  bell: Bell,
+  files: Files,
+  clock: Timer,
+  activity: Activity,
+  scroll: ScrollText,
+  flag: Flag,
+  palette: Palette,
+};
+// FeatureGrid is a React component: its icons are React elements, not Astro markup.
+const features = FEATURES.map(({ icon, title, description }) => ({
+  title,
+  description,
+  icon: createElement(ICONS[icon]),
+}));
+const footerLink =
+  "rounded-sm text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
 ---
 
-<Layout title="Home">
-  <HomePage client:load signedIn={signedIn} />
-</Layout>
+<PublicLayout
+  title={`${DOCS.siteName}: ${HERO.title}`}
+  description={HERO.description}
+>
+  <SiteHeader slot="header">
+    <DocsSearch slot="search" />
+    <Fragment slot="actions">
+      <a class={buttonVariants({ variant: "ghost", size: "sm" })} href={LINKS.signIn}>
+        Sign in
+      </a>
+      <a class={buttonVariants({ variant: "primary", size: "sm" })} href={LINKS.app}>
+        Open app
+      </a>
+    </Fragment>
+  </SiteHeader>
+  <main id="main" class="flex-1">
+    <Hero title={HERO.title} description={HERO.description}>
+      <Fragment slot="eyebrow">
+        {
+          HERO.badges.map((badge, index) => (
+            <Badge tone={index === 0 ? "accent" : "neutral"}>{badge}</Badge>
+          ))
+        }
+      </Fragment>
+      <Fragment slot="actions">
+        <a
+          class={buttonVariants({ variant: "primary", size: "lg" })}
+          href={LINKS.docs}
+        >
+          <BookOpen aria-hidden="true" />Read the docs
+        </a>
+        <a
+          class={buttonVariants({ variant: "secondary", size: "lg" })}
+          href={LINKS.github}
+        >
+          <GitBranch aria-hidden="true" />View on GitHub
+        </a>
+        <a
+          class={buttonVariants({ variant: "ghost", size: "lg" })}
+          href={LINKS.storybook}
+        >
+          <Layers aria-hidden="true" />Open Storybook
+        </a>
+      </Fragment>
+      <section
+        slot="footer"
+        tabindex="0"
+        aria-label="Commands to start a project"
+        class="overflow-x-auto rounded-lg border border-line bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      >
+        <pre class="p-3.5 font-mono text-xs leading-5 text-fg">{HERO.commands.join("\n")}</pre>
+      </section>
+      <LandingPreview slot="aside" />
+    </Hero>
+    <FeatureGrid
+      title="What's in the box"
+      description="Every feature is a demo of a pattern, with tests at every layer and a guide in the docs."
+      features={features}
+    />
+    <section
+      aria-labelledby="built-on"
+      class="mx-auto flex w-full max-w-6xl flex-col gap-3.5 px-4 py-8 sm:px-6"
+    >
+      <h2 id="built-on" class="text-lg font-semibold text-fg">Built on</h2>
+      <ul class="flex flex-wrap gap-2">
+        {
+          BUILT_ON.map((name) => (
+            <li>
+              <Badge size="md" className="h-7 px-3">
+                {name}
+              </Badge>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+    <FeatureGrid
+      className="pb-16"
+      title="Start a project in three steps"
+      features={[...STEPS]}
+      numbered
+    >
+      <Fragment slot="description">
+        The full checklist, with what to remove for each feature, is in <a
+          class="text-accent-text underline underline-offset-2"
+          href={LINKS.start}>Start a project</a
+        >.
+      </Fragment>
+    </FeatureGrid>
+  </main>
+  <footer class="border-t border-line">
+    <div
+      class="mx-auto flex max-w-6xl flex-wrap items-center gap-5 px-4 py-6 text-sm sm:px-6"
+    >
+      <span class="inline-flex items-center gap-2 text-fg-muted">
+        <LogoMark className="size-4.5" />
+        {DOCS.siteName}
+      </span>
+      <span class="flex-1"></span>
+      <a class={footerLink} href={LINKS.docs}>Docs</a>
+      <a class={footerLink} href={LINKS.storybook}>Storybook</a>
+      <a class={footerLink} href={LINKS.github}>GitHub</a>
+    </div>
+  </footer>
+</PublicLayout>

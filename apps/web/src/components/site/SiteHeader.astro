@@ -47,9 +47,10 @@ const link =
     }
     <slot name="search" />
     <span class="flex-1"></span>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
+      {/* Phones: Storybook stays in the footer and the docs; the header must not overflow. */}
       <a
-        class={buttonVariants({ variant: "ghost", size: "sm" })}
+        class={cn(buttonVariants({ variant: "ghost", size: "sm" }), "max-sm:hidden")}
         href="/_storybook/"
       >
         <Layers aria-hidden="true" />Storybook
