@@ -109,7 +109,7 @@ export const RATE_LIMIT_POLICIES = {
     enforcer: "better-auth",
     authPath: "/send-verification-email",
     description:
-      "Verification mails on request (anonymous, to any address; no human check: no form of ours sends it)",
+      "Verification mails on request (Resend link on the check-inbox screens). Anonymous callers may name any address, so it is limited per IP; no human check: our screens only resend to the address just signed up or signed in with (both behind the human check) or the signed-in user's own",
   },
   "auth.oauth-register": {
     limit: 5,
@@ -225,6 +225,16 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "The public health endpoints (/health, /health/live, /health/ready), per IP: anonymous, and readiness queries D1 and R2 on each call",
   },
+  "csp.report": {
+    // A page with a broken policy reports every blocked load; a few per page view is normal.
+    limit: 30,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_CSP_REPORT",
+    description:
+      "Content-Security-Policy violation reports (/api/csp-report), per IP: anonymous and each report is a log line",
+  },
 } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
 
 export type RateLimitPolicyId = keyof typeof RATE_LIMIT_POLICIES;
@@ -261,6 +271,7 @@ export const ROUTE_POLICIES: Readonly<
   "health/index.ts": ["health.ip"],
   "health/live.ts": ["health.ip"],
   "health/ready.ts": ["health.ip"],
+  "api/csp-report.ts": ["csp.report"],
 };
 
 /**

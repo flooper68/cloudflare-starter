@@ -1,8 +1,9 @@
 /**
  * Docs search and page metadata on the build as deployed (astro build + astro preview,
- * `bun run test:e2e:static`): the Pagefind index exists only in a build.
+ * `bun run build && bun run test:e2e:build`): the Pagefind index exists only in a build,
+ * and every test also fails on any CSP violation (../e2e/fixtures.ts).
  */
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../e2e/fixtures";
 
 test.describe("docs search", () => {
   test("⌘K opens the dialog, typing finds a guide, Enter opens it", async ({

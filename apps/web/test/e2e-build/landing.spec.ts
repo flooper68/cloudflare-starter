@@ -2,7 +2,8 @@
  * The landing page as built: prerendered (the same HTML signed in or out), its links,
  * and the public pages at phone width without sideways scrolling.
  */
-import { expect, test } from "@playwright/test";
+import { PRERENDERED_PAGE_CSP } from "../../src/server/security-headers";
+import { expect, test } from "../e2e/fixtures";
 
 test.describe("landing page", () => {
   test("is static HTML with the starter's links and no React", async ({
@@ -13,6 +14,9 @@ test.describe("landing page", () => {
     expect(response.status()).toBe(200);
     expect(response.headers()["cache-control"]).toBe(
       "public, max-age=0, must-revalidate"
+    );
+    expect(response.headers()["content-security-policy"]).toBe(
+      PRERENDERED_PAGE_CSP
     );
     const html = await response.text();
     expect(html).not.toContain("astro-island");

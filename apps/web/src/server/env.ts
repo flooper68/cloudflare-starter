@@ -24,6 +24,7 @@ export interface AppEnv {
   readonly RL_UNSUBSCRIBE?: RateLimit;
   readonly RL_ANALYTICS?: RateLimit;
   readonly RL_HEALTH?: RateLimit;
+  readonly RL_CSP_REPORT?: RateLimit;
   /** Workers Analytics Engine dataset of product events (ANALYTICS=analytics-engine). */
   readonly ANALYTICS_EVENTS?: AnalyticsEngineDataset;
   readonly APP_ENV?: string;
@@ -37,6 +38,8 @@ export interface AppEnv {
   readonly METRICS?: string;
   /** Required var, validated by `parsePlatformConfig`: workers | none. */
   readonly TRACING?: string;
+  /** Required var, validated by `parsePlatformConfig`: enforce | report-only. */
+  readonly CSP_MODE?: string;
   /** Analytics Engine dataset binding; required when METRICS=analytics-engine. */
   readonly METRICS_DATASET?: AnalyticsEngineDataset;
   /** Required var, validated by `parseAnalyticsConfig`: analytics-engine | none. */

@@ -1,8 +1,11 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
-import { newAccount, open, sharedSession } from "./helpers";
+import {
+  latestMailMentioning,
+  newAccount,
+  open,
+  sharedSession,
+} from "./helpers";
 
 // Multi mode (wrangler.jsonc): the shared user creates a team workspace, uploads a file,
 // invites a new account; the invitee signs up from the link, accepts and opens the file;
@@ -12,28 +15,9 @@ import { newAccount, open, sharedSession } from "./helpers";
 // (docs/architecture/testing.md#known-gaps).
 test.describe.configure({ mode: "serial" });
 
-/**
- * The newest mail the local `send_email` simulation wrote that mentions `text`. Miniflare
- * stores each message's text part under .wrangler/tmp/email/<instance>/email-text/.
- */
-function latestMailMentioning(text: string): string {
-  const root = join(process.cwd(), ".wrangler/tmp/email");
-  const files = readdirSync(root).flatMap((instance) => {
-    const dir = join(root, instance, "email-text");
-    try {
-      return readdirSync(dir).map((name) => join(dir, name));
-    } catch {
-      return [];
-    }
-  });
-  const matching = files
-    .filter((file) => readFileSync(file, "utf8").includes(text))
-    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
-  if (!matching[0]) throw new Error(`no mail mentions ${text}`);
-  return readFileSync(matching[0], "utf8");
-}
-
 const team = `E2E Team ${Date.now().toString(36)}`;
+/** The shared user's name (auth.setup.ts signs up `newAccount("shared")`): the team's owner. */
+const owner = "E2E shared";
 const invitee = newAccount("invitee");
 const content = `Shared plan ${Date.now()}\n`;
 let invitationPath = "";
@@ -126,6 +110,16 @@ test("the invitee signs up from the link, joins and opens the shared file", asyn
   const response = await page.request.get(href as string);
   expect(response.status()).toBe(200);
   expect(await response.text()).toBe(content);
+
+  // A member reaching an owner-only page gets the 403 view naming the owner.
+  await open(page, "/app/settings/workspace");
+  const noAccess = page.getByRole("region", { name: "No access" });
+  await expect(noAccess).toContainText("You don't have access to this");
+  await expect(noAccess).toContainText(
+    `Ask ${owner}, the owner of ${team}, if you need it.`
+  );
+  await noAccess.getByRole("link", { name: "Back to dashboard" }).click();
+  await expect(page).toHaveURL(/\/app\/dashboard$/);
 
   await context.close();
 });

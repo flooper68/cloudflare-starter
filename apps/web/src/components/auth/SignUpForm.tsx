@@ -5,6 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  CheckInboxCard,
   FieldError,
   Input,
   Label,
@@ -18,6 +19,8 @@ import {
   authErrorMessage,
   nextPath,
 } from "@/lib/auth-client";
+import { verifiedCallbackURL } from "@/lib/auth-links";
+import { resendVerification } from "./CheckInbox";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import {
   AuthGuardFields,
@@ -89,12 +92,13 @@ export function SignUpForm({
     setLoading(true);
 
     // Signs the new user in right away, unless email verification is required:
-    // then there is no session token and the verification link signs them in.
+    // then there is no session token and the verification link signs them in. The link
+    // lands on /email-verified, which continues to `?next=` (an invitation) or the app.
     const { data, error: signUpError } = await authClient.signUp.email({
       name: name.trim(),
       email,
       password,
-      callbackURL: nextPath(search) ?? "/app/dashboard",
+      callbackURL: verifiedCallbackURL(nextPath(search)),
       fetchOptions: guard.fetchOptions,
     });
     guard.settle();
@@ -117,22 +121,34 @@ export function SignUpForm({
     window.location.href = afterSignIn(data, search);
   }
 
+  if (checkEmail) {
+    return (
+      <CheckInboxCard
+        email={email}
+        onResend={() => resendVerification(email, nextPath(search))}
+        onUseAnotherEmail={() => {
+          setCheckEmail(false);
+          setEmail("");
+          setPassword("");
+        }}
+      />
+    );
+  }
+
   return (
     <Card className="w-full max-w-md space-y-6">
       <CardHeader>
         <Logo className="mb-3" />
         <CardTitle level={1}>Create an account</CardTitle>
         <p className="text-sm text-fg-muted">
-          {checkEmail
-            ? `We sent a verification link to ${email}. Open it to finish signing up.`
-            : emailPassword
-              ? "Email and password accounts, stored in D1 by Better Auth."
-              : "Use your Google account; the first sign-in creates it."}
+          {emailPassword
+            ? "Email and password accounts, stored in D1 by Better Auth."
+            : "Use your Google account; the first sign-in creates it."}
         </p>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {emailPassword && !checkEmail ? (
+        {emailPassword ? (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
@@ -208,7 +224,7 @@ export function SignUpForm({
           <p className="text-sm text-danger">{error}</p>
         ) : null}
 
-        {google && !checkEmail ? (
+        {google ? (
           <GoogleSignInButton onError={setError} search={search} />
         ) : null}
       </CardContent>

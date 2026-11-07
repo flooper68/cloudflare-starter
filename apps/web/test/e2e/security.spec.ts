@@ -1,6 +1,6 @@
 import { base32 } from "@better-auth/utils/base32";
 import { createOTP } from "@better-auth/utils/otp";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { newAccount, open, signOut, signUp } from "./helpers";
 
 // A dedicated synthetic browser identity so factor enrollment never replaces the shared

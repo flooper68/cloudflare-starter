@@ -36,4 +36,23 @@ describe("getSecurityState", () => {
       /secret|backupCodes|publicKey|token/
     );
   });
+
+  it("says whether the user's own address is verified", async () => {
+    const ada = await seedAccount("Ada Verified"),
+      grace = await seedAccount("Grace Unverified");
+    await env.DB.prepare("UPDATE user SET email_verified = 1 WHERE id = ?")
+      .bind(ada.id)
+      .run();
+    await env.DB.prepare("UPDATE user SET email_verified = 0 WHERE id = ?")
+      .bind(grace.id)
+      .run();
+    const deps = { db: testDb(), clock: { now: () => new Date() } };
+    expect(
+      (await getSecurityState(deps, { userId: ada.id, settings })).emailVerified
+    ).toBe(true);
+    expect(
+      (await getSecurityState(deps, { userId: grace.id, settings }))
+        .emailVerified
+    ).toBe(false);
+  });
 });

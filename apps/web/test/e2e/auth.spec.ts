@@ -1,8 +1,15 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "./fixtures";
 
-import { newAccount, open, signIn, signOut, signUp } from "./helpers";
+import {
+  latestVerificationLink,
+  newAccount,
+  open,
+  signIn,
+  signOut,
+  signUp,
+} from "./helpers";
 
 // One account walks through its whole life: sign up, profile, password change, sign out,
 // sign in. Serial and on one page, so the suite signs up only once here (sign-up is rate
@@ -24,11 +31,47 @@ test.afterAll(async () => {
 test("sign up lands on the dashboard", async () => {
   await signUp(page, account);
   await expect(
-    page.getByRole("heading", { name: "Starter app" })
+    page.getByRole("heading", { name: `Welcome, ${account.name}` })
   ).toBeVisible();
   await page.getByRole("button", { name: /workspace menu/ }).click();
   await expect(page.getByRole("menu")).toContainText(account.email);
   await page.keyboard.press("Escape");
+});
+
+test("verify email: the checklist, check your inbox, resend, the link, email verified", async () => {
+  // Locally AUTH_REQUIRE_EMAIL_VERIFICATION=false: sign-up signs in at once and the
+  // address stays unverified until the link is opened.
+  const checklist = page.getByRole("list", { name: "Get started" });
+  await expect(checklist).toContainText("Verify your email (to do)");
+  await checklist.getByRole("link", { name: "Verify" }).click();
+  await expect(page).toHaveURL(/\/verify-email$/);
+  await expect(
+    page.getByRole("heading", { name: "Check your inbox" })
+  ).toBeVisible();
+  await expect(page.getByText(account.email)).toBeVisible();
+  await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
+  await page.getByRole("button", { name: "Resend link" }).click();
+  await expect(
+    page.getByText("Sent. Check your inbox again in a minute.")
+  ).toBeVisible();
+
+  // The newest mail to this address carries the link; it lands on /email-verified.
+  const url = new URL(latestVerificationLink(account.email));
+  await page.goto(`${url.pathname}${url.search}`);
+  await expect(page).toHaveURL(/\/email-verified$/);
+  await expect(
+    page.getByRole("heading", { name: "Email verified" })
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Continue to the app" }).click();
+  await expect(page).toHaveURL(/\/app\/dashboard$/);
+  await expect(checklist).toContainText("Verify your email (done)");
+
+  // A used or broken link says so and offers a new one.
+  await page.goto("/email-verified?error=INVALID_TOKEN");
+  await expect(
+    page.getByRole("heading", { name: "This link doesn't work" })
+  ).toBeVisible();
+  await page.goto("/app/dashboard");
 });
 
 test("the profile shows the signed-in account", async () => {
@@ -95,7 +138,7 @@ test("sign in takes the new password, not the old one", async () => {
 
   await signIn(page, { email: account.email, password: newPassword });
   await expect(
-    page.getByRole("heading", { name: "Starter app" })
+    page.getByRole("heading", { name: `Welcome, ${account.name}` })
   ).toBeVisible();
 });
 

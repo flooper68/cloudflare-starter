@@ -3,7 +3,7 @@
  * guide, with links rewritten for the site, the outline, the edit link and the theme
  * switch; unknown paths get the public 404. Signed out, no account needed.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("docs site", () => {
   test("landing → docs → a guide", async ({ page }) => {
