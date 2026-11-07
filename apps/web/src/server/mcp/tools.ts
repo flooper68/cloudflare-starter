@@ -715,6 +715,8 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
     "public liveness probe for uptime monitors; touches no dependency, nothing for an agent to do",
   "health/ready.ts":
     "public readiness check for uptime monitors (IETF application/health+json); platform admins' agents use admin_get_health",
+  "api/csp-report.ts":
+    "browsers post Content-Security-Policy violation reports here; nothing an agent does",
   "robots.txt.ts":
     "static crawler rules, prerendered at build time; no data and nothing for an agent to do",
 };

@@ -225,6 +225,16 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "The public health endpoints (/health, /health/live, /health/ready), per IP: anonymous, and readiness queries D1 and R2 on each call",
   },
+  "csp.report": {
+    // A page with a broken policy reports every blocked load; a few per page view is normal.
+    limit: 30,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_CSP_REPORT",
+    description:
+      "Content-Security-Policy violation reports (/api/csp-report), per IP: anonymous and each report is a log line",
+  },
 } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
 
 export type RateLimitPolicyId = keyof typeof RATE_LIMIT_POLICIES;
@@ -261,6 +271,7 @@ export const ROUTE_POLICIES: Readonly<
   "health/index.ts": ["health.ip"],
   "health/live.ts": ["health.ip"],
   "health/ready.ts": ["health.ip"],
+  "api/csp-report.ts": ["csp.report"],
 };
 
 /**

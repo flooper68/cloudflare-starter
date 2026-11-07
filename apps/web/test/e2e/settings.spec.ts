@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { newAccount, open, signUp } from "./helpers";
 
 // A dedicated account on its own documentation-range client IP: the shared user's uploads
@@ -118,6 +118,11 @@ test("settings persists profile, image and preferences, then renames and deletes
   await expect(
     page.getByRole("button", { name: /workspace menu/ })
   ).toContainText("Settings renamed");
+  // The page reloads the workspace after saving and clears the confirmation then: wait for
+  // the reloaded name before typing, or the reload can wipe what was typed.
+  await expect(
+    page.getByText("Type Settings renamed to confirm.")
+  ).toBeVisible();
   await page.getByLabel("Confirm workspace name").fill("wrong");
   await expect(
     page.getByRole("button", { name: "Delete workspace", exact: true })

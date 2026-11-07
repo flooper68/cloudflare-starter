@@ -13,6 +13,7 @@ Related guides:
 - [docs/guides/how-to-setup-r2.md](../../docs/guides/how-to-setup-r2.md) — R2 binding and presigned URLs
 - [docs/guides/how-to-setup-email.md](../../docs/guides/how-to-setup-email.md) — Cloudflare Email Service
 - [docs/guides/how-to-setup-mcp.md](../../docs/guides/how-to-setup-mcp.md) — the MCP server and its parity rule
+- [docs/guides/how-to-configure-security-headers.md](../../docs/guides/how-to-configure-security-headers.md) — CSP, HSTS and the other response headers, `CSP_MODE`, `public/_headers`
 - [docs/guides/how-to-setup-logging.md](../../docs/guides/how-to-setup-logging.md) — OpenTelemetry log records, trace context, `LOG_SINK`
 - [docs/guides/how-to-setup-error-reporting.md](../../docs/guides/how-to-setup-error-reporting.md) — error reports and references, `ERROR_REPORTER`
 - [docs/guides/how-to-use-feature-flags.md](../../docs/guides/how-to-use-feature-flags.md) — the flag catalog, `useFlag`/`FlagGate` (`src/lib/feature-flags.tsx`), `FEATURE_FLAGS`
@@ -69,7 +70,7 @@ bun run dev:web
 ```bash
 bun run test --project web-api   # API tests in workerd (from the repo root)
 bun run test:e2e                 # Playwright journeys in test/e2e against astro dev
-bun run test:e2e:static          # test/e2e/static against astro build + astro preview (search, axe)
+bun run build && bun run test:e2e:build   # test/e2e-build against astro preview of the build (headers, CSP, docs search, axe)
 ```
 
 The E2E run needs the same `.dev.vars` and migrated local D1 as `dev:web`, and Chromium once (`bunx playwright install chromium` in `apps/web`). Playwright starts and stops the dev server itself. See [docs/architecture/testing.md](../../docs/architecture/testing.md#e2e-tests).

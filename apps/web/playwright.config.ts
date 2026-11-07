@@ -43,38 +43,6 @@ const smoke = defineConfig({
   ],
 });
 
-// Static pages: E2E_STATIC=1 (`bun run test:e2e:static`) builds the app (`astro build`,
-// prerendering /docs and the Pagefind index) and serves the build with `astro preview` on
-// the port after APP_URL's, then runs test/e2e/static/: the search dialog and axe on the
-// public pages in both themes, as they are deployed. `astro dev` has no search index.
-const staticPort = port + 1;
-const staticPages = defineConfig({
-  testDir: "./test/e2e/static",
-  testMatch: /\.spec\.ts$/,
-  workers: 2,
-  fullyParallel: true,
-  forbidOnly: ci,
-  retries: ci ? 1 : 0,
-  timeout: 30_000,
-  expect: { timeout: 10_000 },
-  reporter: [["list"], ["html", { open: "never" }]],
-  use: {
-    baseURL: `http://localhost:${staticPort}`,
-    trace: "retain-on-failure",
-    screenshot: "only-on-failure",
-  },
-  projects: [{ name: "static", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    // --ignore-lock keeps the preview server in the foreground, owned by Playwright.
-    command: `bun run build:app && bunx astro preview --ignore-lock --port ${staticPort}`,
-    url: `http://localhost:${staticPort}/docs/`,
-    reuseExistingServer: !ci && process.env.E2E_REUSE_SERVER === "1",
-    timeout: 300_000,
-    stdout: "ignore",
-    stderr: "pipe",
-  },
-});
-
 const local = defineConfig({
   testDir: "./test/e2e",
   // Sign-up is rate limited (5 per minute per IP, auth.sign-up in packages/features/src/abuse/domain/policies.ts) and the
@@ -103,8 +71,7 @@ const local = defineConfig({
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
       // The production smoke specs run only against a deployed URL (`smoke` above).
-      // The static-page specs run against a build (`staticPages` above).
-      testIgnore: /\/(smoke|static)\//,
+      testIgnore: /\/smoke\//,
     },
   ],
   webServer: {
@@ -125,8 +92,4 @@ const local = defineConfig({
   },
 });
 
-export default smokeBaseURL
-  ? smoke
-  : process.env.E2E_STATIC === "1"
-    ? staticPages
-    : local;
+export default smokeBaseURL ? smoke : local;

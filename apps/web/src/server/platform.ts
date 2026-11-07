@@ -1,6 +1,6 @@
 /**
  * Composition root of the platform ports: picks one adapter per port from explicit settings
- * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, RATE_LIMITING, TURNSTILE, ANALYTICS) and builds it once per isolate. JobQueue has one
+ * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, RATE_LIMITING, TURNSTILE, ANALYTICS; CSP_MODE) and builds it once per isolate. JobQueue has one
  * adapter, the APP_QUEUE binding, and no setting: it has no "off" (dropping jobs silently is
  * unsafe). Adding a vendor means a new
  * adapter in packages/features/src/platform/adapters/<vendor>/, a new allowed value in
@@ -49,6 +49,7 @@ import {
   type AbuseConfig,
   type AnalyticsConfig,
   ConfigError,
+  type CspMode,
   parseAbuseConfig,
   parseAnalyticsConfig,
   parsePlatformConfig,
@@ -64,6 +65,8 @@ export const SERVICE_NAME = "cloudflare-starter-web";
 
 export interface Platform {
   readonly storageReconcile: StorageReconcileMode;
+  /** CSP_MODE: how HTML pages get their Content-Security-Policy (server/security-headers.ts). */
+  readonly cspMode: CspMode;
   readonly logger: Logger;
   readonly errors: ErrorReporter;
   /** The job queue (APP_QUEUE). Enqueue through `enqueueJob`, never `send` directly. */
@@ -234,6 +237,7 @@ export function buildPlatform(env: AppEnv): Platform {
       : null;
   const platform: Platform = {
     storageReconcile: config.STORAGE_RECONCILE,
+    cspMode: config.CSP_MODE,
     logger,
     errors:
       config.ERROR_REPORTER === "workers-logs"

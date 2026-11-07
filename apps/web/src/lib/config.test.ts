@@ -31,6 +31,7 @@ describe("web config", () => {
       FEATURE_FLAGS: "none",
       METRICS: "none",
       TRACING: "none",
+      CSP_MODE: "enforce",
     };
     expect(() => parsePlatformConfig(settings)).toThrow(
       /STORAGE_RECONCILE is not set/
@@ -159,6 +160,7 @@ describe("platform config", () => {
         METRICS: "analytics-engine",
         TRACING: "workers",
         STORAGE_RECONCILE: "off",
+        CSP_MODE: "enforce",
       })
     ).toEqual({
       APP_ENV: "staging",
@@ -168,7 +170,32 @@ describe("platform config", () => {
       METRICS: "analytics-engine",
       TRACING: "workers",
       STORAGE_RECONCILE: "off",
+      CSP_MODE: "enforce",
     });
+  });
+
+  it("requires CSP_MODE and accepts only enforce or report-only", () => {
+    const rest = {
+      APP_ENV: "production",
+      LOG_SINK: "none",
+      ERROR_REPORTER: "none",
+      FEATURE_FLAGS: "none",
+      METRICS: "none",
+      TRACING: "none",
+      STORAGE_RECONCILE: "off",
+    };
+    expect(() => parsePlatformConfig(rest)).toThrow(
+      new ConfigError(
+        "CSP_MODE",
+        "CSP_MODE is not set: set CSP_MODE to one of enforce, report-only in the vars of apps/web/wrangler.jsonc for every environment"
+      )
+    );
+    expect(() => parsePlatformConfig({ ...rest, CSP_MODE: "off" })).toThrow(
+      /^CSP_MODE is "off"/
+    );
+    expect(
+      parsePlatformConfig({ ...rest, CSP_MODE: "report-only" }).CSP_MODE
+    ).toBe("report-only");
   });
 
   it("requires APP_ENV: no default environment", () => {
@@ -216,6 +243,7 @@ describe("platform config", () => {
       METRICS: "none",
       TRACING: "none",
       STORAGE_RECONCILE: "off",
+      CSP_MODE: "enforce",
     };
     expect(() => parsePlatformConfig(rest)).toThrow(
       new ConfigError(

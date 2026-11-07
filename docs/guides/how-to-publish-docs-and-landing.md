@@ -43,7 +43,7 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 
 ## Theme
 
-The public pages follow the OS setting until the visitor picks a theme with the switch in the header; the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head. It is an external file, not inline code, so a strict Content-Security-Policy (`script-src 'self'`) allows it without `'unsafe-inline'` or a nonce. The `/app` theme is a user setting and separate.
+The public pages follow the OS setting until the visitor picks a theme with the switch in the header; the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head. It is an external file, not inline code, so the pages' Content-Security-Policy allows it without `'unsafe-inline'`, a hash or a nonce. The docs pages are static assets; their policy is a `_headers` rule plus Astro's `<meta>` policy ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)). The `/app` theme is a user setting and separate.
 
 ## Search
 
@@ -52,7 +52,7 @@ The header's "Search docs" button (or ⌘K / Ctrl+K) opens a dialog that searche
 - **Index:** after `astro build`, the integration in `apps/web/src/docs/search-integration.ts` (`astro:build:done`) runs [Pagefind](https://pagefind.app) over `dist/client/docs/**/*.html` and writes the index and its client into `dist/client/pagefind/`, served at `/pagefind/`. Only the rendered Markdown is indexed (`data-pagefind-body` on `Prose`); each result carries its navigation section (`data-pagefind-meta`). A build fails when nothing was indexed.
 - **Dialog:** `apps/web/src/components/site/DocsSearch.astro` is the markup (a native `<dialog>`, a combobox and a listbox); `apps/web/src/docs/search.ts` is the `<docs-search>` custom element, a small module under `/_astro/`. It imports `/pagefind/pagefind.js` the first time the dialog opens, so pages that are never searched never load the index. ↑/↓ move, Enter or a click opens, Esc or a click outside closes.
 - **In development:** `astro dev` builds no index; the dialog says "Search could not load". Use `bun run build:app && bunx astro preview` (in `apps/web`) to try it.
-- **Content-Security-Policy:** Pagefind runs WebAssembly (`script-src 'wasm-unsafe-eval'`) and may start a worker from `/pagefind/` (`worker-src 'self'`); Shiki colours code with inline `style` attributes (`style-src-attr 'unsafe-inline'`). A CSP for these pages needs those, and nothing else inline: every script is an external file (`vite.build.assetsInlineLimit` keeps Astro from inlining small page scripts).
+- **Content-Security-Policy:** Pagefind runs WebAssembly, so the docs pages' policy (`PRERENDERED_PAGE_CSP` in `_headers`, and Astro's `<meta>` through `security.csp.scriptDirective`) has `'wasm-unsafe-eval'`, never `'unsafe-eval'`; its worker comes from `/pagefind/` (`worker-src 'self'`). Every script is an external file (`vite.build.assetsInlineLimit` keeps Astro from inlining small page scripts). [how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)
 
 ## Page metadata, robots.txt and the sitemap
 
@@ -64,7 +64,7 @@ The header's "Search docs" button (or ⌘K / Ctrl+K) opens a dialog that searche
 
 ## Caching
 
-`apps/web/public/_headers` sets `Cache-Control` for static assets (Workers static assets honour `_headers`; the Astro Cloudflare adapter appends the `/_astro/*` rule):
+`apps/web/public/_headers` sets `Cache-Control` for static assets (Workers static assets honour `_headers`; the Astro Cloudflare adapter appends the `/_astro/*` rule). The file is generated: the cache rules are `STATIC_CACHE_RULES` in `apps/web/src/server/static-cache.ts`, rendered after the security rules by `bun apps/web/scripts/write-static-headers.ts` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#static-assets)):
 
 | Path                                                                          | Cache-Control                         | Why                                              |
 | ----------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------ |
@@ -86,7 +86,7 @@ bun run dev:web                     # /docs renders on request in dev
 cd apps/web && bun run build:app    # prerenders every page into dist/client/docs/
 ```
 
-`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:static` builds the app, serves it with `astro preview` on the port after `APP_URL`'s and runs `test/e2e/static/`: the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
+`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
 
 ## Common problems
 
@@ -100,7 +100,7 @@ Add a row for the doc to [docs/README.md](../README.md), or an entry to `DOCS.ex
 
 ### Search says "Search could not load"
 
-The page has no index: `astro dev` builds none (use a build and `astro preview`), or `/pagefind/pagefind.js` failed to load (check the network tab; a Content-Security-Policy without `'wasm-unsafe-eval'` blocks it).
+The page has no index: `astro dev` builds none (use a build and `astro preview`), or `/pagefind/pagefind.js` failed to load (check the network tab and the console: a policy without `'wasm-unsafe-eval'` blocks it).
 
 ### `bun run budget` fails
 

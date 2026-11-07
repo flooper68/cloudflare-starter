@@ -4,7 +4,7 @@
  * open search dialog with results.
  */
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "../e2e/fixtures";
 
 async function violations(page: Page): Promise<string[]> {
   const results = await new AxeBuilder({ page }).analyze();
