@@ -154,7 +154,8 @@ export const PAGE_STYLE_SRC = "'self' 'unsafe-inline'";
  * The Web Analytics origins are always allowed here, because the rule is the same in
  * every environment while WEB_ANALYTICS differs.
  */
-export const PRERENDERED_PAGE_PATHS = ["/docs/*"] as const;
+// /404: the Worker answers an unknown path with this prerendered asset and its headers.
+export const PRERENDERED_PAGE_PATHS = ["/docs/*", "/404", "/404.html"] as const;
 
 export const PRERENDERED_PAGE_CSP = [
   "default-src 'self'",

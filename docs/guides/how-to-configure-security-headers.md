@@ -107,13 +107,13 @@ bun apps/web/scripts/write-static-headers.ts
 
 ## Prerendered pages
 
-The pages Astro prerenders (`/docs/*`; [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md)) are static assets too, so they get their policy from `_headers`: `PRERENDERED_PAGE_PATHS` in `security-headers.ts` replace the asset policy with `PRERENDERED_PAGE_CSP` (`default-src 'self'`, scripts from this origin only, `script-src-attr 'none'`, inline styles allowed, the Web Analytics origins, no plugins, no framing, `report-uri /api/csp-report`). Astro also writes its policy into each prerendered page as a `<meta http-equiv="content-security-policy">` (script hashes, and the `style-src` of `security.csp.styleDirective`); the browser enforces both. Differences from the per-request page policy, because a static file knows neither the origin nor the settings:
+The pages Astro prerenders (`/docs/*`, and the 404 the Worker answers unknown paths with, served as `/404`; [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md)) are static assets too, so they get their policy from `_headers`: `PRERENDERED_PAGE_PATHS` in `security-headers.ts` replace the asset policy with `PRERENDERED_PAGE_CSP` (`default-src 'self'`, scripts from this origin only, `script-src-attr 'none'`, inline styles allowed, the Web Analytics origins, no plugins, no framing, `report-uri /api/csp-report`). Astro also writes its policy into each prerendered page as a `<meta http-equiv="content-security-policy">` (script hashes, and the `style-src` of `security.csp.styleDirective`); the browser enforces both. Differences from the per-request page policy, because a static file knows neither the origin nor the settings:
 
 - `script-src 'self'` instead of `<origin>/_astro/`: a source with a path needs the origin. The pages hold no user content, so nothing on them can point a script at `/api/files`.
 - The Web Analytics origins are always allowed (the rule is the same in every environment).
 - `style-src 'self' 'unsafe-inline'` also in the `<meta>`: Shiki colours code with `style` attributes, and a style hash in the policy would switch `'unsafe-inline'` off.
 
-`test/e2e-build/docs.spec.ts` loads a docs page from the build under both policies with zero violations.
+`test/e2e-build/docs.spec.ts` loads a docs page and the 404 from the build under these policies with zero violations.
 
 ## Storybook
 
