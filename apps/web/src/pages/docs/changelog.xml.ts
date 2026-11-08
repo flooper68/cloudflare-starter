@@ -1,7 +1,7 @@
 /**
  * /docs/changelog.xml: an Atom feed of the releases in CHANGELOG.md, prerendered.
- * URLs are absolute with SITE_URL; without it (local builds) they use the repository's
- * GitHub address so the feed stays valid. docs/processes/development.md#changelog
+ * URLs are absolute with SITE_URL (set for production); without it the feed has no self
+ * link and its entries link to the file on GitHub. docs/processes/development.md#changelog
  */
 
 import { getCollection } from "astro:content";
@@ -17,18 +17,16 @@ export const GET: APIRoute = async ({ site }) => {
   const entries = await getCollection("docs");
   const source =
     entries.find((entry) => entry.id === CHANGELOG_PATH)?.body ?? "";
-  const base = site ?? new URL(`${DOCS.repoUrl}/`);
   const pageUrl = site
-    ? new URL("/docs/changelog/", base).href
+    ? new URL("/docs/changelog/", site).href
     : `${DOCS.repoUrl}/blob/${DOCS.branch}/${CHANGELOG_PATH}`;
-  const feedUrl = site
-    ? new URL("/docs/changelog.xml", base).href
-    : `${DOCS.repoUrl}/blob/${DOCS.branch}/${CHANGELOG_PATH}`;
+  const feedUrl = site ? new URL("/docs/changelog.xml", site).href : undefined;
   return new Response(
     changelogFeed(parseChangelog(source), {
       title: `${DOCS.siteName} changelog`,
       pageUrl,
       feedUrl,
+      sectionLinks: Boolean(site),
       repoUrl: DOCS.repoUrl,
     }),
     { headers: { "content-type": "application/atom+xml; charset=utf-8" } }

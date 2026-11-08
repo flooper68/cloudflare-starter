@@ -145,6 +145,7 @@ describe("billing (BILLING=manual)", () => {
       "storage_bytes",
       "files.uploads_per_month",
       "seats",
+      "notes",
     ]);
     const mcp = await mcpCall(callerFor(owner), "get_billing_summary");
     expect(mcp.isError).toBeFalsy();

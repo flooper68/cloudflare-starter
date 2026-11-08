@@ -53,6 +53,13 @@ export const METRICS = {
     unit: "count",
     description: "Members plus pending invitations",
   },
+  // The placeholder Notes app's example limit: a count of live rows.
+  notes: {
+    kind: "current",
+    source: "notes.countWorkspaceNotes",
+    unit: "count",
+    description: "Notes in the workspace (not those in the trash)",
+  },
 } as const satisfies Record<string, Metric>;
 
 export type MetricKey = keyof typeof METRICS;
@@ -90,7 +97,12 @@ export const UNLIMITED_PLAN: Plan = {
   id: "unlimited",
   name: "Unlimited",
   features: Object.keys(FEATURES) as FeatureKey[],
-  limits: { storage_bytes: null, "files.uploads_per_month": null, seats: null },
+  limits: {
+    storage_bytes: null,
+    "files.uploads_per_month": null,
+    seats: null,
+    notes: null,
+  },
   fallbackPlanId: "unlimited",
   internal: true,
 };
@@ -105,6 +117,7 @@ export const PLANS: readonly Plan[] = [
       storage_bytes: 100 * MIB,
       "files.uploads_per_month": 100,
       seats: 3,
+      notes: 50,
     },
     fallbackPlanId: "free",
   },
@@ -116,6 +129,7 @@ export const PLANS: readonly Plan[] = [
       storage_bytes: 10 * GIB,
       "files.uploads_per_month": 10_000,
       seats: 25,
+      notes: null,
     },
     trialDays: 14,
     fallbackPlanId: "free",

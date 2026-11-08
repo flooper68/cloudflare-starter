@@ -30,6 +30,7 @@ describe("changelogFeed", () => {
     pageUrl: "https://starter.example.com/docs/changelog/",
     feedUrl: "https://starter.example.com/docs/changelog.xml",
     repoUrl: "https://github.com/acme/starter",
+    sectionLinks: true,
   });
 
   it("lists the released versions, newest first, not Unreleased", () => {
@@ -56,5 +57,15 @@ describe("changelogFeed", () => {
     expect(xml).toContain(
       "https://starter.example.com/docs/guides/how-to-setup-d1/"
     );
+  });
+
+  it("without a site address has no self link and links entries to the file", () => {
+    const local = changelogFeed(parseChangelog(SOURCE), {
+      title: "Starter changelog",
+      pageUrl: "https://github.com/acme/starter/blob/main/CHANGELOG.md",
+      repoUrl: "https://github.com/acme/starter",
+    });
+    expect(local).not.toContain('rel="self"');
+    expect(local).not.toContain("CHANGELOG.md#");
   });
 });

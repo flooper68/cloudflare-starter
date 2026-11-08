@@ -37,6 +37,11 @@ describe("permissions", () => {
     expect(rolesAllowedTo("trash.purge")).toEqual(["owner"]);
   });
 
+  it("lets every member read, write, comment on and trash notes", () => {
+    for (const action of ["notes.read", "notes.write", "notes.delete"] as const)
+      expect(rolesAllowedTo(action)).toEqual(["owner", "member"]);
+  });
+
   it("keeps someone able to manage members: the creator's role can, and transfer ownership", () => {
     expect(ACTIONS["members.manage"].length).toBeGreaterThan(0);
     expect(can(CREATOR_ROLE, "members.manage")).toBe(true);

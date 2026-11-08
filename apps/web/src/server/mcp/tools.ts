@@ -474,19 +474,62 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Move file to trash",
     "Moves a file of the workspace (by id, see list_files) to the trash: it leaves the file list and downloads at once and is deleted for good after 30 days. Restorable with restore_from_trash until then. Members and owners."
   ),
+  // The placeholder Notes app: the worked example of a feature added end to end.
+  direct(
+    "list_notes",
+    "read",
+    "notes.list",
+    "List notes",
+    "Lists the notes of the workspace, most recently changed first: id, title, an excerpt of the body, who created and last changed it and when, and the comment count. Optional query matches titles; limit up to 100. Notes in the trash are not listed (see list_trash)."
+  ),
+  direct(
+    "get_note",
+    "read",
+    "notes.get",
+    "Get note",
+    "Returns one note of the workspace by id (see list_notes): its title, full body, people, times and its comments, oldest first. NOT_FOUND if it does not exist or is in the trash."
+  ),
+  direct(
+    "create_note",
+    "write",
+    "notes.create",
+    "Create note",
+    "Creates a note in the workspace with a title (1-200 characters) and an optional plain-text body (up to 20,000 characters); returns its id. The plan may limit how many notes a workspace keeps: past it, FORBIDDEN with domain.kind limit_reached (explain with get_billing_summary)."
+  ),
+  direct(
+    "update_note",
+    "write",
+    "notes.update",
+    "Update note",
+    "Changes the title and/or the body of a note of the workspace by id; the fields given replace the stored ones. Members and owners."
+  ),
+  direct(
+    "delete_note",
+    "write",
+    "notes.delete",
+    "Move note to trash",
+    "Moves a note of the workspace (by id) to the trash with its comments: it leaves the note list at once and is deleted for good after 30 days. Restorable with restore_from_trash (type note) until then."
+  ),
+  direct(
+    "add_note_comment",
+    "write",
+    "notes.comments.add",
+    "Comment on note",
+    "Adds a comment (1-2,000 characters) to a note of the workspace by id, as the signed-in user; returns the comment's id."
+  ),
   direct(
     "list_trash",
     "read",
     "trash.list",
     "List trash",
-    "Lists what is in the workspace's trash, most recently deleted first: type (file), id, label, size, when and by whom it was deleted, and purgeAt (when it is deleted for good). Optional type filter; page with cursor (nextCursor) and limit (up to 100). can.restore and can.purge say what the user may do."
+    "Lists what is in the workspace's trash, most recently deleted first: type (file or note), id, label, size, when and by whom it was deleted, and purgeAt (when it is deleted for good). Optional type filter; page with cursor (nextCursor) and limit (up to 100). can.restore and can.purge say what the user may do."
   ),
   direct(
     "restore_from_trash",
     "write",
     "trash.restore",
     "Restore from trash",
-    "Restores items (1 to 100, each { type, id } from list_trash) from the workspace's trash to where they were. All or nothing: NOT_FOUND if any item is not in this trash."
+    "Restores items (1 to 100, each { type, id } from list_trash) from the workspace's trash to where they were. All or nothing: NOT_FOUND if any item is not in this trash. Restoring notes may be refused past the plan's notes limit (FORBIDDEN, domain.kind limit_reached; explain with get_billing_summary)."
   ),
   direct(
     "delete_from_trash_permanently",

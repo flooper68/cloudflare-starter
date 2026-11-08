@@ -93,7 +93,9 @@ describe("restoreItems", () => {
       ).rejects.toThrow(TrashItemNotFoundError);
     }
     await expect(
-      restoreItems(deps(), actor, { items: [{ type: "note", id: "x" }] })
+      restoreItems(deps(), actor, {
+        items: [{ type: "invoice" as "file", id: "x" }],
+      })
     ).rejects.toThrow(InvalidTrashInputError);
     const listed = await listWorkspaceFiles({ db: testDb() }, actor, {});
     expect(listed.map((file) => file.id)).toEqual([live.fileId]);

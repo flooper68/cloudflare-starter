@@ -277,6 +277,23 @@ const VALID: Record<AuditAction, AuditEventInput> = {
       provider: "stripe",
     },
   },
+  "note.created": {
+    action: "note.created",
+    workspaceId: workspace,
+    target: { type: "note", id: "note-q3" },
+  },
+  "note.updated": {
+    action: "note.updated",
+    workspaceId: workspace,
+    target: { type: "note", id: "note-q3" },
+    metadata: { fields: ["title", "body"] },
+  },
+  "note.commented": {
+    action: "note.commented",
+    workspaceId: workspace,
+    target: { type: "note", id: "note-q3" },
+    metadata: { commentId: "comment-1" },
+  },
   "trash.item_trashed": {
     action: "trash.item_trashed",
     workspaceId: workspace,

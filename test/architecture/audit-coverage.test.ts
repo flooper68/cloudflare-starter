@@ -21,6 +21,7 @@ const AUDITED_FEATURES = [
   "trash",
   "storage-reconciliation",
   "privacy",
+  "notes",
 ] as const;
 
 /** Use cases that change state without an audit event: path → reason. */
@@ -37,6 +38,8 @@ const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
     "storage cleanup within authorized account deletion; self-delete afterDelete and the admin delete use case record user.deleted",
   "packages/features/src/workspaces/purge-workspace-logos.ts":
     "storage cleanup within authorized workspace/account deletion; the parent records workspace.deleted",
+  "packages/features/src/notes/trash.ts":
+    "the notes entity of the trash catalog: its purge is called by the trash use cases, which record trash.item_purged (onRowsDeleted), and by erasure, whose owner records it",
   "packages/features/src/billing/record-usage.ts":
     "usage metering (one counter increment per upload); grants or removes nothing, and the action it counts is the record",
   "packages/features/src/workspaces/switch-workspace.ts":

@@ -131,6 +131,44 @@ export const DATA_CATALOG: readonly DataEntity[] = [
     reason:
       "Own-file metadata in shared workspaces; bytes only for personal-workspace or authorized workspace export. Erasure purges files of deleted workspaces, keeps shared content with attribution nulled.",
   },
+  {
+    table: "notes",
+    scope: "workspace",
+    columns: [
+      "id",
+      "workspace_id",
+      "title",
+      "body",
+      "created_by",
+      "created_at",
+      "updated_by",
+      "updated_at",
+      "deleted_at",
+      "deleted_by",
+    ],
+    workspaceColumn: "workspace_id",
+    userMode: "own-files",
+    erase: "workspace-cascade",
+    reason:
+      "Notes the person wrote in shared workspaces and every note of their personal workspace; deleting a workspace deletes its notes, erasure keeps shared notes with attribution nulled.",
+  },
+  {
+    table: "note_comments",
+    scope: "workspace",
+    columns: [
+      "id",
+      "workspace_id",
+      "note_id",
+      "body",
+      "created_by",
+      "created_at",
+    ],
+    workspaceColumn: "workspace_id",
+    userMode: "own-files",
+    erase: "workspace-cascade",
+    reason:
+      "Comments the person wrote, and every comment in their personal workspace; they go with their note and workspace, erasure keeps shared comments with attribution nulled.",
+  },
   ...[
     "workspace_subscription",
     "workspace_addon",

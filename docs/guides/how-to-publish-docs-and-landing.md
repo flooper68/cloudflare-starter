@@ -64,7 +64,7 @@ A product built from the starter replaces this page with its own:
 
 `/docs/changelog/` renders the root [CHANGELOG.md](../../CHANGELOG.md) (the docs collection reads it like any published file; there is no copy) as release notes: `apps/web/src/pages/docs/changelog.astro` parses it (`apps/web/src/docs/changelog.ts`) and renders `ReleaseNotes` from `packages/ui`, each release with its version, date and compare link, and each change type with its own label colour. Inline Markdown in an entry (`code`, **bold**, links) is rendered as elements (`src/docs/inline.ts`); relative links are rewritten like the rest of the docs. The page is in the navigation's Start section, the sitemap and the search index, and needs no script beyond the docs' own.
 
-`/docs/changelog.xml` is an Atom feed of the released versions (not Unreleased), prerendered by `src/pages/docs/changelog.xml.ts`. Its URLs use `SITE_URL`; without it they point at the file on GitHub. The landing page's header and footer and the dashboard link to the changelog.
+`/docs/changelog.xml` is an Atom feed of the released versions (not Unreleased), prerendered by `src/pages/docs/changelog.xml.ts`. Its URLs use `SITE_URL` (set for production); without it the feed has no self link and its entries point at the file on GitHub. It is served as a static asset, typed `application/xml`. The landing page's header and footer and the dashboard link to the changelog.
 
 What goes into the changelog and how a release is cut: [development.md](../processes/development.md#changelog).
 

@@ -37,8 +37,13 @@ export interface FeedOptions {
   readonly title: string;
   /** Absolute URL of the release-notes page. */
   readonly pageUrl: string;
-  /** Absolute URL of the feed itself. */
-  readonly feedUrl: string;
+  /**
+   * Absolute URL of the feed itself, and whether `pageUrl` is the release-notes page
+   * (entries then link to their section). Without a site address the feed has no self
+   * link and entries link to the file.
+   */
+  readonly feedUrl?: string;
+  readonly sectionLinks?: boolean;
   /** The repository, for stable entry ids (the release tags). */
   readonly repoUrl: string;
 }
@@ -65,7 +70,9 @@ export function changelogFeed(
             .join("")}</ul>`
       ),
     ].join("");
-    const link = `${options.pageUrl}#${releaseId(release.version)}`;
+    const link = options.sectionLinks
+      ? `${options.pageUrl}#${releaseId(release.version)}`
+      : options.pageUrl;
     return [
       "  <entry>",
       `    <title>${escapeXml(release.version)}</title>`,
@@ -80,8 +87,12 @@ export function changelogFeed(
     '<?xml version="1.0" encoding="utf-8"?>',
     '<feed xmlns="http://www.w3.org/2005/Atom">',
     `  <title>${escapeXml(options.title)}</title>`,
-    `  <id>${escapeXml(options.feedUrl)}</id>`,
-    `  <link rel="self" type="application/atom+xml" href="${escapeXml(options.feedUrl)}"/>`,
+    `  <id>${escapeXml(options.feedUrl ?? options.pageUrl)}</id>`,
+    ...(options.feedUrl
+      ? [
+          `  <link rel="self" type="application/atom+xml" href="${escapeXml(options.feedUrl)}"/>`,
+        ]
+      : []),
     `  <link rel="alternate" type="text/html" href="${escapeXml(options.pageUrl)}"/>`,
     `  <updated>${updated}T00:00:00Z</updated>`,
     `  <author><name>${escapeXml(options.title)}</name></author>`,
