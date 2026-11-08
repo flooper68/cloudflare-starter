@@ -20,6 +20,8 @@ describe("getNotificationPreferences", () => {
     expect(
       result.types.map((row) => [row.type, row.locked, row.inApp, row.email])
     ).toEqual([
+      ["container-runs.finished", false, true, false],
+
       ["workspaces.member-joined", false, true, true],
       ["workspaces.role-changed", false, true, true],
       ["auth.password-changed", true, true, true],
@@ -27,8 +29,6 @@ describe("getNotificationPreferences", () => {
       ["auth.factor-changed", true, true, true],
 
       ["privacy.export-ready", true, true, true],
-
-      ["container-runs.finished", false, true, false],
       ["demo.deletion-warning", true, true, true],
     ]);
   });

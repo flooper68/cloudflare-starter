@@ -87,9 +87,9 @@ describe("unsubscribe", () => {
       token: await token(alan.id, "*"),
     });
     expect(result.types).toEqual([
+      "container-runs.finished",
       "workspaces.member-joined",
       "workspaces.role-changed",
-      "container-runs.finished",
     ]);
   });
 

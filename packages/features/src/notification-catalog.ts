@@ -7,7 +7,6 @@ import {
   passwordChangedNotification,
   securityFactorChangedNotification,
 } from "./accounts";
-import { containerRunFinishedNotification } from "./container-runs";
 import { demoDeletionWarningNotification } from "./demo";
 import type { NotificationDefinition } from "./kernel";
 import { createNotificationCatalog } from "./notifications";
@@ -17,7 +16,13 @@ import {
   roleChangedNotification,
 } from "./workspaces";
 
+// The container workflow demo (starter-only: container-workflow-demo).
+
+import { containerRunFinishedNotification } from "./container-runs";
+
 export const notificationCatalog = createNotificationCatalog([
+  containerRunFinishedNotification,
+
   memberJoinedNotification,
   roleChangedNotification,
   passwordChangedNotification,
@@ -25,8 +30,6 @@ export const notificationCatalog = createNotificationCatalog([
   securityFactorChangedNotification,
 
   exportReadyNotification,
-
-  containerRunFinishedNotification,
   // Demo mode only (DEMO_MODE=on); starter-only, removable with the demo feature.
   demoDeletionWarningNotification,
 ] as readonly NotificationDefinition<unknown>[]);

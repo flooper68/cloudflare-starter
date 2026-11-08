@@ -107,7 +107,7 @@ describe("cron handler", () => {
       );
     }
   });
-  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials, notifications.purge, qa-outbox.purge, trash.purge-expired and container-runs.purge, each in a new trace", async () => {
+  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials, notifications.purge, qa-outbox.purge and trash.purge-expired, each in a new trace", async () => {
     const { platform, logger, jobQueue } = memoryPlatform();
     expect(
       cronCatalog.filter((e) => e.schedule === "17 3 * * *").map((e) => e.name)

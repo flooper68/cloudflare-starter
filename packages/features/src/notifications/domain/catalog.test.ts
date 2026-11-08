@@ -61,6 +61,8 @@ describe("notification catalog", () => {
   it("the app's catalog has unique, well-formed types with labels", () => {
     const types = [...notificationCatalog.keys()];
     expect(types).toEqual([
+      "container-runs.finished",
+
       "workspaces.member-joined",
       "workspaces.role-changed",
       "auth.password-changed",
@@ -68,8 +70,6 @@ describe("notification catalog", () => {
       "auth.factor-changed",
 
       "privacy.export-ready",
-
-      "container-runs.finished",
       "demo.deletion-warning",
     ]);
     for (const entry of notificationCatalog.values()) {

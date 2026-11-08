@@ -818,15 +818,6 @@ index 1874514..a993b7f 100644
 -    purgeQaOutbox({ db: deps.db, clock: { now: () => new Date(payload.asOf) } })
 -  ),
    // The cutoff comes from the cron run's time, so every retry purges the same events.
-diff --git a/scripts/cloudflare-plan.test.ts b/scripts/cloudflare-plan.test.ts
-index e4cf2e2..fde16db 100644
---- a/scripts/cloudflare-plan.test.ts
-+++ b/scripts/cloudflare-plan.test.ts
-@@ -189,3 +189,3 @@ describe("bucketJurisdictionPlan", () => {
-     );
--    expect(result.stdout).toContain("= 9001–9013 kept");
-+    expect(result.stdout).toContain("= 9001–9012 kept");
-   });
 diff --git a/scripts/setup-secrets.ts b/scripts/setup-secrets.ts
 index ca3479e..d99bb40 100644
 --- a/scripts/setup-secrets.ts

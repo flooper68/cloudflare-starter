@@ -187,7 +187,8 @@ describe("bucketJurisdictionPlan", () => {
     expect(result.stdout).toContain(
       'wrangler.jsonc env.production.r2_buckets.0.jurisdiction = "eu"'
     );
-    expect(result.stdout).toContain("= 9001–9014 kept");
+    // Whichever ids the starter's environments use (a strip removes some), they are kept.
+    expect(result.stdout).toMatch(/= 9001[–,][^\n]* kept/);
   });
 
   it("refuses to move a bucket to another jurisdiction", () => {

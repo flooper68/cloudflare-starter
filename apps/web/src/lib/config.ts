@@ -1,8 +1,6 @@
 import {
   type BillingSettings,
   billingSettingsSchema,
-  type ContainerDemoSettings,
-  containerDemoSettingsSchema,
   DEMO_MODES,
   DEMO_PROTECTED_EMAILS_MAX,
   DEMO_RETENTION_MAX_DAYS,
@@ -17,6 +15,13 @@ import {
   workspaceSettingsSchema,
 } from "@cloudflare-starter/features";
 import { z } from "zod";
+
+// The container workflow demo (starter-only: container-workflow-demo).
+
+import {
+  type ContainerDemoSettings,
+  containerDemoSettingsSchema,
+} from "@cloudflare-starter/features";
 
 const envSchema = z.object({
   APP_URL: z.url(),
@@ -90,6 +95,7 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       "AUTH_REQUIRE_EMAIL_VERIFICATION"
     ),
     workspaces: workspaceSettingsSchema.parse(env),
+    containerDemo: containerDemoSettingsSchema.parse(env),
     ADMIN_PORTAL: requiredChoice(
       env,
       "ADMIN_PORTAL",
@@ -103,7 +109,6 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       STORAGE_RECONCILE_MODES
     ),
     security: securitySettingsSchema.parse(env),
-    containerDemo: containerDemoSettingsSchema.parse(env),
     demo: parseDemoConfig(env),
   };
 }

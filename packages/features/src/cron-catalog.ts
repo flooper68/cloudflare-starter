@@ -6,7 +6,6 @@
 
 import { purgeAuditEventsJob } from "./audit";
 import { expireTrialsJob } from "./billing";
-import { purgeContainerRunsJob } from "./container-runs";
 import { type DemoSettings, enforceDemoRetentionJob } from "./demo";
 import { retryFileCleanupsJob } from "./files";
 import { createCronCatalog, enqueueJob, purgeIdempotencyKeysJob } from "./jobs";
@@ -24,6 +23,10 @@ import {
   type StorageReconcileMode,
 } from "./storage-reconciliation";
 import { purgeExpiredTrashJob } from "./trash";
+
+// The container workflow demo (starter-only: container-workflow-demo).
+
+import { purgeContainerRunsJob } from "./container-runs";
 
 /** What a cron entry may use. */
 export interface CronDeps {

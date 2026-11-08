@@ -19,6 +19,10 @@ import { filesUnder, read } from "./repo";
 
 /** Tables without `workspace_id`, with the reason. Auth tables are found separately. */
 const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
+  container_run_quota:
+    "the container demo's daily cap for the whole deployment: one counter per UTC day, no tenant data; deleting a workspace must not give its runs back",
+  container_run_user_quota:
+    "the container demo's per-person hourly limit across workspaces; must survive deleting a workspace, cascades with the user",
   pending_file_cleanup:
     "Temporary targeted cleanup state survives erasure; avatar prefixes are user-scoped and have no workspace. It is not user content or job history.",
   data_requests:
@@ -41,10 +45,6 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
     "a user's own settings across workspaces; rows cascade with the user",
   notification_settings:
     "a user's own settings across workspaces; rows cascade with the user",
-  container_run_quota:
-    "the container demo's daily cap for the whole deployment: one counter per UTC day, no tenant data; deleting a workspace must not give its runs back",
-  container_run_user_quota:
-    "the container demo's per-person hourly limit across workspaces; must survive deleting a workspace, cascades with the user",
   qa_outbox:
     "platform table: test mail to the QA suite's own addresses, kept 24 hours, belongs to no workspace",
   job_idempotency_keys:
