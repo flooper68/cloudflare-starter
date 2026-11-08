@@ -20,7 +20,7 @@ Own session procedures return opaque ids, device/IP, creation/expiry and whether
 
 ## Images and storage
 
-`user_settings` is user-scoped (foreign key cascades on account deletion), separate from generated Better Auth tables. It stores theme, timezone, locale and the current `avatar_key`. `workspaces.logo_key` stores the current logo. Schema changes add a numbered migration with `bun run db:generate`; the applied `0000_init` is never edited (see [D1 guide](how-to-setup-d1.md)).
+`user_settings` is user-scoped (foreign key cascades on account deletion), separate from generated Better Auth tables. It stores theme, timezone, locale and the current `avatar_key`. `workspaces.logo_key` stores the current logo. Regenerate the starter's single `0000_init` and recreate only local D1 when moving from the old schema; deployed projects use additive migrations (see [D1 guide](how-to-setup-d1.md)).
 
 Image uploads stream through a 1 MB cap and require a PNG/JPEG/WebP signature matching the declared MIME type. SVG and mismatched files are refused. Uploads require a same-origin request, authentication and the existing `upload.user` limit. Workspace logo writes additionally require ownership. R2 keys are `users/<userId>/avatar/<uuid>` and `workspaces/<workspaceId>/logo/<uuid>`; callers never supply keys. Current versions are served only after ownership/membership checks with `private, max-age=31536000, immutable` and `nosniff`. Old URLs stop resolving at the server once replaced; already cached private copies retain their cache lifetime.
 
