@@ -1,7 +1,14 @@
 import { readFileSync } from "node:fs";
 
-import { createVerifiedAccount } from "./support/accounts";
+import { createVerifiedAccount } from "./support";
 import { tinyPng } from "./support/files";
+import {
+  expect,
+  newUserPage,
+  type Page,
+  skipWithoutQaEnv,
+  test,
+} from "./support/journey";
 import { expectMail, linkTo } from "./support/mail";
 import {
   type Account,
@@ -9,13 +16,6 @@ import {
   open,
   openSettings,
 } from "./support/session";
-import {
-  expect,
-  newUserPage,
-  type Page,
-  skipWithoutQaEnv,
-  test,
-} from "./support/test";
 import { readZip } from "./support/zip";
 
 // Checklist: Privacy (export download; account erasure is the run's cleanup). One
@@ -44,7 +44,7 @@ async function exportOnce(
   button: string,
   kind: "Personal export" | "Workspace export"
 ): Promise<{ archive: Buffer; mailLink: string }> {
-  const since = Date.now();
+  const since = new Date();
   await openSettings(page, "privacy");
   await page.getByRole("button", { name: button }).click();
   await expect(page.getByText("Data export queued")).toBeVisible();

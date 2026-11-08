@@ -1,4 +1,11 @@
-import { createVerifiedAccount } from "./support/accounts";
+import { createVerifiedAccount } from "./support";
+import {
+  expect,
+  newUserPage,
+  type Page,
+  skipWithoutQaEnv,
+  test,
+} from "./support/journey";
 import { callTool, connectMcpClient, type McpConnection } from "./support/mcp";
 import {
   type Account,
@@ -6,13 +13,6 @@ import {
   open,
   openSettings,
 } from "./support/session";
-import {
-  expect,
-  newUserPage,
-  type Page,
-  skipWithoutQaEnv,
-  test,
-} from "./support/test";
 
 // Checklist: MCP (connect a client and call a tool). One account. A test client registers
 // itself through dynamic registration (5 an hour per IP: one per run), the person allows

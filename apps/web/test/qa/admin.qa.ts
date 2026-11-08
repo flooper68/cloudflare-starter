@@ -1,20 +1,20 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { QA_ADMIN_SKIP, qaAdmin } from "./support/admin";
-import {
-  type Account,
-  AUTH_WAIT,
-  displayName,
-  open,
-  signIn,
-  submitSignIn,
-} from "./support/session";
+import { createVerifiedAccount } from "./support";
+import { QA_ADMIN_SKIP, signInQaAdmin } from "./support/admin";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import {
+  type Account,
+  AUTH_WAIT,
+  displayName,
+  open,
+  signInAs,
+  submitSignIn,
+} from "./support/session";
 
 // Checklist: Admin portal, and Billing's admin override. As the persistent QA admin
 // (support/admin.ts), acting only on this run's own account T and T's workspace. Skips
@@ -33,10 +33,10 @@ const reason = `QA ${process.env.QA_RUN_ID ?? "run"}`;
 test.beforeAll(async ({ browser }) => {
   admin = await newUserPage(browser);
   target = await newUserPage(browser);
-  ({ isAdmin } = await qaAdmin(admin));
+  isAdmin = await signInQaAdmin(admin);
   if (!isAdmin) return;
   account = {
-    ...(await createVerifiedAccount(target, { role: "admin-target" })),
+    ...(await createVerifiedAccount(target, { role: "admintarget" })),
   };
   targetName = await displayName(target);
 });
@@ -108,7 +108,7 @@ test("suspending ends T's session and refuses sign-in; lifting it lets T in agai
   await expect(
     admin.getByText(`${targetName} can sign in again`)
   ).toBeVisible();
-  await signIn(target, account);
+  await signInAs(target, account);
 });
 
 test("impersonating T shows the banner; stopping returns to the admin", async () => {

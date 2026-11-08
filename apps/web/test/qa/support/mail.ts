@@ -1,43 +1,40 @@
 /**
- * What the checklist expects of every mail (docs/guides/how-to-qa-a-deployment.md, rules
- * for a run): the sender `starter@flooper.me` named "Cloudflare Starter", the subject,
- * links on the environment's origin, and for notifications the RFC 8058 headers.
- * Security notices carry no unsubscribe link: `notification: false` checks that too.
+ * What the checklist expects of every mail (docs/guides/how-to-qa-a-deployment.md): the
+ * sender `starter@flooper.me` named "Cloudflare Starter", the subject, links on the
+ * environment's origin, and for notifications the RFC 8058 headers. Security notices and
+ * auth mails carry no unsubscribe link: `notification: false` checks that too. Built on
+ * the suite's `inbox` and `linkTo` (index.ts).
  */
-import { qaEnv } from "./env";
-import { expect } from "./fixture";
-import { inbox, type Mail } from "./inbox";
+import {
+  expect,
+  inbox,
+  linkTo as linkOnOrigin,
+  type QaMail,
+  qaEnv,
+} from "./index";
 
 export const SENDER = {
   address: "starter@flooper.me",
   name: "Cloudflare Starter",
 } as const;
 
-/** A header of the mail, by case-insensitive name. */
-export function header(mail: Mail, name: string): string | undefined {
-  const wanted = name.toLowerCase();
-  return Object.entries(mail.headers).find(
-    ([key]) => key.toLowerCase() === wanted
-  )?.[1];
-}
-
-/** The URL in `List-Unsubscribe: <…>`. */
-export function unsubscribeUrl(mail: Mail): string {
-  const value = header(mail, "List-Unsubscribe") ?? "";
+/** The URL in `List-Unsubscribe: <…>` (headers have lowercase names). */
+export function unsubscribeUrl(mail: QaMail): string {
+  const value = mail.headers["list-unsubscribe"] ?? "";
   const url = /^<([^>]+)>$/.exec(value.trim())?.[1];
   if (!url) throw new Error(`no List-Unsubscribe URL in "${value}"`);
   return url;
 }
 
 export function expectAppMail(
-  mail: Mail,
+  mail: QaMail,
   expected: {
     readonly subject: string | RegExp;
     /** A notification (List-Unsubscribe headers) or a security / auth mail (none). */
     readonly notification: boolean;
   }
 ): void {
-  const origin = qaEnv().baseUrl;
+  const origin = qaEnv().baseURL;
   const from = /^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/.exec(mail.from);
   expect(from?.[2]?.toLowerCase(), `sender of "${mail.subject}"`).toBe(
     SENDER.address
@@ -52,35 +49,39 @@ export function expectAppMail(
     expect(new URL(link).origin, `link in "${mail.subject}"`).toBe(origin);
   }
   if (expected.notification) {
-    expect(new URL(unsubscribeUrl(mail)).origin).toBe(origin);
-    expect(new URL(unsubscribeUrl(mail)).pathname).toBe(
-      "/api/notifications/unsubscribe"
-    );
-    expect(header(mail, "List-Unsubscribe-Post")).toBe(
+    const url = new URL(unsubscribeUrl(mail));
+    expect(url.origin).toBe(origin);
+    expect(url.pathname).toBe("/api/notifications/unsubscribe");
+    expect(mail.headers["list-unsubscribe-post"]).toBe(
       "List-Unsubscribe=One-Click"
     );
   } else {
-    expect(header(mail, "List-Unsubscribe")).toBeUndefined();
+    expect(mail.headers["list-unsubscribe"]).toBeUndefined();
   }
 }
 
-/** Waits for a mail to `to` with `subject` sent at or after `since`, then checks it. */
+/**
+ * Waits for the newest mail to `to` sent since `since` whose subject contains `subject`
+ * (a pattern: its fixed part goes to the inbox query), then checks it.
+ */
 export async function expectMail(
   to: string,
   subject: string | RegExp,
-  since: number,
-  notification: boolean
-): Promise<Mail> {
-  const mail = await inbox.waitFor({ to, subject, since, timeoutMs: 90_000 });
+  since: Date,
+  notification: boolean,
+  fixedPart: string = typeof subject === "string" ? subject : ""
+): Promise<QaMail> {
+  const mail = await inbox.waitFor({
+    to,
+    subject: fixedPart || undefined,
+    since,
+    timeoutMs: 120_000,
+  });
   expectAppMail(mail, { subject, notification });
   return mail;
 }
 
-/** The first link of the mail whose path starts with `path`. */
-export function linkTo(mail: Mail, path: string): string {
-  const link = mail.links.find((href) =>
-    new URL(href).pathname.startsWith(path)
-  );
-  if (!link) throw new Error(`"${mail.subject}" has no link to ${path}`);
-  return link;
+/** The mail's link to `path` on the environment's origin (the suite's `linkTo`). */
+export function linkTo(mail: QaMail, path: string): string {
+  return linkOnOrigin(mail.links, qaEnv().baseURL, path);
 }

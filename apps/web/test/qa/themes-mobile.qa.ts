@@ -1,14 +1,14 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { QA_ADMIN_SKIP, qaAdmin } from "./support/admin";
-import { capture, setLook, type Theme, type Viewport } from "./support/screens";
-import { open } from "./support/session";
+import { createVerifiedAccount } from "./support";
+import { QA_ADMIN_SKIP, signInQaAdmin } from "./support/admin";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { capture, setLook, type Theme, type Viewport } from "./support/screens";
+import { open } from "./support/session";
 
 // Checklist: Themes and mobile width, as a screenshot pass for the design-match review.
 // Every main screen at 1440 and 390 px in the dark theme; the light theme only on the
@@ -138,7 +138,7 @@ test("the open command palette", async ({}, testInfo) => {
 test("admin overview", async ({ browser }, testInfo) => {
   const adminPage = await newUserPage(browser);
   try {
-    const { isAdmin } = await qaAdmin(adminPage);
+    const isAdmin = await signInQaAdmin(adminPage);
     test.skip(!isAdmin, QA_ADMIN_SKIP);
     await pass(
       adminPage,

@@ -1,15 +1,15 @@
-import { generatePassword } from "./support/accounts";
-import { qaAddress } from "./support/env";
-import { currentRunId } from "./support/fixture";
-import { expectMail, linkTo } from "./support/mail";
-import { open, submitSignIn } from "./support/session";
+import { currentRunId, qaAddress, qaEnv } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { expectMail, linkTo } from "./support/mail";
+import { qaPassword } from "./support/password";
+import { registerAccount } from "./support/registry";
+import { open, submitSignIn } from "./support/session";
 
 // Checklist: Sign-up and email verification. The one journey that signs up through the
 // form by hand (the others use createVerifiedAccount): check-inbox, one resend, sign-in
@@ -19,11 +19,14 @@ test.describe.configure({ mode: "serial" });
 
 let page: Page;
 let email: string;
-const password = generatePassword();
+let password: string;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
   email = qaAddress(currentRunId(), "signup");
+  // The suite's password for the address, and its registry: the run's cleanup erases it.
+  password = qaPassword(email, qaEnv().token);
+  registerAccount(currentRunId(), email);
 });
 
 test.afterAll(async () => {
@@ -31,7 +34,7 @@ test.afterAll(async () => {
 });
 
 test("sign-up shows Check your inbox naming the address, and sends the link", async () => {
-  const since = Date.now();
+  const since = new Date();
   await open(page, "/sign-up");
   await page.getByLabel("Name").fill(`QA ${currentRunId()} signup`);
   await page.getByLabel("Email").fill(email);
@@ -49,7 +52,7 @@ test("sign-up shows Check your inbox naming the address, and sends the link", as
 });
 
 test("Resend link once says Sent. and sends a second link", async () => {
-  const since = Date.now();
+  const since = new Date();
   await page.getByRole("button", { name: "Resend link" }).click();
   await expect(page.getByText(/^Sent\./)).toBeVisible();
   const mail = await expectMail(email, "Verify your email", since, false);
@@ -67,7 +70,7 @@ test("signing in before verifying shows the same Check your inbox card, not an e
 });
 
 test("the newest link verifies the address and leads to the dashboard", async () => {
-  const mail = await expectMail(email, "Verify your email", 0, false);
+  const mail = await expectMail(email, "Verify your email", new Date(0), false);
   await page.goto(linkTo(mail, "/api/auth/verify-email"));
   await expect(page).toHaveURL(/\/email-verified/);
   await expect(

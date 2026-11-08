@@ -1,5 +1,11 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { inbox } from "./support/inbox";
+import { createVerifiedAccount, inbox } from "./support";
+import {
+  expect,
+  newUserPage,
+  type Page,
+  skipWithoutQaEnv,
+  test,
+} from "./support/journey";
 import { expectMail, unsubscribeUrl } from "./support/mail";
 import {
   type Account,
@@ -7,13 +13,6 @@ import {
   displayName,
   open,
 } from "./support/session";
-import {
-  expect,
-  newUserPage,
-  type Page,
-  skipWithoutQaEnv,
-  test,
-} from "./support/test";
 
 // Checklist: Notifications (inbox, email, digest, unsubscribe). Two accounts: A owns a
 // workspace and B joins it, which sends A "B joined …" (a notification with an
@@ -38,8 +37,8 @@ const roleLabel = "Your role in a workspace changes";
 test.beforeAll(async ({ browser }) => {
   a = await newUserPage(browser);
   b = await newUserPage(browser);
-  accountA = { ...(await createVerifiedAccount(a, { role: "notif-owner" })) };
-  accountB = { ...(await createVerifiedAccount(b, { role: "notif-member" })) };
+  accountA = { ...(await createVerifiedAccount(a, { role: "notifowner" })) };
+  accountB = { ...(await createVerifiedAccount(b, { role: "notifmember" })) };
   nameA = await displayName(a);
   nameB = await displayName(b);
 });
@@ -62,7 +61,7 @@ async function changeRoleOfB(role: "Owner" | "Member") {
 test("B joining A's workspace sends A the notification mail with unsubscribe headers", async () => {
   await createWorkspace(a, workspace);
   await open(a, "/app/members");
-  const invited = Date.now();
+  const invited = new Date();
   await a.getByRole("button", { name: "Invite people" }).click();
   const dialog = a.getByRole("dialog", { name: "Invite people" });
   await dialog.getByLabel("Email").fill(accountB.email);
@@ -74,7 +73,7 @@ test("B joining A's workspace sends A the notification mail with unsubscribe hea
     false
   );
   const link = invitation.links.find((href) => href.includes("/invite/"));
-  const joined = Date.now();
+  const joined = new Date();
   await b.goto(link as string);
   await expect(b.locator("astro-island[ssr]")).toHaveCount(0);
   await b.getByRole("button", { name: "Accept and join" }).click();
@@ -177,7 +176,7 @@ test("the mail's unsubscribe link needs no sign-in and turns off only that type"
 test("one-click unsubscribe (RFC 8058 POST) from a role-change mail; no mail of that type after it", async ({
   playwright,
 }) => {
-  const since = Date.now();
+  const since = new Date();
   await changeRoleOfB("Owner");
   const mail = await expectMail(
     accountB.email,
@@ -204,7 +203,7 @@ test("one-click unsubscribe (RFC 8058 POST) from a role-change mail; no mail of 
   ).not.toBeChecked();
 
   // The next role change still reaches B's inbox in the app, but sends no mail.
-  const after = Date.now();
+  const after = new Date();
   await changeRoleOfB("Member");
   await expect(async () => {
     await open(b, "/app/notifications");

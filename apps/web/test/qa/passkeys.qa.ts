@@ -1,4 +1,11 @@
-import { createVerifiedAccount } from "./support/accounts";
+import { createVerifiedAccount } from "./support";
+import {
+  expect,
+  newUserPage,
+  type Page,
+  skipWithoutQaEnv,
+  test,
+} from "./support/journey";
 import { expectMail } from "./support/mail";
 import {
   type Account,
@@ -8,13 +15,6 @@ import {
   openSettings,
   signOut,
 } from "./support/session";
-import {
-  expect,
-  newUserPage,
-  type Page,
-  skipWithoutQaEnv,
-  test,
-} from "./support/test";
 import { freshTotpCode } from "./support/totp";
 
 // Checklist: Passkeys. Chromium's WebAuthn virtual authenticator (CDP) stands in for the
@@ -58,7 +58,7 @@ async function signInWithPasskey() {
 
 test("adding a passkey lists it by name and sends the security notice", async () => {
   await openSettings(page, "security");
-  const since = Date.now();
+  const since = new Date();
   await page.getByLabel("Passkey name").fill(passkeyName);
   await page.getByRole("button", { name: "Add passkey", exact: true }).click();
   await expect(page.getByText(passkeyName, { exact: true })).toBeVisible();
@@ -106,7 +106,7 @@ test("with an authenticator enrolled, the passkey sign-in still asks for the sec
 
 test("removing the passkey takes it off the list and sends the security notice", async () => {
   await openSettings(page, "security");
-  const since = Date.now();
+  const since = new Date();
   await page.getByRole("button", { name: `Remove ${passkeyName}` }).click();
   await expect(page.getByText(passkeyName, { exact: true })).toHaveCount(0);
   await expectMail(
@@ -115,4 +115,15 @@ test("removing the passkey takes it off the list and sends the security notice",
     since,
     false
   );
+});
+
+test("afterwards: two-factor off, so the run's cleanup can sign in with the password", async () => {
+  await openSettings(page, "security");
+  await page.getByLabel("Password for security changes").fill(account.password);
+  await page
+    .getByRole("button", { name: "Disable two-factor authentication" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Set up authenticator" })
+  ).toBeVisible({ timeout: AUTH_WAIT });
 });

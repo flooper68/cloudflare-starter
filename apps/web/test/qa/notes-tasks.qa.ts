@@ -1,12 +1,12 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { open } from "./support/session";
+import { createVerifiedAccount } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { open } from "./support/session";
 
 // Checklist: Placeholder apps, Notes and Tasks. One account. The checklist's step where
 // a member (B) comments on the note needs a second account; the comment thread itself is

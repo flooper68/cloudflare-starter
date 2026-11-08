@@ -1,4 +1,11 @@
-import { createVerifiedAccount } from "./support/accounts";
+import { createVerifiedAccount } from "./support";
+import {
+  expect,
+  newUserPage,
+  type Page,
+  skipWithoutQaEnv,
+  test,
+} from "./support/journey";
 import { expectMail } from "./support/mail";
 import {
   type Account,
@@ -7,13 +14,6 @@ import {
   signOut,
   submitSignIn,
 } from "./support/session";
-import {
-  expect,
-  newUserPage,
-  type Page,
-  skipWithoutQaEnv,
-  test,
-} from "./support/test";
 import { freshTotpCode } from "./support/totp";
 
 // Checklist: Two-factor (authenticator, recovery codes, email code). One account. The
@@ -58,7 +58,7 @@ test("enrolling an authenticator shows recovery codes and sends the security not
   const setupResponse = page.waitForResponse((response) =>
     response.url().endsWith("/two-factor/enable")
   );
-  const since = Date.now();
+  const since = new Date();
   await page.getByRole("button", { name: "Set up authenticator" }).click();
   const setup = (await (await setupResponse).json()) as {
     totpURI: string;
@@ -115,7 +115,7 @@ test("the emailed code completes sign-in", async () => {
     (await emailMe.count()) === 0,
     "the emailed code is off here (TWO_FACTOR_EMAIL_OTP=off)"
   );
-  const since = Date.now();
+  const since = new Date();
   await emailMe.click();
   await expect(
     page.getByText("Enter the code sent to your email.")
@@ -138,7 +138,7 @@ test("regenerating recovery codes retires the old ones", async () => {
   const regenerated = page.waitForResponse((response) =>
     response.url().endsWith("/two-factor/generate-backup-codes")
   );
-  const since = Date.now();
+  const since = new Date();
   await page.getByRole("button", { name: "Regenerate recovery codes" }).click();
   const fresh = (
     (await (await regenerated).json()) as { backupCodes: string[] }
@@ -159,4 +159,15 @@ test("regenerating recovery codes retires the old ones", async () => {
   ).toBeVisible();
   await verify("Recovery code", fresh[0] ?? "");
   await expect(page).toHaveURL(/\/app\/dashboard$/, { timeout: AUTH_WAIT });
+});
+
+test("afterwards: two-factor off, so the run's cleanup can sign in with the password", async () => {
+  await openSettings(page, "security");
+  await page.getByLabel("Password for security changes").fill(account.password);
+  await page
+    .getByRole("button", { name: "Disable two-factor authentication" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Set up authenticator" })
+  ).toBeVisible({ timeout: AUTH_WAIT });
 });

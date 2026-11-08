@@ -1,8 +1,18 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { qaAddress } from "./support/env";
+import {
+  createVerifiedAccount,
+  currentRunId,
+  eraseQaAccount,
+  inbox,
+  qaAddress,
+} from "./support";
 import { tinyPng } from "./support/files";
-import { currentRunId } from "./support/fixture";
-import { inbox } from "./support/inbox";
+import {
+  expect,
+  newUserPage,
+  type Page,
+  skipWithoutQaEnv,
+  test,
+} from "./support/journey";
 import { expectMail } from "./support/mail";
 import {
   type Account,
@@ -10,16 +20,9 @@ import {
   authSlot,
   open,
   openSettings,
-  signIn,
+  signInAs,
   signOut,
 } from "./support/session";
-import {
-  expect,
-  newUserPage,
-  type Page,
-  skipWithoutQaEnv,
-  test,
-} from "./support/test";
 
 // Checklist: Settings (profile, avatar, email change, sessions, connected accounts,
 // appearance). One account; the email change moves it to a second run address
@@ -36,7 +39,12 @@ test.beforeAll(async ({ browser }) => {
   account = { ...(await createVerifiedAccount(page, { role: "settings" })) };
 });
 
-test.afterAll(async () => {
+test.afterAll(async ({ browser }) => {
+  // After the email change the run's cleanup no longer finds this account under its
+  // first address: erase it here, through the same privacy flow.
+  if (account?.email.includes("settings2")) {
+    await eraseQaAccount(browser, account).catch(() => undefined);
+  }
   await page?.context().close();
 });
 
@@ -87,7 +95,7 @@ test("an avatar uploads and is removed; a file that is no image is refused", asy
 
 test("the email changes after the confirmation mail, and the new address signs in", async () => {
   const newEmail = qaAddress(currentRunId(), "settings2");
-  const since = Date.now();
+  const since = new Date();
   await openSettings(page, "account");
   await page.getByLabel("New email address").fill(newEmail);
   await page.getByRole("button", { name: "Change email" }).click();
@@ -105,7 +113,7 @@ test("the email changes after the confirmation mail, and the new address signs i
     false
   );
   const confirmLink = confirm.links.find((href) => href.includes("/api/auth/"));
-  const confirmed = Date.now();
+  const confirmed = new Date();
   await page.goto(confirmLink as string);
   const verify = await inbox
     .waitFor({
@@ -125,7 +133,7 @@ test("the email changes after the confirmation mail, and the new address signs i
   await expect(page.getByText(newEmail).first()).toBeVisible();
   account.email = newEmail;
   await signOut(page);
-  await signIn(page, account);
+  await signInAs(page, account);
 });
 
 test("sessions: another browser's session is listed and signed out from here", async ({
@@ -136,7 +144,7 @@ test("sessions: another browser's session is listed and signed out from here", a
       "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0 QA",
   });
   try {
-    await signIn(other, account);
+    await signInAs(other, account);
     await openSettings(page, "security");
     const signOutOther = page.getByRole("button", {
       name: "Sign out session",

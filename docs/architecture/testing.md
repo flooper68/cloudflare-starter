@@ -41,8 +41,7 @@ The `web-api` project disables Vitest's filesystem module cache (`fsModuleCache:
 
 ### Production QA journeys
 
-- `bun run test:qa -- --base-url <url>` runs `apps/web/test/qa/*.qa.ts` (`apps/web/playwright.qa.config.ts`, project `qa`): the [scripted feature QA](../guides/how-to-qa-a-deployment.md) as journeys against a deployed environment, each creating its own `qa-<runId>-<role>@<QA_EMAIL_DOMAIN>` accounts through the real sign-up and mail link; the global teardown erases the run's accounts. It needs the QA variables (token, test inbox, email domain); without them every journey skips, so it never fails a PR. Not part of CI.
-- Every `/api/auth/*` request is paced to the app's own per-IP limits across workers (`support/limits.ts`); no traces and no page snapshots are kept, since they would record typed passwords. Map, skips and the run's sign-up and mail budget: [apps/web/test/qa/README.md](../../apps/web/test/qa/README.md).
+- `bun run test:qa -- --base-url <url>` runs the QA suite (`apps/web/test/qa/*.qa.ts`, project `qa` of `apps/web/playwright.qa.config.ts`) against a deployed app: [the checklist](../guides/how-to-qa-a-deployment.md#the-checklist) as journeys with their own QA accounts, mail through the QA inbox, every account erased afterwards. Without the QA variables every journey skips. Which file covers which section, the skips and the run's sign-up and mail budget: [apps/web/test/qa/README.md](../../apps/web/test/qa/README.md).
 
 ### Production smoke
 

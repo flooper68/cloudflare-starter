@@ -1,13 +1,13 @@
-import { createVerifiedAccount } from "./support/accounts";
+import { createVerifiedAccount } from "./support";
 import { tinyPng } from "./support/files";
-import { displayName, open } from "./support/session";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { displayName, open } from "./support/session";
 
 // Checklist: Trash (delete, restore, purge). One account, the owner of its workspace.
 // "A member cannot delete forever" needs a second account and is covered by the API

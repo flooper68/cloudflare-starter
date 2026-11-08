@@ -1,12 +1,12 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { open } from "./support/session";
+import { createVerifiedAccount } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { open } from "./support/session";
 
 // Checklist: Dashboard and system screens. One account: the Get started list, the in-app
 // 404 and the offline notice (emulated with the browser context offline). The member's

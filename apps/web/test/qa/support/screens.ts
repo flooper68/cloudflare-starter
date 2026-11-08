@@ -6,7 +6,7 @@
  */
 import type { Page, TestInfo } from "@playwright/test";
 
-import { expect } from "./fixture";
+import { expect } from "./index";
 
 export const VIEWPORTS = {
   "1440": { width: 1440, height: 900 },

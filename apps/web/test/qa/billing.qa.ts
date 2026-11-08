@@ -1,12 +1,12 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { open } from "./support/session";
+import { createVerifiedAccount } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { open } from "./support/session";
 
 // Checklist: Billing, as the workspace owner sees it in manual mode (production runs
 // BILLING=manual). The admin's plan, add-on and override changes are in admin.qa.ts.

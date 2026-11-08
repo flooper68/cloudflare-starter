@@ -1,13 +1,13 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { expectMail } from "./support/mail";
-import { open } from "./support/session";
+import { createVerifiedAccount } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { expectMail } from "./support/mail";
+import { open } from "./support/session";
 
 // Checklist: Demos (queue and email). One account; the test email goes to its own QA
 // address (the demo sends to the signed-in address only).
@@ -54,8 +54,14 @@ test("the queue demo enqueues a hello job", async () => {
 
 test("the email demo sends the test email to the signed-in QA address", async () => {
   await open(page, "/app/email-demo");
-  const since = Date.now();
+  const since = new Date();
   await page.getByRole("button", { name: "Send test email" }).click();
   await expect(page.getByText(/^Email sent\./)).toBeVisible();
-  await expectMail(email, /^\[[a-z]+\] Starter kit test email$/, since, false);
+  await expectMail(
+    email,
+    /^\[[a-z]+\] Starter kit test email$/,
+    since,
+    false,
+    "Starter kit test email"
+  );
 });

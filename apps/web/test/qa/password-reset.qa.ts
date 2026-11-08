@@ -1,21 +1,22 @@
-import { createVerifiedAccount, generatePassword } from "./support/accounts";
-import { qaAddress } from "./support/env";
-import { currentRunId } from "./support/fixture";
-import { expectMail, linkTo } from "./support/mail";
-import {
-  type Account,
-  open,
-  signIn,
-  signOut,
-  submitSignIn,
-} from "./support/session";
+import { randomBytes } from "node:crypto";
+import { createVerifiedAccount, currentRunId, qaAddress } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { expectMail, linkTo } from "./support/mail";
+import {
+  type Account,
+  AUTH_WAIT,
+  open,
+  openSettings,
+  signInAs,
+  signOut,
+  submitSignIn,
+} from "./support/session";
 
 // Checklist: Password reset. One account: the same answer for an address with no
 // account, the reset mail and its link (once), the changed-password notice, and the old
@@ -27,7 +28,7 @@ let page: Page;
 let account: Account;
 let resetLink: string;
 let oldPassword: string;
-const newPassword = generatePassword();
+const newPassword = `${randomBytes(18).toString("base64url")}-Qa1`;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
@@ -57,7 +58,7 @@ test("the reset page answers the same whether or not the account exists", async 
 });
 
 test("the reset mail's link sets a new password", async () => {
-  const since = Date.now();
+  const since = new Date();
   await requestReset(account.email);
   const mail = await expectMail(
     account.email,
@@ -71,7 +72,7 @@ test("the reset mail's link sets a new password", async () => {
   await expect(
     page.getByRole("heading", { name: "Choose a new password" })
   ).toBeVisible();
-  const changed = Date.now();
+  const changed = new Date();
   await page.getByLabel("New password", { exact: true }).fill(newPassword);
   await page.getByLabel("Confirm new password").fill(newPassword);
   await page.getByRole("button", { name: "Reset password" }).click();
@@ -107,9 +108,21 @@ test("the old password is refused, the new one signs in, and the notice is in th
   } finally {
     await fresh.context().close();
   }
-  await signIn(page, account);
+  await signInAs(page, account);
   await open(page, "/app/notifications");
   await expect(page.getByRole("list", { name: "Notifications" })).toContainText(
     "Your password was changed"
   );
+});
+
+test("afterwards: the suite's password again, so the run's cleanup can sign in", async () => {
+  await openSettings(page, "security");
+  await page.getByLabel("Current password").fill(account.password);
+  await page.getByLabel("New password", { exact: true }).fill(oldPassword);
+  await page.getByLabel("Confirm new password").fill(oldPassword);
+  await page.getByRole("button", { name: "Update password" }).click();
+  await expect(page.getByText(/Password updated/)).toBeVisible({
+    timeout: AUTH_WAIT,
+  });
+  account.password = oldPassword;
 });

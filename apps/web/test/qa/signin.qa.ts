@@ -1,21 +1,19 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { qaAddress } from "./support/env";
-import { currentRunId } from "./support/fixture";
-import { expectMail } from "./support/mail";
-import {
-  type Account,
-  open,
-  signIn,
-  signOut,
-  submitSignIn,
-} from "./support/session";
+import { createVerifiedAccount, currentRunId, qaAddress } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { expectMail } from "./support/mail";
+import {
+  type Account,
+  open,
+  signInAs,
+  signOut,
+  submitSignIn,
+} from "./support/session";
 
 // Checklist: Sign-in and sign-out. One account: sign out, a refused wrong password with
 // the same answer as for an address that has no account, the right password, and the
@@ -59,7 +57,7 @@ test("a wrong password is refused with no hint whether the address exists", asyn
 });
 
 test("the right password signs in to the dashboard", async () => {
-  await signIn(page, account);
+  await signInAs(page, account);
 });
 
 test("a sign-in from another browser sends New sign-in to your account", async ({
@@ -76,8 +74,8 @@ test("a sign-in from another browser sends New sign-in to your account", async (
       "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0 QA",
   });
   try {
-    const since = Date.now();
-    await signIn(other, account);
+    const since = new Date();
+    await signInAs(other, account);
     await expectMail(
       account.email,
       "New sign-in to your account",

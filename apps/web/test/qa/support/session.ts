@@ -1,15 +1,16 @@
 /**
- * The app's navigation as the QA journeys use it, in one place: signing in and out,
- * opening settings, the workspace switcher and the few tRPC calls the UI has no control
- * for. When the shell's menus move, only
- * this file changes.
+ * The app's navigation as the checklist journeys use it, built on the suite's `open`,
+ * `signIn` and `callApp` (index.ts), in one place: sign-in with a rate-limit-aware wait,
+ * signing out through the profile menu, settings, the workspace switcher. When the shell's
+ * menus move, only this file changes.
  */
 import type { Page } from "@playwright/test";
 
 import { openProfileMenu } from "../../e2e/helpers";
-import { qaEnv } from "./env";
-import { expect } from "./fixture";
+import { expect, open, QA_TOKEN_HEADER, qaEnv } from "./index";
 import { authPolicies, takeSlots } from "./limits";
+
+export { callApp, open } from "./index";
 
 /**
  * How long a step that calls /api/auth may take: its request can wait for a rate-limit
@@ -21,12 +22,6 @@ export const AUTH_WAIT = 150_000;
 export interface Account {
   email: string;
   password: string;
-}
-
-/** Opens a page and waits until its React islands have hydrated. */
-export async function open(page: Page, path: string): Promise<void> {
-  await page.goto(path);
-  await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
 }
 
 /** Fills and submits the sign-in form; the caller checks the outcome. */
@@ -42,7 +37,7 @@ export async function submitSignIn(
 }
 
 /** Signs in with the password and lands on `landing` (the dashboard by default). */
-export async function signIn(
+export async function signInAs(
   page: Page,
   account: Account,
   landing: RegExp = /\/app\/dashboard$/
@@ -51,7 +46,7 @@ export async function signIn(
   await expect(page).toHaveURL(landing, { timeout: AUTH_WAIT });
 }
 
-/** Signs out from the app shell's profile menu (the E2E suite's helper); lands on `/`. */
+/** Signs out through the profile menu (the E2E suite's helper); lands on `/`. */
 export async function signOut(page: Page): Promise<void> {
   if (!new URL(page.url()).pathname.startsWith("/app")) {
     await open(page, "/app/dashboard");
@@ -116,43 +111,13 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Headers of an API call made outside the page (page.request): origin and QA token. */
+/** Headers of a call made outside the page (page.request): origin and QA token. */
 export function apiHeaders(): Record<string, string> {
-  const { baseUrl, qaToken } = qaEnv();
-  return { origin: baseUrl, "x-qa-token": qaToken };
+  const { baseURL, token } = qaEnv();
+  return { origin: baseURL, [QA_TOKEN_HEADER]: token };
 }
 
-/**
- * Calls a tRPC procedure as the page's signed-in person, the way the app's client does
- * (`x-trpc-source: app`). Only for actions the UI has no control for.
- */
-export async function trpc<T>(
-  page: Page,
-  path: string,
-  input: unknown,
-  kind: "query" | "mutation" = "mutation"
-): Promise<T> {
-  const headers = { ...apiHeaders(), "x-trpc-source": "app" };
-  const response =
-    kind === "query"
-      ? await page.request.get(
-          `/api/trpc/${path}?input=${encodeURIComponent(JSON.stringify(input))}`,
-          { headers }
-        )
-      : await page.request.post(`/api/trpc/${path}`, { headers, data: input });
-  const body = (await response.json()) as {
-    result?: { data: T };
-    error?: { message?: string };
-  };
-  if (!response.ok() || !body.result) {
-    throw new Error(
-      `tRPC ${path} answered ${response.status()}: ${body.error?.message ?? ""}`
-    );
-  }
-  return body.result.data;
-}
-
-/** An /api/auth call outside the page, through the run's rate-limit slots. */
+/** An /api/auth call made outside the page takes its rate-limit slots first. */
 export async function authSlot(path: string): Promise<void> {
   await takeSlots(authPolicies(path));
 }

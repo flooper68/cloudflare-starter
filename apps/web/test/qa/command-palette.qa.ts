@@ -1,12 +1,12 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { createWorkspace, open } from "./support/session";
+import { createVerifiedAccount } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { createWorkspace, open } from "./support/session";
 
 // Checklist: Command palette. One account, an owner. The member's view (no workspace
 // settings, no invite, no admin) is in workspaces.qa.ts, where a member exists; the

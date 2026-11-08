@@ -1,21 +1,21 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { expectMail, linkTo } from "./support/mail";
-import {
-  type Account,
-  createWorkspace,
-  displayName,
-  open,
-  switchWorkspace,
-  trpc,
-  workspaceMenu,
-} from "./support/session";
+import { createVerifiedAccount } from "./support";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { expectMail, linkTo } from "./support/mail";
+import {
+  type Account,
+  callApp,
+  createWorkspace,
+  displayName,
+  open,
+  switchWorkspace,
+  workspaceMenu,
+} from "./support/session";
 
 // Checklist: Workspaces (create, switch, invite, accept, roles, leave, transfer). Two
 // accounts, A (owner) and B (invitee). Also covers, because only this file has a member:
@@ -40,8 +40,8 @@ const shared = `QA ${process.env.QA_RUN_ID ?? "run"} shared`;
 test.beforeAll(async ({ browser }) => {
   a = await newUserPage(browser);
   b = await newUserPage(browser);
-  accountA = { ...(await createVerifiedAccount(a, { role: "ws-owner" })) };
-  accountB = { ...(await createVerifiedAccount(b, { role: "ws-member" })) };
+  accountA = { ...(await createVerifiedAccount(a, { role: "wsowner" })) };
+  accountB = { ...(await createVerifiedAccount(b, { role: "wsmember" })) };
   nameA = await displayName(a);
   nameB = await displayName(b);
 });
@@ -74,7 +74,7 @@ test("A creates the shared workspace and switches between it and the personal on
 
 test("A invites B by mail as a member; B accepts from the mail's link", async () => {
   await open(a, "/app/members");
-  const since = Date.now();
+  const since = new Date();
   await a.getByRole("button", { name: "Invite people" }).click();
   const dialog = a.getByRole("dialog", { name: "Invite people" });
   await dialog.getByLabel("Email").fill(accountB.email);
@@ -97,7 +97,7 @@ test("A invites B by mail as a member; B accepts from the mail's link", async ()
   ).toHaveCount(0);
   await b.keyboard.press("Escape");
 
-  const joined = Date.now();
+  const joined = new Date();
   await b.goto(linkTo(invitation, "/invite/"));
   await expect(b.locator("astro-island[ssr]")).toHaveCount(0);
   await expect(
@@ -160,7 +160,7 @@ test("B's command palette lists no workspace settings, no invite and no admin", 
 });
 
 test("A makes B an owner: the Members page shows it at once and B is told", async () => {
-  const since = Date.now();
+  const since = new Date();
   const row = await memberRow(a, accountB.email);
   await row.getByRole("combobox", { name: `Role of ${nameB}` }).click();
   await a.getByRole("option", { name: "Owner", exact: true }).click();
@@ -185,12 +185,9 @@ test("A makes B an owner: the Members page shows it at once and B is told", asyn
 test("A transfers ownership to B, and B transfers it back", async () => {
   const members = async (page: Page) =>
     (
-      await trpc<{ items: { userId: string; email: string; role: string }[] }>(
-        page,
-        "workspace.members.list",
-        {},
-        "query"
-      )
+      await callApp<{
+        items: { userId: string; email: string; role: string }[];
+      }>(page, "query", "workspace.members.list", {})
     ).items;
   const idOf = async (page: Page, email: string) => {
     const member = (await members(page)).find((item) => item.email === email);
@@ -198,14 +195,14 @@ test("A transfers ownership to B, and B transfers it back", async () => {
     return member.userId;
   };
 
-  await trpc(a, "workspace.transferOwnership", {
+  await callApp(a, "mutation", "workspace.transferOwnership", {
     userId: await idOf(a, accountB.email),
   });
   let roles = await members(a);
   expect(roles.find((m) => m.email === accountB.email)?.role).toBe("owner");
   expect(roles.find((m) => m.email === accountA.email)?.role).toBe("member");
 
-  await trpc(b, "workspace.transferOwnership", {
+  await callApp(b, "mutation", "workspace.transferOwnership", {
     userId: await idOf(b, accountA.email),
   });
   roles = await members(a);
@@ -220,7 +217,7 @@ test("A transfers ownership to B, and B transfers it back", async () => {
 test("B leaves: B no longer sees the workspace and A's Members page no longer lists B", async () => {
   await open(b, "/app/dashboard");
   await expect(workspaceMenu(b, shared)).toBeVisible();
-  await trpc(b, "workspace.leave", {});
+  await callApp(b, "mutation", "workspace.leave", {});
   await open(b, "/app/dashboard");
   await workspaceMenu(b).click();
   await expect(

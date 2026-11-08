@@ -1,14 +1,14 @@
-import { createVerifiedAccount } from "./support/accounts";
-import { QA_ADMIN_SKIP, qaAdmin } from "./support/admin";
+import { createVerifiedAccount } from "./support";
+import { QA_ADMIN_SKIP, signInQaAdmin } from "./support/admin";
 import { tinyPng } from "./support/files";
-import { createWorkspace, open } from "./support/session";
 import {
   expect,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
   test,
-} from "./support/test";
+} from "./support/journey";
+import { createWorkspace, open } from "./support/session";
 
 // Checklist: Files (both upload paths and limits). One account, in a workspace of its
 // own. Small generated files only (a few dozen bytes). The limit step needs the QA admin
@@ -97,7 +97,7 @@ test("over the storage limit an upload is refused before storing, with an upgrad
 }) => {
   const adminPage = await newUserPage(browser);
   try {
-    const { isAdmin } = await qaAdmin(adminPage);
+    const isAdmin = await signInQaAdmin(adminPage);
     test.skip(!isAdmin, QA_ADMIN_SKIP);
     // The admin gives this workspace a storage limit of 0 MB (an override, with a reason).
     await open(adminPage, "/admin/workspaces");

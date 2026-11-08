@@ -7,8 +7,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { Page } from "@playwright/test";
 
-import { qaEnv } from "./env";
-import { expect } from "./fixture";
+import { expect, QA_TOKEN_HEADER, qaEnv } from "./index";
 import { apiHeaders, authSlot, open } from "./session";
 
 const CALLBACK = "https://qa-client.example.test/oauth/callback";
@@ -24,8 +23,8 @@ export async function connectMcpClient(
   page: Page,
   clientName: string
 ): Promise<McpConnection> {
-  const { baseUrl } = qaEnv();
-  const resource = `${baseUrl}/mcp`;
+  const { baseURL } = qaEnv();
+  const resource = `${baseURL}/mcp`;
   await authSlot("/oauth2/register");
   const registered = await page.request.post("/api/auth/oauth2/register", {
     headers: apiHeaders(),
@@ -116,7 +115,7 @@ export async function callTool(
     headers: {
       authorization: `Bearer ${connection.accessToken}`,
       accept: "application/json, text/event-stream",
-      "x-qa-token": qaEnv().qaToken,
+      [QA_TOKEN_HEADER]: qaEnv().token,
     },
     data: {
       jsonrpc: "2.0",
