@@ -26,7 +26,7 @@ import {
 
 // Checklist: Settings (profile, avatar, email change, sessions, connected accounts,
 // appearance). One account; the email change moves it to a second run address
-// (qa-<runId>-settings2@…), which the run's cleanup erases too.
+// (qa+<runId>-settings2@…), which the run's cleanup erases too.
 skipWithoutQaEnv();
 test.describe.configure({ mode: "serial" });
 

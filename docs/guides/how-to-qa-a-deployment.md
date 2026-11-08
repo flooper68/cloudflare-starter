@@ -104,13 +104,13 @@ The workflow **QA** ([.github/workflows/qa.yml](../../.github/workflows/qa.yml))
 
 Secrets, in the GitHub environment `qa` (Settings › Environments › New environment `qa`; deployment branches: `main` only; no required reviewers, so it runs unattended):
 
-| Secret              | Value                                                                                    |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| `QA_TOKEN`          | The same value as the production Worker secret `QA_TOKEN` (`openssl rand -hex 32`)       |
-| `QA_INBOX_URL`      | The inbox Worker's URL, e.g. `https://cloudflare-starter-qa-inbox.<account>.workers.dev` |
-| `QA_INBOX_TOKEN`    | The same value as the inbox Worker secret `QA_INBOX_TOKEN`                               |
-| `QA_ADMIN_EMAIL`    | The QA admin's address (cleanup only), e.g. `qa+admin@qa.flooper.me`                     |
-| `QA_ADMIN_PASSWORD` | The QA admin's password (cleanup only)                                                   |
+| Secret              | Value                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------- |
+| `QA_TOKEN`          | The same value as the production Worker secret `QA_TOKEN` (`openssl rand -hex 32`)                 |
+| `QA_INBOX_URL`      | The inbox Worker's URL, e.g. `https://cloudflare-starter-qa-inbox.<account>.workers.dev`           |
+| `QA_INBOX_TOKEN`    | The same value as the inbox Worker secret `QA_INBOX_TOKEN`                                         |
+| `QA_ADMIN_EMAIL`    | The QA admin's address (the nightly cleanup and the admin journeys), e.g. `qa+admin@qa.flooper.me` |
+| `QA_ADMIN_PASSWORD` | The QA admin's password (the same)                                                                 |
 
 ### Nightly cleanup
 
