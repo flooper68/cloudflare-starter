@@ -74,6 +74,23 @@ async function demoAccount(email: string, days: number) {
   return user;
 }
 
+/**
+ * A QA suite account, inserted directly: sign-up refuses QA addresses without the QA
+ * bypass (QA_ADDRESS_RESERVED), and the suite's own accounts are not what is tested here.
+ */
+async function qaAccount(email: string, days: number) {
+  const id = `user-${email}`;
+  const created = Date.now() - days * DAY;
+  await sql(
+    "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, 'QA', ?, 1, ?, ?)",
+    id,
+    email,
+    created,
+    created
+  );
+  return { id };
+}
+
 async function exists(userId: string) {
   return (await all("SELECT id FROM user WHERE id = ?", userId)).length === 1;
 }
@@ -113,7 +130,7 @@ describe("demo mode in the Worker", () => {
     const visitor = await demoAccount("expired@demo.test", 10);
     const kept = [
       await demoAccount("keep@demo.test", 30),
-      await demoAccount("qa+run-1@qa.flooper.me", 30),
+      await qaAccount("qa+run-1@qa.flooper.me", 30),
     ];
     const first = new Date(Date.now() - DAY - 60_000).toISOString();
 
