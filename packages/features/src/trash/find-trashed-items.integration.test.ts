@@ -46,7 +46,9 @@ describe("findTrashedItems", () => {
       new TrashItemNotFoundError({ type: "file", id: live.fileId })
     );
     await expect(
-      findTrashedItems(deps(), actor, { items: [{ type: "note", id: "1" }] })
+      findTrashedItems(deps(), actor, {
+        items: [{ type: "invoice" as "file", id: "1" }],
+      })
     ).rejects.toThrow(InvalidTrashInputError);
   });
 });

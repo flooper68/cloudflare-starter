@@ -5,12 +5,14 @@
 // client-sent name is here. Guide: docs/guides/how-to-setup-product-analytics.md
 import { signedUpEvent } from "./accounts";
 import { fileUploadedEvent } from "./files";
+import { noteCreatedEvent } from "./notes";
 import { createEventCatalog, pageViewedEvent } from "./product-analytics";
 import { memberJoinedEvent, workspaceCreatedEvent } from "./workspaces";
 
 export const analyticsEvents = createEventCatalog([
   signedUpEvent,
   fileUploadedEvent,
+  noteCreatedEvent,
   workspaceCreatedEvent,
   memberJoinedEvent,
   pageViewedEvent,

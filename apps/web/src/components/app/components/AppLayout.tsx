@@ -33,6 +33,8 @@ const titles: Record<string, string> = {
   "/app/members": "Members",
   "/app/billing": "Billing",
   "/app/trash": "Trash",
+  "/app/notes": "Notes",
+  "/app/tasks": "Tasks",
   "/app/demos": "Developer demos",
   "/app/upload-demo": "Upload demo",
   "/app/queue-demo": "Queue demo",
@@ -131,7 +133,8 @@ export function AppLayout() {
       <AppTopBar
         title={
           <span className="truncate text-sm font-medium text-fg">
-            {titles[pathname] ?? "Not found"}
+            {titles[pathname] ??
+              (pathname.startsWith("/app/notes/") ? "Note" : "Not found")}
           </span>
         }
         actions={<NotificationBellMenu />}

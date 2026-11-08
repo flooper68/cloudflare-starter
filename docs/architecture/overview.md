@@ -232,6 +232,9 @@ packages/features/src/
 ├── billing/                     plans, add-ons, features, limits: catalog in domain/, entitlements,
 │                                usage counters, trials (job billing.expire-trials), admin changes, provider events
 ├── health/                      readiness checks behind /health/ready: outcome rules and probes
+├── notes/                       the placeholder Notes app, the worked example of a feature added end to
+│                                end (docs/guides/how-to-add-a-feature.md): notes and comments
+│                                (notes.schema.ts), the `notes` limit, trash entity, audit and product events
 ├── greetings/                   the job demo: helloJob, sendHello (enqueue), sayHello (handler)
 ├── privacy/                     data exports (job privacy.build-export, Zip port, signed downloads, purge
 │                                job privacy.purge-exports) and account erasure (preflight, erasure lock,
@@ -459,6 +462,7 @@ Do not cite these as precedent until they are closed. None today. When the code 
 | How work is planned, reviewed and shipped     | [processes/development.md](../processes/development.md), [processes/code-review.md](../processes/code-review.md)                                                                               |
 | Trash, soft delete, retention of deleted data | [how-to-use-trash.md](../guides/how-to-use-trash.md), `packages/features/src/trash-catalog.ts`                                                                                                 |
 | Orphaned R2 objects, storage reconciliation   | [how-to-use-trash.md](../guides/how-to-use-trash.md#optional-storage-reconciliation), [Storage reconciliation](#storage-reconciliation)                                                        |
+| A new product feature (end to end)            | [how-to-add-a-feature.md](../guides/how-to-add-a-feature.md), `packages/features/src/notes/`                                                                                                   |
 | Health endpoints, uptime monitors             | [how-to-monitor-health.md](../guides/how-to-monitor-health.md), `apps/web/src/server/health.ts`                                                                                                |
 | Docs site, public pages, 404                  | [how-to-publish-docs-and-landing.md](../guides/how-to-publish-docs-and-landing.md), [Public pages](#public-pages), `apps/web/src/docs/docs.config.ts`                                          |
 
@@ -466,7 +470,7 @@ Do not cite these as precedent until they are closed. None today. When the code 
 
 Each list is the minimum; [testing.md](testing.md#change--required-test) names the tests and the [review checklist 5](../processes/code-review.md#5-documentation-and-retrievable-context) the docs.
 
-**A feature**
+**A feature** (worked example: Notes, [how-to-add-a-feature.md](../guides/how-to-add-a-feature.md))
 
 - [ ] `packages/features/src/<feature>/` with `index.ts`, `domain/` (with its own `index.ts`), use-case files, `<feature>.schema.ts` if it has tables.
 - [ ] Re-exported from `packages/features/src/index.ts`.

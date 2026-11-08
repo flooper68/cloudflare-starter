@@ -23,6 +23,7 @@ import {
   router,
   workspaceProcedure,
 } from "./init";
+import { notesRouter } from "./notes-router";
 import { notificationsRouter } from "./notifications-router";
 import { privacyRouter } from "./privacy-router";
 import { requireFeature } from "./require-feature";
@@ -85,6 +86,9 @@ export const appRouter = router({
   }),
 
   trash: trashRouter,
+
+  // The placeholder Notes app (docs/guides/how-to-add-a-feature.md).
+  notes: notesRouter,
 
   queue: router({
     enqueueHello: protectedProcedure
