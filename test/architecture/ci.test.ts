@@ -1,6 +1,6 @@
 /**
  * CI safety rules for a public repository with optional self-hosted runners
- * (docs/guides/how-to-setup-ci.md#security):
+ * (docs/reference/ci.md#security):
  * - every CI job picks its runner with CI_RUNS_ON behind the fork guard, so a fork's pull
  *   request never reaches a self-hosted runner;
  * - no workflow uses pull_request_target; the deploy only starts by hand;

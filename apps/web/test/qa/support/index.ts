@@ -1,5 +1,5 @@
 // The automated QA suite's helpers: the contract journeys under apps/web/test/qa/ code
-// against. docs/guides/how-to-qa-a-deployment.md#writing-a-journey
+// against. apps/web/test/qa/README.md#writing-a-journey
 export {
   cleanupRun,
   createVerifiedAccount,

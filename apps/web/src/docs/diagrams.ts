@@ -8,7 +8,7 @@
  * (`style-src 'unsafe-inline'`), and an SVG never runs script here: one with a
  * `<script>`, an event handler or a `javascript:` URL is refused.
  * Pure, so the Markdown plugin (markdown-plugins.ts) and its test share it.
- * docs/guides/how-to-publish-docs-and-landing.md#diagrams
+ * docs/reference/docs-site.md#diagrams
  */
 import { parseRepoLink } from "./links";
 

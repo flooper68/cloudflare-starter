@@ -19,7 +19,7 @@
           "env": "all",
           "path": ["vars", "QA_BYPASS"],
           "value": "off",
-          "comment": "The QA suite's bypass of the human check and its mail outbox (required: on | off;\ndocs/guides/how-to-configure-abuse-protection.md#qa-bypass). off: this project runs no QA suite."
+          "comment": "The QA suite's bypass of the human check and its mail outbox (required: on | off;\ndocs/reference/abuse-protection.md#qa-bypass). off: this project runs no QA suite."
         },
         {
           "env": "all",
@@ -56,44 +56,31 @@
           "action": "replace",
           "heading": "How to QA a deployment",
           "intro": true,
-          "content": "# How to QA a deployment\n\nThe checks of a deployed environment and the checklist to run on it. Use when you release to production or staging, or after a change to auth, email, workspaces, billing, notifications, storage, privacy or the admin portal.\n\nQuality on a deployment has three layers:\n\n| Layer            | What                                                                                              | Where                                                                                     | Who        |\n| ---------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------- |\n| Automated E2E    | Every critical journey against `astro dev` with local bindings                                    | `bun run test:e2e` locally and in CI ([testing.md](../architecture/testing.md#e2e-tests)) | CI         |\n| Production smoke | What a signed-out visitor sees: pages, redirects, endpoints, headers, axe in both themes, console | `bun run test:smoke -- --env production`; the Deploy workflow runs it after every deploy  | CI, anyone |\n| Checklist        | [The checklist](#the-checklist) below: every feature with real accounts and real mail             | by hand, on the deployment, after a release                                               | a person   |\n\nThe smoke suite never signs up and never writes (it aborts any non-GET request to the app). Everything that needs an account is the checklist's."
+          "content": "# How to QA a deployment\n\nThe checks of a deployed environment. Use when you release to production or staging, or after a change to auth, email, workspaces, billing, notifications, storage, privacy or the admin portal.\n\n| Layer            | What                                                                       | Run                                                          |\n| ---------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------ |\n| Browser journeys | Every critical journey against a local dev server                          | `bun run test:e2e`, in CI on every pull request              |\n| Production smoke | Pages, redirects, endpoints, headers, accessibility, signed out, read-only | `bun run test:smoke -- --env production`, after every deploy |\n| Checklist        | Every feature with real accounts and real mail, by hand                    | [the checklist](#the-checklist) below, after a release       |"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "replace",
+          "heading": "The automated suite",
+          "content": "## The checklist\n\nWalk each feature on the deployment as a person would, with an account at a mailbox you can read and a second account (B) in a separate browser profile. For each: do it, check the result and the mail it sends, and record pass, fail (with the screenshot and the reference shown in the error) or N/A. For every mail: it arrived, the sender is the environment's `EMAIL_FROM`, links point at the environment's origin, and notifications carry `List-Unsubscribe`.\n\n| Feature                                         | Guide                                                                                                                              |\n| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |\n| Sign-up, verification, sign-in, password reset  | [how-to-setup-auth.md](how-to-setup-auth.md), [how-to-setup-email.md](how-to-setup-email.md)                                       |\n| Bot check and rate limits                       | [how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md)                                                       |\n| Two-factor and passkeys                         | [how-to-configure-account-security.md](how-to-configure-account-security.md)                                                       |\n| Workspaces, invitations and roles               | [how-to-configure-workspaces.md](how-to-configure-workspaces.md)                                                                   |\n| Settings                                        | [how-to-use-settings.md](how-to-use-settings.md)                                                                                   |\n| Files                                           | [how-to-setup-r2.md](how-to-setup-r2.md)                                                                                           |\n| Billing                                         | [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)                                                     |\n| Notifications                                   | [how-to-send-notifications.md](how-to-send-notifications.md)                                                                       |\n| Trash                                           | [how-to-use-trash.md](how-to-use-trash.md)                                                                                         |\n| Privacy: export and delete                      | [how-to-handle-data-privacy.md](how-to-handle-data-privacy.md)                                                                     |\n| Audit log                                       | [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)                                                                         |\n| Admin portal and feature flags                  | [how-to-use-admin-portal.md](how-to-use-admin-portal.md), [how-to-use-feature-flags.md](how-to-use-feature-flags.md)               |\n| Agents: connect Claude, call a tool, disconnect | [how-to-setup-mcp.md](how-to-setup-mcp.md)                                                                                         |\n| Your features, the command palette              | [how-to-add-a-feature.md](how-to-add-a-feature.md)                                                                                 |\n| Background jobs and email                       | [how-to-add-background-jobs.md](how-to-add-background-jobs.md)                                                                     |\n| Landing, docs and search                        | [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md), [how-to-define-branding.md](how-to-define-branding.md)   |\n| Health and security headers                     | [how-to-monitor-health.md](how-to-monitor-health.md), [how-to-configure-security-headers.md](how-to-configure-security-headers.md) |\n| Public demo, if you turn it on                  | [how-to-run-a-public-demo.md](how-to-run-a-public-demo.md)                                                                         |\n\nFinish by deleting the accounts you created (Settings › Privacy › **Delete account**), never with SQL.\n\n`test/architecture/qa-checklist.test.ts` fails when a guide in `docs/guides/` is neither linked from this checklist nor exempt with a reason."
         },
         {
           "file": "docs/guides/how-to-qa-a-deployment.md",
           "action": "remove",
-          "heading": "The automated suite"
+          "heading": "Read a failure"
         },
         {
           "file": "docs/guides/how-to-qa-a-deployment.md",
           "action": "remove",
-          "heading": "CI"
+          "heading": "Checks only a person can do"
         },
         {
           "file": "docs/guides/how-to-qa-a-deployment.md",
-          "action": "replace",
-          "heading": "The checklist",
-          "intro": true,
-          "content": "## The checklist\n\nEach section is what to do on the deployment, the expected result and the mail it causes. Use accounts at a mailbox you can read; a second account (B) works in a separate browser profile. Record each section in the [run record](#run-record) as pass, fail (with the screenshot and the reference/trace id shown in the error) or N/A (with the reason).\n\nFor every mail: it arrived, the sender is the environment's `EMAIL_FROM`, the subject, links point at the environment's origin, and (for notifications) the `List-Unsubscribe` and `List-Unsubscribe-Post` headers."
+          "action": "remove",
+          "heading": "Reference"
         },
         {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "action": "replace",
-          "heading": "Cleanup",
-          "content": "### Cleanup\n\nErase the accounts the run created: as each account, delete the shared workspaces it owns, then Settings → Privacy → **Delete account**. Never delete users with SQL: it skips the erasure of their files, exports and avatars ([how-to-handle-data-privacy.md](how-to-handle-data-privacy.md#erasure-and-retained-data)).\n\nMail: **Your account was deleted** (to each account)."
-        },
-        {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "action": "replace",
-          "heading": "Keeping it current",
-          "content": "## Keeping it current\n\n`test/architecture/qa-checklist.test.ts` fails when a guide in `docs/guides/` is neither linked from this checklist nor exempt with a reason (setup, operations or build-time guides). A new user-facing feature gets a section here with steps, the expected result and the mail it sends."
-        },
-        {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "action": "rewrite",
-          "note": "the checklist sections still name the starter's QA addresses (qa+<runId>-a@qa.flooper.me); read them as your own test accounts, or rewrite them"
-        },
-        {
-          "file": "docs/guides/how-to-setup-ci.md",
+          "file": "docs/reference/ci.md",
           "action": "remove",
           "heading": "4. The QA environment"
         }
@@ -108,11 +95,6 @@
           "replace": " Features that need an account are the QA checklist in [how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md)."
         },
         {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "find": "[human-only check](#the-automated-suite)",
-          "replace": "check by hand"
-        },
-        {
           "file": "CHANGELOG.md",
           "find": "[apps/web/test/qa/README.md](apps/web/test/qa/README.md)",
           "replace": "`apps/web/test/qa/README.md`"
@@ -124,19 +106,9 @@
           "line": true
         },
         {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "how-to-qa-a-deployment.md#ci)",
-          "replace": "how-to-qa-a-deployment.md)"
-        },
-        {
           "file": "test/architecture/qa-checklist.test.ts",
-          "find": "  \"how-to-setup-web-app.md\": \"first-time local setup and deploy steps\",\n  \"how-to-start-a-project.md\":",
-          "replace": "  \"how-to-setup-web-app.md\": \"first-time local setup and deploy steps\",\n  \"how-to-setup-d1.md\": \"database creation and migrations; no UI\",\n  \"how-to-start-a-project.md\":"
-        },
-        {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "find": "[weekly delivery check](#weekly-delivery-check)",
-          "replace": "weekly delivery check of the QA workflow"
+          "find": "\"the checklist itself\",\n  \"how-to-start-a-project.md\":",
+          "replace": "\"the checklist itself\",\n  \"how-to-setup-d1.md\": \"database creation and migrations; no UI\",\n  \"how-to-start-a-project.md\":"
         },
         {
           "file": "test/architecture/api-test-bindings.test.ts",
@@ -171,15 +143,9 @@
       ],
       "text": [
         {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "find": "[apps/web/test/qa/README.md](../../apps/web/test/qa/README.md)",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "CHANGELOG.md",
-          "find": "[apps/web/test/qa/README.md](apps/web/test/qa/README.md)",
-          "replace": "`apps/web/test/qa/README.md`"
+          "file": "docs/architecture/overview.md",
+          "find": "(../../apps/web/test/qa/README.md#the-qa-outbox)",
+          "replace": "(../guides/how-to-qa-a-deployment.md)"
         }
       ]
     },
@@ -199,7 +165,7 @@
               "custom_domain": true
             }
           ],
-          "comment": "Served only on its custom domain: replace app.example.com with the project's hostname\n(the zone must be in this account; docs/guides/how-to-setup-web-app.md#deploy). The\nAPP_URL secret of this environment is https:// plus that hostname."
+          "comment": "Served only on its custom domain: replace app.example.com with the project's hostname\n(the zone must be in this account; docs/reference/deployment.md#deploy). The\nAPP_URL secret of this environment is https:// plus that hostname."
         },
         {
           "env": "production",
@@ -293,7 +259,7 @@
       ],
       "docs": [
         {
-          "file": "docs/guides/how-to-setup-web-app.md",
+          "file": "docs/reference/deployment.md",
           "action": "rewrite",
           "note": "examples name starter.flooper.me; they are examples, replace them with your hostname when you like"
         }
@@ -341,7 +307,7 @@
         {
           "file": "docs/processes/dependencies.md",
           "find": "../../README.md#starting-a-new-project-from-this-starter",
-          "replace": "../guides/how-to-start-a-project.md#1-create-the-repository-from-the-template"
+          "replace": "../reference/start-a-project.md#1-create-the-repository-from-the-template"
         },
         {
           "file": "docs/processes/dependencies.md",
@@ -380,7 +346,7 @@
         }
       ],
       "manual": [
-        "Replace the landing page at / with the product's: docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page (its copy, apps/web/src/landing/content.ts, and the feature list there describe the starter).",
+        "Replace the landing page at / with the product's: docs/reference/docs-site.md#replace-the-landing-page (its copy, apps/web/src/landing/content.ts, and the feature list there describe the starter).",
         "Decide what /docs becomes: keep publishing the repository's docs, point DOCS.sources at product docs, or remove it (same guide)."
       ]
     },
@@ -391,7 +357,7 @@
       "status": "active",
       "default": true,
       "manual": [
-        "Replace the home page with the product's: the copy and feature data in apps/web/src/landing/content.ts, the sections of apps/web/src/pages/index.astro and its components (HeroScene.astro, FeatureMap.astro), and apps/web/test/e2e-build/landing.spec.ts with them (docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page)."
+        "Replace the home page with the product's: the copy and feature data in apps/web/src/landing/content.ts, the sections of apps/web/src/pages/index.astro and its components (HeroScene.astro, FeatureMap.astro), and apps/web/test/e2e-build/landing.spec.ts with them (docs/reference/docs-site.md#replace-the-landing-page)."
       ],
       "docs": [
         {
@@ -559,13 +525,13 @@
       ],
       "docs": [
         {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "file": "apps/web/test/qa/README.md",
           "action": "replace",
           "heading": "Demos: queue and email",
-          "content": "### Background jobs and email\n\nGuides: [how-to-add-background-jobs.md](how-to-add-background-jobs.md), [how-to-setup-email.md](how-to-setup-email.md).\n\n1. Do something that queues a job or sends mail (an invitation, a password reset, a notification).\n2. The job shows as completed in the logs, and the mail arrives.\n\nExpected: the job completes within a minute; the mail arrives."
+          "content": "### Background jobs and email\n\nGuides: [how-to-add-background-jobs.md](../../../../docs/guides/how-to-add-background-jobs.md), [how-to-setup-email.md](../../../../docs/guides/how-to-setup-email.md).\n\n1. Do something that queues a job or sends mail (an invitation, a password reset, a notification).\n2. The job shows as completed in the logs, and the mail arrives.\n\nExpected: the job completes within a minute; the mail arrives."
         },
         {
-          "file": "docs/guides/how-to-setup-web-app.md",
+          "file": "docs/reference/deployment.md",
           "action": "rewrite",
           "note": "Troubleshooting still names the queue and email demos; the upload demo stays"
         }
@@ -749,7 +715,7 @@
       "status": "active",
       "default": false,
       "manual": [
-        "Keep Notes as the pattern for the first feature (docs/guides/how-to-add-a-feature.md); remove it afterwards with the steps in how-to-add-a-feature.md#removing-notes-from-a-project."
+        "Keep Notes as the pattern for the first feature (docs/guides/how-to-add-a-feature.md); remove it afterwards with the steps in docs/reference/adding-a-feature.md#removing-notes-from-a-project."
       ]
     },
     {
@@ -773,7 +739,7 @@
         }
       ],
       "manual": [
-        "If the project uses self-hosted runners, give them its own label: CI_RUNS_ON (docs/guides/how-to-setup-ci.md#switch-ci-to-them) names cloudflare-starter in the examples.",
+        "If the project uses self-hosted runners, give them its own label: CI_RUNS_ON (docs/reference/ci.md#switch-ci-to-them) names cloudflare-starter in the examples.",
         "Keep or drop the authorship rule (no AI agent as author or co-author, scripts/check-attribution.ts, the lint job); it is the starter owner's choice."
       ]
     }

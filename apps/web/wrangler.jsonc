@@ -81,7 +81,7 @@
     "TURNSTILE": "on",
     "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
     // The automated QA suite's bypass of the human check (required, no default: on | off;
-    // docs/guides/how-to-configure-abuse-protection.md#qa-bypass). With on, a request with
+    // docs/reference/abuse-protection.md#qa-bypass). With on, a request with
     // the QA_TOKEN secret in X-QA-Token for an address @QA_EMAIL_DOMAIN skips Turnstile only.
     // develop: on, so the QA suite can run against a develop deploy before production
     // (needs the QA_TOKEN secret there). Local dev overrides it to off in .dev.vars.

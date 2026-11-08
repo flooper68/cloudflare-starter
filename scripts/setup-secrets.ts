@@ -161,7 +161,7 @@ if (dryRun) {
 } else {
   const [env] = parseEnvironments(target) as [Environment];
   // QA_BYPASS=on without QA_TOKEN fails every request of that environment: refuse to
-  // leave it unset (docs/guides/how-to-configure-abuse-protection.md#qa-bypass).
+  // leave it unset (docs/reference/abuse-protection.md#qa-bypass).
   const vars = (envBlock(readWranglerConfig(), env).vars ?? {}) as Record<
     string,
     string

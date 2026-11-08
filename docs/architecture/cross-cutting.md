@@ -30,4 +30,4 @@ Not every request meets every layer: Turnstile guards only the account forms, an
 
 ![Environments and deploys](diagrams/environments.svg)
 
-Bindings are not inherited between environments, so each section declares all of them; `test/architecture/wrangler.test.ts` checks that. Migrations go out before the code that needs them. Code: [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml). Guides: [how-to-setup-web-app.md](../guides/how-to-setup-web-app.md), [how-to-setup-ci.md](../guides/how-to-setup-ci.md), [how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md).
+Bindings are not inherited between environments, so each section declares all of them; `test/architecture/wrangler.test.ts` checks that. Migrations go out before the code that needs them. Code: [apps/web/wrangler.jsonc](../../apps/web/wrangler.jsonc), [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml). Guides: [../start/run-locally.md](../start/run-locally.md), [how-to-setup-ci.md](../guides/how-to-setup-ci.md), [how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md).

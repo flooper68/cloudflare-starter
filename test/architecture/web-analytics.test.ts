@@ -1,6 +1,6 @@
 /**
  * Pages whose URL carries a credential never load the Web Analytics beacon
- * (docs/guides/how-to-setup-product-analytics.md#web-analytics): an `.astro` page under
+ * (docs/reference/product-analytics.md#web-analytics): an `.astro` page under
  * apps/web/src/pages with a `[token]` route segment, or that reads a token from the query
  * string (`searchParams.get("t" | "token")`), renders `<Layout … analytics={false}>`.
  */

@@ -19,7 +19,7 @@ concurrency:
 # runners: the repository is public and a fork PR runs code its author wrote, which must
 # never reach the owner's machine. Never add a pull_request_target trigger here.
 # test/architecture/ci.test.ts checks both. The self-hosted runners are Docker containers
-# (ops/runner/, `bun run runner:up`); see docs/guides/how-to-setup-ci.md#self-hosted-runners.
+# (ops/runner/, `bun run runner:up`); see docs/reference/ci.md#self-hosted-runners.
 
 jobs:
   lint:

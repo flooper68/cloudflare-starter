@@ -83,7 +83,7 @@ export function buildEmailFeature(
     const from = { email: config.EMAIL_FROM, name: config.EMAIL_FROM_NAME };
     const email = createCloudflareEmail({ binding, from });
     // QA_BYPASS=on: mail to a QA address goes to the QA outbox instead of being sent
-    // (docs/guides/how-to-qa-a-deployment.md#the-qa-outbox); everything else is sent.
+    // (apps/web/test/qa/README.md#the-qa-outbox); everything else is sent.
     const { qaBypass } = parseAbuseConfig(env);
     const d1 = runtimeEnv?.DB as D1Database | undefined;
     if (!qaBypass) return email;

@@ -3,7 +3,7 @@
  * modify the payload, so a zone's Web Analytics "automatic setup" injects no beacon
  * (https://developers.cloudflare.com/web-analytics/faq/), which the page policy would
  * block. The app loads the beacon itself when WEB_ANALYTICS=cloudflare.
- * docs/guides/how-to-configure-security-headers.md#edge-injected-web-analytics
+ * docs/reference/security-headers.md#edge-injected-web-analytics
  */
 
 export const NO_TRANSFORM = "no-transform";

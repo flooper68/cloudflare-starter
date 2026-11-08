@@ -38,7 +38,7 @@ walk me through creating the access key it asks for, and set CORS on the bucket.
 :::
 
 :::byhand
-The six steps (bucket, account id, token, local values, secrets, CORS) are in [Set up storage](../guides/how-to-setup-r2.md#presigned-urls).
+The six steps (bucket, account id, token, local values, secrets, CORS) are in [Set up storage](../reference/storage.md#presigned-urls).
 :::
 
 ## Use it
@@ -63,7 +63,7 @@ A link issued before a file was deleted keeps working until it expires (one hour
 ## Limits
 
 - 10 MB per file; storage and monthly uploads count against the plan.
-- Orphaned objects can be reported or removed by a daily check ([storage reconciliation](../guides/how-to-use-trash.md#optional-storage-reconciliation)).
+- Orphaned objects can be reported or removed by a daily check ([storage reconciliation](../reference/trash.md#optional-storage-reconciliation)).
 
 ## Related
 

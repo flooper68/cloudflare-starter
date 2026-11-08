@@ -67,5 +67,5 @@ The palette leaves out what your role cannot do, but the server still checks eve
 
 ## Related
 
-- [Navigation and the command palette](../guides/how-to-add-a-feature.md#navigation-and-the-command-palette)
+- [Navigation and the command palette](../reference/adding-a-feature.md#navigation-and-the-command-palette)
 - [Notes](notes.md)

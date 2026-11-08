@@ -7,7 +7,7 @@ import { devPort } from "./dev-port.mjs";
 // journeys run against `astro preview` of the build (workerd with local bindings, as
 // deployed): public pages with the Turnstile widget, Storybook, assets and API answers,
 // with zero CSP violations. Run with `bun run test:e2e:build` after `bun run build`.
-// docs/guides/how-to-configure-security-headers.md#tests
+// docs/reference/security-headers.md#tests
 // APP_URL's port, like the dev journeys: Better Auth trusts only that origin, so the two
 // configs cannot run at the same time in one checkout.
 const port = devPort();
