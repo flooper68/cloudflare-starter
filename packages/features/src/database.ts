@@ -6,6 +6,7 @@ import * as accountsSchema from "./accounts/accounts.schema";
 import * as userSettingsSchema from "./accounts/user-settings.schema";
 import * as auditSchema from "./audit/audit.schema";
 import * as billingSchema from "./billing/billing.schema";
+import * as containerRunsSchema from "./container-runs/container-runs.schema";
 import * as filesSchema from "./files/files.schema";
 import * as jobsSchema from "./jobs/jobs.schema";
 import * as notesSchema from "./notes/notes.schema";
@@ -20,6 +21,7 @@ export const schema = {
   ...userSettingsSchema,
   ...auditSchema,
   ...billingSchema,
+  ...containerRunsSchema,
   ...filesSchema,
   ...jobsSchema,
   ...notesSchema,

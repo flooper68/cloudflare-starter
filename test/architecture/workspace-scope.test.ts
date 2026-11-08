@@ -41,6 +41,8 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
     "a user's own settings across workspaces; rows cascade with the user",
   notification_settings:
     "a user's own settings across workspaces; rows cascade with the user",
+  container_run_quota:
+    "the container demo's daily cap for the whole deployment: one counter per UTC day, no tenant data; deleting a workspace must not give its runs back",
   job_idempotency_keys:
     "platform table of the job queue: keys are per job type and payload, the workspace travels in the job envelope",
 };
@@ -52,6 +54,7 @@ const WORKSPACE_ROUTERS = [
   "flags",
   "trash",
   "notes",
+  "containerRuns",
 ] as const;
 
 /** Procedures of those routers that act for the signed-in user, not in one workspace. */
@@ -67,6 +70,7 @@ const USER_LEVEL_PROCEDURES: Readonly<Record<string, string>> = {
 /** Features whose data is workspace-scoped: their use cases take an actor. */
 const WORKSPACE_SCOPED_FEATURES = [
   "billing",
+  "container-runs",
   "files",
   "notes",
   "trash",
@@ -125,6 +129,20 @@ const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
   "workspaces/count-workspace-seats.ts":
     "billing's seats metric, for a workspace its caller authorized",
   "files/r2-presign.ts": "S3 signing helper, not a use case",
+  "container-runs/begin-container-run-step.ts":
+    "a step of the run's Workflow, which runs as the system after startContainerRun authorized the actor",
+  "container-runs/store-container-run-result.ts":
+    "a step of the run's Workflow, which runs as the system after startContainerRun authorized the actor",
+  "container-runs/notify-container-run-finished.ts":
+    "a step of the run's Workflow: notifies the person who started the run",
+  "container-runs/finish-container-run.ts":
+    "a step of the run's Workflow, recorded as the system",
+  "container-runs/purge-container-runs.ts":
+    "daily retention job over all workspaces; no actor",
+  "container-runs/delete-workspace-container-runs.ts":
+    "runs during account deletion for workspaces being deleted; no actor exists",
+  "container-runs/find-referenced-container-run-keys.ts":
+    "system orphan reconciliation protects result keys across every workspace; not a user-facing read",
   "files/delete-workspace-files.ts":
     "runs during account deletion for workspaces being deleted; no actor exists",
   "files/trash.ts":

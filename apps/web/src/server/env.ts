@@ -26,6 +26,18 @@ export interface AppEnv {
   readonly RL_HEALTH?: RateLimit;
   readonly RL_CSP_REPORT?: RateLimit;
   readonly RL_QA_BYPASS?: RateLimit;
+  readonly RL_CONTAINER_RUN?: RateLimit;
+  /**
+   * The container workflow demo (docs/guides/how-to-run-container-workflows.md): the
+   * Workflow that runs each container run, and the pi container Worker (apps/container)
+   * as a service binding (CONTAINER_DEMO_RUNNER=container).
+   */
+  readonly CONTAINER_RUN_WORKFLOW?: Workflow<{ readonly runId: string }>;
+  readonly PI_CONTAINER_SERVICE?: Fetcher;
+  /** Required vars, validated by `parseAppConfig`: on | off, a positive integer, container | fake. */
+  readonly CONTAINER_DEMO?: string;
+  readonly CONTAINER_DEMO_DAILY_CAP?: string;
+  readonly CONTAINER_DEMO_RUNNER?: string;
   /** Workers Analytics Engine dataset of product events (ANALYTICS=analytics-engine). */
   readonly ANALYTICS_EVENTS?: AnalyticsEngineDataset;
   readonly APP_ENV?: string;

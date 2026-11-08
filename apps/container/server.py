@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 
@@ -24,13 +24,22 @@ class PiHandler(BaseHTTPRequestHandler):
         digits = params.get("digits", ["12"])[0]
 
         started_at = time.perf_counter()
-        result = subprocess.run(
-            [sys.executable, "/app/pi_task.py", digits],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=10,
-        )
+        if parsed.path not in ("/", "/pi"):
+            json_response(self, 404, {"ok": False, "error": "not found"})
+            return
+
+        try:
+            result = subprocess.run(
+                [sys.executable, "/app/pi_task.py", digits],
+                capture_output=True,
+                text=True,
+                check=False,
+                # 50,000 digits take a few seconds on a `lite` instance (1/16 vCPU).
+                timeout=60,
+            )
+        except subprocess.TimeoutExpired:
+            json_response(self, 504, {"ok": False, "error": "pi computation timed out"})
+            return
         elapsed_ms = round((time.perf_counter() - started_at) * 1000, 2)
 
         if result.returncode != 0:
@@ -66,7 +75,8 @@ class PiHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    server = HTTPServer(("0.0.0.0", 8080), PiHandler)
+    # Threads: a run that is computing does not hold up another run's request.
+    server = ThreadingHTTPServer(("0.0.0.0", 8080), PiHandler)
     server.pid = os.getpid()
     print("Pi container listening on :8080", flush=True)
     server.serve_forever()

@@ -75,7 +75,16 @@
     // develop: on, so the QA suite can run against a develop deploy before production
     // (needs the QA_TOKEN secret there). Local dev overrides it to off in .dev.vars.
     "QA_BYPASS": "on",
-    "QA_EMAIL_DOMAIN": "qa.flooper.me"
+    "QA_EMAIL_DOMAIN": "qa.flooper.me",
+    // The container workflow demo (docs/guides/how-to-run-container-workflows.md#settings).
+    // Required, no defaults: CONTAINER_DEMO on | off, CONTAINER_DEMO_DAILY_CAP (runs per UTC
+    // day for the whole deployment), CONTAINER_DEMO_RUNNER container | fake.
+    // develop: on with the fake runner. The Workflow, D1, R2 and notifications run for real;
+    // pi is computed in the Worker, so the develop deploy (and local dev, which starts from
+    // these vars) starts no container. Set container to try the real one there.
+    "CONTAINER_DEMO": "on",
+    "CONTAINER_DEMO_DAILY_CAP": "50",
+    "CONTAINER_DEMO_RUNNER": "fake"
   },
   // Create with `bunx wrangler d1 create <name>` and paste the id (docs/guides/how-to-setup-d1.md).
   // The placeholder id is enough for local dev.
@@ -135,7 +144,7 @@
   // (test/architecture/abuse.test.ts). Periods are 10 or 60 s. namespace_id is a positive
   // integer that must be unique in the whole Cloudflare ACCOUNT, not just this file: every
   // Worker binding the same id shares its counters. No resource to create. These ids
-  // (7001–7013 develop, 8001–8013 staging, 9001–9013 production) are the starter's own; a
+  // (7001–7014 develop, 8001–8014 staging, 9001–9014 production) are the starter's own; a
   // project built from it gets its own block from `bun run setup:cloudflare` (or
   // --namespace-base). Simulated locally.
   "ratelimits": [
@@ -203,6 +212,28 @@
       "name": "RL_QA_BYPASS",
       "namespace_id": "7013",
       "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "RL_CONTAINER_RUN",
+      "namespace_id": "7014",
+      "simple": { "limit": 3, "period": 60 }
+    }
+  ],
+  // The container workflow demo: its Workflow (class ContainerRunWorkflow in src/worker.ts;
+  // created on deploy, nothing to create by hand; the name is account-wide, so one per
+  // environment) and the pi container Worker (apps/container) as a service binding. Results
+  // go to the FILES bucket under workspaces/<id>/container-runs/.
+  "workflows": [
+    {
+      "name": "cloudflare-starter-container-run",
+      "binding": "CONTAINER_RUN_WORKFLOW",
+      "class_name": "ContainerRunWorkflow"
+    }
+  ],
+  "services": [
+    {
+      "binding": "PI_CONTAINER_SERVICE",
+      "service": "cloudflare-starter-container"
     }
   ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
@@ -236,7 +267,15 @@
         // staging: off. No staging deployment runs the QA suite yet; switch to on with its
         // own QA_TOKEN secret when one does.
         "QA_BYPASS": "off",
-        "QA_EMAIL_DOMAIN": "qa.flooper.me"
+        "QA_EMAIL_DOMAIN": "qa.flooper.me",
+        // The container workflow demo (docs/guides/how-to-run-container-workflows.md#settings).
+        // Required, no defaults: CONTAINER_DEMO on | off, CONTAINER_DEMO_DAILY_CAP (runs per UTC
+        // day for the whole deployment), CONTAINER_DEMO_RUNNER container | fake.
+        // staging: off. Turn on to rehearse the real container before a production change
+        // (the pi container Worker is deployed to staging either way and costs nothing idle).
+        "CONTAINER_DEMO": "off",
+        "CONTAINER_DEMO_DAILY_CAP": "20",
+        "CONTAINER_DEMO_RUNNER": "container"
       },
       "send_email": [{ "name": "EMAIL" }],
       "d1_databases": [
@@ -343,6 +382,28 @@
           "name": "RL_QA_BYPASS",
           "namespace_id": "8013",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_CONTAINER_RUN",
+          "namespace_id": "8014",
+          "simple": { "limit": 3, "period": 60 }
+        }
+      ],
+      // The container workflow demo: its Workflow (class ContainerRunWorkflow in src/worker.ts;
+      // created on deploy, nothing to create by hand; the name is account-wide, so one per
+      // environment) and the pi container Worker (apps/container) as a service binding. Results
+      // go to the FILES bucket under workspaces/<id>/container-runs/.
+      "workflows": [
+        {
+          "name": "cloudflare-starter-container-run-staging",
+          "binding": "CONTAINER_RUN_WORKFLOW",
+          "class_name": "ContainerRunWorkflow"
+        }
+      ],
+      "services": [
+        {
+          "binding": "PI_CONTAINER_SERVICE",
+          "service": "cloudflare-starter-container-staging"
         }
       ],
       "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] }
@@ -395,7 +456,15 @@
         "BILLING": "manual",
         "ANALYTICS": "analytics-engine",
         "WEB_ANALYTICS": "none",
-        "WEB_ANALYTICS_TOKEN": ""
+        "WEB_ANALYTICS_TOKEN": "",
+        // The container workflow demo (docs/guides/how-to-run-container-workflows.md#settings).
+        // Required, no defaults: CONTAINER_DEMO on | off, CONTAINER_DEMO_DAILY_CAP (runs per UTC
+        // day for the whole deployment), CONTAINER_DEMO_RUNNER container | fake.
+        // production: on (owner decision), the real container, at most 100 runs a day: inside the
+        // plan's included usage, at most about $0.50 a month beyond it (docs/guides/how-to-run-container-workflows.md#what-it-costs).
+        "CONTAINER_DEMO": "on",
+        "CONTAINER_DEMO_DAILY_CAP": "100",
+        "CONTAINER_DEMO_RUNNER": "container"
       },
       "send_email": [
         {
@@ -507,6 +576,28 @@
           "name": "RL_QA_BYPASS",
           "namespace_id": "9013",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_CONTAINER_RUN",
+          "namespace_id": "9014",
+          "simple": { "limit": 3, "period": 60 }
+        }
+      ],
+      // The container workflow demo: its Workflow (class ContainerRunWorkflow in src/worker.ts;
+      // created on deploy, nothing to create by hand; the name is account-wide, so one per
+      // environment) and the pi container Worker (apps/container) as a service binding. Results
+      // go to the FILES bucket under workspaces/<id>/container-runs/.
+      "workflows": [
+        {
+          "name": "cloudflare-starter-container-run-production",
+          "binding": "CONTAINER_RUN_WORKFLOW",
+          "class_name": "ContainerRunWorkflow"
+        }
+      ],
+      "services": [
+        {
+          "binding": "PI_CONTAINER_SERVICE",
+          "service": "cloudflare-starter-container-production"
         }
       ],
       "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] }

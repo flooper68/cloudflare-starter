@@ -20,9 +20,43 @@ const core = {
   APP_ENV: "local",
   AUTH_EMAIL_PASSWORD: "true",
   AUTH_REQUIRE_EMAIL_VERIFICATION: "false",
+  CONTAINER_DEMO: "on",
+  CONTAINER_DEMO_DAILY_CAP: "50",
+  CONTAINER_DEMO_RUNNER: "fake",
 };
 
 describe("web config", () => {
+  it("requires the container demo settings, without defaults", () => {
+    const workspaces = {
+      WORKSPACE_MODE: "multi",
+      SIGN_UP: "open",
+      ADMIN_PORTAL: "on",
+      BILLING: "off",
+    };
+    expect(parseAppConfig({ ...core, ...workspaces }).containerDemo).toEqual({
+      mode: "on",
+      dailyCap: 50,
+      runner: "fake",
+    });
+    for (const [name, value, message] of [
+      ["CONTAINER_DEMO", undefined, /CONTAINER_DEMO must be on or off/],
+      ["CONTAINER_DEMO", "yes", /CONTAINER_DEMO must be on or off/],
+      [
+        "CONTAINER_DEMO_DAILY_CAP",
+        undefined,
+        /CONTAINER_DEMO_DAILY_CAP is not set/,
+      ],
+      ["CONTAINER_DEMO_DAILY_CAP", "0", /whole number/],
+      ["CONTAINER_DEMO_DAILY_CAP", "-5", /whole number/],
+      ["CONTAINER_DEMO_DAILY_CAP", "10001", /at most 10000/],
+      ["CONTAINER_DEMO_RUNNER", "docker", /container or fake/],
+    ] as const) {
+      expect(() =>
+        parseAppConfig({ ...core, ...workspaces, [name]: value })
+      ).toThrow(message);
+    }
+  });
+
   it("requires an explicit storage reconciliation mode", () => {
     const settings = {
       APP_ENV: "local",

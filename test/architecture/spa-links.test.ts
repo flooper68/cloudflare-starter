@@ -42,6 +42,8 @@ const COMPUTED_ALLOWED: Readonly<Record<string, string>> = {
     "only `document` entries (the admin portal, docs, component library); app pages use Link",
   "apps/web/src/components/app/pages/DashboardPage.tsx":
     "only /verify-email, an Astro page; app pages use Link",
+  "apps/web/src/components/app/pages/ContainerDemoPage.tsx":
+    "only a run's result download (/api/container-runs/<id>/result), a file",
 };
 
 function computedAnchors(path: string): string[] {

@@ -41,6 +41,7 @@ export type NavIcon =
   | "upload"
   | "queue"
   | "email"
+  | "containers"
   | "account"
   | "security"
   | "agents"
@@ -249,6 +250,17 @@ export const appDestinations: readonly AppDestination[] = [
     sidebar: "demos",
     palette: true,
     keywords: ["demo", "mail"],
+    visible: always,
+  },
+  {
+    id: "container-demo",
+    label: "Containers",
+    title: "Containers: run a workflow",
+    to: "/app/container-demo",
+    icon: "containers",
+    sidebar: "demos",
+    palette: true,
+    keywords: ["demo", "workflow", "container", "pi"],
     visible: always,
   },
 ];

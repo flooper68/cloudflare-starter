@@ -169,6 +169,40 @@ export const DATA_CATALOG: readonly DataEntity[] = [
     reason:
       "Comments the person wrote, and every comment in their personal workspace; they go with their note and workspace, erasure keeps shared comments with attribution nulled.",
   },
+  {
+    table: "container_runs",
+    scope: "workspace",
+    columns: [
+      "id",
+      "workspace_id",
+      "created_by",
+      "digits",
+      "status",
+      "steps",
+      "error_code",
+      "retry_of",
+      "result_key",
+      "result_preview",
+      "result_bytes",
+      "compute_ms",
+      "created_at",
+      "finished_at",
+      "expires_at",
+    ],
+    workspaceColumn: "workspace_id",
+    userMode: "own-files",
+    erase: "workspace-cascade",
+    reason:
+      "Container workflow demo runs the person started and every run of their personal workspace: digits of pi and timings, no personal content. Expire 7 days after they start; deleting a workspace deletes its runs and their R2 results, erasure keeps shared runs with attribution nulled.",
+  },
+  {
+    table: "container_run_quota",
+    scope: "platform",
+    columns: [],
+    erase: "retain-platform",
+    reason:
+      "One counter of container demo runs per UTC day for the whole deployment (the daily cap); no user or workspace data.",
+  },
   ...[
     "workspace_subscription",
     "workspace_addon",

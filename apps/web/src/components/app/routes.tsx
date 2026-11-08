@@ -9,6 +9,7 @@ import { appLayoutRoute } from "./layout-route";
 import { NoteDetailPage } from "./notes/NoteDetailPage";
 import { NotesPage } from "./notes/NotesPage";
 import { BillingPage } from "./pages/BillingPage";
+import { ContainerDemoPage } from "./pages/ContainerDemoPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DemosPage } from "./pages/DemosPage";
 import { EmailDemoPage } from "./pages/EmailDemoPage";
@@ -111,6 +112,15 @@ const emailDemoRoute = createRoute({
   component: EmailDemoPage,
 });
 
+const containerDemoRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/app/container-demo",
+  component: ContainerDemoPage,
+  // `?run=<id>` opens a run (the finished notification links here).
+  validateSearch: (search: Record<string, unknown>): { run?: string } =>
+    typeof search.run === "string" ? { run: search.run } : {},
+});
+
 const notificationsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/app/notifications",
@@ -139,6 +149,7 @@ const routeTree = rootRoute.addChildren([
     uploadDemoRoute,
     queueDemoRoute,
     emailDemoRoute,
+    containerDemoRoute,
     notificationsRoute,
     notificationPreferencesRoute,
   ]),

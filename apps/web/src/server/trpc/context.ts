@@ -20,6 +20,7 @@ import {
 } from "@/server/admin-auth-gateway";
 import { getAuth } from "@/server/auth";
 import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
+import { containerRunWorkflowsFor } from "@/server/container-runs";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { readinessReport } from "@/server/health";
@@ -92,6 +93,7 @@ export function createAppContext(
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
     notify: notifier,
+    containerRunWorkflows: containerRunWorkflowsFor(env),
     emailOut: platform.email,
     analytics: platform.productAnalytics(),
     user,

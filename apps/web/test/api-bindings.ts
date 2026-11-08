@@ -37,6 +37,11 @@ export const API_TEST_BINDINGS = {
   QA_BYPASS: "on",
   QA_EMAIL_DOMAIN: "qa.flooper.me",
   QA_TOKEN: "api-test-qa-token-0123456789abcdefghij",
+  // The container workflow demo, as in the develop vars: on, with the fake pi computer (no
+  // Docker; the Workflow runs in Miniflare). Tests of off or the cap override them.
+  CONTAINER_DEMO: "on",
+  CONTAINER_DEMO_DAILY_CAP: "50",
+  CONTAINER_DEMO_RUNNER: "fake",
   // Not in wrangler.jsonc (setup:auth writes them per environment); tests of other modes
   // or with the admin portal off override them (test/api/helpers.ts envWith).
   WORKSPACE_MODE: "multi",

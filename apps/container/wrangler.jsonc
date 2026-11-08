@@ -1,14 +1,80 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   // Kept as its own Worker: the Docker image is built on every deploy of this Worker.
+  // The web app reaches it only through its PI_CONTAINER_SERVICE service binding (the
+  // container workflow demo, docs/guides/how-to-run-container-workflows.md): no
+  // workers.dev URL and no preview URLs, so nobody can start a container from the internet
+  // around the web app's rate limits and daily cap. `wrangler dev` (bun run dev:container)
+  // still serves http://127.0.0.1:8790 locally.
+  // Names are the web app's service names: cloudflare-starter-container (develop, the top
+  // level), -staging and -production (Wrangler appends the environment name).
   "name": "cloudflare-starter-container",
   "main": "./src/index.ts",
   "compatibility_date": "2026-04-20",
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true },
+    "traces": { "enabled": true }
+  },
+  // Cost limits (docs/guides/how-to-run-container-workflows.md#what-it-costs): the smallest
+  // instance type (lite: 1/16 vCPU, 256 MiB, 2 GB disk), at most two instances at a time
+  // (PI_INSTANCES in src/index.ts picks between them), and each sleeps after 30 s idle
+  // (sleepAfter in src/index.ts), when billing stops.
   "containers": [
-    { "class_name": "PiContainer", "image": "./Dockerfile", "max_instances": 2 }
+    {
+      "class_name": "PiContainer",
+      "image": "./Dockerfile",
+      "instance_type": "lite",
+      "max_instances": 2
+    }
   ],
   "durable_objects": {
     "bindings": [{ "name": "PI_CONTAINER", "class_name": "PiContainer" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PiContainer"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PiContainer"] }],
+  // Bindings are not inherited by env.*: each environment repeats them.
+  "env": {
+    "staging": {
+      "workers_dev": false,
+      "preview_urls": false,
+      "observability": {
+        "enabled": true,
+        "logs": { "enabled": true, "invocation_logs": true },
+        "traces": { "enabled": true }
+      },
+      "containers": [
+        {
+          "class_name": "PiContainer",
+          "image": "./Dockerfile",
+          "instance_type": "lite",
+          "max_instances": 2
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "PI_CONTAINER", "class_name": "PiContainer" }]
+      }
+    },
+    "production": {
+      "workers_dev": false,
+      "preview_urls": false,
+      "observability": {
+        "enabled": true,
+        "logs": { "enabled": true, "invocation_logs": true },
+        "traces": { "enabled": true }
+      },
+      "containers": [
+        {
+          "class_name": "PiContainer",
+          "image": "./Dockerfile",
+          "instance_type": "lite",
+          "max_instances": 2
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "PI_CONTAINER", "class_name": "PiContainer" }]
+      }
+    }
+  }
 }

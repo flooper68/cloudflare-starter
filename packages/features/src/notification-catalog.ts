@@ -7,6 +7,7 @@ import {
   passwordChangedNotification,
   securityFactorChangedNotification,
 } from "./accounts";
+import { containerRunFinishedNotification } from "./container-runs";
 import type { NotificationDefinition } from "./kernel";
 import { createNotificationCatalog } from "./notifications";
 import { exportReadyNotification } from "./privacy";
@@ -23,4 +24,6 @@ export const notificationCatalog = createNotificationCatalog([
   securityFactorChangedNotification,
 
   exportReadyNotification,
+
+  containerRunFinishedNotification,
 ] as readonly NotificationDefinition<unknown>[]);

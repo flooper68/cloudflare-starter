@@ -1,6 +1,8 @@
 import {
   type BillingSettings,
   billingSettingsSchema,
+  type ContainerDemoSettings,
+  containerDemoSettingsSchema,
   type SecuritySettings,
   STORAGE_RECONCILE_MODES,
   type StorageReconcileMode,
@@ -45,6 +47,8 @@ export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
   readonly billing: BillingSettings;
   readonly security: SecuritySettings;
+  /** CONTAINER_DEMO, CONTAINER_DEMO_DAILY_CAP, CONTAINER_DEMO_RUNNER: required, no defaults. */
+  readonly containerDemo: ContainerDemoSettings;
   readonly ADMIN_PORTAL: AdminPortalSetting;
   readonly STORAGE_RECONCILE: StorageReconcileMode;
   readonly AUTH_EMAIL_PASSWORD: boolean;
@@ -91,6 +95,7 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       STORAGE_RECONCILE_MODES
     ),
     security: securitySettingsSchema.parse(env),
+    containerDemo: containerDemoSettingsSchema.parse(env),
   };
 }
 

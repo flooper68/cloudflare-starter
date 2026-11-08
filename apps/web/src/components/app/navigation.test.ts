@@ -97,6 +97,7 @@ describe("the app's navigation source", () => {
       "upload-demo",
       "queue-demo",
       "email-demo",
+      "container-demo",
     ]);
     expect(ids(sidebarDestinations(owner, "admin"))).toEqual([]);
   });
@@ -121,6 +122,7 @@ describe("the app's navigation source", () => {
       "upload-demo",
       "queue-demo",
       "email-demo",
+      "container-demo",
     ]);
   });
 

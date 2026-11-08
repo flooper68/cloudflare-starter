@@ -6,6 +6,7 @@
 
 import { purgeAuditEventsJob } from "./audit";
 import { expireTrialsJob } from "./billing";
+import { purgeContainerRunsJob } from "./container-runs";
 import { retryFileCleanupsJob } from "./files";
 import { createCronCatalog, enqueueJob, purgeIdempotencyKeysJob } from "./jobs";
 import type { Clock, Ids } from "./kernel";
@@ -132,5 +133,17 @@ export const cronCatalog = createCronCatalog<CronDeps>([
         { context }
       );
     },
+  },
+  {
+    // The container workflow demo's retention: runs and results older than 7 days.
+    name: "container-runs.purge",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeContainerRunsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
   },
 ]);

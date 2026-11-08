@@ -84,7 +84,7 @@ describe("cron handler", () => {
         });
     }
   });
-  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials notifications.purge and trash.purge-expired, each in a new trace", async () => {
+  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials notifications.purge, trash.purge-expired and container-runs.purge, each in a new trace", async () => {
     const { platform, logger, jobQueue } = memoryPlatform();
     expect(
       cronCatalog.filter((e) => e.schedule === "17 3 * * *").map((e) => e.name)
@@ -95,6 +95,7 @@ describe("cron handler", () => {
       "notifications.purge",
       "trash.purge-expired",
       "storage.reconcile",
+      "container-runs.purge",
     ]);
 
     await runScheduled(controller("17 3 * * *"), platform);
@@ -125,16 +126,21 @@ describe("cron handler", () => {
         type: "trash.purge-expired",
         data: { asOf: "2026-10-28T03:17:00.000Z" },
       }),
+      expect.objectContaining({
+        type: "container-runs.purge",
+        data: { asOf: "2026-10-28T03:17:00.000Z" },
+      }),
       expect.objectContaining({ type: "audit.purge-events" }),
       expect.objectContaining({ type: "jobs.purge-idempotency-keys" }),
       expect.objectContaining({ type: "billing.expire-trials" }),
       expect.objectContaining({ type: "notifications.purge" }),
       expect.objectContaining({ type: "trash.purge-expired" }),
+      expect.objectContaining({ type: "container-runs.purge" }),
     ]);
     const traces = jobQueue.sent.map(
       (sent) => sent.envelope.traceparent?.split("-")[1]
     );
-    expect(new Set(traces).size).toBe(10);
+    expect(new Set(traces).size).toBe(12);
     expect(logger.records[1]).toMatchObject({
       body: "cron.completed",
       trace_id: traces[1],
@@ -226,6 +232,7 @@ describe("cron handler", () => {
       "cron notifications.purge",
       "cron trash.purge-expired",
       "cron storage.reconcile",
+      "cron container-runs.purge",
     ]);
     expect(tracer.spans[0]).toMatchObject({
       kind: "internal",
@@ -273,6 +280,12 @@ describe("cron handler", () => {
       expect.objectContaining({
         attributes: {
           "app.cron.name": "storage.reconcile",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "container-runs.purge",
           "app.cron.schedule": "17 3 * * *",
         },
       }),

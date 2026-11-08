@@ -1,6 +1,7 @@
 // Composition root: owning features expose erasers; the privacy feature imports no tables here.
 import { purgeAccountImages } from "./accounts";
 import { redactAuditSubject } from "./audit";
+import { deleteWorkspaceContainerRuns } from "./container-runs";
 import type { Database } from "./database";
 import { deleteWorkspaceFiles, rememberErasureStorage } from "./files";
 import type { Clock } from "./kernel";
@@ -19,6 +20,7 @@ export function buildErasureHandlers(deps: {
       await rememberErasureStorage(deps, { userId, workspaceIds });
       await eraseUserExports(deps, { workspaceIds });
       await deleteWorkspaceFiles(deps, { workspaceIds });
+      await deleteWorkspaceContainerRuns(deps, { workspaceIds });
       await purgeWorkspaceLogos(deps, { workspaceIds });
     },
     async eraseUserArtifacts(input: { userId: string; email: string }) {

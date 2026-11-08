@@ -7,6 +7,7 @@ export * from "./admin";
 export { analyticsEvents } from "./analytics-events";
 export * from "./audit";
 export * from "./billing";
+export * from "./container-runs";
 export { type CronDeps, cronCatalog } from "./cron-catalog";
 export { DATA_CATALOG } from "./data-catalog";
 export { createDatabase, type Database, schema } from "./database";

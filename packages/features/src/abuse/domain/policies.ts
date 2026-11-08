@@ -235,6 +235,18 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "Content-Security-Policy violation reports (/api/csp-report), per IP: anonymous and each report is a log line",
   },
+  "container.run": {
+    // Bursts only: the hourly limit (CONTAINER_RUN_USER_HOURLY_LIMIT) and the daily cap
+    // (CONTAINER_DEMO_DAILY_CAP) are counted in D1 by startContainerRun, since edge
+    // periods stop at 60 s.
+    limit: 3,
+    periodSeconds: 60,
+    scope: "user",
+    enforcer: "edge",
+    binding: "RL_CONTAINER_RUN",
+    description:
+      "Container workflow demo runs a user starts (containerRuns.start): each starts a billed container",
+  },
   "qa.bypass": {
     // The automated QA suite signs up a handful of accounts per run from one runner IP;
     // a guesser of the token gets this many tries a minute and nothing else.
@@ -257,6 +269,8 @@ export const PROCEDURE_POLICIES: Readonly<Record<string, RateLimitPolicyId>> = {
   "workspace.invitations.create": "invitation.send",
   // Client telemetry: frequent, cheap, its own budget.
   "analytics.track": "analytics.client",
+  // Starts a billed container (the container workflow demo).
+  "containerRuns.start": "container.run",
 };
 
 /** Every tRPC mutation without an entry in PROCEDURE_POLICIES. */
@@ -299,6 +313,8 @@ export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
   "api/trpc/[...trpc].ts":
     "each mutation is limited by the tRPC middleware with its own policy",
   "api/hello.ts": "public read-only example with no state or cost behind it",
+  "api/container-runs/[id]/result.ts":
+    "authenticated read of a container run result of the user's own workspace; reads are not limited",
   "api/files/[id].ts":
     "authenticated read of the user's own file; reads are not limited",
   ".well-known/[...path].ts": "static OAuth discovery documents",

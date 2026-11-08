@@ -3,10 +3,11 @@ export const TRACEPARENT_PATTERN =
   /^[0-9a-f]{2}-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/;
 
 /**
- * Which edge started the work: an HTTP request, a queue message, a cron run, or an
+ * Which edge started the work: an HTTP request, a queue message, a cron run, a Workflow
+ * step (the container workflow demo), or an
  * operator's script (`bun run setup:admin`, which writes D1 through Wrangler).
  */
-export type RequestSource = "http" | "queue" | "cron" | "script";
+export type RequestSource = "http" | "queue" | "cron" | "workflow" | "script";
 
 /**
  * Who and what one unit of work is about, built once at the edge (middleware, queue

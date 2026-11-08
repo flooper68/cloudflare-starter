@@ -342,12 +342,27 @@ Mail: none.
 
 Guides: [how-to-add-background-jobs.md](how-to-add-background-jobs.md), [how-to-setup-email.md](how-to-setup-email.md).
 
-1. Dashboard → **Developer demos** (`/app/demos`) lists Upload, Queue and Email.
+1. Dashboard → **Developer demos** (`/app/demos`) lists API hello, Upload, Queue, Email and Containers.
 2. `/app/queue-demo`: enqueue a hello job; it shows as processed.
 3. `/app/email-demo`: send the test email to A.
 
 Expected: the job completes within a minute; the mail arrives.
 Mail: **[production] Starter kit test email**.
+
+### Demos: containers (a workflow)
+
+Guide: [how-to-run-container-workflows.md](how-to-run-container-workflows.md). Costs a container run: start at most two.
+
+1. **Developer demos** → **Containers** → **Run a workflow** (`/app/container-demo`): the card says how many runs are left today and for A this hour.
+2. Pick **10,000** and **Start run**: the timeline goes Queued, Starting container, Computing, Storing in R2, Notifying, Done, each with a time; a cold start takes a few seconds.
+3. The result shows the first 100 digits (`3.14159265358979…`), the run duration and the compute time; **Download all 10,000 digits** saves a text file; the run is listed under **Past runs** as Succeeded.
+4. The bell has **Container run finished: 10,000 digits of pi**, linking back to the run.
+5. As B in another workspace, the run's link (`?run=<id>`) shows nothing of it.
+6. Admin portal → audit log: `container_run.started` (A) and `container_run.finished` (system) for the run.
+7. In an environment with `CONTAINER_DEMO=off` (staging ships off): the page says the demo is off and **Start run** is disabled.
+
+Expected: the run succeeds within a minute; a failed run (the first minutes after a container deploy) shows the reason and **Retry**.
+Mail: none (container notices are in-app unless A turned email on).
 
 ### Landing, docs and search
 

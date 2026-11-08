@@ -52,7 +52,9 @@ jobs:
             bunx wrangler d1 migrations apply DB --remote --env "$DEPLOY_ENV"
           fi
 
-      # deploy / deploy:staging / deploy:production pick the environment at build time.
+      # deploy / deploy:staging / deploy:production pick the environment at build time. They
+      # deploy the pi container Worker (apps/container) first, which builds its Docker image:
+      # the runner needs a Docker engine (ubuntu-latest has one, the self-hosted runners do not).
       - name: Deploy
         working-directory: apps/web
         env:

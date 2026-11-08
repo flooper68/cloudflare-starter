@@ -68,6 +68,8 @@ describe("notification catalog", () => {
       "auth.factor-changed",
 
       "privacy.export-ready",
+
+      "container-runs.finished",
     ]);
     for (const entry of notificationCatalog.values()) {
       expect(entry.label.length).toBeGreaterThan(5);
