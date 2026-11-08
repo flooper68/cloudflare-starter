@@ -106,7 +106,7 @@ const local = defineConfig({
       env: { E2E_LOCAL_TURNSTILE: "1", E2E_DEMO_PORT: String(demoPort) },
       command: `bunx wrangler d1 migrations apply DB --local --persist-to ${DEMO_E2E_STATE} && bun run dev --ignore-lock --port ${demoPort}`,
       url: demoBaseURL,
-      reuseExistingServer: false,
+      reuseExistingServer: !ci && process.env.E2E_REUSE_SERVER === "1",
       timeout: 120_000,
       stdout: "ignore",
       stderr: "pipe",

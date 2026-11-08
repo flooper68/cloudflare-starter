@@ -45,6 +45,11 @@ export function localDemoPlugins(port) {
         }
         return true;
       },
+      // Its own dependency cache: two dev servers optimizing into one node_modules/.vite
+      // race and break each other's imports.
+      config() {
+        return { cacheDir: "node_modules/.vite-e2e-demo" };
+      },
       transform(code, id) {
         if (!id.split("?")[0].endsWith("/apps/web/src/lib/env.ts")) return null;
         if (code.split(injection).length !== 2) {

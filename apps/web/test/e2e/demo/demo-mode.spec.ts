@@ -32,7 +32,7 @@ test("a new sign-up sees the demo notice, the banner and the sample notes", asyn
   // The sample notes, written by the queued seed job shortly after sign-up.
   await page.getByRole("link", { name: "Notes", exact: true }).click();
   await expect(page).toHaveURL(/\/app\/notes$/);
-  const welcome = page.getByRole("link", {
+  const welcome = page.getByRole("option", {
     name: /Sample: Welcome to the demo/,
   });
   await expect(async () => {
@@ -40,10 +40,10 @@ test("a new sign-up sees the demo notice, the banner and the sample notes", asyn
     await expect(welcome).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
   await expect(
-    page.getByRole("link", { name: /Sample: Launch checklist/ })
+    page.getByRole("option", { name: /Sample: Launch checklist/ })
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: /Sample: Product sync notes/ })
+    page.getByRole("option", { name: /Sample: Product sync notes/ })
   ).toBeVisible();
   await welcome.click();
   await expect(
