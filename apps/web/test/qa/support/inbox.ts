@@ -1,7 +1,14 @@
 import { type QaEnv, qaEnv } from "./env";
 import { extractLinks } from "./links";
+import { QA_TOKEN_HEADER } from "./routing";
 
-/** A mail the QA inbox received, as `inbox.waitFor` returns it. */
+/** The app's QA outbox (apps/web/src/pages/api/qa/outbox.ts). */
+const OUTBOX_PATH = "/api/qa/outbox";
+
+/**
+ * A mail the app kept in its QA outbox instead of sending (QA_BYPASS=on), as
+ * `inbox.waitFor` returns it.
+ */
 export interface QaMail {
   readonly subject: string;
   readonly from: string;
@@ -13,12 +20,12 @@ export interface QaMail {
   readonly links: string[];
 }
 
-/** One message of the inbox API (apps/qa-inbox/src/store.ts InboxMessage). */
+/** One message of GET /api/qa/outbox (packages/features/src/qa-outbox QaMail). */
 interface InboxMessage {
   readonly subject: string;
   readonly from: string;
-  readonly text: string | null;
-  readonly html: string | null;
+  readonly text: string;
+  readonly html: string;
   readonly headers: Readonly<Record<string, string>>;
   readonly receivedAt: string;
 }
@@ -30,7 +37,7 @@ export interface WaitForMail {
   readonly subject?: string;
   /** Only mail received at or after this time (take it just before the action). */
   readonly since: Date;
-  /** Default 90 s: delivery through Email Routing usually takes a few seconds. */
+  /** Default 90 s: the outbox has the mail as soon as the app would have sent it. */
   readonly timeoutMs?: number;
 }
 
@@ -41,19 +48,25 @@ async function call(
   method: "GET" | "DELETE",
   query: URLSearchParams
 ): Promise<unknown> {
-  const response = await fetch(`${env.inboxURL}/messages?${query}`, {
+  const response = await fetch(`${env.baseURL}${OUTBOX_PATH}?${query}`, {
     method,
-    headers: { authorization: `Bearer ${env.inboxToken}` },
+    headers: { [QA_TOKEN_HEADER]: env.token },
   });
   if (!response.ok) {
     throw new Error(
-      `QA inbox ${method} /messages answered ${response.status}${response.status === 401 ? " (check QA_INBOX_TOKEN)" : ""}`
+      `QA outbox ${method} ${OUTBOX_PATH} answered ${response.status}${
+        response.status === 401
+          ? " (QA_TOKEN differs from the app's secret)"
+          : response.status === 404
+            ? " (QA_BYPASS is off for this environment)"
+            : ""
+      }`
     );
   }
   return response.json();
 }
 
-/** The QA inbox API (apps/qa-inbox), with the URL and token from `qaEnv()`. */
+/** The app's QA outbox, read with QA_BASE_URL and QA_TOKEN from `qaEnv()`. */
 export const inbox = {
   /**
    * The newest mail to `to` received since `since` (and whose subject contains `subject`),

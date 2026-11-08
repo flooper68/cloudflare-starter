@@ -244,7 +244,7 @@ export const RATE_LIMIT_POLICIES = {
     enforcer: "edge",
     binding: "RL_QA_BYPASS",
     description:
-      "Requests that carry the QA bypass header (x-qa-token) on a human-checked auth endpoint, per IP, counted before the token is compared (QA_BYPASS=on only)",
+      "Requests that carry the QA token (x-qa-token): on a human-checked auth endpoint, and every request to the QA outbox (/api/qa/outbox); per IP, counted before the token is compared (QA_BYPASS=on only)",
   },
 } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
 
@@ -283,6 +283,7 @@ export const ROUTE_POLICIES: Readonly<
   "health/live.ts": ["health.ip"],
   "health/ready.ts": ["health.ip"],
   "api/csp-report.ts": ["csp.report"],
+  "api/qa/outbox.ts": ["qa.bypass"],
 };
 
 /**

@@ -16,6 +16,7 @@ import {
 } from "./notifications";
 import type { JobQueue, Logger } from "./platform";
 import { purgeDataExportsJob } from "./privacy";
+import { purgeQaOutboxJob } from "./qa-outbox";
 import {
   reconcileStorageJob,
   type StorageReconcileMode,
@@ -99,6 +100,18 @@ export const cronCatalog = createCronCatalog<CronDeps>([
       enqueueJob(
         deps,
         planDigestsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
+  },
+  {
+    // Mail the QA outbox kept instead of sending (QA_BYPASS=on) lives 24 hours.
+    name: "qa-outbox.purge",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeQaOutboxJob,
         { asOf: new Date(scheduledTime).toISOString() },
         { context }
       ),

@@ -12,17 +12,13 @@ import { isAppRequest } from "./routing";
 const ENV = {
   QA_BASE_URL: "https://starter.flooper.me/some/path",
   QA_TOKEN: "qa-token-0123456789abcdefghijklmnopqrstuv",
-  QA_INBOX_URL: "https://cloudflare-starter-qa-inbox.example.workers.dev",
-  QA_INBOX_TOKEN: "inbox-token-0123456789abcdefghijklmnop",
 };
 
 describe("qaEnv", () => {
-  it("reads the four variables, origins only", () => {
+  it("reads the variables, the URL reduced to its origin", () => {
     expect(qaEnv(ENV)).toEqual({
       baseURL: "https://starter.flooper.me",
       token: ENV.QA_TOKEN,
-      inboxURL: ENV.QA_INBOX_URL,
-      inboxToken: ENV.QA_INBOX_TOKEN,
       emailDomain: "qa.flooper.me",
     });
     expect(
@@ -33,10 +29,9 @@ describe("qaEnv", () => {
   it("names every missing variable and what it is, without any token", () => {
     expect(
       missingQaEnv({ QA_BASE_URL: ENV.QA_BASE_URL, QA_TOKEN: " " })
-    ).toEqual(["QA_TOKEN", "QA_INBOX_URL", "QA_INBOX_TOKEN"]);
-    expect(() => qaEnv({ QA_TOKEN: ENV.QA_TOKEN })).toThrow(
-      /QA_BASE_URL.*QA_INBOX_URL.*QA_INBOX_TOKEN/
-    );
+    ).toEqual(["QA_TOKEN"]);
+    expect(() => qaEnv({ QA_TOKEN: ENV.QA_TOKEN })).toThrow(/QA_BASE_URL/);
+    expect(() => qaEnv({})).toThrow(/QA_BASE_URL, QA_TOKEN/);
     let message = "";
     try {
       qaEnv({ QA_TOKEN: ENV.QA_TOKEN });
