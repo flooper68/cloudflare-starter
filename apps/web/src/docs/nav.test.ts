@@ -60,7 +60,7 @@ describe("buildNav", () => {
     expect(nav[0].items.map((item) => item.href)).toEqual([
       "/docs/",
       "/docs/start/",
-      "/docs/changelog/",
+      "/docs/guides/how-to-setup-web-app/",
     ]);
   });
 
@@ -93,7 +93,7 @@ describe("locate", () => {
   it("finds the section and the neighbours in reading order", () => {
     const location = locate(nav, "docs/guides/how-to-a.md");
     expect(location.section?.title).toBe("Guides");
-    expect(location.previous?.path).toBe("CHANGELOG.md");
+    expect(location.previous?.path).toBe("docs/guides/how-to-setup-web-app.md");
     expect(location.next?.path).toBe("docs/guides/how-to-b.md");
   });
 
@@ -116,20 +116,28 @@ describe("the real docs index", () => {
   it("has the sections of docs/README.md", () => {
     expect(nav.map((section) => section.title)).toEqual([
       "Start",
-      "Working with agents",
+      "Features",
       "Guides",
       "Architecture",
-      "Processes",
-      "Decisions",
-      "Elsewhere",
+      "Reference",
+      "Changelog",
+      "Working with agents",
     ]);
   });
 
-  it("lists every guide in the order of the index", () => {
+  it("lists every guide in the order of the index, after the ones in Start", () => {
+    const start = new Set<string>(DOCS.start.items.map((item) => item.path));
     const guides = nav.find((section) => section.title === "Guides");
-    const linked = [...source.matchAll(/^\| \[[^\]]+\]\((guides\/[^)]+)\)/gm)];
-    expect(guides?.items.map((item) => item.path)).toEqual(
-      linked.map((match) => `docs/${match[1]}`)
-    );
+    const linked = [...source.matchAll(/^\| \[[^\]]+\]\((guides\/[^)]+)\)/gm)]
+      .map((match) => `docs/${match[1]}`)
+      .filter((path) => !start.has(path));
+    expect(guides?.items.map((item) => item.path)).toEqual(linked);
+  });
+
+  it("lists a page per feature, under Features", () => {
+    const features = nav.find((section) => section.title === "Features");
+    expect(features?.items.length).toBeGreaterThanOrEqual(12);
+    for (const item of features?.items ?? [])
+      expect(item.path).toMatch(/^docs\/features\//);
   });
 });

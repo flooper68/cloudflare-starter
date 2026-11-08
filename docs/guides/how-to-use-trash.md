@@ -1,6 +1,31 @@
 # How to use the trash
 
-How soft delete works in this starter: what "move to trash" does, how reads stay correct, how restore, permanent delete and the daily retention purge work, and how to make another table trashable. Use when you make a table trashable, read a trashable table, change a retention, debug an item that is missing or came back, or erase data for good (account deletion, GDPR).
+::reviewed{date="2026-11-08"}
+
+Deleting a note or a file moves it to its workspace's trash for 30 days: anyone in the workspace can restore it, owners can delete it for good sooner, and a daily job purges what expired. This guide is for making your own table trashable, reading one correctly, changing a retention, and the optional clean-up of orphaned files. What people see: [Export, delete, restore and audit](../features/privacy.md).
+
+::flow[Move to trash -> Hidden from live reads -> Restore, or 30 days pass -> Purged for good]{title="Trash flow: an item moved to the trash disappears from live reads, can be restored, and is purged after its retention"}
+
+:::screenshot{shot="trash" alt="The Trash, with a deleted note to restore"}
+- **Restore** puts it back where it was, for any member
+
+:::
+
+:::steps
+1. **Make the table trashable**: two columns and a contract ([below](#making-a-table-trashable)).
+2. **Read live rows only**: every read goes through `liveIn` ([below](#reading-a-trashable-table)).
+3. **Register it** with the trash and the purge job; the architecture tests list what is missing.
+
+:::
+
+:::prompt{title="Paste this into your coding agent"}
+```text
+Make the <table> table trashable like files and notes: follow
+docs/guides/how-to-use-trash.md#making-a-table-trashable, keep every live read on liveIn,
+register it with the trash feature and the purge job, and add the tests the
+architecture tests ask for.
+```
+:::
 
 ## What it does
 
@@ -11,7 +36,9 @@ Deleting a file moves it to its workspace's **trash**: the row stays, with `dele
 - any member can restore it (`trash.restore`, MCP `restore_from_trash`); an owner can delete it for good sooner (`trash.deletePermanently`, `trash.empty`);
 - after the entity's retention (files: 30 days, `FILE_TRASH_RETENTION_DAYS`) the daily job `trash.purge-expired` deletes the row and the object.
 
+:::gotcha{title="A signed download link outlives the trash"}
 A presigned download URL issued before the file was trashed stays valid until it expires (one hour): R2 checks only its signature. New URLs are refused at once.
+:::
 
 | Who    | Move to trash (`files.delete`) | See trash (`trash.read`) | Restore (`trash.restore` + the entity's write permission) | Delete permanently, empty (`trash.purge`) |
 | ------ | ------------------------------ | ------------------------ | --------------------------------------------------------- | ----------------------------------------- |

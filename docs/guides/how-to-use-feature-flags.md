@@ -1,6 +1,29 @@
 # How to use feature flags
 
-How feature flags work in this starter: the catalog in code, how a feature and the browser read a flag, how targeting rules and percentage rollouts evaluate, how admins change a flag, where flags are stored (`FEATURE_FLAGS`), how a flag is removed, and how to plug in LaunchDarkly or PostHog instead of D1. Also what a flag is not: an entitlement or a permission. Use when you add, evaluate, roll out or remove a feature flag, change `FEATURE_FLAGS`, or connect a flag vendor.
+::reviewed{date="2026-11-08"}
+
+Ship a change switched off, then turn it on for one workspace, one plan or a percentage of workspaces, and remove the flag when it is done. Flags are a catalog in code; admins change them in the portal or through an agent. This guide also says what a flag is not: an entitlement or a permission.
+
+::flow[Add to the catalog -> Read it in the feature -> Roll out by rule -> Remove the flag]{title="Flag lifecycle: add it to the catalog, read it in the feature, roll it out by rules, remove it"}
+
+::shot{id="admin-flags" alt="Feature flags in the admin portal"}
+
+:::settings
+- FEATURE_FLAGS = d1 (d1 | none) Flags stored in the database and changed by admins, or every flag at its catalog default
+
+:::
+
+:::prompt{title="Paste this into your coding agent"}
+```text
+Add a feature flag "new-editor" (boolean, default off, remove when the editor ships) to
+the catalog, read it in the notes screen, and roll it out to 10% of workspaces with
+set_feature_flag_rules on develop. Follow docs/guides/how-to-use-feature-flags.md.
+```
+:::
+
+:::decision{title="Never gate a paid feature or a permission on a flag"}
+A flag can be wrong for a moment (a cache, a vendor outage) and then falls back to its default. That is fine for a release switch, and wrong for anything someone pays for or anything that protects data.
+:::
 
 ## Flags, entitlements and permissions
 
@@ -109,13 +132,15 @@ A flag whose stored JSON does not parse (after hand-written SQL) resolves to its
 
 They are `adminProcedure`s of the admin portal (`apps/web/src/server/trpc/admin-router.ts`): platform admins only, with `ADMIN_PORTAL=on`; everyone else gets `NOT_FOUND` ([how-to-use-admin-portal.md](how-to-use-admin-portal.md)). Every write records an audit event with the admin as actor and no workspace: `feature_flag.updated` (`enabled`, `fallthrough`) and `feature_flag.rules_changed` (`ruleCount`, `ruleKinds`; rule targets stay out of the log) ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)). Admins manage them on the portal's Feature flags page (`/admin/flags`, `AdminFlagCard` with `FlagRuleEditor`).
 
-Without the portal (`ADMIN_PORTAL=off`, or from a script), change a flag with SQL on the environment's D1 (`feature_flags`, `feature_flag_rules`; values are JSON):
+:::byhand{title="Without the portal: change a flag with SQL"}
+With `ADMIN_PORTAL=off`, or from a script, change a flag with SQL on the environment's D1 (`feature_flags`, `feature_flag_rules`; values are JSON):
 
 ```bash
 cd apps/web && bunx wrangler d1 execute DB --local --command \
   "INSERT INTO feature_flags (key, enabled, fallthrough_json, updated_at, updated_by) VALUES ('upload-demo-presigned', 1, 'false', unixepoch() * 1000, 'sql')
    ON CONFLICT(key) DO UPDATE SET enabled = 1, fallthrough_json = 'false', updated_at = unixepoch() * 1000"
 ```
+:::
 
 ## FEATURE_FLAGS
 
