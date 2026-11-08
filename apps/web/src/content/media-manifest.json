@@ -5,17 +5,17 @@
       "id": "agents",
       "title": "Agents & MCP",
       "kind": "walkthrough",
-      "hash": "049b652e3f6a",
-      "duration": 75,
+      "hash": "b70925b758ed",
+      "duration": 74.8,
       "width": 1440,
       "height": 900,
       "audio": false,
       "poster": {
-        "src": "/media/049b652e3f6a/agents.jpg",
-        "bytes": 92076
+        "src": "/media/b70925b758ed/agents.jpg",
+        "bytes": 86567
       },
       "captions": {
-        "src": "/media/049b652e3f6a/agents.vtt",
+        "src": "/media/b70925b758ed/agents.vtt",
         "bytes": 569
       },
       "chapters": [
@@ -67,14 +67,14 @@
       ],
       "sources": [
         {
-          "src": "/media/049b652e3f6a/agents.mp4",
+          "src": "/media/b70925b758ed/agents.mp4",
           "type": "video/mp4",
-          "bytes": 841849
+          "bytes": 843323
         },
         {
-          "src": "/media/049b652e3f6a/agents.webm",
+          "src": "/media/b70925b758ed/agents.webm",
           "type": "video/webm",
-          "bytes": 993386
+          "bytes": 979072
         }
       ],
       "encoder": "ffmpeg"
@@ -83,27 +83,27 @@
       "id": "loop-agent-note",
       "title": "An agent adds a note",
       "kind": "loop",
-      "hash": "e77ff125a647",
-      "duration": 8,
+      "hash": "14bb35347b63",
+      "duration": 7.8,
       "width": 960,
       "height": 600,
       "audio": false,
       "poster": {
-        "src": "/media/e77ff125a647/loop-agent-note.jpg",
-        "bytes": 64571
+        "src": "/media/14bb35347b63/loop-agent-note.jpg",
+        "bytes": 60566
       },
       "captions": null,
       "chapters": [],
       "sources": [
         {
-          "src": "/media/e77ff125a647/loop-agent-note.mp4",
+          "src": "/media/14bb35347b63/loop-agent-note.mp4",
           "type": "video/mp4",
-          "bytes": 120930
+          "bytes": 105853
         },
         {
-          "src": "/media/e77ff125a647/loop-agent-note.webm",
+          "src": "/media/14bb35347b63/loop-agent-note.webm",
           "type": "video/webm",
-          "bytes": 110734
+          "bytes": 102654
         }
       ],
       "encoder": "ffmpeg"
@@ -112,27 +112,27 @@
       "id": "loop-consent",
       "title": "Consent, then Allow",
       "kind": "loop",
-      "hash": "8b1f8c5cde10",
-      "duration": 5.7,
+      "hash": "9c83aa33b149",
+      "duration": 6,
       "width": 960,
       "height": 600,
       "audio": false,
       "poster": {
-        "src": "/media/8b1f8c5cde10/loop-consent.jpg",
+        "src": "/media/9c83aa33b149/loop-consent.jpg",
         "bytes": 10712
       },
       "captions": null,
       "chapters": [],
       "sources": [
         {
-          "src": "/media/8b1f8c5cde10/loop-consent.mp4",
+          "src": "/media/9c83aa33b149/loop-consent.mp4",
           "type": "video/mp4",
-          "bytes": 25813
+          "bytes": 26387
         },
         {
-          "src": "/media/8b1f8c5cde10/loop-consent.webm",
+          "src": "/media/9c83aa33b149/loop-consent.webm",
           "type": "video/webm",
-          "bytes": 28176
+          "bytes": 28850
         }
       ],
       "encoder": "ffmpeg"
@@ -141,27 +141,27 @@
       "id": "loop-health",
       "title": "A health check goes green",
       "kind": "loop",
-      "hash": "bc4aa78c33a3",
+      "hash": "2fef52748bfa",
       "duration": 6,
       "width": 960,
       "height": 600,
       "audio": false,
       "poster": {
-        "src": "/media/bc4aa78c33a3/loop-health.jpg",
-        "bytes": 45270
+        "src": "/media/2fef52748bfa/loop-health.jpg",
+        "bytes": 45306
       },
       "captions": null,
       "chapters": [],
       "sources": [
         {
-          "src": "/media/bc4aa78c33a3/loop-health.mp4",
+          "src": "/media/2fef52748bfa/loop-health.mp4",
           "type": "video/mp4",
-          "bytes": 36900
+          "bytes": 35229
         },
         {
-          "src": "/media/bc4aa78c33a3/loop-health.webm",
+          "src": "/media/2fef52748bfa/loop-health.webm",
           "type": "video/webm",
-          "bytes": 56072
+          "bytes": 56337
         }
       ],
       "encoder": "ffmpeg"
@@ -170,27 +170,27 @@
       "id": "loop-invite",
       "title": "Invite a teammate",
       "kind": "loop",
-      "hash": "9dafacfa71a3",
+      "hash": "cd5bbafb0584",
       "duration": 8,
       "width": 960,
       "height": 600,
       "audio": false,
       "poster": {
-        "src": "/media/9dafacfa71a3/loop-invite.jpg",
-        "bytes": 43603
+        "src": "/media/cd5bbafb0584/loop-invite.jpg",
+        "bytes": 43823
       },
       "captions": null,
       "chapters": [],
       "sources": [
         {
-          "src": "/media/9dafacfa71a3/loop-invite.mp4",
+          "src": "/media/cd5bbafb0584/loop-invite.mp4",
           "type": "video/mp4",
-          "bytes": 89414
+          "bytes": 94463
         },
         {
-          "src": "/media/9dafacfa71a3/loop-invite.webm",
+          "src": "/media/cd5bbafb0584/loop-invite.webm",
           "type": "video/webm",
-          "bytes": 80846
+          "bytes": 84460
         }
       ],
       "encoder": "ffmpeg"
@@ -199,27 +199,27 @@
       "id": "loop-job-mail",
       "title": "A job runs, the mail arrives",
       "kind": "loop",
-      "hash": "5932f0e254ad",
+      "hash": "369c1a6ad79a",
       "duration": 10,
       "width": 960,
       "height": 600,
       "audio": false,
       "poster": {
-        "src": "/media/5932f0e254ad/loop-job-mail.jpg",
-        "bytes": 47668
+        "src": "/media/369c1a6ad79a/loop-job-mail.jpg",
+        "bytes": 48009
       },
       "captions": null,
       "chapters": [],
       "sources": [
         {
-          "src": "/media/5932f0e254ad/loop-job-mail.mp4",
+          "src": "/media/369c1a6ad79a/loop-job-mail.mp4",
           "type": "video/mp4",
-          "bytes": 60568
+          "bytes": 61062
         },
         {
-          "src": "/media/5932f0e254ad/loop-job-mail.webm",
+          "src": "/media/369c1a6ad79a/loop-job-mail.webm",
           "type": "video/webm",
-          "bytes": 83410
+          "bytes": 83249
         }
       ],
       "encoder": "ffmpeg"
@@ -228,17 +228,17 @@
       "id": "tour",
       "title": "The starter in 90 seconds",
       "kind": "walkthrough",
-      "hash": "9ecf4902977e",
+      "hash": "e58bfec086f8",
       "duration": 90,
       "width": 1440,
       "height": 900,
       "audio": false,
       "poster": {
-        "src": "/media/9ecf4902977e/tour.jpg",
-        "bytes": 91729
+        "src": "/media/e58bfec086f8/tour.jpg",
+        "bytes": 86698
       },
       "captions": {
-        "src": "/media/9ecf4902977e/tour.vtt",
+        "src": "/media/e58bfec086f8/tour.vtt",
         "bytes": 690
       },
       "chapters": [
@@ -253,7 +253,7 @@
           "caption": "The demo is the starter itself."
         },
         {
-          "start": 18,
+          "start": 19.8,
           "title": "Already done for you",
           "caption": "Sign-in, workspaces and billing are already done."
         },
@@ -295,14 +295,14 @@
       ],
       "sources": [
         {
-          "src": "/media/9ecf4902977e/tour.mp4",
+          "src": "/media/e58bfec086f8/tour.mp4",
           "type": "video/mp4",
-          "bytes": 1346817
+          "bytes": 1346022
         },
         {
-          "src": "/media/9ecf4902977e/tour.webm",
+          "src": "/media/e58bfec086f8/tour.webm",
           "type": "video/webm",
-          "bytes": 1545632
+          "bytes": 1549502
         }
       ],
       "encoder": "ffmpeg"
