@@ -12,6 +12,8 @@ Quality on a deployment has three layers:
 
 The smoke suite never signs up and never writes (it aborts any non-GET request to the app). Everything that needs an account is here.
 
+Most of this checklist also runs unattended as Playwright journeys, one file per section, that create their own `qa-<run>-*` accounts and erase them at the end: `bun run test:qa -- --base-url <url>` ([apps/web/test/qa/README.md](../../apps/web/test/qa/README.md) maps sections to files and lists what it skips and why). The steps below stay the reference for what each journey asserts, and for the parts it cannot do (real passkeys and authenticator apps on the owner's device, the next day's digest, Claude itself).
+
 ## Rules for a run
 
 - **Accounts.** Only plus-addressed QA accounts: `premysl.ciompa+qa-<run>-a@gmail.com` (owner A) and `premysl.ciompa+qa-<run>-b@gmail.com` (invitee B), where `<run>` is the date and a letter, e.g. `20261106a`. Mail to them lands in the owner's Gmail inbox (check Spam too). Never use the owner's own account for anything but the [admin](#admin-portal) section.

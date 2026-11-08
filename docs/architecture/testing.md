@@ -39,6 +39,11 @@ The `web-api` project disables Vitest's filesystem module cache (`fsModuleCache:
 - Invitation links: the journey reads the mail that the local `send_email` simulation writes under `apps/web/.wrangler/tmp/email/`.
 - Failures keep a trace, video and screenshot in `apps/web/test-results/` and an HTML report in `apps/web/playwright-report/` (`bunx playwright show-report` in `apps/web`); CI uploads both as the `playwright-report` artifact.
 
+### Production QA journeys
+
+- `bun run test:qa -- --base-url <url>` runs `apps/web/test/qa/*.qa.ts` (`apps/web/playwright.qa.config.ts`, project `qa`): the [scripted feature QA](../guides/how-to-qa-a-deployment.md) as journeys against a deployed environment, each creating its own `qa-<runId>-<role>@<QA_EMAIL_DOMAIN>` accounts through the real sign-up and mail link; the global teardown erases the run's accounts. It needs the QA variables (token, test inbox, email domain); without them every journey skips, so it never fails a PR. Not part of CI.
+- Every `/api/auth/*` request is paced to the app's own per-IP limits across workers (`support/limits.ts`); no traces and no page snapshots are kept, since they would record typed passwords. Map, skips and the run's sign-up and mail budget: [apps/web/test/qa/README.md](../../apps/web/test/qa/README.md).
+
 ### Production smoke
 
 - `bun run test:smoke -- --base-url https://starter.flooper.me` (or `-- --env production`, which reads the environment's route from `wrangler.jsonc`) runs `apps/web/test/e2e/smoke/*.smoke.ts` against a deployed app. `E2E_BASE_URL` switches `playwright.config.ts` to the `production` project: only `@smoke` tests, no local server, the HTML report in `apps/web/playwright-report/`.
