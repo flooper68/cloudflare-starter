@@ -6,6 +6,7 @@
 
 import { purgeAuditEventsJob } from "./audit";
 import { expireTrialsJob } from "./billing";
+import { type DemoSettings, enforceDemoRetentionJob } from "./demo";
 import { retryFileCleanupsJob } from "./files";
 import { createCronCatalog, enqueueJob, purgeIdempotencyKeysJob } from "./jobs";
 import type { Clock, Ids } from "./kernel";
@@ -16,6 +17,7 @@ import {
 } from "./notifications";
 import type { JobQueue, Logger } from "./platform";
 import { purgeDataExportsJob } from "./privacy";
+import { purgeQaOutboxJob } from "./qa";
 import {
   reconcileStorageJob,
   type StorageReconcileMode,
@@ -25,6 +27,8 @@ import { purgeExpiredTrashJob } from "./trash";
 /** What a cron entry may use. */
 export interface CronDeps {
   readonly storageReconcile: StorageReconcileMode;
+  /** DEMO_MODE and its settings: the demo retention runs only with on. */
+  readonly demo: DemoSettings;
   readonly jobQueue: JobQueue;
   readonly clock: Clock;
   readonly ids: Ids;
@@ -104,6 +108,18 @@ export const cronCatalog = createCronCatalog<CronDeps>([
       ),
   },
   {
+    // Mail the QA outbox kept instead of sending (QA_BYPASS=on) lives 24 hours.
+    name: "qa-outbox.purge",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeQaOutboxJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
+  },
+  {
     name: "trash.purge-expired",
     schedule: DAILY,
     run: (deps, { scheduledTime, context }) =>
@@ -113,6 +129,21 @@ export const cronCatalog = createCronCatalog<CronDeps>([
         { asOf: new Date(scheduledTime).toISOString() },
         { context }
       ),
+  },
+  {
+    // Demo mode only (DEMO_MODE=on; starter-only): warns accounts a day before
+    // DEMO_RETENTION_DAYS and erases the expired ones. Enqueues nothing with off.
+    name: "demo.enforce-retention",
+    schedule: DAILY,
+    run: async (deps, { scheduledTime, context }) => {
+      if (deps.demo.mode !== "on") return;
+      return enqueueJob(
+        deps,
+        enforceDemoRetentionJob,
+        { asOf: new Date(scheduledTime).toISOString(), batch: 0 },
+        { context }
+      );
+    },
   },
   {
     name: "storage.reconcile",

@@ -84,6 +84,16 @@ The owner decides when to release and which number (SemVer: a breaking change fo
 3. After the PR is merged, tag the merge commit and push the tag: `git tag -a vX.Y.Z -m "vX.Y.Z" <commit>` and `git push origin vX.Y.Z`. Optionally create a GitHub release from the tag with the section's text.
 4. Deploy as usual; the release notes and the feed update with the deploy.
 
+## Starter-only parts
+
+Some of this repository exists only for the starter's own public instance at `starter.flooper.me` and its repository: its QA automation, demos, marketing, production values. A project made from the template removes them with `bun run starter:strip` ([how-to-start-a-project.md](../guides/how-to-start-a-project.md)), which works from the manifest `starter-only.json` at the root.
+
+- **Any new starter-only part goes into the manifest in the same PR**: a new component, or the files, settings, rate limits, secrets, CI jobs, docs and tests it adds to an existing one. Ask "would a new project built from the template delete or replace this?"; if yes, it is starter-only.
+- A guide that documents a starter-only part says so with a blockquote the strip removes, starting ``> **Starter-only, removed by `starter:strip`** (`<component id>`):``.
+- Prefer manifest operations that survive edits around them: settings (`wrangler`, `json`), CI jobs and steps (`ci`), doc sections (`docs`), exact text (`text`). Use a `patch` only for code edits too entangled for `text`; regenerate it when the code it edits changes (apply it to a copy with `git apply --3way`, fix the conflicts, then `git diff > scripts/starter-only/<id>.patch` on the edited files).
+- A component whose PR has not landed is `"status": "pending"` with the PR it waits for; when the PR merges, list its parts and set it `active`.
+- `test/architecture/starter-only.test.ts` checks that every path, setting, job, section and text the manifest names exists and every patch applies; the CI job `starter-strip` applies the default set to a scratch copy and runs typecheck, lint and test there (`bun run starter:strip:check`, `--each` for every component on its own, `--all` for all at once).
+
 ## Authorship and attribution
 
 The person who asked for the work is the author. Never credit an AI agent as author or co-author in commits, PR descriptions or code: no agent `Co-Authored-By` trailers or "Generated with …" lines. CI checks commits with `scripts/check-attribution.ts`.

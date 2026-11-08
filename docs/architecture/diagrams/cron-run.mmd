@@ -1,0 +1,17 @@
+sequenceDiagram
+  accTitle: A cron run
+  accDescr: A Cron Trigger from triggers.crons in wrangler.jsonc fires the Worker's scheduled handler with the schedule. The handler finds every cron catalog entry with that schedule, and runs each in a new trace and its own span. Each entry enqueues jobs, so the queue does the work. A failing entry is reported and the others still run; the run then fails. The run's metrics are flushed at the end.
+  participant T as Cron Trigger
+  participant S as scheduled()
+  participant E as Cron catalog entry
+  participant Q as APP_QUEUE
+  T->>S: controller.cron, scheduledTime
+  Note over S: cronEntriesFor(catalog, cron)
+  loop each entry with this schedule
+    Note over S: new trace, span cron name
+    S->>E: run(deps, scheduledTime)
+    E->>Q: enqueueJob(...)
+  end
+  alt an entry failed
+    S-->>T: report, rethrow, run fails
+  end

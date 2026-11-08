@@ -1,6 +1,12 @@
 import {
   type BillingSettings,
   billingSettingsSchema,
+  DEMO_MODES,
+  DEMO_PROTECTED_EMAILS_MAX,
+  DEMO_RETENTION_MAX_DAYS,
+  DEMO_RETENTION_MIN_DAYS,
+  DEMO_SAMPLE_DATA_VALUES,
+  type DemoSettings,
   type SecuritySettings,
   STORAGE_RECONCILE_MODES,
   type StorageReconcileMode,
@@ -49,6 +55,8 @@ export type AppConfig = z.infer<typeof envSchema> & {
   readonly STORAGE_RECONCILE: StorageReconcileMode;
   readonly AUTH_EMAIL_PASSWORD: boolean;
   readonly AUTH_REQUIRE_EMAIL_VERIFICATION: boolean;
+  /** DEMO_MODE and, with on, DEMO_RETENTION_DAYS, DEMO_SAMPLE_DATA, DEMO_PROTECTED_EMAILS. */
+  readonly demo: DemoSettings;
 };
 
 export type RequiredAppConfig = Omit<
@@ -91,6 +99,65 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       STORAGE_RECONCILE_MODES
     ),
     security: securitySettingsSchema.parse(env),
+    demo: parseDemoConfig(env),
+  };
+}
+
+const DEMO_WHERE =
+  "in the vars of apps/web/wrangler.jsonc (docs/guides/how-to-run-a-public-demo.md)";
+
+/**
+ * Demo mode (docs/guides/how-to-run-a-public-demo.md), starter-only: DEMO_MODE=off|on is
+ * required, no default; apps built from the starter keep off. With on, DEMO_RETENTION_DAYS
+ * (an integer, 2..365) and DEMO_SAMPLE_DATA (on|off) are required too, and
+ * DEMO_PROTECTED_EMAILS (optional, comma-separated addresses, at most 50) is read. With
+ * off the other DEMO_* vars are ignored.
+ */
+export function parseDemoConfig(env: PartialEnv): DemoSettings {
+  const mode = requiredChoice(env, "DEMO_MODE", DEMO_MODES, DEMO_WHERE);
+  if (mode === "off") return { mode };
+  const rawDays = env.DEMO_RETENTION_DAYS;
+  const days = Number(rawDays);
+  if (
+    rawDays === undefined ||
+    !/^\d+$/.test(rawDays) ||
+    days < DEMO_RETENTION_MIN_DAYS ||
+    days > DEMO_RETENTION_MAX_DAYS
+  ) {
+    throw new ConfigError(
+      "DEMO_RETENTION_DAYS",
+      `DEMO_MODE=on needs DEMO_RETENTION_DAYS, a whole number of days from ${DEMO_RETENTION_MIN_DAYS} to ${DEMO_RETENTION_MAX_DAYS}, ${DEMO_WHERE}${rawDays === undefined ? "" : `; "${rawDays}" is not one`}`
+    );
+  }
+  const sampleData = requiredChoice(
+    env,
+    "DEMO_SAMPLE_DATA",
+    DEMO_SAMPLE_DATA_VALUES,
+    DEMO_WHERE
+  );
+  const protectedEmails = (env.DEMO_PROTECTED_EMAILS ?? "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter((email) => email !== "");
+  for (const email of protectedEmails) {
+    if (!z.email().safeParse(email).success) {
+      throw new ConfigError(
+        "DEMO_PROTECTED_EMAILS",
+        `DEMO_PROTECTED_EMAILS must be comma-separated email addresses; "${email}" is not one`
+      );
+    }
+  }
+  if (protectedEmails.length > DEMO_PROTECTED_EMAILS_MAX) {
+    throw new ConfigError(
+      "DEMO_PROTECTED_EMAILS",
+      `DEMO_PROTECTED_EMAILS holds at most ${DEMO_PROTECTED_EMAILS_MAX} addresses`
+    );
+  }
+  return {
+    mode,
+    retentionDays: days,
+    sampleData: sampleData === "on",
+    protectedEmails: [...new Set(protectedEmails)],
   };
 }
 
@@ -288,7 +355,7 @@ function parseQaBypass(env: PartialEnv): {
   if (!HOSTNAME.test(emailDomain)) {
     throw new ConfigError(
       "QA_EMAIL_DOMAIN",
-      `QA_BYPASS=on needs QA_EMAIL_DOMAIN, the lowercase mail domain of the QA inbox (e.g. qa.example.com), in the vars of apps/web/wrangler.jsonc${emailDomain ? `; "${emailDomain}" is not a hostname` : ""}`
+      `QA_BYPASS=on needs QA_EMAIL_DOMAIN, the lowercase mail domain of QA addresses (e.g. qa.example.com), in the vars of apps/web/wrangler.jsonc${emailDomain ? `; "${emailDomain}" is not a hostname` : ""}`
     );
   }
   return { token, emailDomain };

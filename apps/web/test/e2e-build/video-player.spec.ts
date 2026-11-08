@@ -9,7 +9,9 @@ import { MEDIA_MANIFEST } from "../../src/content/media";
 import { HOME_CLIPS, HOME_WALKTHROUGH } from "../../src/content/videos";
 import { expect, type Page, test } from "../e2e/fixtures";
 
-const tour = MEDIA_MANIFEST.videos[HOME_WALKTHROUGH];
+const tour = HOME_WALKTHROUGH
+  ? MEDIA_MANIFEST.videos[HOME_WALKTHROUGH]
+  : undefined;
 
 /** The media as it is before an upload: every /media/ request is a 404. */
 async function withoutMedia(page: Page): Promise<string[]> {
@@ -107,7 +109,9 @@ test.describe("video player under reduced motion", () => {
   test("loops wait on their poster with a Play button", async ({ page }) => {
     const requested = await withoutMedia(page);
     await page.goto("/");
-    const first = MEDIA_MANIFEST.videos[HOME_CLIPS.agents];
+    const first = HOME_CLIPS.agents
+      ? MEDIA_MANIFEST.videos[HOME_CLIPS.agents]
+      : undefined;
     test.skip(!first, "the agents clip is not recorded yet");
     const card = page.getByRole("button", {
       name: `Play clip: ${first?.title}`,

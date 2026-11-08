@@ -14,6 +14,16 @@ export interface AdminSettingsData {
   readonly emailVerificationRequired: boolean;
   readonly emailEnabled: boolean;
   readonly adminPortal: "on" | "off";
+  /** DEMO_MODE and its settings; absent on older servers. */
+  readonly demo?:
+    | { readonly mode: "off" }
+    | {
+        readonly mode: "on";
+        readonly retentionDays: number;
+        readonly sampleData: boolean;
+        readonly protectedEmails: readonly string[];
+        readonly qaEmailDomain: string | null;
+      };
 }
 
 export interface AdminSettingsProps {
@@ -83,6 +93,34 @@ export function AdminSettings({
           {onOff(settings.adminPortal === "on")}
         </SettingsRow>
       </SettingsSection>
+      {settings.demo ? (
+        <SettingsSection
+          title="Demo mode"
+          description="A public demo erases accounts after the retention. Apps built from the starter keep it off."
+        >
+          <SettingsRow label="Demo mode">
+            {onOff(settings.demo.mode === "on")}
+          </SettingsRow>
+          {settings.demo.mode === "on" ? (
+            <>
+              <SettingsRow label="Retention">
+                {`${settings.demo.retentionDays} days`}
+              </SettingsRow>
+              <SettingsRow label="Sample data">
+                {onOff(settings.demo.sampleData)}
+              </SettingsRow>
+              <SettingsRow label="Protected accounts">
+                {settings.demo.protectedEmails.length
+                  ? settings.demo.protectedEmails.join(", ")
+                  : "None"}
+              </SettingsRow>
+              <SettingsRow label="QA domain (skipped)">
+                {settings.demo.qaEmailDomain ?? "None"}
+              </SettingsRow>
+            </>
+          ) : null}
+        </SettingsSection>
+      ) : null}
       {queuesDashboardUrl ? (
         <SettingsSection
           title="Background jobs"

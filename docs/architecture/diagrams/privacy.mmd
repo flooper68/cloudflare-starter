@@ -1,0 +1,20 @@
+flowchart LR
+  accTitle: Data export and account erasure
+  accDescr: Export. privacy.requestExport checks the limits and authorization, writes a data_requests row and enqueues privacy.build-export. The job reads D1 in pages and the user's R2 objects, streams them through the Zip port into a multipart upload in R2, checks authorization again, and notifies the user. The download route needs a signed, expiring link and the signed-in user. The hourly privacy.purge-exports removes expired archives. Erasure. Self-deletion through Better Auth and admin erasure share one pipeline: preflight refuses the last owner or last admin and takes the erasure lock, the owning features erase workspace and user artifacts in R2 and redact the audit subject, Better Auth deletes the user, whose rows cascade, and the after hook writes an erasure record, schedules delayed storage sweeps, records the audit event and sends a confirmation.
+  subgraph Export["export"]
+    Request["privacy.requestExport"]
+    Build["job privacy.build-export: D1 pages, R2 objects, Zip"]
+    Archive[("R2: export archive")]
+    Download["/api/privacy/exports/id: signed link and session"]
+    Purge["cron privacy.purge-exports"]
+  end
+  subgraph Erasure["erasure"]
+    Delete["delete account or admin erasure"]
+    Preflight["prepareUserErasure: last owner and admin, lock"]
+    Artifacts["erasure-catalog: R2 objects, audit subject"]
+    Cascade["Better Auth deletes the user, rows cascade"]
+    Complete["completeUserErasure: erasure record, sweeps, mail"]
+  end
+  Request --> Build --> Archive --> Download
+  Purge --> Archive
+  Delete --> Preflight --> Artifacts --> Cascade --> Complete

@@ -1,0 +1,28 @@
+sequenceDiagram
+  accTitle: An MCP tool call, create_note
+  accDescr: The MCP client posts a JSON-RPC tool call to /mcp with its bearer token. The endpoint counts the request per IP, verifies the JWT against the in-process key set (issuer, audience /mcp, sub and azp), reloads the user from D1, counts the request per user, then checks in parallel that the browser session that granted the token (starter_session_id) is still valid and that the user's consent for this client is not newer than the token. Any failure answers 401 invalid_token. The tool runs in its own span and calls the same tRPC procedure in process through appRouter.createCaller, so the rate limit, actor, permission, use case, audit event and errors are the web app's. The result wraps user data in untrusted-data tags.
+  participant C as MCP client
+  participant M as /mcp
+  participant L as Rate Limiting
+  participant D as D1
+  participant T as Tool create_note
+  participant R as notes.create procedure
+  C->>M: POST tools/call, Bearer JWT
+  M->>L: mcp.ip
+  Note over M: verify JWT with the in-process JWKS
+  M->>D: findUserById(sub)
+  M->>L: mcp.user
+  par session binding
+    M->>D: getSecurityState(starter_session_id)
+  and consent
+    M->>D: hasAgentGrant(user, azp, iat)
+  end
+  alt any check fails
+    M-->>C: 401 invalid_token
+  end
+  M->>T: tool call, in a tool span
+  T->>R: appRouter.createCaller(context)
+  Note over R: same chain and use case as the web app
+  R->>D: createNote, audit event
+  R-->>T: result or tRPC error
+  T-->>C: result in untrusted-data tags

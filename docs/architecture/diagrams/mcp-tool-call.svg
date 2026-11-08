@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 985.7585 710" width="986" height="710" role="img" data-natural-width="">
+<title>An MCP tool call, create_note</title>
+<desc>The MCP client posts a JSON-RPC tool call to /mcp with its bearer token. The endpoint counts the request per IP, verifies the JWT against the in-process key set (issuer, audience /mcp, sub and azp), reloads the user from D1, counts the request per user, then checks in parallel that the browser session that granted the token (starter_session_id) is still valid and that the user's consent for this client is not newer than the token. Any failure answers 401 invalid_token. The tool runs in its own span and calls the same tRPC procedure in process through appRouter.createCaller, so the rate limit, actor, permission, use case, audit event and errors are the web app's. The result wraps user data in untrusted-data tags.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="985.7585" height="710" rx="12"/>
+<defs>
+<marker id="dg-mcp-tool-call-seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+</marker>
+<marker id="dg-mcp-tool-call-seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+</marker>
+</defs>
+<g class="block" data-type="par" data-label="session binding">
+<rect x="178.097" y="253" width="380" height="124" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="178.097" y="253" width="127.21000000000002" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="184.097" y="262" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">par [session binding]</text>
+<line x1="178.097" y1="329" x2="558.097" y2="329" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<text x="186.097" y="343" font-size="11" text-anchor="start" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">[consent]</text>
+</g>
+<g class="block" data-type="alt" data-label="any check fails">
+<rect x="30" y="385" width="248.09699999999998" height="60" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="30" y="385" width="115.99000000000001" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="36" y="394" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [any check fails]</text>
+</g>
+<line class="lifeline" data-actor="C" x1="88.09700000000001" y1="70" x2="88.09700000000001" y2="680" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="M" x1="228.097" y1="70" x2="228.097" y2="680" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="L" x1="368.097" y1="70" x2="368.097" y2="680" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="D" x1="508.097" y1="70" x2="508.097" y2="680" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="T" x1="655.0895" y1="70" x2="655.0895" y2="680" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="R" x1="849.0815" y1="70" x2="849.0815" y2="680" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="C" data-to="M" data-label="POST tools/call, Bearer JWT" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="88.09700000000001" y1="90" x2="228.097" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="158.097" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">POST tools/call, Bearer JWT</text>
+</g>
+<g class="message" data-from="M" data-to="L" data-label="mcp.ip" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="228.097" y1="130" x2="368.097" y2="130" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="298.097" y="120" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">mcp.ip</text>
+</g>
+<g class="message" data-from="M" data-to="D" data-label="findUserById(sub)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="228.097" y1="185" x2="508.097" y2="185" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="368.097" y="175" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">findUserById(sub)</text>
+</g>
+<g class="message" data-from="M" data-to="L" data-label="mcp.user" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="228.097" y1="225" x2="368.097" y2="225" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="298.097" y="215" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">mcp.user</text>
+</g>
+<g class="message" data-from="M" data-to="D" data-label="getSecurityState(starter_session_id)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="228.097" y1="293" x2="508.097" y2="293" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="368.097" y="283" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">getSecurityState(starter_session_id)</text>
+</g>
+<g class="message" data-from="M" data-to="D" data-label="hasAgentGrant(user, azp, iat)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="228.097" y1="357" x2="508.097" y2="357" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="368.097" y="347" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">hasAgentGrant(user, azp, iat)</text>
+</g>
+<g class="message" data-from="M" data-to="C" data-label="401 invalid_token" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="228.097" y1="425" x2="88.09700000000001" y2="425" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="158.097" y="415" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">401 invalid_token</text>
+</g>
+<g class="message" data-from="M" data-to="T" data-label="tool call, in a tool span" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="228.097" y1="465" x2="655.0895" y2="465" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="441.59325" y="455" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">tool call, in a tool span</text>
+</g>
+<g class="message" data-from="T" data-to="R" data-label="appRouter.createCaller(context)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="655.0895" y1="505" x2="849.0815" y2="505" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="752.0855" y="495" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">appRouter.createCaller(context)</text>
+</g>
+<g class="message" data-from="R" data-to="D" data-label="createNote, audit event" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="849.0815" y1="560" x2="508.097" y2="560" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="678.58925" y="550" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">createNote, audit event</text>
+</g>
+<g class="message" data-from="R" data-to="T" data-label="result or tRPC error" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="849.0815" y1="600" x2="655.0895" y2="600" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="752.0855" y="590" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">result or tRPC error</text>
+</g>
+<g class="message" data-from="T" data-to="C" data-label="result in untrusted-data tags" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="655.0895" y1="640" x2="88.09700000000001" y2="640" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-mcp-tool-call-seq-arrow)" />
+<text x="371.59325" y="630" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">result in untrusted-data tags</text>
+</g>
+<g class="note" data-position="over" data-actors="M">
+<polygon points="128.548,138 321.646,138 327.646,144 327.646,161 128.548,161" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="321.646,138 327.646,144 321.646,144" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="228.097" y="149.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">verify JWT with the in-process JWKS</text>
+</g>
+<g class="note" data-position="over" data-actors="R">
+<polygon points="742.4045,513 949.7585,513 955.7585,519 955.7585,536 742.4045,536" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="949.7585,513 955.7585,519 949.7585,519" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="849.0815" y="524.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">same chain and use case as the web app</text>
+</g>
+<g class="actor" data-id="C" data-label="MCP client" data-type="participant">
+<rect x="40.00000000000001" y="30" width="96.194" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="88.09700000000001" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">MCP client</text>
+</g>
+<g class="actor" data-id="M" data-label="/mcp" data-type="participant">
+<rect x="188.097" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="228.097" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">/mcp</text>
+</g>
+<g class="actor" data-id="L" data-label="Rate Limiting" data-type="participant">
+<rect x="314.4425" y="30" width="107.30900000000001" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="368.097" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Rate Limiting</text>
+</g>
+<g class="actor" data-id="D" data-label="D1" data-type="participant">
+<rect x="468.097" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="508.097" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">D1</text>
+</g>
+<g class="actor" data-id="T" data-label="Tool create_note" data-type="participant">
+<rect x="588.097" y="30" width="133.985" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="655.0895" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Tool create_note</text>
+</g>
+<g class="actor" data-id="R" data-label="notes.create procedure" data-type="participant">
+<rect x="762.082" y="30" width="173.999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="849.0815" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">notes.create procedure</text>
+</g>
+</svg>

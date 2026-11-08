@@ -163,16 +163,16 @@ export const VIDEOS: readonly Video[] = [
   },
 ];
 
-/** The clip in each pillar card on the home page. */
-export const HOME_CLIPS: Readonly<Record<PillarId, string>> = {
+/** The clip in each pillar card on the home page (a card without one shows none). */
+export const HOME_CLIPS: Readonly<Partial<Record<PillarId, string>>> = {
   agents: "loop-agent-note",
   scaffold: "loop-invite",
   platform: "loop-job-mail",
   infra: "loop-health",
 };
 
-/** The walkthrough on the home page, under the pillars. */
-export const HOME_WALKTHROUGH = "tour";
+/** The walkthrough on the home page, under the pillars (null: no such section). */
+export const HOME_WALKTHROUGH: string | null = "tour";
 
 export function video(id: string): Video | undefined {
   return VIDEOS.find((entry) => entry.id === id);

@@ -481,6 +481,19 @@ CREATE TABLE `erasure_records` (
 	`completed_at` integer
 );
 --> statement-breakpoint
+CREATE TABLE `qa_outbox` (
+	`id` text PRIMARY KEY NOT NULL,
+	`recipient` text NOT NULL,
+	`sender` text NOT NULL,
+	`subject` text NOT NULL,
+	`text_body` text NOT NULL,
+	`html_body` text NOT NULL,
+	`headers` text NOT NULL,
+	`created_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `qa_outbox_recipient_idx` ON `qa_outbox` (`recipient`,`created_at`);--> statement-breakpoint
+CREATE INDEX `qa_outbox_created_at_idx` ON `qa_outbox` (`created_at`);--> statement-breakpoint
 CREATE TABLE `workspace_invitations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`workspace_id` text NOT NULL,

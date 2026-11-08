@@ -3,8 +3,8 @@
 import { describe, expect, it } from "vitest";
 
 import { isQaAddress, newRunId, qaAddress } from "./address";
+import { qaAdmin } from "./admin";
 import { missingQaEnv, qaEnv, qaSkipReason } from "./env";
-import { onlyQaMembers, selectLeftovers } from "./leftovers";
 import { extractLinks, linkTo } from "./links";
 import { qaPassword } from "./password";
 import { isAppRequest } from "./routing";
@@ -12,17 +12,13 @@ import { isAppRequest } from "./routing";
 const ENV = {
   QA_BASE_URL: "https://starter.flooper.me/some/path",
   QA_TOKEN: "qa-token-0123456789abcdefghijklmnopqrstuv",
-  QA_INBOX_URL: "https://cloudflare-starter-qa-inbox.example.workers.dev",
-  QA_INBOX_TOKEN: "inbox-token-0123456789abcdefghijklmnop",
 };
 
 describe("qaEnv", () => {
-  it("reads the four variables, origins only", () => {
+  it("reads the variables, the URL reduced to its origin", () => {
     expect(qaEnv(ENV)).toEqual({
       baseURL: "https://starter.flooper.me",
       token: ENV.QA_TOKEN,
-      inboxURL: ENV.QA_INBOX_URL,
-      inboxToken: ENV.QA_INBOX_TOKEN,
       emailDomain: "qa.flooper.me",
     });
     expect(
@@ -33,10 +29,9 @@ describe("qaEnv", () => {
   it("names every missing variable and what it is, without any token", () => {
     expect(
       missingQaEnv({ QA_BASE_URL: ENV.QA_BASE_URL, QA_TOKEN: " " })
-    ).toEqual(["QA_TOKEN", "QA_INBOX_URL", "QA_INBOX_TOKEN"]);
-    expect(() => qaEnv({ QA_TOKEN: ENV.QA_TOKEN })).toThrow(
-      /QA_BASE_URL.*QA_INBOX_URL.*QA_INBOX_TOKEN/
-    );
+    ).toEqual(["QA_TOKEN"]);
+    expect(() => qaEnv({ QA_TOKEN: ENV.QA_TOKEN })).toThrow(/QA_BASE_URL/);
+    expect(() => qaEnv({})).toThrow(/QA_BASE_URL, QA_TOKEN/);
     let message = "";
     try {
       qaEnv({ QA_TOKEN: ENV.QA_TOKEN });
@@ -141,66 +136,12 @@ describe("QA routing", () => {
   });
 });
 
-describe("nightly leftovers", () => {
-  const now = new Date("2026-11-09T03:00:00Z");
-  const old = "2026-11-08T12:00:00.000Z";
-  const rows = [
-    {
-      id: "1",
-      email: "qa+20261108kqzt-a@qa.flooper.me",
-      role: "user",
-      createdAt: old,
-    },
-    {
-      id: "2",
-      email: "qa+20261109abcd-a@qa.flooper.me",
-      role: "user",
-      createdAt: "2026-11-09T02:30:00.000Z",
-    },
-    { id: "3", email: "qa+admin@qa.flooper.me", role: "admin", createdAt: old },
-    {
-      id: "4",
-      email: "qa+20261108kqzt-b@qa.flooper.me",
-      role: "user,admin",
-      createdAt: old,
-    },
-    { id: "5", email: "premysl@example.com", role: "user", createdAt: old },
-    {
-      id: "6",
-      email: "qa+20261108kqzt-c@notqa.flooper.me",
-      role: "user",
-      createdAt: old,
-    },
-  ];
-
-  it("selects QA suite accounts older than two hours, never admins or anyone else", () => {
-    expect(
-      selectLeftovers(rows, {
-        domain: "qa.flooper.me",
-        adminEmail: "qa+admin@qa.flooper.me",
-        now,
-      }).map((row) => row.id)
-    ).toEqual(["1"]);
-  });
-
-  it("deletes a shared workspace only when every member is a QA suite account", () => {
-    expect(
-      onlyQaMembers(
-        [
-          { email: "qa+20261108kqzt-a@qa.flooper.me" },
-          { email: "qa+20261108kqzt-b@qa.flooper.me" },
-        ],
-        "qa.flooper.me"
-      )
-    ).toBe(true);
-    expect(
-      onlyQaMembers(
-        [
-          { email: "qa+20261108kqzt-a@qa.flooper.me" },
-          { email: "real@example.com" },
-        ],
-        "qa.flooper.me"
-      )
-    ).toBe(false);
+describe("the QA admin", () => {
+  it("is qa+admin@ in the QA domain, with a password derived from the token", () => {
+    const env = qaEnv(ENV);
+    const admin = qaAdmin(env);
+    expect(admin.email).toBe("qa+admin@qa.flooper.me");
+    expect(admin.password).toBe(qaPassword(admin.email, ENV.QA_TOKEN));
+    expect(isQaAddress(admin.email)).toBe(false);
   });
 });

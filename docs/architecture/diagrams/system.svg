@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 2108.9286875 873.1999999999999" width="2109" height="874" role="img" data-natural-width="">
+<title>System overview</title>
+<desc>Four kinds of callers reach the app. Browsers load the prerendered landing page, docs, 404, SPA bundle and Storybook as static assets, without running the Worker, and send everything else to the one web Worker; with presigned uploads on they also put files straight into R2. MCP clients such as Claude call /mcp with an OAuth token. Mail recipients follow links and one-click unsubscribe posts back to the Worker. Cron Triggers call its scheduled handler. Inside the Worker, the Astro middleware builds the request context, session and security headers for the server-rendered pages, /api/auth (Better Auth), /api/trpc, /mcp, which calls the tRPC procedures in process, and the other routes. The adapters, the queue consumer and the cron handler call the use cases in packages/features, which use D1, R2, Queues with a dead-letter queue, Email Sending and Analytics Engine; the abuse feature's enforceRateLimit and verifyHuman, called by the adapters and Better Auth's hook, reach Workers Rate Limiting and Turnstile. With QA_BYPASS on, mail to QA addresses is kept in D1 instead of sent, for the QA suite to read through /api/qa. Everything logs to Workers Logs, with traces.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="2108.9286875" height="873.1999999999999" rx="12"/>
+<defs>
+<marker id="dg-system-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-system-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<g class="subgraph" data-id="Callers" data-label="Callers">
+<rect x="949.2648541666666" y="40" width="561.675" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="949.2648541666666" y="40" width="561.675" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="961.2648541666666" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Callers</text>
+</g>
+<g class="subgraph" data-id="Worker" data-label="Web Worker: apps/web/src/worker.ts">
+<rect x="459.2391875" y="208.9" width="1087.4724999999999" height="436.5" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="459.2391875" y="208.9" width="1087.4724999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="471.2391875" y="222.9" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Web Worker: apps/web/src/worker.ts</text>
+</g>
+<polyline class="edge" data-from="Worker" data-to="Logs" data-style="dotted" data-arrow-start="false" data-arrow-end="true" points="772.5740625000001,645.4 772.5740625000001,675.4 136.55700000000002,675.4 136.55700000000002,699.4" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Browser" data-to="Assets" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1448.0298541666666,120.9 1448.0298541666666,190.9 1765.7461875,190.9 1765.7461875,597.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Browser" data-to="Middleware" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1448.0298541666666,120.9 1448.0298541666666,186.9 1011.2691874999999,186.9 1011.2691874999999,252.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Browser" data-to="R2" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="presigned PUT" points="1471.4848541666665,120.9 1471.4848541666665,178.9 1966.7806874999997,178.9 1966.7806874999997,675.4 1904.0876875,675.4 1904.0876875,743.6999999999999 1824.546875,743.6999999999999 1824.546875,755.6999999999999" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Agent" data-to="Middleware" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1172.5268541666667,120.9 1172.5268541666667,186.9 1011.2691874999999,186.9 1011.2691874999999,252.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Recipient" data-to="Middleware" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1312.8718541666667,120.9 1312.8718541666667,186.9 1011.2691874999999,186.9 1011.2691874999999,252.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Cron" data-to="Scheduled" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1028.8473541666667,120.9 1028.8473541666667,154.9 769.1981874999999,154.9 769.1981875,507.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="D1" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="874.2731875,634.4 874.2731875,699.4 1173.2733541666669,699.4 1173.2733541666669,699.4" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="R2" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="929.4059374999999,634.4 929.4059375,675.4 1790.5565416666668,675.4 1790.5565416666668,755.6999999999999" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Queue" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="846.7068125000001,634.4 846.7068125000001,699.4 838.3786666666666,699.4 838.3786666666666,699.4" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Queue" data-to="Consumer" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="763.3863333333334,699.4 763.3863333333334,663.4 401.6931666666667,663.4 401.6931666666667,190.9 560.6811875000001,190.9 560.6811875000001,507.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Email" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="901.8395625,634.4 901.8395624999999,687.4 1324.733354166667,687.4 1324.733354166667,699.4" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="AE" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="791.5740625000001,634.4 791.5740625000001,687.4 402.13100000000003,687.4 402.13100000000003,699.4" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="RL" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="enforceRateLimit" points="819.1404375,634.4 819.1404375,699.4 616.1480000000001,699.4 616.148,796.3" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Turnstile" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="verifyHuman" points="956.9723125,634.4 956.9723124999999,663.4 1992.0081874999998,663.4 1992.0081874999998,755.6999999999999" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Middleware" data-to="Pages" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1011.2691874999999,289.8 1011.2691874999999,313.8 1387.4716875,313.8 1387.4716875,337.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Middleware" data-to="Auth" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1011.2691874999999,289.8 1011.2691874999999,313.8 874.2731875000001,313.8 874.2731875000001,422.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Middleware" data-to="TRPC" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1011.2691874999999,289.8 1011.2691874999999,313.8 988.2691874999999,313.8 988.2691874999999,507.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Middleware" data-to="MCP" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1011.2691874999999,289.8 1011.2691874999999,313.8 1011.2691874999999,313.8 1011.2691874999999,337.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Middleware" data-to="Routes" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1011.2691874999999,289.8 1011.2691874999999,313.8 1233.2316875,313.8 1233.2316875,422.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="MCP" data-to="TRPC" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="createCaller" points="1011.2691875,374.70000000000005 1011.2691875,471.6 1003.4118541666667,471.6 1003.4118541666667,507.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Auth" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="874.2731875000001,459.6 874.2731875000001,571 874.2731875,571 874.2731875,597.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="TRPC" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="988.2691874999999,544.5 988.2691874999999,571 874.2731875,571 874.2731875,597.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Routes" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1233.2316875,459.6 1233.2316875,571 874.2731875,571 874.2731875,597.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Consumer" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="560.6811875,544.5 560.6811875,571 874.2731875,571 874.2731875,597.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<polyline class="edge" data-from="Scheduled" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="769.1981875000001,544.5 769.1981875000001,571 874.2731875,571 874.2731875,597.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-system-arrowhead)" />
+<g class="edge-label" data-from="Browser" data-to="R2" data-label="presigned PUT">
+<rect x="1859.0876875" y="682.4" width="89.52399999999999" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1903.8496874999998" y="697.55" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">presigned PUT</text>
+</g>
+<g class="edge-label" data-from="UseCases" data-to="RL" data-label="enforceRateLimit">
+<rect x="567.1480000000001" y="723" width="97.24600000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="615.7710000000002" y="738.15" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">enforceRateLimit</text>
+</g>
+<g class="edge-label" data-from="UseCases" data-to="Turnstile" data-label="verifyHuman">
+<rect x="1953.0081874999998" y="682.4" width="77.05000000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1991.5331875" y="697.55" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">verifyHuman</text>
+</g>
+<g class="edge-label" data-from="MCP" data-to="TRPC" data-label="createCaller">
+<rect x="972.2691874999999" y="426.00000000000006" width="77.05000000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1010.7941874999999" y="441.15000000000003" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">createCaller</text>
+</g>
+<g class="node" data-id="Assets" data-label="Static assets: landing, /docs, 404, SPA bundle, /_storybook" data-shape="rectangle">
+<rect x="1574.7116874999997" y="597.5" width="382.06899999999985" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1765.7461874999997" y="615.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Static assets: landing, /docs, 404, SPA bundle, /_storybook</text>
+</g>
+<g class="node" data-id="D1" data-label="D1: DB" data-shape="cylinder">
+<rect x="1134.8848541666666" y="706.4" width="76.777" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+<line x1="1134.8848541666666" y1="706.4" x2="1134.8848541666666" y2="743.3" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="1211.6618541666667" y1="706.4" x2="1211.6618541666667" y2="743.3" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1173.2733541666666" cy="743.3" rx="38.3885" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1173.2733541666666" cy="706.4" rx="38.3885" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1173.2733541666666" y="724.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">D1: DB</text>
+</g>
+<g class="node" data-id="R2" data-label="R2: FILES" data-shape="cylinder">
+<rect x="1756.5662083333332" y="762.6999999999999" width="101.971" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+<line x1="1756.5662083333332" y1="762.6999999999999" x2="1756.5662083333332" y2="799.5999999999999" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="1858.5372083333332" y1="762.6999999999999" x2="1858.5372083333332" y2="799.5999999999999" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1807.5517083333332" cy="799.5999999999999" rx="50.9855" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1807.5517083333332" cy="762.6999999999999" rx="50.9855" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1807.5517083333332" y="781.15" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">R2: FILES</text>
+</g>
+<g class="node" data-id="Queue" data-label="Queues: APP_QUEUE and DLQ" data-shape="subroutine">
+<rect x="688.394" y="699.4" width="224.97699999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="696.394" y1="699.4" x2="696.394" y2="736.3" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="905.371" y1="699.4" x2="905.371" y2="736.3" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="800.8824999999999" y="717.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Queues: APP_QUEUE and DLQ</text>
+</g>
+<g class="node" data-id="Email" data-label="Email Sending: EMAIL" data-shape="rectangle">
+<rect x="1239.6618541666667" y="699.4" width="170.14299999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1324.7333541666667" y="717.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Email Sending: EMAIL</text>
+</g>
+<g class="node" data-id="AE" data-label="Analytics Engine: metrics, product events" data-shape="rectangle">
+<rect x="261.11400000000003" y="699.4" width="282.034" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="402.13100000000003" y="717.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Analytics Engine: metrics, product events</text>
+</g>
+<g class="node" data-id="RL" data-label="Workers Rate Limiting: RL_*" data-shape="rectangle">
+<rect x="512.181" y="796.3" width="207.93399999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="616.148" y="814.75" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Workers Rate Limiting: RL_*</text>
+</g>
+<g class="node" data-id="Turnstile" data-label="Turnstile Siteverify" data-shape="rectangle">
+<rect x="1915.0876875" y="755.6999999999999" width="153.841" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1992.0081874999998" y="774.15" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Turnstile Siteverify</text>
+</g>
+<g class="node" data-id="Logs" data-label="Workers Logs and traces" data-shape="rectangle">
+<rect x="40" y="699.4" width="193.114" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="136.55700000000002" y="717.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Workers Logs and traces</text>
+</g>
+<g class="node" data-id="Browser" data-label="Browser" data-shape="rectangle">
+<rect x="1401.1198541666665" y="84" width="93.82" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1448.0298541666666" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Browser</text>
+</g>
+<g class="node" data-id="Agent" data-label="MCP client" data-shape="rectangle">
+<rect x="1120.4298541666667" y="84" width="104.194" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1172.5268541666667" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">MCP client</text>
+</g>
+<g class="node" data-id="Recipient" data-label="Mail recipient" data-shape="rectangle">
+<rect x="1252.6238541666667" y="84" width="120.49599999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1312.8718541666667" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Mail recipient</text>
+</g>
+<g class="node" data-id="Cron" data-label="Cron Triggers" data-shape="rectangle">
+<rect x="965.2648541666666" y="84" width="127.16499999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1028.8473541666667" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Cron Triggers</text>
+</g>
+<g class="node" data-id="Middleware" data-label="Astro middleware: context, session, headers" data-shape="rectangle">
+<rect x="861.3601874999999" y="252.9" width="299.8179999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1011.2691874999999" y="271.35" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Astro middleware: context, session, headers</text>
+</g>
+<g class="node" data-id="Pages" data-label="SSR pages: /app, /admin, /sign-in, /consent" data-shape="rectangle">
+<rect x="1244.2316875" y="337.8" width="286.4799999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1387.4716875" y="356.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">SSR pages: /app, /admin, /sign-in, /consent</text>
+</g>
+<g class="node" data-id="Auth" data-label="/api/auth: Better Auth" data-shape="rectangle">
+<rect x="793.2771875000001" y="422.70000000000005" width="161.99200000000002" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="874.2731875000001" y="441.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">/api/auth: Better Auth</text>
+</g>
+<g class="node" data-id="TRPC" data-label="/api/trpc" data-shape="rectangle">
+<rect x="942.8411874999999" y="507.6" width="90.856" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="988.2691874999999" y="526.0500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">/api/trpc</text>
+</g>
+<g class="node" data-id="MCP" data-label="/mcp" data-shape="rectangle">
+<rect x="976.5856875" y="337.8" width="69.36699999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1011.2691874999999" y="356.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">/mcp</text>
+</g>
+<g class="node" data-id="Routes" data-label="/api/files, webhook, unsubscribe, /health, /api/qa" data-shape="rectangle">
+<rect x="1073.3191875" y="422.70000000000005" width="319.8249999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1233.2316875" y="441.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">/api/files, webhook, unsubscribe, /health, /api/qa</text>
+</g>
+<g class="node" data-id="Consumer" data-label="queue(): job consumer" data-shape="rectangle">
+<rect x="475.2391875" y="507.6" width="170.884" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="560.6811875" y="526.0500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">queue(): job consumer</text>
+</g>
+<g class="node" data-id="Scheduled" data-label="scheduled(): cron catalog" data-shape="rectangle">
+<rect x="674.1231875000001" y="507.6" width="190.14999999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="769.1981875000001" y="526.0500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">scheduled(): cron catalog</text>
+</g>
+<g class="node" data-id="UseCases" data-label="use cases: packages/features" data-shape="rectangle">
+<rect x="764.0076875" y="597.5" width="220.53099999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="874.2731875" y="615.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">use cases: packages/features</text>
+</g>
+</svg>

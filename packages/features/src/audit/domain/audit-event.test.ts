@@ -107,6 +107,13 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: email,
     metadata: { form: "sign-up" },
   },
+  "qa.admin.promoted": {
+    action: "qa.admin.promoted",
+    target: user,
+    metadata: { previousRole: "user" },
+  },
+  "qa.admin.demoted": { action: "qa.admin.demoted", target: user },
+  "admin.test_email_sent": { action: "admin.test_email_sent", target: email },
   "auth.sign_up": {
     action: "auth.sign_up",
     target: user,
@@ -306,6 +313,18 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     workspaceId: workspace,
     target: { type: "note", id: "note-q3" },
     metadata: { fields: ["title", "body"] },
+  },
+  "demo.deletion_warned": {
+    action: "demo.deletion_warned",
+    actor: { kind: "system" },
+    target: { type: "user", id: "user-demo" },
+    metadata: { deletesAt: "2026-11-08T03:17:00.000Z" },
+  },
+  "demo.account_erased": {
+    action: "demo.account_erased",
+    actor: { kind: "system" },
+    target: { type: "user", id: "user-demo" },
+    metadata: { retentionDays: 7 },
   },
   "note.commented": {
     action: "note.commented",

@@ -56,6 +56,17 @@
     "TRACING": "workers",
     // Required, no default: off | report | delete (the daily orphan check itself is optional).
     "STORAGE_RECONCILE": "off",
+    // Demo mode (starter-only; docs/guides/how-to-run-a-public-demo.md): off | on, required,
+    // no default. With on, DEMO_RETENTION_DAYS (2..365) and DEMO_SAMPLE_DATA (on | off)
+    // are required and DEMO_PROTECTED_EMAILS (comma list) is read; accounts older than
+    // the retention are erased daily. Apps built from the starter keep off everywhere.
+    // develop: off. It is the starter's own playground and its data should stay put.
+    // The other DEMO_* vars are ignored with off; they are here so every environment
+    // declares the same vars.
+    "DEMO_MODE": "off",
+    "DEMO_RETENTION_DAYS": "7",
+    "DEMO_SAMPLE_DATA": "on",
+    "DEMO_PROTECTED_EMAILS": "",
     // Content-Security-Policy of HTML pages: enforce | report-only. Required, no default
     // (docs/guides/how-to-configure-security-headers.md).
     "CSP_MODE": "enforce",
@@ -225,6 +236,12 @@
         "TRACING": "workers",
         // Required, no default: off | report | delete (the daily orphan check itself is optional).
         "STORAGE_RECONCILE": "off",
+        // staging: on, exactly as production, so a release rehearses the demo retention
+        // (warning, then erasure a day later) before it reaches production.
+        "DEMO_MODE": "on",
+        "DEMO_RETENTION_DAYS": "7",
+        "DEMO_SAMPLE_DATA": "on",
+        "DEMO_PROTECTED_EMAILS": "",
         "CSP_MODE": "enforce",
         "AUTH_EMAIL_PASSWORD": "true",
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
@@ -368,6 +385,14 @@
         "TRACING": "workers",
         // Required, no default: off | report | delete (the daily orphan check itself is optional).
         "STORAGE_RECONCILE": "report",
+        // production: on (owner decision). The public site's "Try the demo app" points
+        // here: accounts are warned a day before and erased after DEMO_RETENTION_DAYS.
+        // Platform admins, BOOTSTRAP_ADMIN_EMAIL, QA_EMAIL_DOMAIN and the addresses below
+        // are never erased: add the owner's other accounts to DEMO_PROTECTED_EMAILS.
+        "DEMO_MODE": "on",
+        "DEMO_RETENTION_DAYS": "7",
+        "DEMO_SAMPLE_DATA": "on",
+        "DEMO_PROTECTED_EMAILS": "",
         "CSP_MODE": "enforce",
         "AUTH_EMAIL_PASSWORD": "true",
         // Required by BOOTSTRAP_ADMIN_EMAIL; needs EMAIL_FROM (bun run setup:email).

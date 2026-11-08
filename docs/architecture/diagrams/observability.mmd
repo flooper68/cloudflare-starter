@@ -1,0 +1,23 @@
+flowchart LR
+  accTitle: Logs, traces, metrics and health
+  accDescr: The edges of the Worker, which are the HTTP edge, the tRPC middleware, MCP tools, the queue consumer and the cron handler, open one span and record one duration metric per unit of work, and log and report errors under the request context's trace id. They write through four ports. The Logger, ErrorReporter and Tracer adapters write JSON records to Workers Logs, which also keeps Cloudflare's own invocation logs and traces. The Metrics adapter writes to the Analytics Engine dataset METRICS_DATASET, flushed once per unit of work. Uptime monitors call /health/live and /health/ready, which probe D1, R2 and the bindings.
+  Edges["edges: HTTP, tRPC, MCP tools, queue, cron"]
+  Logger["Logger port"]
+  Errors["ErrorReporter port"]
+  Tracer["Tracer port"]
+  Metrics["Metrics port"]
+  Logs["Workers Logs: logs, error reports, span records"]
+  AE["Analytics Engine: METRICS_DATASET"]
+  Monitor["Uptime monitor"]
+  Health["/health/live, /health/ready"]
+  Probes["D1, R2, queue, email, settings, bindings"]
+  Edges --> Logger
+  Edges --> Errors
+  Edges --> Tracer
+  Edges --> Metrics
+  Logger -->|LOG_SINK| Logs
+  Errors -->|ERROR_REPORTER| Logs
+  Tracer -->|TRACING| Logs
+  Metrics -->|METRICS| AE
+  Monitor --> Health
+  Health --> Probes

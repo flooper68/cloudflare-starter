@@ -126,10 +126,11 @@ The videos, posters and captions come from this origin, so every page policy alr
 
 Run `bun run media:record` (or `--only` the videos that show the change), check the output, upload and commit the manifest. `rerecordAfter` in `VIDEOS` names the UI work in flight each video shows:
 
-| Change in flight                                | Re-record                                                                                                                            |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Demo mode (a banner and sample data in the app) | `tour`, `agents`, `loop-agent-note`, `loop-invite`, `loop-job-mail`, `loop-health`; and move the seed to the demo mode's sample data |
-| The container workflow demo                     | `loop-job-mail`; the planned `platform` walkthrough waits for it                                                                     |
+| Change in flight            | Re-record                                                        |
+| --------------------------- | ---------------------------------------------------------------- |
+| The container workflow demo | `loop-job-mail`; the planned `platform` walkthrough waits for it |
+
+The recordings run with `DEMO_MODE=off` from `.dev.vars.example`: they show the app as a project runs it, without the public demo's banner. Demo mode's sample data could replace the seed (`DEMO_SAMPLE_DATA`); the seed stays separate so the videos do not change when the demo's data does.
 
 ## Planned videos
 
@@ -137,14 +138,7 @@ Run `bun run media:record` (or `--only` the videos that show the change), check 
 
 ## Starter only
 
-The starter's own videos show the starter itself, so a project started from it removes them; the starter-only cleanup (`starter:strip`, being built) will do it, and until then do it by hand:
-
-- the scripts in `apps/web/media/videos/` (keep `types.ts` and `scenes.ts`) and their entries in `SCRIPTS`;
-- the entries of `VIDEOS`, `HOME_CLIPS` and `HOME_WALKTHROUGH` in `apps/web/src/content/videos.ts`, and the `VideoPlayer` uses on the home page;
-- every entry of `apps/web/src/content/media-manifest.json` (leave `{"version": 1, "videos": {}}`);
-- the `<!-- walkthrough: … -->` lines in the docs.
-
-The pipeline stays: the recorder, the seed's structure, the upload, the `/media` route, the player and the workflow, for a project that wants walkthroughs of its own product.
+> **Starter-only, removed by `starter:strip`** (`walkthrough-videos`): the starter's own videos (the scripts in `apps/web/media/videos/` other than `types.ts`, `scenes.ts` and `index.ts`, their entries in `VIDEOS`, `HOME_CLIPS`, `HOME_WALKTHROUGH` and `media-manifest.json`, and the MCP guide's marker) show the starter itself. The strip removes them and keeps the pipeline: the recorder, the seed's structure, the upload, the `/media` route, the player and the workflow, for a project that wants walkthroughs of its own product ([how-to-start-a-project.md](how-to-start-a-project.md)).
 
 ## Common problems
 

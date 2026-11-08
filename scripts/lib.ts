@@ -101,10 +101,22 @@ export function setWranglerValue(
     return;
   }
   const text = readFileSync(WRANGLER_CONFIG, "utf8");
+  writeFileSync(WRANGLER_CONFIG, modifyJsonc(text, path, value));
+}
+
+/**
+ * Sets (or, with undefined, removes) a value in JSONC text, keeping comments and
+ * formatting: how the setup scripts and `starter:strip` edit wrangler.jsonc.
+ */
+export function modifyJsonc(
+  text: string,
+  path: JSONPath,
+  value: unknown
+): string {
   const edits = modify(text, path, value, {
     formattingOptions: { insertSpaces: true, tabSize: 2 },
   });
-  writeFileSync(WRANGLER_CONFIG, applyEdits(text, edits));
+  return applyEdits(text, edits);
 }
 
 /** KEY=VALUE lines of a .dev.vars file. */
