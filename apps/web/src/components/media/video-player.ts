@@ -47,6 +47,10 @@ class WalkthroughVideo extends HTMLElement {
       video.hidden = false;
       video.controls = true;
       video.muted = true;
+      // The captions load with the video, not before Play.
+      const captions = video.querySelector("track");
+      if (captions?.dataset.src && !captions.getAttribute("src"))
+        captions.src = captions.dataset.src;
       const seek = () => {
         video.currentTime = at;
         const track = video.textTracks[0];

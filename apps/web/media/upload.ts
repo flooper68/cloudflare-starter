@@ -95,7 +95,8 @@ for (const folder of plan) {
       ...target,
     ];
     if (dryRun) {
-      console.log(`  wrangler ${args.join(" ")}`);
+      const shown = args.map((arg) => (/[\s;]/.test(arg) ? `"${arg}"` : arg));
+      console.log(`  wrangler ${shown.join(" ")}`);
       continue;
     }
     if (!existsSync(file)) {

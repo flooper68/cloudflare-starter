@@ -17,9 +17,26 @@ export function walkthroughId(html: string): string | null {
   return MARKER.exec(html.trim())?.[1] ?? null;
 }
 
+/** The ids of a doc's markers, outside fenced code blocks (an example is not one). */
+export function walkthroughIds(markdown: string): string[] {
+  const ids: string[] = [];
+  let fence: string | null = null;
+  for (const line of markdown.split("\n")) {
+    const opener = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
+    if (opener) {
+      if (fence === null) fence = opener[0] as string;
+      else if (opener[0] === fence) fence = null;
+      continue;
+    }
+    const id = fence === null ? walkthroughId(line) : null;
+    if (id) ids.push(id);
+  }
+  return ids;
+}
+
 /** Whether a doc has a marker (its page then loads the player's script). */
 export function hasWalkthrough(markdown: string): boolean {
-  return markdown.split("\n").some((line) => walkthroughId(line) !== null);
+  return walkthroughIds(markdown).length > 0;
 }
 
 /** The player's HTML for a marker's id; throws (failing the build) for an unknown id. */

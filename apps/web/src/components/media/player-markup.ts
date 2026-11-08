@@ -178,7 +178,7 @@ export function walkthroughTree(entry: MediaEntry): MarkupElement {
             kind: "captions",
             srclang: "en",
             label: "English",
-            src: entry.captions.src,
+            "data-src": entry.captions.src,
             default: true,
           })
       ),
@@ -232,7 +232,6 @@ export function walkthroughTree(entry: MediaEntry): MarkupElement {
                 type: "button",
                 class: "wv-chap",
                 "data-start": chapter.start,
-                "aria-label": `Play from ${formatDuration(chapter.start)}: ${chapter.title}`,
               },
               h("span", { class: "wv-t" }, formatDuration(chapter.start)),
               h("span", {}, chapter.title)

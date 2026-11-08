@@ -4,6 +4,7 @@ import type { MediaEntry } from "../../content/media";
 import {
   walkthroughHtml as docsHtml,
   walkthroughId,
+  walkthroughIds,
 } from "../../docs/walkthroughs";
 import {
   escapeHtml,
@@ -47,7 +48,7 @@ describe("walkthroughHtml", () => {
 
   it("has captions on by default, MP4 first", () => {
     expect(html).toContain(
-      '<track kind="captions" srclang="en" label="English" src="/media/0123456789ab/agents.vtt" default>'
+      '<track kind="captions" srclang="en" label="English" data-src="/media/0123456789ab/agents.vtt" default>'
     );
     expect(html.indexOf("video/mp4")).toBeLessThan(html.indexOf("video/webm"));
   });
@@ -93,6 +94,11 @@ describe("docs markers", () => {
     expect(walkthroughId("  <!--walkthrough:tour-->  ")).toBe("tour");
     expect(walkthroughId("<!-- walkthrough: agents --> more")).toBeNull();
     expect(walkthroughId("<!-- a comment -->")).toBeNull();
+    expect(
+      walkthroughIds(
+        "<!-- walkthrough: tour -->\n```markdown\n<!-- walkthrough: agents -->\n```\n"
+      )
+    ).toEqual(["tour"]);
   });
 
   it("fails the build for an id that is not a video", () => {

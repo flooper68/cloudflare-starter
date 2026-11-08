@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { MEDIA_MANIFEST } from "../src/content/media";
 import { HOME_CLIPS, HOME_WALKTHROUGH, VIDEOS } from "../src/content/videos";
-import { walkthroughId } from "../src/docs/walkthroughs";
+import { walkthroughIds } from "../src/docs/walkthroughs";
 import { SCRIPTS } from "./videos";
 
 const scripted = VIDEOS.filter((video) => video.status === "scripted").map(
@@ -88,11 +88,9 @@ describe("walkthrough videos", () => {
 
   it("names only catalogued videos in the docs' markers", () => {
     const markers = markdownFiles(join(ROOT, "docs")).flatMap((file) =>
-      readFileSync(file, "utf8")
-        .split("\n")
-        .map(walkthroughId)
-        .filter((id): id is string => id !== null)
-        .map((id) => [file, id] as const)
+      walkthroughIds(readFileSync(file, "utf8")).map(
+        (id) => [file, id] as const
+      )
     );
     expect(markers.length).toBeGreaterThan(0);
     for (const [file, id] of markers) {
