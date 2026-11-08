@@ -75,9 +75,11 @@ export default defineConfig({
     },
     // Page scripts stay files under /_astro/, never inline <script> code, so a strict
     // Content-Security-Policy (script-src 'self') needs no 'unsafe-inline' or nonce for
-    // the prerendered pages. Other assets keep Vite's default (undefined).
+    // the prerendered pages. Fonts stay files too: a small subset inlined as a data: URL
+    // would break font-src 'self'. Other assets keep Vite's default (undefined).
     build: {
-      assetsInlineLimit: (file) => (file.endsWith(".js") ? false : undefined),
+      assetsInlineLimit: (file) =>
+        /\.(js|woff2?|ttf|otf)$/.test(file) ? false : undefined,
     },
     plugins: [
       tailwindcss(),

@@ -4,7 +4,7 @@
  * (/app/* has its own not-found screen). It offers the way back home, into the docs and
  * the docs search, the usual reason someone lands here being an old docs link.
  */
-import { buttonVariants } from "@cloudflare-starter/ui";
+import { brand, buttonVariants } from "@cloudflare-starter/ui";
 import { BookOpen } from "lucide-react";
 
 import DocsSearch from "@/components/site/DocsSearch.astro";
@@ -15,7 +15,7 @@ import PublicLayout from "@/layouts/PublicLayout.astro";
 export const prerender = true;
 ---
 
-<PublicLayout title={`Page not found · ${DOCS.siteName}`} indexable={false}>
+<PublicLayout title={`Page not found${brand.titleSeparator}${DOCS.siteName}`} indexable={false}>
   <SiteHeader slot="header">
     <DocsSearch slot="search" />
   </SiteHeader>

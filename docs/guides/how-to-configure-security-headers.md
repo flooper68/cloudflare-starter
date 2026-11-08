@@ -143,7 +143,7 @@ No inline script runs on the app's pages unless its hash is in the policy (inlin
 
 ## Adding a third party
 
-1. Prefer self-hosting (fonts are bundled with `@fontsource`; nothing loads from a CDN).
+1. Prefer self-hosting (fonts are bundled with `@fontsource`; nothing loads from a CDN). `vite.build.assetsInlineLimit` in `apps/web/astro.config.mjs` keeps font files as files: a small subset inlined as a `data:` URL is blocked by `font-src 'self'`.
 2. Add the narrowest source (an origin, with a path when the service allows) to `pagePolicy` in `security-headers.ts`, behind the setting that turns the integration on, never `*` or a scheme like `https:`.
 3. Add a unit test in `security-headers.test.ts`, regenerate `_headers` if it is a static asset rule, and document the row in the table above.
 4. Ship it with `CSP_MODE=report-only` to staging first when you are unsure what the service loads.

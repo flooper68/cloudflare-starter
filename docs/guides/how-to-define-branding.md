@@ -3,8 +3,12 @@
 The UI is themed entirely by CSS variables. A project gets its own look by editing two files
 in `packages/ui/src/brand/`; every component, the web app and Storybook follow.
 
-The starter ships a mock brand, **Acme**: Linear-like lavender accent, Inter, 6px corners,
-dark-first. Replace it when you start a product.
+The starter ships its own brand, **Starter** ("Everything a new app needs on day one."),
+the identity of the public instance at `starter.flooper.me`: a deep teal accent (`#14a393`
+in the dark theme, `#0a6e62` in the light one), a stacked-layers mark, Instrument Sans with
+JetBrains Mono, 8px corners, dark-first. Longer copy calls it "Cloudflare Starter"
+(`APP_NAME`, the docs `siteName`, `EMAIL_FROM_NAME`). It is the starter's identity, not
+yours: replace it when you start a product, with the steps below.
 
 ## What Is Brand And What Is System
 
@@ -35,7 +39,14 @@ export const brand = {
 Replace the SVG in `LogoMark` with your mark. Keep it square (24×24 viewBox) and colour it
 with `var(--brand-accent)` / `var(--brand-accent-fg)` or `currentColor`, so it follows the
 theme. `Logo` renders the mark plus the name. Then replace the app's favicon
-(`apps/web/public/favicon.svg`) with the same mark.
+(`apps/web/public/favicon.svg`) with the same mark; a favicon cannot read the page's CSS
+variables, so give it the hex values, with a `prefers-color-scheme: dark` block when the
+accent differs per theme (the shipped one does). Delete the **Foundations › Mark Options**
+story, which shows the candidates sketched for the Starter mark.
+
+Other places that carry the name: `DOCS.siteName` (`apps/web/src/docs/docs.config.ts`, the
+docs header, the landing page and page titles) and `APP_NAME` (`apps/web/src/server/auth.ts`,
+the name in emails and the shared workspace).
 
 `brand.colors` and `brand.fonts` are only for docs and emails; the CSS file is the source of
 truth.
@@ -61,7 +72,8 @@ Edit [`brand.css`](../../packages/ui/src/brand/brand.css):
 ```
 
 Repeat each light value in the `@media (prefers-color-scheme: light)` block of `brand.css`,
-which applies when the page sets no `data-theme`.
+which applies when the page sets no `data-theme`. The comment at the top of `brand.css`
+records the measured contrast of the shipped values; update it with yours.
 
 What derives from these automatically (in `tokens.css`): accent hover, the subtle accent tint
 (selected rows, chips), the focus ring, and the `sm/lg/xl` radii.
@@ -80,7 +92,13 @@ Choosing values:
   (axe `color-contrast`), so `bun run test:components` checks a new brand for you.
 - **Fonts**: a variable sans with good small sizes (the UI is dense: 13px body). Install it
   self-hosted (e.g. `bun add @fontsource-variable/geist` in `packages/ui`) and import it at
-  the top of `src/globals.css` in place of Inter; avoid runtime font CDNs.
+  the top of `src/globals.css` in place of Instrument Sans and JetBrains Mono (remove those
+  packages); avoid runtime font CDNs, which the CSP (`font-src 'self'`) blocks.
+- **Accent foreground**: white on a dark accent is the usual choice. A light accent needs
+  dark text instead; the shipped brand does that in the dark theme (`#03201c` on `#14a393`)
+  and switches to white on the deeper light-theme teal, so it sets `--brand-accent-fg` in
+  each theme block. The derived hover mixes the accent with white, so check the foreground
+  on the hover too.
 - **Radius**: 4–8px keeps the dense look; above 10px the controls start to look like a
   different product.
 
@@ -116,13 +134,16 @@ The default theme follows the OS; the app can force one with `<html data-theme="
 
 ## Checklist
 
-- [ ] `brand.tsx`: name, tagline, support email, `LogoMark` SVG
+- [ ] `brand.tsx`: name, tagline, support email, `LogoMark` SVG; the Mark Options story deleted
 - [ ] `brand.css`: accent (+ light-theme tweak), accent foreground, accent text (4.5:1 in both
   themes), fonts, radius
 - [ ] Font package installed and imported in `globals.css`
 - [ ] `apps/web/public/favicon.svg` replaced
+- [ ] `DOCS.siteName` (`apps/web/src/docs/docs.config.ts`) and the landing page copy
+  (`apps/web/src/landing/content.ts`) use the new name
 - [ ] Contrast checked in both themes: `bun run test:components` passes
-- [ ] Email sender name (`EMAIL_FROM_NAME` in `apps/web/wrangler.jsonc`) and Better Auth
-  `appName` (`apps/web/src/server/auth.ts`) use the new name
+- [ ] Email sender name (`EMAIL_FROM_NAME` in `apps/web/wrangler.jsonc`) and `APP_NAME`
+  (`apps/web/src/server/auth.ts`, Better Auth's `appName` and the name in emails) use the
+  new name
 - [ ] The authenticator `issuer` and passkey `rpName` in `apps/web/src/server/auth-security.ts`
   (shown in authenticator apps and passkey prompts) use the new name

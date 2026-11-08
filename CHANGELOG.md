@@ -4,6 +4,10 @@ What changed in each release of the starter, for people evaluating it or buildin
 
 ## [Unreleased]
 
+### Changed
+
+- **The starter has its own brand.** The mock brand Acme is replaced by Starter ("Everything a new app needs on day one."): a deep teal accent that passes WCAG AA as text and on buttons in both themes, a stacked-layers logo mark and favicon, Instrument Sans with JetBrains Mono (self-hosted), and 8px corners. Notification emails show the app's name as a header. A new project still replaces it in `packages/ui/src/brand/` ([how-to-define-branding.md](docs/guides/how-to-define-branding.md)).
+
 ## [0.1.0] - 2026-11-08
 
 The first release: a Cloudflare-first SaaS starter with auth, workspaces, billing, an admin portal and an MCP server, built, tested and documented.
