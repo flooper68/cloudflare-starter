@@ -69,7 +69,7 @@ bun run starter:strip --name "Acme" --repo-url https://github.com/acme/acme   # 
 bun run starter:strip --name "Acme" --repo-url https://github.com/acme/acme --apply
 ```
 
-Without flags it asks about each component (Enter keeps the default). For an agent or a script: `--yes` takes the defaults, `--only <ids>` strips exactly those, `--keep <ids>` keeps some of the defaults. It is a dry run until `--apply`, and it is idempotent: run it again and it finds nothing to do. It edits `apps/web/wrangler.jsonc` the way the setup scripts do, keeping every comment. After `--apply` it runs `bun install`, `lint:fix`, `typecheck` and `lint`, marks the components `stripped` in the manifest, and prints the next steps, including the secrets to delete (it never contacts Cloudflare or GitHub).
+Without flags it asks about each component (Enter keeps the default). For an agent or a script: `--yes` takes the defaults, `--only <ids>` strips exactly those, `--keep <ids>` keeps some of the defaults. It is a dry run until `--apply`, and it is idempotent: run it again and it finds nothing to do. It edits `apps/web/wrangler.jsonc` the way the setup scripts do, keeping every comment, and turns links to the docs and sections it removed into plain text. After `--apply` it runs `bun install`, `lint:fix`, `typecheck` and `lint`, marks the components `stripped` in the manifest, and prints the next steps, including the secrets to delete (it never contacts Cloudflare or GitHub).
 
 Without `--name` and `--repo-url` (and no GitHub `origin` remote to read it from), the renames are left to you and printed. Commit the strip on its own, so the diff of what was removed stays readable.
 

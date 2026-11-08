@@ -205,8 +205,8 @@ describe("GET /health/ready", () => {
 
   it.each([
     ["QA_BYPASS", { QA_BYPASS: undefined }],
-    ["QA_TOKEN", { QA_TOKEN: undefined }],
-    ["QA_EMAIL_DOMAIN", { QA_EMAIL_DOMAIN: "not a domain" }],
+    ["QA_TOKEN", { QA_BYPASS: "on", QA_TOKEN: undefined }],
+    ["QA_EMAIL_DOMAIN", { QA_BYPASS: "on", QA_EMAIL_DOMAIN: "not a domain" }],
   ])(
     "fails the settings check naming %s, in the admin view only",
     async (name, change) => {

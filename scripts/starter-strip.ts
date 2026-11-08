@@ -25,6 +25,7 @@ import {
   planComponent,
   readManifest,
   selectComponents,
+  unlinkDangling,
   validateManifest,
 } from "./starter-strip-lib";
 
@@ -167,6 +168,11 @@ if (!values.apply) {
 }
 
 for (const action of todo) action.run();
+// Links to the docs and sections the strip removed become plain text.
+for (const { file, links } of unlinkDangling(root))
+  console.log(
+    `  ${file}: unlinked ${links} link(s) to removed docs or sections`
+  );
 markStripped(
   root,
   plans

@@ -24,6 +24,7 @@ import {
   removeStarterNotes,
   selectComponents,
   stepRange,
+  unlinkDangling,
   validateManifest,
 } from "./starter-strip-lib";
 
@@ -319,6 +320,23 @@ describe("planComponent", () => {
     expect(readFileSync(join(root, "src/a.ts"), "utf8")).toBe("one\nthree\n");
     writeFileSync(join(root, "src/a.ts"), "changed\n");
     expect(() => planComponent(root, part, {})).toThrow(/no longer applies/);
+  });
+});
+
+describe("unlinkDangling", () => {
+  it("turns links to removed files and sections into text, once", () => {
+    const root = repo({
+      "docs/a.md":
+        "# A\n\n## Kept\n\nSee [kept](#kept), [gone](#gone), [b](b.md#there), [b gone](b.md#nope), [deleted](c.md) and [site](https://x.test).\n\n```md\n[in code](#gone)\n```\n",
+      "docs/b.md": "# B\n\n## There\n",
+    });
+    expect(unlinkDangling(root)).toEqual([{ file: "docs/a.md", links: 3 }]);
+    const text = readFileSync(join(root, "docs/a.md"), "utf8");
+    expect(text).toContain(
+      "See [kept](#kept), gone, [b](b.md#there), b gone, deleted and [site](https://x.test)."
+    );
+    expect(text).toContain("[in code](#gone)");
+    expect(unlinkDangling(root)).toEqual([]);
   });
 });
 

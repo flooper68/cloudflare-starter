@@ -15,6 +15,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import GithubSlugger from "github-slugger";
 import {
   findNodeAtLocation,
   type JSONPath,
@@ -198,6 +199,11 @@ export function validateManifest(manifest: Manifest): string[] {
       problems.push(`${label}: pending needs the PR it waits for`);
     if (typeof component.default !== "boolean")
       problems.push(`${label}: default must be true or false`);
+    for (const edit of component.text ?? [])
+      if (edit.replace.includes(edit.find))
+        problems.push(
+          `${label}: ${edit.file}: the replacement contains what it replaces, so the edit never finishes`
+        );
     for (const doc of component.docs ?? []) {
       if ((doc.action === "remove" || doc.action === "replace") && !doc.heading)
         problems.push(`${label}: ${doc.file} ${doc.action} needs a heading`);
@@ -846,6 +852,81 @@ function markdownFiles(root: string): string[] {
   };
   walk("");
   return found;
+}
+
+/** Heading ids as GitHub and the docs site make them (test/architecture/docs.test.ts). */
+export function headingIds(source: string): Set<string> {
+  const slugger = new GithubSlugger();
+  const ids = new Set<string>();
+  for (const [, , title] of headings(source.split("\n"))) {
+    const text = title
+      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/<[^>]+>/g, "")
+      .replace(/`/g, "");
+    ids.add(slugger.slug(text));
+  }
+  return ids;
+}
+
+/**
+ * After a strip: every relative Markdown link to a file it deleted or a section it
+ * removed becomes plain text (`[the QA inbox](#the-qa-inbox)` → `the QA inbox`), so the
+ * docs keep no broken link. Returns the files it changed and how many links each lost.
+ */
+export function unlinkDangling(
+  root: string
+): { file: string; links: number }[] {
+  const changed: { file: string; links: number }[] = [];
+  const ids = new Map<string, Set<string>>();
+  const idsOf = (file: string) => {
+    if (!ids.has(file)) ids.set(file, headingIds(readText(root, file) ?? ""));
+    return ids.get(file) as Set<string>;
+  };
+  for (const file of markdownFiles(root)) {
+    const text = readText(root, file);
+    if (text === null) continue;
+    let count = 0;
+    let fence: string | null = null;
+    const next = text
+      .split("\n")
+      .map((line) => {
+        const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
+        if (marker) {
+          if (fence === null) fence = marker;
+          else if (marker.startsWith(fence)) fence = null;
+          return line;
+        }
+        if (fence !== null) return line;
+        return line.replace(
+          /(?<!!)\[([^\]]*)\]\(([^)\s]+)\)/g,
+          (whole, label: string, href: string) => {
+            if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith("/"))
+              return whole;
+            const hashAt = href.indexOf("#");
+            const target = hashAt === -1 ? href : href.slice(0, hashAt);
+            const anchor = hashAt === -1 ? "" : href.slice(hashAt + 1);
+            const path = target
+              ? join(dirname(file), decodeURI(target.split("?")[0] ?? ""))
+              : file;
+            const dangling =
+              !existsSync(join(root, path)) ||
+              (anchor !== "" &&
+                path.endsWith(".md") &&
+                !idsOf(path).has(decodeURIComponent(anchor)));
+            if (!dangling) return whole;
+            count++;
+            return label;
+          }
+        );
+      })
+      .join("\n");
+    if (count) {
+      writeFileSync(join(root, file), next);
+      ids.delete(file);
+      changed.push({ file, links: count });
+    }
+  }
+  return changed;
 }
 
 /** Marks components stripped in the manifest (keeps its formatting). */

@@ -99,7 +99,7 @@
         }
       ],
       "manual": [
-        "The QA bypass, the QA outbox (packages/features/src/qa, its qa_outbox table), the QA admin and /api/qa/* stay, inert with QA_BYPASS=off. Remove them only if you want the code gone: it touches the schema and the first migration."
+        "The QA bypass, the QA outbox (packages/features/src/qa, its qa_outbox table), the QA admin and /api/qa/* stay, inert with QA_BYPASS=off; their API tests turn it on themselves. Remove the code too only if you want it gone: it touches the schema and the first migration."
       ],
       "text": [
         {
@@ -122,6 +122,26 @@
           "find": "| 13. QA suite | CI |",
           "replace": "",
           "line": true
+        },
+        {
+          "file": "apps/web/test/api-bindings.ts",
+          "find": "  // The QA suite's human-check bypass, on as in the develop vars, with a test token\n  // (test/api/qa-bypass.test.ts; tests of QA_BYPASS=off override it).\n  QA_BYPASS: \"on\",",
+          "replace": "  // The QA suite's human-check bypass, off as in the develop vars; the test token and\n  // domain are for a test that turns it on.\n  QA_BYPASS: \"off\","
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "how-to-qa-a-deployment.md#ci)",
+          "replace": "how-to-qa-a-deployment.md)"
+        },
+        {
+          "file": "test/architecture/qa-checklist.test.ts",
+          "find": "  \"how-to-setup-web-app.md\": \"first-time local setup and deploy steps\",\n  \"how-to-start-a-project.md\":",
+          "replace": "  \"how-to-setup-web-app.md\": \"first-time local setup and deploy steps\",\n  \"how-to-setup-d1.md\": \"database creation and migrations; no UI\",\n  \"how-to-start-a-project.md\":"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "find": "[weekly delivery check](#weekly-delivery-check)",
+          "replace": "weekly delivery check of the QA workflow"
         }
       ]
     },
