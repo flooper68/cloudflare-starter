@@ -60,6 +60,8 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 
 ## The landing page
 
+> **Starter-only, removed by `starter:strip`** (`marketing`): the landing page's copy describes the starter. The strip retitles the docs and resets the changelog; you replace this page by [the steps below](#replace-the-landing-page) ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
 `apps/web/src/pages/index.astro`, prerendered on `PublicLayout`. Its sections, top to bottom:
 
 | Section          | What it is                                                                                                                                                                                                                                                    |
@@ -130,6 +132,8 @@ A product built from the starter replaces this page with its own:
 Its script is `feature-map.ts`, the `<feature-map>` custom element. Positions are set in the component (a 1000 × 560 box); a new group needs a position there.
 
 ## Changelog
+
+> **Starter-only, removed by `starter:strip`** (`marketing`): `CHANGELOG.md` is the starter's history; the strip resets it to an empty Unreleased with one entry for the project ([how-to-start-a-project.md](how-to-start-a-project.md)).
 
 `/docs/changelog/` renders the root [CHANGELOG.md](../../CHANGELOG.md) (the docs collection reads it like any published file; there is no copy) as release notes: `apps/web/src/pages/docs/changelog.astro` parses it (`apps/web/src/docs/changelog.ts`) and renders `ReleaseNotes` from `packages/ui`, each release with its version, date and compare link, and each change type with its own label colour. Inline Markdown in an entry (`code`, **bold**, links) is rendered as elements (`src/docs/inline.ts`); relative links are rewritten like the rest of the docs. The page is in the navigation's Start section, the sitemap and the search index, and needs no script beyond the docs' own.
 

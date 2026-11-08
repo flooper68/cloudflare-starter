@@ -4,6 +4,8 @@ Demo mode turns a deployment into a public demo that anyone may sign up to: a no
 
 **Apps built from the starter normally keep `DEMO_MODE=off` everywhere.** Demo mode exists for the starter's own public instance; a product has real users whose accounts must never expire. It is starter-only and can be removed (see [Removing demo mode](#removing-demo-mode)).
 
+> **Starter-only, removed by `starter:strip`** (`demo-mode`): the starter's staging and production run as a public demo; the strip sets `DEMO_MODE` off in every environment, and the code stays inert ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
 ## Settings
 
 All in the `vars` of each environment in `apps/web/wrangler.jsonc` (locally `apps/web/.dev.vars`). Parsed by `parseDemoConfig` (`apps/web/src/lib/config.ts`); a missing or invalid one fails every request with an error naming it, the `settings:configuration` check of `/health/ready` fails (the admin view of the check names the setting), and `bun run doctor` reports it per environment.

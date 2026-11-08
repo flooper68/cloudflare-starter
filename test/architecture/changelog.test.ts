@@ -24,7 +24,8 @@ describe("CHANGELOG.md", () => {
   });
 
   it("has at least one release (the checks above are not vacuous)", () => {
-    expect(changelog.releases.length).toBeGreaterThan(1);
+    // A project starts with Unreleased only (starter:strip resets the changelog).
+    expect(changelog.releases.length).toBeGreaterThan(0);
     expect(
       changelog.releases.some((release) =>
         release.groups.some((group) => group.items.length > 0)
