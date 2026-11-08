@@ -1,10 +1,15 @@
 import {
   createCloudflareEmail,
+  createDatabase,
   type EmailService,
   type R2Config,
+  randomIds,
+  systemClock,
+  withQaOutbox,
 } from "@cloudflare-starter/features";
 import {
   type FeatureConfig,
+  parseAbuseConfig,
   parseAppConfig,
   parseOptionalFeature,
   type RequiredAppConfig,
@@ -75,9 +80,21 @@ export function buildEmailFeature(
       throw new Error("Needs the EMAIL send_email binding and EMAIL_FROM");
     }
 
-    return createCloudflareEmail({
-      binding,
-      from: { email: config.EMAIL_FROM, name: config.EMAIL_FROM_NAME },
+    const from = { email: config.EMAIL_FROM, name: config.EMAIL_FROM_NAME };
+    const email = createCloudflareEmail({ binding, from });
+    // QA_BYPASS=on: mail to a QA address goes to the QA outbox instead of being sent
+    // (docs/guides/how-to-qa-a-deployment.md#the-qa-outbox); everything else is sent.
+    const { qaBypass } = parseAbuseConfig(env);
+    const d1 = runtimeEnv?.DB as D1Database | undefined;
+    if (!qaBypass) return email;
+    if (!d1)
+      throw new Error("QA_BYPASS=on needs the DB binding for the QA outbox");
+    return withQaOutbox(email, {
+      db: createDatabase(d1),
+      clock: systemClock,
+      ids: randomIds,
+      from,
+      emailDomain: qaBypass.emailDomain,
     });
   });
 }

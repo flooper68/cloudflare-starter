@@ -68,6 +68,7 @@ describe("notification catalog", () => {
       "auth.factor-changed",
 
       "privacy.export-ready",
+      "demo.deletion-warning",
     ]);
     for (const entry of notificationCatalog.values()) {
       expect(entry.label.length).toBeGreaterThan(5);

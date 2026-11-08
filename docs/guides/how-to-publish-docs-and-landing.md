@@ -25,7 +25,7 @@ Write links as you always do: relative paths between files (`[testing.md](../arc
 - any other file becomes its GitHub page (`…/blob/main/apps/web/wrangler.jsonc`), a folder (`../.claude/skills/`) its GitHub tree;
 - absolute URLs, site paths (`/app`) and `#fragments` stay as they are.
 
-Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks are shown as code; for a diagram on the site, use an SVG ([Diagrams](#diagrams)).
+Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). A ` ```mermaid ` block is shown as code on the site; for a diagram, use an SVG, hand-drawn or generated from a Mermaid source ([Diagrams](#diagrams)).
 
 ### Diagrams
 
@@ -36,6 +36,10 @@ A paragraph that is only an image of an SVG in the repository is a diagram: `![T
 - prefix class names and marker ids (`dg-`, `dg-<diagram>-arrow`): every inlined SVG shares the page's styles and ids.
 
 The build fails when an inlined SVG has no `<title>` or alt text, or contains script. The docs pages allow inline styles (`style-src 'unsafe-inline'`), so the inlined `<style>` passes their Content-Security-Policy. Examples: `docs/processes/images/`.
+
+#### From a Mermaid source
+
+For boxes and arrows or a sequence, write the diagram in Mermaid instead of drawing it: a `<name>.mmd` file under `docs/` with an `accTitle:` and an `accDescr:` line (Mermaid's accessibility syntax: a short name, then what the diagram shows in sentences). `bun run docs:diagrams` writes `<name>.svg` beside it (`apps/web/scripts/render-diagrams.ts`, `apps/web/src/docs/mermaid-svg.ts`, with [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid), which needs no browser), following the rules above: token colours with fallbacks for both schemes, `<title>` and `<desc>` from the two lines, marker ids prefixed with the file name, which is therefore unique. Commit both files and link the `.svg` like any diagram. A generated diagram keeps its own size on the site (`data-natural-width`) and scrolls sideways when wider than the column. `apps/web/src/docs/mermaid-svg.test.ts` fails when an `.svg` differs from what its source renders to, or a source lacks either line. Flowcharts, sequence, state, class and ER diagrams work; keep to plain syntax (no `classDef`, `style` or `click`) and quote labels with punctuation (`A["/api/trpc"]`). Examples: `docs/architecture/diagrams/`.
 
 ## Add, move or remove a doc
 
@@ -58,19 +62,19 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 
 `apps/web/src/pages/index.astro`, prerendered on `PublicLayout`. Its sections, top to bottom:
 
-| Section          | What it is                                                                                                                                                                                                               |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Hero             | The hook, the lead, **Try the demo app** and **View on GitHub**, and `HeroScene.astro`: the app in CSS 3D with requests flowing to the database, files, jobs and email, plain labels, one `role="img"` with a text label |
-| Pillars          | The four pillars from the feature data, each with a clip slot: a designed poster ("Clip coming soon"), no player until the videos exist                                                                                  |
-| Feature map      | `FeatureMap.astro`, [below](#the-feature-map)                                                                                                                                                                            |
-| What it costs    | "$5/month, plus usage above the included allowances", a receipt of what the plan covers and the allowances that matter first, with the date the prices were checked                                                      |
-| Start in minutes | The four commands of [how-to-setup-web-app.md](how-to-setup-web-app.md#run-locally) and the time they took from a fresh clone                                                                                            |
-| What's new       | The three newest titled entries of `CHANGELOG.md` (`src/landing/whats-new.ts`, read at build time), with the release notes and the feed                                                                                  |
-| Closing, footer  | Both calls to action again; `SiteFooter.astro` with Product, Docs and Project links and the one place the page names its technology, a collapsed "Under the hood"                                                        |
+| Section          | What it is                                                                                                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hero             | The hook, the lead, **Try the demo app** and **View on GitHub**, and `HeroScene.astro`: the app in CSS 3D with requests flowing to the database, files, jobs and email, plain labels, one `role="img"` with a text label                                      |
+| Pillars          | The four pillars from the feature data, each with a clip slot: a designed poster ("Clip coming soon"), no player until the videos exist                                                                                                                       |
+| Feature map      | `FeatureMap.astro`, [below](#the-feature-map)                                                                                                                                                                                                                 |
+| What it costs    | "$5/month", one sentence on the Workers Paid plan and the source, beside one receipt (`RECEIPT`): each line is what the plan covers, its included allowance and the price above it, then "$5.00 / month + usage above allowances". Numbers exactly as sourced |
+| Start in minutes | One prompt to paste into a coding agent (`START_PROMPT`, `CopyPrompt.astro`): **Copy prompt** uses the Clipboard API, or selects the text where it is missing or refused. No manual steps on the page                                                         |
+| What's new       | The three newest titled entries of `CHANGELOG.md` (`src/landing/whats-new.ts`, read at build time), with the release notes and the feed                                                                                                                       |
+| Closing, footer  | Both calls to action again; `SiteFooter.astro` with Product, Docs and Project links and the one place the page names its technology, a collapsed "Under the hood"                                                                                             |
 
 What the starter does is data ([feature data](#feature-data)); the page's own words and links are in `apps/web/src/landing/content.ts`. Keep the copy honest: the hook says "today" because a local app was measured (about 45 s from a fresh clone with Bun's cache warm, 80 s cold) and a deploy was not; the costs come from Cloudflare's pricing pages with the date checked; Containers is a demo, never "built".
 
-The page reads no session, so it is the same for everyone. It ships no React. Its scripts are the theme file, the header menu (`site-menu.ts`), the hero (`hero-scene.ts`) and the feature map (`feature-map.ts`), about 3 KB gzip together ([bundle budget](#bundle-budget)).
+The page reads no session, so it is the same for everyone. It ships no React. Its scripts are the theme file, the header menu (`site-menu.ts`), the hero (`hero-scene.ts`), the feature map (`feature-map.ts`) and the copy button (`copy-prompt.ts`), about 3 KB gzip together ([bundle budget](#bundle-budget)).
 
 ### Motion
 
@@ -79,7 +83,7 @@ CSS first, and the base style is always the finished state, so the first frame i
 - **Hero, idle:** requests flow, the services pulse, the app bobs (keyframes).
 - **Hero, scroll:** over the first 45% of a viewport of scrolling, the app's layers lift apart, the services rise and connect, then the requests brighten; scrolling up plays it back (`animation-timeline: scroll(root)`). Browsers without scroll timelines get the same states from an IntersectionObserver and a transition once the hero leaves the view.
 - **Hero, pointer:** under a fine pointer the scene tilts a few degrees toward it, eased by one `requestAnimationFrame` loop that stops when it settles; services lift on hover. Not on touch screens.
-- **Pillar cards** rise in as they scroll into view (`animation-timeline: view()`), static where unsupported.
+- **Pillar cards** rise in, and the cost receipt prints in line by line, as they scroll into view (`animation-timeline: view()`), static where unsupported.
 - **Feature map:** one pulse along the main flow.
 - **`prefers-reduced-motion: reduce`:** none of it. The scene and the map are static and no script moves anything; `test/e2e-build/landing.spec.ts` checks that no animation runs.
 

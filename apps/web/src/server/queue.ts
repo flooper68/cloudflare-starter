@@ -19,8 +19,11 @@ import {
 } from "@cloudflare-starter/features";
 
 import { buildRequiredConfig } from "@/lib/env";
-import { APP_NAME } from "@/server/auth";
+import { createAdminAuthGateway } from "@/server/admin-auth-gateway";
+import { APP_NAME, getAuth } from "@/server/auth";
+import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
+import { demoRuntimeFor } from "@/server/demo";
 import type { AppEnv } from "@/server/env";
 import { errorTypeOf, secondsSince } from "@/server/instrumentation";
 import { loggerFor, type Platform, tracerFor } from "@/server/platform";
@@ -36,6 +39,12 @@ export interface QueueDeps {
   readonly maxRetries: number;
   /** The app as mail sees it: name, APP_URL and BETTER_AUTH_SECRET (unsubscribe keys). */
   readonly app: JobDeps["app"];
+  /** DEMO_MODE and its retention policy. */
+  readonly demo: JobDeps["demo"];
+  /** Better Auth's user deletion (the admin gateway's), for the demo retention's erasure. */
+  readonly authUsers: JobDeps["authUsers"];
+  /** The BillingGate of one job's work. */
+  readonly billing: JobDeps["billing"];
 }
 
 /** The consumer's dependencies in the Worker: the real database, job catalog and settings. */
@@ -52,6 +61,9 @@ export function queueDeps(env: AppEnv): QueueDeps {
     catalog: jobCatalog,
     random: mathRandom,
     maxRetries: JOB_MAX_RETRIES,
+    demo: demoRuntimeFor(env),
+    authUsers: createAdminAuthGateway(() => getAuth(env), null),
+    billing: (context) => billingGateFor(env, context),
   };
 }
 
@@ -182,6 +194,10 @@ async function handleMessage(
           email: platform.email,
           metrics: platform.metrics,
           app: deps.app,
+          demo: deps.demo,
+          authUsers: deps.authUsers,
+          billing: deps.billing,
+          analytics: platform.productAnalytics(),
         },
         job,
         parsed.envelope,

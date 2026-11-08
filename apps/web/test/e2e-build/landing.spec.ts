@@ -6,6 +6,7 @@
  * (fixtures.ts).
  */
 import { GROUPS, PILLARS } from "../../src/content/features";
+import { START_PROMPT } from "../../src/landing/content";
 import { PRERENDERED_PAGE_CSP } from "../../src/server/security-headers";
 import { expect, test } from "../e2e/fixtures";
 
@@ -165,6 +166,64 @@ test.describe("feature map", () => {
   });
 });
 
+test.describe("start prompt", () => {
+  test("Copy prompt puts the prompt on the clipboard", async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/");
+    const section = page.getByRole("region", { name: "Start with one prompt" });
+    await expect(section.getByRole("figure")).toContainText(
+      "Prompt for your coding agent"
+    );
+    await expect(section.locator("code")).toHaveText(START_PROMPT);
+    await section.getByRole("button", { name: "Copy prompt" }).click();
+    await expect(section.getByRole("status")).toHaveText(
+      "Prompt copied. Paste it into your coding agent."
+    );
+    await expect(section.getByRole("button", { name: "Copied" })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      START_PROMPT
+    );
+  });
+
+  test("without the Clipboard API it selects the prompt instead", async ({
+    page,
+  }) => {
+    await page.addInitScript(() =>
+      Object.defineProperty(navigator, "clipboard", { value: undefined })
+    );
+    await page.goto("/");
+    const section = page.getByRole("region", { name: "Start with one prompt" });
+    await section.getByRole("button", { name: "Copy prompt" }).click();
+    await expect(section.getByRole("status")).toContainText(
+      "The prompt is selected: press"
+    );
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe(
+      START_PROMPT
+    );
+  });
+});
+
+test.describe("what it costs", () => {
+  test("is one receipt with the allowances and the prices above them", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const section = page.getByRole("region", {
+      name: "One platform, one bill.",
+    });
+    await expect(section.getByRole("table")).toHaveCount(0);
+    const lines = section.getByRole("list", { name: "Included every month" });
+    await expect(lines.getByRole("listitem")).toHaveCount(8);
+    await expect(lines.getByRole("listitem").first()).toHaveText(
+      /App, API and agents.*10M requests.*then \$0\.30 \/ million/
+    );
+    await expect(section.getByText("$5.00 / month")).toBeVisible();
+  });
+});
+
 test.describe("reduced motion", () => {
   test.use({ reducedMotion: "reduce" });
 
@@ -225,6 +284,17 @@ test.describe("phone width", () => {
     );
     await page.keyboard.press("Escape");
     await expect(menu).toBeHidden();
+  });
+
+  test("each receipt line stays on its two lines", async ({ page }) => {
+    await page.goto("/");
+    const heights = await page
+      .locator(".receipt-line")
+      .evaluateAll((lines) =>
+        lines.map((line) => line.getBoundingClientRect().height)
+      );
+    expect(heights).toHaveLength(8);
+    for (const height of heights) expect(height).toBeLessThanOrEqual(40);
   });
 
   test("the feature map is a list of four pillars", async ({ page }) => {

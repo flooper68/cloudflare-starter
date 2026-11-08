@@ -10,6 +10,10 @@ APP_ENV=local
 # STORAGE_RECONCILE (required, no default): off | report | delete. off turns the optional
 # daily orphan maintenance off; admins can still run a report on demand.
 STORAGE_RECONCILE=off
+# DEMO_MODE (required, no default): off | on. Starter-only public demo
+# (docs/guides/how-to-run-a-public-demo.md); keep off. With on, also set
+# DEMO_RETENTION_DAYS=7, DEMO_SAMPLE_DATA=on and optionally DEMO_PROTECTED_EMAILS=a@x.test,b@x.test.
+DEMO_MODE=off
 APP_URL=http://localhost:4321
 # At least 32 characters. Generate with: openssl rand -base64 32
 BETTER_AUTH_SECRET=local-dev-secret-change-me-0000000000

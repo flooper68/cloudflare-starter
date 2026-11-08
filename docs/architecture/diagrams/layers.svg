@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 789.3475833333332 934.1" width="790" height="935" role="img" data-natural-width="">
+<title>Layers and allowed imports</title>
+<desc>Arrows point from the importing layer to the imported one. In apps/web, the Astro pages call the server adapters and render packages/ui; the React SPA renders packages/ui and imports the tRPC router's types only. The server adapters call the feature use cases and build the platform adapters. In packages/features, the composition roots list the use cases; use cases call their own domain, the kernel and the ports; domain imports only the kernel and zod; adapters implement the ports and are the only code that touches vendor SDKs and the console. packages/ui and packages/features never import each other, and no package imports apps.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="789.3475833333332" height="934.1" rx="12"/>
+<defs>
+<marker id="dg-layers-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-layers-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<g class="subgraph" data-id="Web" data-label="apps/web">
+<rect x="127.65841666666668" y="40" width="504.87433333333325" height="266.70000000000005" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="127.65841666666668" y="40" width="504.87433333333325" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="139.65841666666668" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">apps/web</text>
+</g>
+<g class="subgraph" data-id="Features" data-label="packages/features/src">
+<rect x="40" y="451.6" width="705.5612499999999" height="351.6" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="40" y="451.6" width="705.5612499999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="52" y="465.6" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">packages/features/src</text>
+</g>
+<polyline class="edge" data-from="Pages" data-to="UI" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="473.03725,205.8 473.03725,229.8 610.5535833333333,229.8 610.5535833333333,360.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="SPA" data-to="UI" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="490.6499166666667,120.9 490.6499166666667,132.9 615.53275,132.9 615.53275,348.70000000000005 656.81825,348.70000000000005 656.81825,360.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Server" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="325.43041666666664,290.70000000000005 325.43041666666664,556.5 242.20125000000002,556.5 242.20125000000002,580.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Server" data-to="Roots" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="325.4304166666667,290.70000000000005 325.4304166666667,433.6 320.43275000000006,433.6 320.43275,495.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Server" data-to="Adapters" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="buildPlatform" points="416.31641666666667,290.70000000000005 416.31641666666667,365.3 409.0215833333333,365.3 409.0215833333333,433.6 565.9437499999999,433.6 565.9437499999999,580.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Adapters" data-to="Vendors" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="565.9437499999999,617.4 565.9437499999999,641.4000000000001 620.4829166666666,641.4000000000001 620.4829166666666,857.2" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Pages" data-to="Server" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="473.03725,205.8 473.03725,229.8 325.43041666666664,229.8 325.43041666666664,253.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="SPA" data-to="Server" data-style="dotted" data-arrow-start="false" data-arrow-end="true" data-label="types only" points="389.7225833333333,120.9 389.7225833333333,132.9 264.83975,132.9 264.83975,253.8" fill="none" stroke="var(--_line)" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Roots" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="320.43275,532.5 320.43275,556.5 242.20125000000002,556.5 242.20125000000002,580.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Domain" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="242.20125000000002,617.4 242.20125000000002,641.4000000000001 154.77999999999997,641.4000000000001 154.77999999999997,665.4000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Ports" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="242.20125000000002,617.4 242.20125000000002,641.4000000000001 480.20691666666653,641.4000000000001 480.20691666666653,665.4000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Kernel" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="242.20125000000002,617.4 242.20125000000002,641.4000000000001 259.8935833333333,641.4000000000001 259.8935833333333,750.3000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Domain" data-to="Kernel" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="154.77999999999997,702.3000000000001 154.77999999999997,726.3000000000001 259.8935833333333,726.3000000000001 259.8935833333333,750.3000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Ports" data-to="Kernel" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="480.20691666666653,702.3000000000001 480.20691666666653,726.3000000000001 259.8935833333333,726.3000000000001 259.8935833333333,750.3000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<polyline class="edge" data-from="Adapters" data-to="Ports" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="565.9437499999999,617.4 565.9437499999999,641.4000000000001 480.20691666666653,641.4000000000001 480.20691666666653,665.4000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-layers-arrowhead)" />
+<g class="edge-label" data-from="Server" data-to="Adapters" data-label="buildPlatform">
+<rect x="369.5215833333333" y="372.3" width="78.23800000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="408.6405833333333" y="387.45" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">buildPlatform</text>
+</g>
+<g class="edge-label" data-from="SPA" data-to="Server" data-label="types only">
+<rect x="231.83975000000004" y="172.2" width="65.76400000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="264.72175000000004" y="187.35" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">types only</text>
+</g>
+<g class="node" data-id="UI" data-label="packages/ui: components, tokens, brand" data-shape="rectangle">
+<rect x="471.7595833333333" y="360.70000000000005" width="277.58799999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="610.5535833333333" y="379.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">packages/ui: components, tokens, brand</text>
+</g>
+<g class="node" data-id="Vendors" data-label="vendor SDKs and Workers bindings" data-shape="rectangle">
+<rect x="493.9154166666666" y="857.2" width="253.13499999999996" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="620.4829166666666" y="875.6500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">vendor SDKs and Workers bindings</text>
+</g>
+<g class="node" data-id="Pages" data-label="src/pages: Astro pages and endpoints" data-shape="rectangle">
+<rect x="340.54175" y="168.9" width="264.991" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="473.03725" y="187.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">src/pages: Astro pages and endpoints</text>
+</g>
+<g class="node" data-id="SPA" data-label="src/components: React SPA and admin portal" data-shape="rectangle">
+<rect x="288.79525" y="84" width="302.78199999999987" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="440.18625" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">src/components: React SPA and admin portal</text>
+</g>
+<g class="node" data-id="Server" data-label="src/server: tRPC, MCP, auth, queue, cron, buildPlatform" data-shape="rectangle">
+<rect x="143.65841666666668" y="253.8" width="363.5439999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="325.43041666666664" y="272.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">src/server: tRPC, MCP, auth, queue, cron, buildPlatform</text>
+</g>
+<g class="node" data-id="Roots" data-label="composition roots: database.ts, *-catalog.ts" data-shape="rectangle">
+<rect x="174.96975000000003" y="495.6" width="290.92599999999993" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="320.43275" y="514.0500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">composition roots: database.ts, *-catalog.ts</text>
+</g>
+<g class="node" data-id="UseCases" data-label="feature use cases: one function per file" data-shape="rectangle">
+<rect x="110.07625000000007" y="580.5" width="264.2499999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="242.20125000000002" y="598.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">feature use cases: one function per file</text>
+</g>
+<g class="node" data-id="Domain" data-label="feature domain/: pure rules" data-shape="rectangle">
+<rect x="56" y="665.4000000000001" width="197.55999999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="154.77999999999997" y="683.8500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">feature domain/: pure rules</text>
+</g>
+<g class="node" data-id="Ports" data-label="platform/ports: interfaces" data-shape="rectangle">
+<rect x="386.61391666666657" y="665.4000000000001" width="187.18599999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="480.20691666666653" y="683.8500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">platform/ports: interfaces</text>
+</g>
+<g class="node" data-id="Adapters" data-label="platform/adapters: cloudflare, fflate, noop, memory" data-shape="rectangle">
+<rect x="402.32624999999996" y="580.5" width="327.2349999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="565.9437499999999" y="598.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">platform/adapters: cloudflare, fflate, noop, memory</text>
+</g>
+<g class="node" data-id="Kernel" data-label="kernel/: pure shared types" data-shape="rectangle">
+<rect x="161.1135833333333" y="750.3000000000001" width="197.56" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="259.8935833333333" y="768.7500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">kernel/: pure shared types</text>
+</g>
+</svg>

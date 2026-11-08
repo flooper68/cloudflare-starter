@@ -7,6 +7,7 @@ import {
   type BillingProvider,
   type Clock,
   type Database,
+  type DemoRuntime,
   DomainError,
   type EmailService,
   type ErrorReporter,
@@ -69,6 +70,11 @@ export interface Context {
   readonly emailOut: EmailService;
   /** Edge rate limits; every mutation counts against its policy (limitMutations). */
   readonly rateLimiter: RateLimiter;
+  /**
+   * The QA admin's address while QA_BYPASS=on, else null: no other `qa+admin@` account is
+   * an admin (server/qa-admin.ts).
+   */
+  readonly qaAdminEmail: string | null;
   /** Product analytics of this request; use cases track with `trackEvent`. */
   readonly analytics: ProductAnalytics;
   /** Entitlement checks and usage counting for use cases (BILLING). */
@@ -95,6 +101,8 @@ export interface Context {
    * (server/health.ts): a live check, nothing stored.
    */
   readonly readiness: () => Promise<HealthResponseBody>;
+  /** DEMO_MODE with its retention policy (server/demo.ts). */
+  readonly demo: DemoRuntime;
 }
 
 /** What procedures read from the Better Auth session. */
@@ -319,7 +327,11 @@ function notFound(): TRPCError {
  */
 export const requireAdmin = t.middleware(async ({ ctx, next }) => {
   if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user) throw notFound();
-  const access = await findAdminAccess(ctx, { userId: ctx.user.id });
+  const access = await findAdminAccess(ctx, {
+    userId: ctx.user.id,
+    qaAdminEmail: ctx.qaAdminEmail,
+    sessionCreatedAt: ctx.session?.createdAt ?? null,
+  });
   if (!access.isAdmin) throw notFound();
   const state = await getSecurityState(ctx, {
     userId: ctx.user.id,
@@ -395,7 +407,11 @@ export const requireImpersonator = t.middleware(async ({ ctx, next }) => {
   if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user || !impersonatedBy) {
     throw notFound();
   }
-  const access = await findAdminAccess(ctx, { userId: impersonatedBy });
+  const access = await findAdminAccess(ctx, {
+    userId: impersonatedBy,
+    qaAdminEmail: ctx.qaAdminEmail,
+    sessionCreatedAt: ctx.session?.createdAt ?? null,
+  });
   if (!access.isAdmin) throw notFound();
   return next({ ctx: { ...ctx, user: ctx.user, impersonatedBy } });
 });

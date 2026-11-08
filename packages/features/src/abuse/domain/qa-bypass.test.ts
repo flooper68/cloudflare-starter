@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isQaEmail } from "./qa-bypass";
+import { isQaAdminEmail, isQaEmail, qaAdminEmail } from "./qa-bypass";
 
 describe("isQaEmail", () => {
   it.each([
@@ -31,5 +31,22 @@ describe("isQaEmail", () => {
     ["an empty email", ""],
   ])("refuses %s", (_, email) => {
     expect(isQaEmail(email, "qa.example.com")).toBe(false);
+  });
+});
+
+describe("the QA admin's address", () => {
+  it("is qa+admin@ in the QA domain, nothing else", () => {
+    expect(qaAdminEmail("QA.Example.com")).toBe("qa+admin@qa.example.com");
+    expect(isQaAdminEmail(" QA+Admin@qa.example.com ", "qa.example.com")).toBe(
+      true
+    );
+    for (const email of [
+      "qa+admin@example.com",
+      "qa+admin2@qa.example.com",
+      "qa@qa.example.com",
+      null,
+    ]) {
+      expect(isQaAdminEmail(email, "qa.example.com")).toBe(false);
+    }
   });
 });

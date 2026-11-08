@@ -12,6 +12,7 @@ import {
   flagRulesSchema,
   flagUpdateSchema,
   getAdminOverview,
+  getDemoStats,
   getUserDetail,
   getWorkspaceDetail,
   listAdminDataRequests,
@@ -25,6 +26,7 @@ import {
   resetSecondFactor,
   revokeUserSessions,
   STORAGE_GRACE_MS,
+  sendAdminTestEmail,
   sendPasswordReset,
   setFlagRules,
   setUserRole,
@@ -44,6 +46,7 @@ import {
   impersonatorProcedure,
   router,
 } from "./init";
+import { requireFeature } from "./require-feature";
 
 const userId = z
   .string()
@@ -108,14 +111,35 @@ export const adminRouter = router({
     ),
   }),
   overview: router({
-    get: adminProcedure.query(({ ctx }) =>
-      getAdminOverview({ ...ctx, billing: ctx.config.billing }, ctx.admin)
-    ),
+    get: adminProcedure.query(async ({ ctx }) => ({
+      ...(await getAdminOverview(
+        { ...ctx, billing: ctx.config.billing },
+        ctx.admin
+      )),
+      // DEMO_MODE=on: active demo accounts, deletions due today, erased in 7 days.
+      demo:
+        ctx.demo.mode === "on"
+          ? await getDemoStats(ctx, ctx.admin, ctx.demo.policy)
+          : null,
+    })),
   }),
 
   health: router({
     // A live readiness check with each failure's detail; nothing is stored.
     get: adminProcedure.query(({ ctx }) => ctx.readiness()),
+  }),
+
+  email: router({
+    // The real sending path to any address (the QA suite's weekly delivery check).
+    sendTest: adminProcedure
+      .input(z.object({ to: z.email().max(254) }))
+      .mutation(({ ctx, input }) =>
+        sendAdminTestEmail(
+          { ...ctx, email: requireFeature(ctx.email) },
+          ctx.admin,
+          { to: input.to, environment: ctx.config.APP_ENV }
+        )
+      ),
   }),
 
   settings: router({
@@ -128,6 +152,16 @@ export const adminRouter = router({
         bootstrapAdminEmail: ctx.config.workspaces.bootstrapAdminEmail,
         emailEnabled: ctx.email.enabled,
         adminPortal: ctx.config.ADMIN_PORTAL,
+        demo:
+          ctx.demo.mode === "on"
+            ? {
+                mode: "on",
+                retentionDays: ctx.demo.policy.retentionDays,
+                sampleData: ctx.demo.sampleData,
+                protectedEmails: ctx.demo.policy.protectedEmails,
+                qaEmailDomain: ctx.demo.policy.qaEmailDomain,
+              }
+            : { mode: "off" },
         methods: authMethodsOf(ctx.config),
       })
     ),

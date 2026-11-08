@@ -2,6 +2,7 @@ export { assertUserErasureAllowed } from "./assert-user-erasure-allowed";
 export { assignWorkspaceOwner } from "./assign-workspace-owner";
 export { banUser } from "./ban-user";
 export { deleteWorkspace } from "./delete-workspace";
+export { demoteQaAdmin } from "./demote-qa-admin";
 export {
   ADMIN_PAGE_SIZE_DEFAULT,
   ADMIN_PAGE_SIZE_MAX,
@@ -54,6 +55,7 @@ export { promoteBootstrapAdmin } from "./promote-bootstrap-admin";
 export { removeUser } from "./remove-user";
 export { resetSecondFactor } from "./reset-second-factor";
 export { revokeUserSessions } from "./revoke-user-sessions";
+export { sendAdminTestEmail } from "./send-admin-test-email";
 export { sendPasswordReset } from "./send-password-reset";
 export { setUserRole } from "./set-user-role";
 export { startImpersonation } from "./start-impersonation";

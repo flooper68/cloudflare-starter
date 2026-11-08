@@ -6,6 +6,15 @@ import { purgeAuditEvents, purgeAuditEventsJob } from "./audit";
 import { expireTrials, expireTrialsJob } from "./billing";
 import { DATA_CATALOG } from "./data-catalog";
 import {
+  enforceDemoRetention,
+  enforceDemoRetentionJob,
+  seedDemoWorkspace,
+  seedDemoWorkspaceJob,
+  warnDemoAccount,
+  warnDemoAccountJob,
+} from "./demo";
+import { buildErasureHandlers } from "./erasure-catalog";
+import {
   cleanupStorage,
   cleanupStorageJob,
   retryFileCleanups,
@@ -40,6 +49,7 @@ import {
   purgeDataExports,
   purgeDataExportsJob,
 } from "./privacy";
+import { purgeQaOutbox, purgeQaOutboxJob } from "./qa";
 import {
   reconcileStorage,
   reconcileStorageJob,
@@ -89,6 +99,10 @@ export const jobCatalog = createJobCatalog<JobDeps>([
     return result;
   }),
   registerJob(helloJob, sayHello),
+  // The cutoff comes from the cron run's time, so every retry purges the same mail.
+  registerJob(purgeQaOutboxJob, (deps: JobDeps, payload) =>
+    purgeQaOutbox({ db: deps.db, clock: { now: () => new Date(payload.asOf) } })
+  ),
   // The cutoff comes from the cron run's time, so every retry purges the same events.
   registerJob(purgeAuditEventsJob, (deps: JobDeps, payload) =>
     purgeAuditEvents({
@@ -138,6 +152,38 @@ export const jobCatalog = createJobCatalog<JobDeps>([
     purgeExpiredTrash(
       { ...deps, requestContext: job.context, entities: TRASH_CATALOG },
       payload
+    )
+  ),
+  // Demo mode (DEMO_MODE=on; starter-only). Each re-reads the settings when it runs.
+  registerJob(seedDemoWorkspaceJob, (deps: JobDeps, payload, job) =>
+    seedDemoWorkspace(
+      {
+        ...deps,
+        requestContext: job.context,
+        billing: deps.billing(job.context),
+      },
+      payload
+    )
+  ),
+  // Judged as of the cron run's time; erasures through the privacy erasure.
+  registerJob(enforceDemoRetentionJob, (deps: JobDeps, payload, job) =>
+    enforceDemoRetention(
+      {
+        ...deps,
+        requestContext: job.context,
+        ...buildErasureHandlers(deps),
+      },
+      { asOf: new Date(payload.asOf), batch: payload.batch, skip: payload.skip }
+    )
+  ),
+  registerJob(warnDemoAccountJob, (deps: JobDeps, payload, job) =>
+    warnDemoAccount(
+      {
+        ...deps,
+        requestContext: job.context,
+        notify: (definition, input) => notify(deps, definition, input),
+      },
+      { userId: payload.userId, asOf: new Date(payload.asOf) }
     )
   ),
 ]);

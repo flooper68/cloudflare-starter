@@ -307,6 +307,14 @@ export const DATA_CATALOG: readonly DataEntity[] = [
       "Deployment security/configuration or bounded operational state, not portable user data; normal retention applies. Signing keys and assertions never exported.",
   })),
   {
+    table: "qa_outbox",
+    scope: "platform",
+    columns: [],
+    erase: "retain-platform",
+    reason:
+      "Test mail the app kept instead of sending to the automated QA suite's own addresses (QA_BYPASS=on), never a person's; deleted after 24 hours by the daily qa-outbox.purge job.",
+  },
+  {
     table: "data_requests",
     scope: "user",
     columns: [

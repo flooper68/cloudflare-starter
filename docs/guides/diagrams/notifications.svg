@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 2389.2329999999997 236.4" width="2390" height="237" role="img" data-natural-width="">
+<title>How a notification is sent</title>
+<desc>A use case calls deps.notify, which validates the data, drops the actor and enqueues one notifications.dispatch job keyed by the event id. The dispatcher applies preferences and writes inbox rows. Mail due now becomes a notifications.send-email job; daily-cadence rows are marked pending_digest. The 08:00 UTC cron entry notifications.plan-digests enqueues notifications.send-digest per user and day, which reads those rows. Both mail jobs send through the Email port.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="2389.2329999999997" height="236.4" rx="12"/>
+<defs>
+<marker id="dg-notifications-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-notifications-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<polyline class="edge" data-from="U" data-to="N" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="deps.notify(definition, { recipients, data, context })" points="201.99200000000002,76.67500000000003 530.3919999999999,76.67500000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="N" data-to="Q" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="enqueueJob notifications.dispatch (key = event id)" points="721.2829999999999,76.67500000000003 1059.187,76.67500000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="Q" data-to="D" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1179.6829999999998,76.67500000000003 1227.6829999999998,76.67500000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="D" data-to="E" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="email due now" points="1532.6879999999996,70.52500000000002 1810.3899999999999,70.52500000000002 1810.3899999999999,58.45000000000002 1930.3394999999996,58.45000000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="D" data-to="P" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="daily cadence" points="1532.6879999999996,82.82500000000003 1568.6879999999996,82.82500000000003 1568.6879999999996,106.05000000000003 1704.2719999999997,106.05000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="C" data-to="S" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1868.4869999999996,177.95000000000005 1899.4132499999996,177.95000000000005 1899.4132499999996,142 1930.3394999999996,142" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="P" data-to="S" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1868.4869999999996,106.05000000000003 1899.4132499999996,106.05000000000003 1899.4132499999996,142 1930.3394999999996,142" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="E" data-to="M" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="2212.3734999999997,58.45000000000002 2233.1522499999996,58.45000000000002 2233.1522499999996,109.55000000000003 2250.2259999999997,109.55000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<polyline class="edge" data-from="S" data-to="M" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="2216.0784999999996,142 2233.1522499999996,142 2233.1522499999996,109.55000000000003 2250.2259999999997,109.55000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-notifications-arrowhead)" />
+<g class="edge-label" data-from="U" data-to="N" data-label="deps.notify(definition, { recipients, data, context })">
+<rect x="245.99200000000005" y="60.67500000000002" width="240.39999999999992" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="366.192" y="75.82500000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">deps.notify(definition, { recipients, data, context })</text>
+</g>
+<g class="edge-label" data-from="N" data-to="Q" data-label="enqueueJob notifications.dispatch (key = event id)">
+<rect x="765.2829999999999" y="60.67500000000002" width="249.90399999999994" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="890.2349999999999" y="75.82500000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">enqueueJob notifications.dispatch (key = event id)</text>
+</g>
+<g class="edge-label" data-from="D" data-to="E" data-label="email due now">
+<rect x="1818.3899999999999" y="42.45000000000002" width="81.802" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1859.291" y="57.600000000000016" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">email due now</text>
+</g>
+<g class="edge-label" data-from="D" data-to="P" data-label="daily cadence">
+<rect x="1576.6879999999996" y="90.05000000000003" width="83.584" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1618.4799999999996" y="105.20000000000003" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">daily cadence</text>
+</g>
+<g class="node" data-id="U" data-label="use case (producer)" data-shape="rectangle">
+<rect x="40" y="58.22500000000002" width="161.99200000000002" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="120.99600000000001" y="76.67500000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">use case (producer)</text>
+</g>
+<g class="node" data-id="N" data-label="notify: validate, drop actor" data-shape="rectangle">
+<rect x="530.3919999999999" y="58.22500000000002" width="190.891" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="625.8375" y="76.67500000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notify: validate, drop actor</text>
+</g>
+<g class="node" data-id="Q" data-label="APP_QUEUE" data-shape="subroutine">
+<rect x="1059.187" y="58.22500000000002" width="120.49599999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="1067.187" y1="58.22500000000002" x2="1067.187" y2="95.12500000000003" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="1171.683" y1="58.22500000000002" x2="1171.683" y2="95.12500000000003" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1119.435" y="76.67500000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">APP_QUEUE</text>
+</g>
+<g class="node" data-id="D" data-label="dispatchNotification: preferences, inbox rows" data-shape="rectangle">
+<rect x="1227.6829999999998" y="58.22500000000002" width="305.00499999999994" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1380.1854999999998" y="76.67500000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">dispatchNotification: preferences, inbox rows</text>
+</g>
+<g class="node" data-id="E" data-label="notifications.send-email (key email-&lt;row&gt;)" data-shape="rectangle">
+<rect x="1930.3394999999996" y="40.000000000000014" width="282.0339999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="2071.3564999999994" y="58.45000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notifications.send-email (key email-&lt;row&gt;)</text>
+</g>
+<g class="node" data-id="P" data-label="rows pending_digest" data-shape="cylinder">
+<rect x="1704.2719999999997" y="87.60000000000002" width="164.21499999999997" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+<line x1="1704.2719999999997" y1="87.60000000000002" x2="1704.2719999999997" y2="124.50000000000003" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="1868.4869999999996" y1="87.60000000000002" x2="1868.4869999999996" y2="124.50000000000003" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1786.3794999999998" cy="124.50000000000003" rx="82.10749999999999" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1786.3794999999998" cy="87.60000000000002" rx="82.10749999999999" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1786.3794999999998" y="106.05000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">rows pending_digest</text>
+</g>
+<g class="node" data-id="C" data-label="cron notifications.plan-digests (08:00 UTC)" data-shape="rectangle">
+<rect x="1580.5249999999996" y="159.50000000000003" width="287.962" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1724.5059999999996" y="177.95000000000005" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">cron notifications.plan-digests (08:00 UTC)</text>
+</g>
+<g class="node" data-id="S" data-label="notifications.send-digest per user and day" data-shape="rectangle">
+<rect x="1930.3394999999996" y="123.55000000000001" width="285.73900000000003" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="2073.209" y="142" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notifications.send-digest per user and day</text>
+</g>
+<g class="node" data-id="M" data-label="Email port" data-shape="rectangle">
+<rect x="2250.2259999999997" y="91.10000000000002" width="99.007" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="2299.7294999999995" y="109.55000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Email port</text>
+</g>
+</svg>

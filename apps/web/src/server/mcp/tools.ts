@@ -621,7 +621,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "admin.overview.get",
     "Admin: overview",
-    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, and workspace counts and sizes."
+    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, workspace counts and sizes, and with DEMO_MODE=on the demo counters (active demo accounts, deletions scheduled today, accounts erased in the last 7 days; null otherwise)."
   ),
   direct(
     "admin_get_health",
@@ -635,7 +635,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "admin.settings.get",
     "Admin: deployment settings",
-    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL."
+    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL, and DEMO_MODE with its retention days, sample data, protected emails and QA domain."
   ),
   direct(
     "admin_list_users",
@@ -688,6 +688,14 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "admin.users.sendPasswordReset",
     "Admin: send password reset",
     "Platform admins only. Emails a user (by userId) a password reset link; the link is never returned. Confirm with the user before calling.",
+    { outward: true }
+  ),
+  direct(
+    "admin_send_test_email",
+    "write",
+    "admin.email.sendTest",
+    "Admin: send test email",
+    "Platform admins only. Sends the deployment's test email to any address (checks that mail from this deployment arrives). Confirm the address with the user before calling.",
     { outward: true }
   ),
   direct(
@@ -780,6 +788,10 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
     "public liveness probe for uptime monitors; touches no dependency, nothing for an agent to do",
   "health/ready.ts":
     "public readiness check for uptime monitors (IETF application/health+json); platform admins' agents use admin_get_health",
+  "api/qa/cleanup.ts":
+    "the automated QA suite's erasure of its own run accounts (QA_BYPASS=on), authorized by the QA token, not a user; admins use admin_remove_user",
+  "api/qa/outbox.ts":
+    "the automated QA suite's read of the QA outbox (QA_BYPASS=on), authorized by the QA token, not a user; no MCP client reads it",
   "api/csp-report.ts":
     "browsers post Content-Security-Policy violation reports here; nothing an agent does",
   "docs/changelog.xml.ts":

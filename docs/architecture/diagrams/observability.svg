@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 1110.925 376.5" width="1111" height="377" role="img" data-natural-width="">
+<title>Logs, traces, metrics and health</title>
+<desc>The edges of the Worker, which are the HTTP edge, the tRPC middleware, MCP tools, the queue consumer and the cron handler, open one span and record one duration metric per unit of work, and log and report errors under the request context's trace id. They write through four ports. The Logger, ErrorReporter and Tracer adapters write JSON records to Workers Logs, which also keeps Cloudflare's own invocation logs and traces. The Metrics adapter writes to the Analytics Engine dataset METRICS_DATASET, flushed once per unit of work. Uptime monitors call /health/live and /health/ready, which probe D1, R2 and the bindings.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="1110.925" height="376.5" rx="12"/>
+<defs>
+<marker id="dg-observability-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-observability-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<polyline class="edge" data-from="Edges" data-to="Logger" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="334.631,155.8 352.631,155.8 352.631,58.45 500.84000000000003,58.45" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Edges" data-to="Errors" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="334.631,155.8 352.631,155.8 352.631,123.35000000000001 370.631,123.35000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Edges" data-to="Tracer" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="334.631,155.8 352.631,155.8 352.631,188.25 500.84000000000003,188.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Edges" data-to="Metrics" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="334.631,155.8 352.631,155.8 352.631,253.15000000000003 370.631,253.15000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Logger" data-to="Logs" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="LOG_SINK" points="613.1850000000001,58.45 730.2080000000001,58.449999999999996 730.2080000000001,114.125 742.2080000000001,114.125" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Errors" data-to="Logs" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="ERROR_REPORTER" points="525.954,123.35000000000001 742.2080000000001,123.35000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Tracer" data-to="Logs" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="TRACING" points="611.703,188.25 730.2080000000001,188.25 730.2080000000001,132.57500000000002 742.2080000000001,132.57500000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Metrics" data-to="AE" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="METRICS" points="483.717,253.15000000000003 624.293,253.15000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Monitor" data-to="Health" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="165.68300000000005,318.05 213.68300000000005,318.05" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<polyline class="edge" data-from="Health" data-to="Probes" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="403.09200000000004,318.05 451.09200000000004,318.05" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-observability-arrowhead)" />
+<g class="edge-label" data-from="Logger" data-to="Logs" data-label="LOG_SINK">
+<rect x="653.474" y="42.449999999999996" width="68.73400000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="687.841" y="57.599999999999994" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">LOG_SINK</text>
+</g>
+<g class="edge-label" data-from="Errors" data-to="Logs" data-label="ERROR_REPORTER">
+<rect x="581.9540000000001" y="107.35000000000002" width="116.25399999999998" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="640.081" y="122.50000000000003" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">ERROR_REPORTER</text>
+</g>
+<g class="edge-label" data-from="Tracer" data-to="Logs" data-label="TRACING">
+<rect x="659.4140000000001" y="172.25" width="62.794000000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="690.8110000000001" y="187.4" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">TRACING</text>
+</g>
+<g class="edge-label" data-from="Metrics" data-to="AE" data-label="METRICS">
+<rect x="515.717" y="237.15000000000003" width="64.57600000000002" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="548.005" y="252.30000000000004" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">METRICS</text>
+</g>
+<g class="node" data-id="Edges" data-label="edges: HTTP, tRPC, MCP tools, queue, cron" data-shape="rectangle">
+<rect x="40" y="137.35000000000002" width="294.631" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="187.3155" y="155.8" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">edges: HTTP, tRPC, MCP tools, queue, cron</text>
+</g>
+<g class="node" data-id="Logger" data-label="Logger port" data-shape="rectangle">
+<rect x="500.84000000000003" y="40" width="112.34500000000001" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="557.0125" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Logger port</text>
+</g>
+<g class="node" data-id="Errors" data-label="ErrorReporter port" data-shape="rectangle">
+<rect x="370.631" y="104.9" width="155.32300000000004" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="448.2925" y="123.35000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">ErrorReporter port</text>
+</g>
+<g class="node" data-id="Tracer" data-label="Tracer port" data-shape="rectangle">
+<rect x="500.84000000000003" y="169.8" width="110.863" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="556.2715000000001" y="188.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Tracer port</text>
+</g>
+<g class="node" data-id="Metrics" data-label="Metrics port" data-shape="rectangle">
+<rect x="370.631" y="234.70000000000002" width="113.086" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="427.174" y="253.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Metrics port</text>
+</g>
+<g class="node" data-id="Logs" data-label="Workers Logs: logs, error reports, span records" data-shape="rectangle">
+<rect x="742.2080000000001" y="104.9" width="328.7169999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="906.5665" y="123.35000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Workers Logs: logs, error reports, span records</text>
+</g>
+<g class="node" data-id="AE" data-label="Analytics Engine: METRICS_DATASET" data-shape="rectangle">
+<rect x="624.293" y="234.70000000000002" width="273.8829999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="761.2345" y="253.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Analytics Engine: METRICS_DATASET</text>
+</g>
+<g class="node" data-id="Monitor" data-label="Uptime monitor" data-shape="rectangle">
+<rect x="40.00000000000006" y="299.6" width="125.68299999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="102.84150000000005" y="318.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Uptime monitor</text>
+</g>
+<g class="node" data-id="Health" data-label="/health/live, /health/ready" data-shape="rectangle">
+<rect x="213.68300000000005" y="299.6" width="189.409" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="308.38750000000005" y="318.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">/health/live, /health/ready</text>
+</g>
+<g class="node" data-id="Probes" data-label="D1, R2, queue, email, settings, bindings" data-shape="rectangle">
+<rect x="451.09200000000004" y="299.6" width="259.06299999999993" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="580.6235" y="318.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">D1, R2, queue, email, settings, bindings</text>
+</g>
+</svg>

@@ -78,6 +78,10 @@ The retained `erasure_records` row contains only user id, requested time and com
 
 Residual copies: D1 Time Travel and provider backups follow the account's configured retention; logs follow deployment retention; existing shared-workspace content belongs to that workspace; redacted audit history follows the configured audit retention; pseudonymous product analytics follows its provider retention. Consuming products must document their actual retention windows and legal policy. The minimal erasure ledger is retained to make the restoration procedure possible.
 
+## Demo retention
+
+With `DEMO_MODE=on` (the starter's public demo only; [how-to-run-a-public-demo.md](how-to-run-a-public-demo.md)) a daily job erases accounts older than `DEMO_RETENTION_DAYS` through the same pipeline: `eraseAccount` (the admin erasure's core: `prepareUserErasure`, then Better Auth's delete and its hooks), as the system, recording `demo.account_erased` after `privacy.user_erased`. Nobody is erased without the security-critical **Your demo account will be deleted tomorrow** notice first (`demo.deletion_warned`, at least 12 hours before), which links Settings › Privacy so they can export their data. Platform admins, `BOOTSTRAP_ADMIN_EMAIL`, `DEMO_PROTECTED_EMAILS` and `QA_EMAIL_DOMAIN` accounts are never erased by it; a last owner of a workspace others use is refused by the usual preflight and tried again the next day. It adds no table: the warning's audit event is its record.
+
 ## Why it is built this way
 
 These are the rules a change to exports or erasure keeps; the architecture summary is in [Data privacy](../architecture/overview.md#data-privacy).

@@ -16,6 +16,7 @@ import {
   createWorkersLogsErrorReporter,
   createWorkersLogsLogger,
   createWorkersTracer,
+  type DemoSettings,
   type EmailService,
   type ErrorReporter,
   type FeatureFlagStore,
@@ -53,6 +54,7 @@ import {
   type CspMode,
   parseAbuseConfig,
   parseAnalyticsConfig,
+  parseDemoConfig,
   parsePlatformConfig,
 } from "@/lib/config";
 import { buildEmailFeature, buildRawEnv } from "@/lib/env";
@@ -66,6 +68,8 @@ export const SERVICE_NAME = "cloudflare-starter-web";
 
 export interface Platform {
   readonly storageReconcile: StorageReconcileMode;
+  /** DEMO_MODE and its settings: the cron's demo retention entry runs only with on. */
+  readonly demo: DemoSettings;
   /** CSP_MODE: how HTML pages get their Content-Security-Policy (server/security-headers.ts). */
   readonly cspMode: CspMode;
   readonly logger: Logger;
@@ -243,6 +247,7 @@ export function buildPlatform(env: AppEnv): Platform {
       : null;
   const platform: Platform = {
     storageReconcile: config.STORAGE_RECONCILE,
+    demo: parseDemoConfig(raw),
     cspMode: config.CSP_MODE,
     logger,
     errors:

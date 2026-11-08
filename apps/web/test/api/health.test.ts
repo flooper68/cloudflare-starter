@@ -207,6 +207,13 @@ describe("GET /health/ready", () => {
     ["QA_BYPASS", { QA_BYPASS: undefined }],
     ["QA_TOKEN", { QA_TOKEN: undefined }],
     ["QA_EMAIL_DOMAIN", { QA_EMAIL_DOMAIN: "not a domain" }],
+    ["DEMO_MODE", { DEMO_MODE: undefined }],
+    ["DEMO_RETENTION_DAYS", { DEMO_MODE: "on", DEMO_RETENTION_DAYS: "1" }],
+    ["DEMO_SAMPLE_DATA", { DEMO_MODE: "on", DEMO_SAMPLE_DATA: undefined }],
+    [
+      "DEMO_PROTECTED_EMAILS",
+      { DEMO_MODE: "on", DEMO_PROTECTED_EMAILS: "not-an-email" },
+    ],
   ])(
     "fails the settings check naming %s, in the admin view only",
     async (name, change) => {

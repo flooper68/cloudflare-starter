@@ -13,6 +13,11 @@ export const API_TEST_BINDINGS = {
   METRICS: "analytics-engine",
   TRACING: "workers",
   STORAGE_RECONCILE: "off",
+  // Demo mode off, as in the develop vars; test/api/demo-mode.test.ts turns it on.
+  DEMO_MODE: "off",
+  DEMO_RETENTION_DAYS: "7",
+  DEMO_SAMPLE_DATA: "on",
+  DEMO_PROTECTED_EMAILS: "",
   CSP_MODE: "enforce",
   APP_URL: "http://localhost:4321",
   BETTER_AUTH_SECRET: "api-test-secret-0123456789abcdefghij",

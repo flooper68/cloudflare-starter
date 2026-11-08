@@ -17,6 +17,7 @@ const settings: AdminSettingsData = {
   emailVerificationRequired: true,
   emailEnabled: true,
   adminPortal: "on",
+  demo: { mode: "off" },
 };
 
 /** The deployment's settings, read-only, with a link to Cloudflare Queues for jobs. */
@@ -48,6 +49,31 @@ export const Content: Story = {
     await expect(
       canvas.getByRole("link", { name: /Open Queues/ })
     ).toBeVisible();
+  },
+};
+
+/** A public demo instance (DEMO_MODE=on): its retention and who it never erases. */
+export const DemoInstance: Story = {
+  args: {
+    settings: {
+      ...settings,
+      signUp: "open",
+      signUpDomains: [],
+      demo: {
+        mode: "on",
+        retentionDays: 7,
+        sampleData: true,
+        protectedEmails: ["owner@acme.test"],
+        qaEmailDomain: "qa.acme.test",
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Retention")).toBeVisible();
+    await expect(canvas.getByText("7 days")).toBeVisible();
+    await expect(canvas.getByText("owner@acme.test")).toBeVisible();
+    await expect(canvas.getByText("qa.acme.test")).toBeVisible();
   },
 };
 

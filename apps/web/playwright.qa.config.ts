@@ -1,10 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // The automated QA suite: real journeys with real accounts against a DEPLOYED app (by
-// default production, https://starter.flooper.me), with no human. Mail goes to the QA
-// inbox Worker (apps/qa-inbox); the QA bypass replaces Turnstile for QA addresses only.
-// Run with `bun run test:qa -- --base-url <url>` and QA_TOKEN, QA_INBOX_URL and
-// QA_INBOX_TOKEN set; without them every journey skips and says why.
+// default production, https://starter.flooper.me), with no human. Mail to QA addresses
+// is kept in the app's QA outbox instead of sent (GET /api/qa/outbox), and the QA bypass
+// replaces Turnstile for QA addresses only. Run with `bun run test:qa -- --base-url <url>`
+// and QA_TOKEN set; without it every journey skips and says why.
 // docs/guides/how-to-qa-a-deployment.md
 const baseURL = process.env.QA_BASE_URL;
 const ci = Boolean(process.env.CI);
@@ -48,6 +48,13 @@ export default defineConfig({
       // QA admin (cleanup/leftovers.cleanup.ts).
       name: "qa-cleanup",
       testMatch: /cleanup\/.*\.cleanup\.ts$/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // Weekly, not part of `test:qa`: one real mail through the real sender
+      // (delivery/real-delivery.delivery.ts), since the outbox keeps the suite's own mail.
+      name: "qa-delivery",
+      testMatch: /delivery\/.*\.delivery\.ts$/,
       use: { ...devices["Desktop Chrome"] },
     },
   ],

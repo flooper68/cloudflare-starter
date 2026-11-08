@@ -3,6 +3,7 @@ import {
   type BillingProvider,
   type Notify,
   notify,
+  qaAdminEmail,
   type RequestContext,
   randomIds,
   systemClock,
@@ -21,6 +22,7 @@ import {
 import { getAuth } from "@/server/auth";
 import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
+import { demoRuntimeFor } from "@/server/demo";
 import type { AppEnv } from "@/server/env";
 import { readinessReport } from "@/server/health";
 import { buildPlatform, loggerFor, tracerFor } from "@/server/platform";
@@ -91,6 +93,9 @@ export function createAppContext(
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
+    qaAdminEmail: platform.qaBypass
+      ? qaAdminEmail(platform.qaBypass.emailDomain)
+      : null,
     notify: notifier,
     emailOut: platform.email,
     analytics: platform.productAnalytics(),
@@ -102,6 +107,7 @@ export function createAppContext(
     adminAuth: createAdminAuthGateway(() => getAuth(env), browser.exchange),
     accountAuth: createAccountAuthGateway(() => getAuth(env), browser.exchange),
     readiness: () => readinessReport(env, scoped, { detail: true }),
+    demo: demoRuntimeFor(env),
   };
 }
 

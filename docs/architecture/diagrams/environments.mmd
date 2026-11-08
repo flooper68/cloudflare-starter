@@ -1,0 +1,13 @@
+flowchart LR
+  accTitle: Environments and deploys
+  accDescr: Locally, bun run dev:web runs the Worker with simulated bindings and .dev.vars. A pull request runs CI. The Deploy workflow is started by hand for one environment, develop, staging or production. It runs verify, applies the D1 migrations, then deploys. Each environment is a section of wrangler.jsonc with its own D1 database, R2 bucket, queue and dead-letter queue, Analytics Engine datasets and rate-limit namespaces, and its secrets.
+  Local["local: dev:web, .dev.vars, simulated bindings"]
+  CI["ci.yml: lint, typecheck, tests, e2e, build"]
+  Deploy["deploy.yml: manual, one environment"]
+  Develop["develop: top level of wrangler.jsonc"]
+  Staging["staging: env.staging"]
+  Production["production: env.production"]
+  Local --> CI --> Deploy
+  Deploy -->|verify, migrations, deploy| Develop
+  Deploy --> Staging
+  Deploy --> Production
