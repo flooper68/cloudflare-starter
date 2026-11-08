@@ -11,19 +11,24 @@ name: QA
 # and QA_ADMIN_PASSWORD. GitHub-hosted runners only: the suite talks to production with a
 # token that skips the human check, so it never runs on a self-hosted machine, and only
 # from the repository itself (no pull_request trigger at all).
+# The app under test is an environment of apps/web/wrangler.jsonc, never a free-text URL:
+# the suite sends QA_TOKEN to it, so only the repository's own routes may receive it
+# (`bun run test:qa -- --env <env>` resolves the route).
 on:
   workflow_call:
     inputs:
-      base_url:
-        description: The deployed app to test
+      environment:
+        description: The environment to test (its route in apps/web/wrangler.jsonc)
         type: string
-        default: https://starter.flooper.me
+        default: production
   workflow_dispatch:
     inputs:
-      base_url:
-        description: The deployed app to test
-        type: string
-        default: https://starter.flooper.me
+      environment:
+        description: The environment to test (its route in apps/web/wrangler.jsonc)
+        type: choice
+        default: production
+        options:
+          - production
       cleanup:
         description: Also run the leftover-account cleanup
         type: boolean
@@ -38,7 +43,7 @@ permissions:
 # One QA run against an environment at a time (they share its per-IP rate limits); a new
 # one waits instead of cancelling a run halfway through its cleanup.
 concurrency:
-  group: qa-${{ inputs.base_url || 'https://starter.flooper.me' }}
+  group: qa-${{ inputs.environment || 'production' }}
   cancel-in-progress: false
 
 jobs:
@@ -49,16 +54,17 @@ jobs:
     timeout-minutes: 45
     environment: qa
     env:
-      BASE_URL: ${{ inputs.base_url || 'https://starter.flooper.me' }}
-      QA_TOKEN: ${{ secrets.QA_TOKEN }}
-      QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
-      QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
+      QA_ENV: ${{ inputs.environment || 'production' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - run: bun scripts/ci-playwright-install.ts
       # Without them every journey would skip and the run would pass: fail instead.
       - name: QA secrets are set
+        env:
+          QA_TOKEN: ${{ secrets.QA_TOKEN }}
+          QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
+          QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
         run: |
           missing=""
           for name in QA_TOKEN QA_INBOX_URL QA_INBOX_TOKEN; do
@@ -70,13 +76,20 @@ jobs:
           fi
       - name: QA suite
         timeout-minutes: 40
+        env:
+          QA_TOKEN: ${{ secrets.QA_TOKEN }}
+          QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
+          QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
         # --forbid-only and no retries come from playwright.qa.config.ts (CI is set).
-        run: bun run test:qa -- --base-url "$BASE_URL"
+        run: bun run test:qa -- --env "$QA_ENV"
       # Traces and the HTML report record request headers and typed text: remove the QA
       # token and every QA password before anything leaves the runner. Fails if any is left.
       - name: Scrub secrets from the report
         id: scrub
         if: always()
+        env:
+          QA_TOKEN: ${{ secrets.QA_TOKEN }}
+          QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
         run: python3 -I scripts/qa-scrub-artifacts.py apps/web/playwright-report/qa apps/web/test-results/qa
       - name: Upload the QA report
         if: always() && steps.scrub.outcome == 'success'
@@ -96,17 +109,18 @@ jobs:
     timeout-minutes: 20
     environment: qa
     env:
-      BASE_URL: ${{ inputs.base_url || 'https://starter.flooper.me' }}
-      QA_TOKEN: ${{ secrets.QA_TOKEN }}
-      QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
-      QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
-      QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
-      QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+      QA_ENV: ${{ inputs.environment || 'production' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - run: bun scripts/ci-playwright-install.ts
       - name: QA secrets are set
+        env:
+          QA_TOKEN: ${{ secrets.QA_TOKEN }}
+          QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
+          QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
+          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
         run: |
           missing=""
           for name in QA_TOKEN QA_INBOX_URL QA_INBOX_TOKEN QA_ADMIN_EMAIL QA_ADMIN_PASSWORD; do
@@ -117,10 +131,20 @@ jobs:
             exit 1
           fi
       - name: Erase leftovers
-        run: bun run test:qa -- --base-url "$BASE_URL" --project qa-cleanup
+        env:
+          QA_TOKEN: ${{ secrets.QA_TOKEN }}
+          QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
+          QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
+          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+        run: bun run test:qa -- --env "$QA_ENV" --project qa-cleanup
       - name: Scrub secrets from the report
         id: scrub
         if: always()
+        env:
+          QA_TOKEN: ${{ secrets.QA_TOKEN }}
+          QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
         run: python3 -I scripts/qa-scrub-artifacts.py apps/web/playwright-report/qa apps/web/test-results/qa
       - name: Upload the cleanup report
         if: failure() && steps.scrub.outcome == 'success'

@@ -210,8 +210,21 @@ describe("the API", () => {
     }
   });
 
-  it("needs a QA address in to", async () => {
-    for (const query of ["", "to=", "to=someone%40example.com"]) {
+  it("needs a QA run address in to", async () => {
+    await receiveEmail(
+      incoming(
+        "qa-admin@qa.flooper.me",
+        mime({ to: "qa-admin@qa.flooper.me", subject: "Reset your password" })
+      ),
+      env
+    );
+    for (const query of [
+      "",
+      "to=",
+      "to=someone%40example.com",
+      // In the domain but not a run address: the QA admin's mail is never served.
+      "to=qa-admin%40qa.flooper.me",
+    ]) {
       expect((await api("GET", `/messages?${query}`)).status).toBe(400);
       expect((await api("DELETE", `/messages?${query}`)).status).toBe(400);
     }
@@ -222,7 +235,11 @@ describe("the API", () => {
     await deliver(OWNER, "Verify your email", t0);
     await deliver(OWNER, "Reset your password", t0 + 1_000);
     await deliver(OWNER, "Verify your email", t0 + 2_000);
-    await deliver("qa-other@qa.flooper.me", "Verify your email", t0 + 3_000);
+    await deliver(
+      "qa-20261108abcd-other@qa.flooper.me",
+      "Verify your email",
+      t0 + 3_000
+    );
 
     const all = await messages(`to=${OWNER}`);
     expect(all.map((message) => message.subject)).toEqual([
@@ -258,11 +275,13 @@ describe("the API", () => {
 
   it("clears one recipient's messages", async () => {
     await deliver(OWNER, "One", Date.now());
-    await deliver("qa-other@qa.flooper.me", "Two", Date.now());
+    await deliver("qa-20261108abcd-other@qa.flooper.me", "Two", Date.now());
     const response = await api("DELETE", `/messages?to=${OWNER}`);
     expect(await response.json()).toEqual({ deleted: 1 });
     expect(await messages(`to=${OWNER}`)).toEqual([]);
-    expect(await messages("to=qa-other@qa.flooper.me")).toHaveLength(1);
+    expect(
+      await messages("to=qa-20261108abcd-other@qa.flooper.me")
+    ).toHaveLength(1);
   });
 });
 

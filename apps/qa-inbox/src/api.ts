@@ -5,6 +5,15 @@ import { deleteMessages, findMessages } from "./store";
 
 const MESSAGES_PATH = "/messages";
 
+/**
+ * The only addresses the API serves: the QA suite's per-run accounts
+ * (`qa-<yyyymmdd><4 letters>-<role>@…`, apps/web/test/qa/support/address.ts). Mail to any
+ * other address of the domain (the QA admin's, `qa-setup-check@`) is stored but never
+ * served, so the API token alone cannot read a password reset for the QA admin; the owner
+ * reads such mail with `wrangler d1 execute` (docs/guides/how-to-qa-a-deployment.md).
+ */
+const RUN_ADDRESS = /^qa-\d{8}[a-z]{4}-[a-z0-9]{1,20}@/;
+
 function json(status: number, body: unknown, headers: HeadersInit = {}) {
   return new Response(JSON.stringify(body), {
     status,
@@ -24,7 +33,7 @@ function json(status: number, body: unknown, headers: HeadersInit = {}) {
  * - `GET /messages?to=<address>&since=<iso>&subject=<substring>`: JSON
  *   `{ messages: [...] }`, newest first, at most 50.
  * - `DELETE /messages?to=<address>`: `{ deleted: <n> }`.
- * `to` is required and must be in QA_EMAIL_DOMAIN.
+ * `to` is required and must be a QA run address in QA_EMAIL_DOMAIN (RUN_ADDRESS).
  */
 export async function handleApi(
   request: Request,
@@ -46,10 +55,15 @@ export async function handleApi(
     return json(405, { error: "method_not_allowed" }, { allow: "GET, DELETE" });
   }
   const to = url.searchParams.get("to")?.trim().toLowerCase() ?? "";
-  if (!to || !env.QA_EMAIL_DOMAIN || !inDomain(to, env.QA_EMAIL_DOMAIN)) {
+  if (
+    !to ||
+    !env.QA_EMAIL_DOMAIN ||
+    !inDomain(to, env.QA_EMAIL_DOMAIN) ||
+    !RUN_ADDRESS.test(to)
+  ) {
     return json(400, {
       error: "invalid_to",
-      detail: `to must be an address @${env.QA_EMAIL_DOMAIN ?? "the QA domain"}`,
+      detail: `to must be a QA run address qa-<runId>-<role>@${env.QA_EMAIL_DOMAIN ?? "the QA domain"}`,
     });
   }
   if (request.method === "DELETE") {

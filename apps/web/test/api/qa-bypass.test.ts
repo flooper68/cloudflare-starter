@@ -152,7 +152,12 @@ describe("QA bypass of the human check", () => {
 
   it("falls back to Turnstile for an address outside the QA domain, even with the right token", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    for (const email of ["robot@example.test", `robot@sub.${DOMAIN}`]) {
+    for (const email of [
+      "robot@example.test",
+      `robot@sub.${DOMAIN}`,
+      // Its first 320 characters end in the QA domain; Better Auth would use all of it.
+      `${"a".repeat(306)}@${DOMAIN}.attacker.example`,
+    ]) {
       const response = await getAuth(env).handler(
         signUpRequest(email, {
           [QA_TOKEN_HEADER]: TOKEN,
@@ -167,7 +172,7 @@ describe("QA bypass of the human check", () => {
     }
     expect(
       warnings(warn).filter((line) => line.includes("wrong_domain"))
-    ).toHaveLength(2);
+    ).toHaveLength(3);
   });
 
   it("keeps Turnstile working for everyone else (a real token, no QA header)", async () => {

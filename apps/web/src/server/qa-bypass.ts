@@ -13,10 +13,16 @@ import {
 } from "@cloudflare-starter/features";
 import { APIError } from "better-auth/api";
 
-import { auditQaBypassUsed, contextFor, emailOf } from "@/server/auth-audit";
+import { auditQaBypassUsed, contextFor } from "@/server/auth-audit";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform, loggerFor } from "@/server/platform";
 import { RATE_LIMIT_POLICY_FIELD } from "@/server/rate-limited-response";
+
+/** The email the request body names, untouched (isQaEmail trims and lowercases it). */
+function requestEmail(ctx: { readonly body?: unknown }): string | null {
+  const email = (ctx.body as { email?: unknown } | undefined)?.email;
+  return typeof email === "string" ? email : null;
+}
 
 /**
  * Whether this request skips the human check. False (and nothing recorded) with
@@ -53,7 +59,8 @@ export async function qaBypassesHumanCheck(
       {
         bypass: platform.qaBypass,
         presentedToken,
-        email: emailOf(ctx),
+        // The full address, as Better Auth will use it: never the audit log's shortened copy.
+        email: requestEmail(ctx),
         ip: requestContext.ip,
       }
     );

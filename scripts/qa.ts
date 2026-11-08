@@ -1,5 +1,7 @@
 /**
  * `bun run test:qa -- --base-url https://starter.flooper.me [playwright args]`
+ * `bun run test:qa -- --env production` (the URL from that environment's route in
+ * wrangler.jsonc, as CI runs it: the QA token only ever goes to a route of this repository)
  *
  * Runs the automated QA suite (apps/web/test/qa, project `qa` of
  * apps/web/playwright.qa.config.ts) against a deployed app: real sign-ups and mail through
@@ -11,10 +13,36 @@
  */
 import { spawnSync } from "node:child_process";
 
-import { fail, WEB } from "./lib";
-import { parseSmokeArgs } from "./smoke-args";
+import {
+  ENVIRONMENTS,
+  type Environment,
+  envBlock,
+  fail,
+  readWranglerConfig,
+  WEB,
+} from "./lib";
+import { deployedURL, parseSmokeArgs } from "./smoke-args";
 
-const args = parseSmokeArgs(process.argv.slice(2), process.env.QA_BASE_URL);
+const argv = process.argv.slice(2);
+const envIndex = argv.indexOf("--env");
+let fromEnvironment: string | undefined;
+if (envIndex !== -1) {
+  const env = argv[envIndex + 1];
+  if (!ENVIRONMENTS.includes(env as Environment)) {
+    fail(`--env must be one of ${ENVIRONMENTS.join(", ")}`);
+  }
+  argv.splice(envIndex, 2);
+  fromEnvironment =
+    deployedURL(envBlock(readWranglerConfig(), env as Environment)) ??
+    fail(
+      `${env} has no hostname route in apps/web/wrangler.jsonc: pass --base-url`
+    );
+  if (argv.some((arg) => arg.startsWith("--base-url"))) {
+    fail("pass --env or --base-url, not both");
+  }
+}
+
+const args = parseSmokeArgs(argv, fromEnvironment ?? process.env.QA_BASE_URL);
 if (!args.ok) {
   fail(
     args.error.replace(

@@ -66,8 +66,8 @@ function errorCodeOf(error: {
 }
 
 /** The email an anonymous request was about, normalized, or null when it named none. */
-/** The email a Better Auth request names in its body (lowercased), or null. */
-export function emailOf(ctx: { readonly body?: unknown }): string | null {
+/** The email a Better Auth request names in its body (lowercased, at most 320 characters), or null. */
+function emailOf(ctx: { readonly body?: unknown }): string | null {
   const email = (ctx.body as { email?: unknown } | undefined)?.email;
   return typeof email === "string" && email.trim()
     ? email.trim().toLowerCase().slice(0, 320)

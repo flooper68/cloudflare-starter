@@ -106,5 +106,5 @@ jobs:
     if: inputs.environment == 'production'
     uses: ./.github/workflows/qa.yml
     with:
-      base_url: https://starter.flooper.me
+      environment: ${{ inputs.environment }}
     secrets: inherit

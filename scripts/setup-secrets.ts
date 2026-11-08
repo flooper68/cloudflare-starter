@@ -16,11 +16,13 @@ import { parseArgs } from "node:util";
 import {
   ask,
   type Environment,
+  envBlock,
   envFlag,
   fail,
   parseEnvironments,
   ROOT,
   readDevVars,
+  readWranglerConfig,
   wrangler,
   writeDevVars,
 } from "./lib";
@@ -158,6 +160,26 @@ if (dryRun) {
   console.log(`✓ apps/web/.dev.vars: ${["APP_ENV", ...names].join(", ")}`);
 } else {
   const [env] = parseEnvironments(target) as [Environment];
+  // QA_BYPASS=on without QA_TOKEN fails every request of that environment: refuse to
+  // leave it unset (docs/guides/how-to-configure-abuse-protection.md#qa-bypass).
+  const vars = (envBlock(readWranglerConfig(), env).vars ?? {}) as Record<
+    string,
+    string
+  >;
+  if (vars.QA_BYPASS === "on" && !collected.QA_TOKEN && !dryRun) {
+    const listed = wrangler([
+      "secret",
+      "list",
+      "--format",
+      "json",
+      ...envFlag(env),
+    ]);
+    if (!listed.ok || !listed.stdout.includes('"QA_TOKEN"')) {
+      fail(
+        `${env} has QA_BYPASS=on but no QA_TOKEN secret: the Worker would refuse every request. Run again and enter QA_TOKEN (openssl rand -hex 32), or set QA_BYPASS to off in apps/web/wrangler.jsonc.`
+      );
+    }
+  }
   if (names.length === 0) {
     console.log("Nothing to store.");
   } else {

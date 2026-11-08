@@ -326,5 +326,5 @@ if (plan.action === "keep") {
 console.log(
   dryRun
     ? "\nDry run: nothing was called or changed."
-    : `\nDone. Send a test mail to qa-setup-check@${domain} and read it with:\n  curl -H "Authorization: Bearer $QA_INBOX_TOKEN" "${url ?? "<QA_INBOX_URL>"}/messages?to=qa-setup-check@${domain}"`
+    : `\nDone. Send a test mail to qa-20260101test-check@${domain} and read it with:\n  curl -H "Authorization: Bearer $QA_INBOX_TOKEN" "${url ?? "<QA_INBOX_URL>"}/messages?to=qa-20260101test-check@${domain}"`
 );

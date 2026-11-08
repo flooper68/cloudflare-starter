@@ -15,13 +15,19 @@ export interface QaBypassSettings {
 /** Why a request that carried the QA header still goes through the human check. */
 export type QaBypassRejection = "wrong_token" | "wrong_domain";
 
+/** RFC 5321's limit on a deliverable address; longer ones are never QA addresses. */
+export const MAX_EMAIL_LENGTH = 254;
+
 /**
  * Whether `email` is an address directly in `domain` (`someone@qa.example.com`, not
- * `someone@x.qa.example.com` or `qa.example.com@elsewhere`). Case-insensitive.
+ * `someone@x.qa.example.com` or `qa.example.com@elsewhere`). Case-insensitive. Pass the
+ * address exactly as the request names it, never a shortened copy: a truncated
+ * `…@qa.example.com.attacker.example` would look like a QA address.
  */
 export function isQaEmail(email: string | null, domain: string): boolean {
   if (!email) return false;
   const address = email.trim().toLowerCase();
+  if (address.length > MAX_EMAIL_LENGTH) return false;
   const at = address.lastIndexOf("@");
   if (at <= 0 || address.indexOf("@") !== at) return false;
   return address.slice(at + 1) === domain.toLowerCase();
