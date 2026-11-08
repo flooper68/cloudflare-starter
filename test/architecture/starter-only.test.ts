@@ -7,8 +7,10 @@
  *   doc section and text it edits is there, and its patch applies cleanly;
  * - a pending component has nothing on main yet (once its PR lands, mark it active);
  * - every "Starter-only, removed by `starter:strip`" note in the docs names a component.
- * Stripped components (in a project made from the template) are skipped. That the strip
- * leaves a working app is the CI job starter-strip (scripts/starter-strip-check.ts).
+ * In a project made from the template (some component is stripped) only the first and
+ * the last check run: what one component stripped may be what another, kept one would
+ * have edited, and the strip then finds nothing to do there, which is fine. That the
+ * strip leaves a working app is the CI job starter-strip (scripts/starter-strip-check.ts).
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -37,8 +39,14 @@ import {
 import { filesUnder, ROOT, read } from "./repo";
 
 const manifest = readManifest(ROOT);
-const active = manifest.components.filter((c) => c.status === "active");
-const pending = manifest.components.filter((c) => c.status === "pending");
+/** The starter itself: nothing stripped yet, so the manifest must match it exactly. */
+const inStarter = manifest.components.every((c) => c.status !== "stripped");
+const active = inStarter
+  ? manifest.components.filter((c) => c.status === "active")
+  : [];
+const pending = inStarter
+  ? manifest.components.filter((c) => c.status === "pending")
+  : [];
 
 function has(file: string, path: JSONPath): boolean {
   const tree = parseTree(read(file));
