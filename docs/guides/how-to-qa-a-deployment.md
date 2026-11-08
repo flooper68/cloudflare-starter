@@ -2,6 +2,8 @@
 
 The automated QA suite of a deployed environment (production: <https://starter.flooper.me>) and the checklist it implements. Use when you release to production or staging, after a change to auth, email, workspaces, billing, notifications, storage, privacy or the admin portal, when you add or debug a QA journey, or when you change the QA bypass, the QA outbox, the QA admin, the QA cleanup or the QA workflow.
 
+> **Starter-only, removed by `starter:strip`** (`qa-automation`): the automated QA suite, its workflow and `QA_BYPASS=on` exist for the starter's own production. A project keeps the smoke suite and the checklist as a manual one (`bun run starter:strip`).
+
 Quality on a deployment has three layers:
 
 | Layer            | What                                                                                              | Where                                                                                                         | Who                                            |
@@ -338,6 +340,8 @@ Expected: works in both themes; selecting **Switch to the light theme** switches
 Mail: none.
 
 ### Demos: queue and email
+
+> **Starter-only, removed by `starter:strip`** (`developer-demos`): the demo pages. A project checks its own jobs and mail instead.
 
 Guides: [how-to-add-background-jobs.md](how-to-add-background-jobs.md), [how-to-setup-email.md](how-to-setup-email.md).
 
