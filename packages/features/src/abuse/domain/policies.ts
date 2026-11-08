@@ -206,6 +206,18 @@ export const RATE_LIMIT_POLICIES = {
     binding: "RL_INVITE",
     description: "Invitations a user sends (mail to other people)",
   },
+  "container.run": {
+    // Bursts only: the hourly limit (CONTAINER_RUN_USER_HOURLY_LIMIT) and the daily cap
+    // (CONTAINER_DEMO_DAILY_CAP) are counted in D1 by startContainerRun, since edge
+    // periods stop at 60 s.
+    limit: 3,
+    periodSeconds: 60,
+    scope: "user",
+    enforcer: "edge",
+    binding: "RL_CONTAINER_RUN",
+    description:
+      "Container workflow demo runs a user starts (containerRuns.start): each starts a billed container",
+  },
   "analytics.client": {
     limit: 120,
     periodSeconds: 60,
@@ -234,18 +246,6 @@ export const RATE_LIMIT_POLICIES = {
     binding: "RL_CSP_REPORT",
     description:
       "Content-Security-Policy violation reports (/api/csp-report), per IP: anonymous and each report is a log line",
-  },
-  "container.run": {
-    // Bursts only: the hourly limit (CONTAINER_RUN_USER_HOURLY_LIMIT) and the daily cap
-    // (CONTAINER_DEMO_DAILY_CAP) are counted in D1 by startContainerRun, since edge
-    // periods stop at 60 s.
-    limit: 3,
-    periodSeconds: 60,
-    scope: "user",
-    enforcer: "edge",
-    binding: "RL_CONTAINER_RUN",
-    description:
-      "Container workflow demo runs a user starts (containerRuns.start): each starts a billed container",
   },
   "qa.bypass": {
     // The automated QA suite signs up a handful of accounts per run from one runner IP;
