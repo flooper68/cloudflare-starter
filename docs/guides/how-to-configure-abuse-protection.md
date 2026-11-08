@@ -128,6 +128,8 @@ done | sort | uniq -c
 
 ## QA Bypass
 
+> **Starter-only, removed by `starter:strip`** (`qa-automation`): the bypass, `QA_BYPASS`, `QA_EMAIL_DOMAIN`, `QA_TOKEN` and `RL_QA_BYPASS` exist for the starter's own QA suite; a project's human check has no bypass ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
 The automated QA suite ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)) signs up, signs in and resets passwords on production with no human, so it cannot solve Turnstile. With `QA_BYPASS=on` a request may skip the Turnstile check, and only that check, when all of this holds:
 
 - it goes to one of the human-checked endpoints (`HUMAN_CHECKED_PATHS` in `apps/web/src/server/auth.ts`): `/api/auth/sign-up/email`, `/api/auth/sign-in/email` and `/api/auth/request-password-reset` (the forgot-password form). Nothing else reads the header;

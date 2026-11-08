@@ -41,7 +41,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 
 ## Starting a new project from this starter
 
-This repository is a template, not a framework. When you start a project from it:
+This repository is a template, not a framework. Start with [docs/guides/how-to-start-a-project.md](docs/guides/how-to-start-a-project.md): it walks the whole path in order (create the repository from the template, `bun run starter:strip` to remove what exists only for the starter's own instance, branding, the setup scripts, the first deploy) and points back here. The `start-project` agent skill does the same flow. Beyond the strip, when you start a project from it:
 
 1. **Update and pin every dependency.** The pins here are only as fresh as the last time the starter was touched.
 
@@ -101,7 +101,7 @@ Packages:
 
 ## Working on this repo (people and agents)
 
-[AGENTS.md](AGENTS.md) points agents to the [documentation index](docs/README.md). The [development process](docs/processes/development.md) covers how work is done; [architecture principles](docs/architecture/overview.md#principles) define the system's contracts, including MCP coverage for APIs ([MCP guide](docs/guides/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
+[AGENTS.md](AGENTS.md) points agents to the [documentation index](docs/README.md). The [development process](docs/processes/development.md) covers how work is done; [architecture principles](docs/architecture/overview.md#principles) define the system's contracts, including MCP coverage for APIs ([MCP guide](docs/guides/how-to-setup-mcp.md)). Agents also get skills for starting a project from the template and for setting up auth, D1 and email in [.claude/skills](.claude/skills).
 
 ## Why one Worker
 
@@ -153,6 +153,7 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 | `bun run test:smoke -- --base-url <url>` | Read-only production smoke suite against a deployed app (`--env production` reads the URL from `wrangler.jsonc`)                                                    |
 | `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                                                                   |
 | `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                                                                 |
+| `bun run starter:strip`                  | Dry run of removing the starter-only parts (`starter-only.json`) from a new project; `--apply` does it ([how-to-start-a-project.md](docs/guides/how-to-start-a-project.md))           |
 | `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                                                               |
 | `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id, R2 jurisdiction and rate-limit namespace_ids into the config                                           |
 | `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                                                         |

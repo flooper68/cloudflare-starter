@@ -88,6 +88,8 @@ Repeat for `develop` and `staging`. Do not pass the token with `--body`; it ends
 
 ### 4. The QA environment
 
+> **Starter-only, removed by `starter:strip`** (`qa-automation`): the QA workflow and the `qa` GitHub environment belong to the starter's production QA ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
 After a production deploy whose smoke suite passed, the Deploy workflow calls the **QA** workflow (`.github/workflows/qa.yml`, job `qa`): the automated QA suite against production. The same workflow runs it by hand and runs the nightly cleanup of leftover QA accounts (job `cleanup`). Both jobs run on GitHub-hosted runners only and read their secrets from a GitHub environment `qa` (deployment branches: `main` only, no required reviewers):
 
 ```sh

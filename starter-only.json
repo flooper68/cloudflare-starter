@@ -1,0 +1,815 @@
+{
+  "$comment": "Parts of this repository that exist only for the starter's own public instance (starter.flooper.me) and its repository. `bun run starter:strip` removes them from a project made from the template (docs/guides/how-to-start-a-project.md). A new starter-only part is added here in the same PR (docs/processes/development.md#starter-only-parts); test/architecture/starter-only.test.ts checks every path, setting, job and patch, and the CI job starter-strip applies the default set to a scratch copy and runs typecheck, lint and test.",
+  "components": [
+    {
+      "id": "qa-automation",
+      "title": "Automated QA of the starter's production",
+      "why": "The starter tests its own deployment at starter.flooper.me with real accounts and real mail: a QA suite, a QA inbox Worker on qa.flooper.me, a QA workflow with a GitHub environment, and a token that lets the suite skip Turnstile. A new project has none of that infrastructure; the bypass would be an unused hole in the human check.",
+      "status": "active",
+      "default": true,
+      "delete": [
+        "apps/qa-inbox",
+        "apps/web/playwright.qa.config.ts",
+        "apps/web/src/server/qa-bypass.ts",
+        "packages/features/src/abuse/check-qa-bypass.ts",
+        "packages/features/src/abuse/domain/qa-bypass.ts",
+        "scripts/qa.ts",
+        "scripts/qa-inbox-plan.ts",
+        "scripts/setup-qa-inbox.ts",
+        "scripts/qa-scrub-artifacts.py",
+        ".github/workflows/qa.yml"
+      ],
+      "tests": [
+        "apps/web/test/qa",
+        "apps/web/test/api/qa-bypass.test.ts",
+        "packages/features/src/abuse/check-qa-bypass.test.ts",
+        "packages/features/src/abuse/domain/qa-bypass.test.ts",
+        "scripts/qa-inbox-plan.test.ts",
+        "scripts/qa-scrub-artifacts.test.ts"
+      ],
+      "patch": "scripts/starter-only/qa-automation.patch",
+      "wrangler": [
+        {
+          "env": "all",
+          "path": ["vars", "QA_BYPASS"],
+          "comment": null
+        },
+        {
+          "env": "all",
+          "path": ["vars", "QA_EMAIL_DOMAIN"]
+        }
+      ],
+      "rateLimits": ["RL_QA_BYPASS"],
+      "json": [
+        {
+          "file": "package.json",
+          "path": ["scripts", "test:qa"]
+        },
+        {
+          "file": "package.json",
+          "path": ["scripts", "setup:qa-inbox"]
+        }
+      ],
+      "secrets": [
+        {
+          "name": "QA_TOKEN",
+          "where": ["develop", "staging", "production"]
+        },
+        {
+          "name": "QA_TOKEN, QA_INBOX_URL, QA_INBOX_TOKEN, QA_ADMIN_EMAIL, QA_ADMIN_PASSWORD",
+          "where": ["github"],
+          "note": "and the GitHub environment qa that holds them"
+        }
+      ],
+      "ci": [
+        {
+          "workflow": ".github/workflows/deploy.yml",
+          "job": "qa",
+          "why": "calls the QA workflow after a production deploy"
+        },
+        {
+          "workflow": ".github/workflows/ci.yml",
+          "job": "deploy-dry-run",
+          "step": "Dry-run deploy of the QA inbox",
+          "why": "packages the QA inbox Worker"
+        }
+      ],
+      "docs": [
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "replace",
+          "heading": "How to QA a deployment",
+          "intro": true,
+          "content": "# How to QA a deployment\n\nThe checks of a deployed environment and the checklist to run on it. Use when you release to production or staging, or after a change to auth, email, workspaces, billing, notifications, storage, privacy or the admin portal.\n\nQuality on a deployment has three layers:\n\n| Layer            | What                                                                                              | Where                                                                                     | Who        |\n| ---------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------- |\n| Automated E2E    | Every critical journey against `astro dev` with local bindings                                    | `bun run test:e2e` locally and in CI ([testing.md](../architecture/testing.md#e2e-tests)) | CI         |\n| Production smoke | What a signed-out visitor sees: pages, redirects, endpoints, headers, axe in both themes, console | `bun run test:smoke -- --env production`; the Deploy workflow runs it after every deploy  | CI, anyone |\n| Checklist        | [The checklist](#the-checklist) below: every feature with real accounts and real mail             | by hand, on the deployment, after a release                                               | a person   |\n\nThe smoke suite never signs up and never writes (it aborts any non-GET request to the app). Everything that needs an account is the checklist's."
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "remove",
+          "heading": "The automated suite"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "remove",
+          "heading": "The QA inbox"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "remove",
+          "heading": "CI"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "replace",
+          "heading": "The checklist",
+          "intro": true,
+          "content": "## The checklist\n\nEach section is what to do on the deployment, the expected result and the mail it causes. Use accounts at a mailbox you can read; a second account (B) works in a separate browser profile. Record each section in the [run record](#run-record) as pass, fail (with the screenshot and the reference/trace id shown in the error) or N/A (with the reason).\n\nFor every mail: it arrived, the sender is the environment's `EMAIL_FROM`, the subject, links point at the environment's origin, and (for notifications) the `List-Unsubscribe` and `List-Unsubscribe-Post` headers."
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "replace",
+          "heading": "Cleanup",
+          "content": "### Cleanup\n\nErase the accounts the run created: as each account, delete the shared workspaces it owns, then Settings → Privacy → **Delete account**. Never delete users with SQL: it skips the erasure of their files, exports and avatars ([how-to-handle-data-privacy.md](how-to-handle-data-privacy.md#erasure-and-retained-data)).\n\nMail: **Your account was deleted** (to each account)."
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "replace",
+          "heading": "Keeping it current",
+          "content": "## Keeping it current\n\n`test/architecture/qa-checklist.test.ts` fails when a guide in `docs/guides/` is neither linked from this checklist nor exempt with a reason (setup, operations or build-time guides). A new user-facing feature gets a section here with steps, the expected result and the mail it sends."
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "rewrite",
+          "note": "the checklist sections still name the starter's QA addresses (qa+<runId>-a@qa.flooper.me); read them as your own test accounts, or rewrite them"
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "action": "remove",
+          "heading": "QA Bypass"
+        },
+        {
+          "file": "docs/guides/how-to-setup-ci.md",
+          "action": "remove",
+          "heading": "4. The QA environment"
+        }
+      ],
+      "manual": [
+        "Delete the QA inbox Worker cloudflare-starter-qa-inbox and its Email Routing rule only if this account ran the starter's QA (a new project never deployed them)."
+      ],
+      "text": [
+        {
+          "file": ".claude/skills/setup-auth/SKILL.md",
+          "find": " `QA_BYPASS` (`on`|`off`, required, no default) is the automated QA suite's bypass of Turnstile for `@QA_EMAIL_DOMAIN` addresses; with `on` the `QA_TOKEN` secret (32+ characters) and `QA_EMAIL_DOMAIN` are required too, or the Worker refuses every request, so have the user store `QA_TOKEN` with `bun run setup:secrets --env <env>` before deploying, or set `QA_BYPASS` to `off`. Local dev keeps `QA_BYPASS=off` in `.dev.vars`.",
+          "replace": ""
+        },
+        {
+          "file": "docs/README.md",
+          "find": "you release to staging or production, run the production smoke suite or the automated QA suite, write a QA journey, set up the QA inbox (`setup:qa-inbox`), the QA workflow or the QA admin, or clean up QA accounts                                ",
+          "replace": "you release to staging or production, run the production smoke suite, or check a deployment by hand with the QA checklist                                                                                                                                         "
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": ", `RL_CSP_REPORT`, `RL_QA_BYPASS` (`ratelimits`)",
+          "replace": ", `RL_CSP_REPORT` (`ratelimits`)"
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": ", `QA_BYPASS` (`on` | `off`, required, no default) and `QA_EMAIL_DOMAIN` (with `on`: [the QA bypass](../guides/how-to-configure-abuse-protection.md#qa-bypass)), and the workspace",
+          "replace": ", and the workspace"
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": " `QA_TOKEN` (with `QA_BYPASS=on`),",
+          "replace": ""
+        },
+        {
+          "file": "docs/architecture/testing.md",
+          "find": " Features that need an account are the automated QA suite in [how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md).",
+          "replace": " Features that need an account are the QA checklist in [how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md)."
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": " the Cloudflare setup per environment, the automated QA suite's bypass of the human check, how to change",
+          "replace": " the Cloudflare setup per environment, how to change"
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": ", or debug a 429 or a failed human check, or turn the QA bypass on or off.",
+          "replace": ", or debug a 429 or a failed human check."
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": ", `RL_CSP_REPORT`, `RL_QA_BYPASS` (`ratelimits`)",
+          "replace": ", `RL_CSP_REPORT` (`ratelimits`)"
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": " (catalog validity, keys, Better Auth rules, QA addresses, constant-time comparison); `packages/features/src/abuse/check-qa-bypass.test.ts`                                                                                                                                                     |",
+          "replace": " (catalog validity, keys, Better Auth rules, constant-time comparison)                                                                                                                                                                                                         |"
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "; `apps/web/test/api/qa-bypass.test.ts` (the QA bypass: off, wrong token, wrong domain, accepted and audited, rate limited) |",
+          "replace": "                                                                                                                         |"
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "find": ", `RL_CSP_REPORT`, `RL_QA_BYPASS` (`ratelimits`",
+          "replace": ", `RL_CSP_REPORT` (`ratelimits`"
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "find": "7. Secrets, including `TURNSTILE_SECRET_KEY`, `ANALYTICS_ID_SECRET` and `QA_TOKEN` (required while the environment has `QA_BYPASS=on`, as production and develop ship; without it the Worker refuses every request, so set it or switch `QA_BYPASS` to `off` first) (asks",
+          "replace": "7. Secrets, including `TURNSTILE_SECRET_KEY` and `ANALYTICS_ID_SECRET` (asks"
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "find": "| `QA_TOKEN`                                 | with `QA_BYPASS=on`               | 32+ characters; the QA suite's human-check bypass ([how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md#qa-bypass)) |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-use-the-audit-log.md",
+          "find": "| `qa.bypass.used`                    | `hooks.before` letting the automated QA suite skip Turnstile on sign-up, sign-in or password reset (QA_BYPASS=on, server/qa-bypass.ts)      | `email`                | `form` (sign-up, sign-in, password-reset); never the token                                     |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-use-the-audit-log.md",
+          "find": "| `qa.bypass.used`                                                   | by `metadata.form`: sign-in Authentication (3002), sign-up and password-reset Account Change (3001) | 99 Other, status Unknown (the human check was skipped; the attempt itself is the next event), `unmapped.qa_bypass: true` |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": "| QA inbox        | [apps/qa-inbox](../../apps/qa-inbox/src/index.ts)                                         | A separate Worker for the automated QA suite: mail to `qa+<tag>@qa.flooper.me` (one literal Email Routing rule with subaddressing) lands in its own D1, read through a bearer-token API, kept 24 hours ([how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md#the-qa-inbox))                                                                                                                                                                                                                                                                                                                                                                                                                                 |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": "- **One bypass, for the QA suite.** With `QA_BYPASS=on`, a request to a human-checked endpoint with the `QA_TOKEN` secret in `X-QA-Token` (constant-time compare, limited by `qa.bypass`) for a `qa+<tag>@QA_EMAIL_DOMAIN` address skips the Turnstile check only, recorded as `qa.bypass.used`; anything else falls back to the check ([security model](../guides/how-to-configure-abuse-protection.md#qa-bypass)).\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "| The same three endpoints with `X-QA-Token`, while `QA_BYPASS=on` (the automated QA suite)                        | `qa.bypass` (30 a minute per IP, counted before the token is compared); the Turnstile check is skipped only for the right token and an address `qa+…@QA_EMAIL_DOMAIN`        | `RL_QA_BYPASS`, in `hooks.before` before Turnstile ([QA bypass](#qa-bypass))                                                                                                                                                           |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "| `QA_BYPASS`            | var                                 | `on` or `off`: the [QA bypass](#qa-bypass); `on` in production and develop, `off` in staging and locally |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "| `QA_EMAIL_DOMAIN`      | var                                 | the only mail domain the bypass covers (`qa.flooper.me`), a lowercase hostname; required with `on`       |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "| `QA_TOKEN`             | secret (Worker secret)              | the token the QA suite sends in `X-QA-Token`, 32+ characters; required with `on`                         |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "| `QA_BYPASS=on needs the QA_TOKEN secret`, `… needs QA_EMAIL_DOMAIN`                          | `bun run setup:secrets --env <env>` (`QA_TOKEN`), or set `QA_BYPASS` to `off`.                                                                 |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "| The QA suite fails sign-up with \"The human check did not pass\"                               | `qa.bypass.rejected` in Workers Logs says why: the GitHub `QA_TOKEN` differs from the Worker secret, or the address is not `@QA_EMAIL_DOMAIN`. |\n",
+          "replace": ""
+        }
+      ]
+    },
+    {
+      "id": "qa-outbox",
+      "title": "QA outbox",
+      "why": "In flight: the QA suite's outbox for the starter's production QA. Part of the QA automation; strip it with it.",
+      "status": "pending",
+      "pending": "the QA outbox PR (not opened yet); when it merges, list its files here and set status to active",
+      "default": true
+    },
+    {
+      "id": "qa-journeys",
+      "title": "QA journeys",
+      "why": "The QA suite's journeys (one *.qa.ts per checklist section) for the starter's production. They live in apps/web/test/qa/, which qa-automation deletes.",
+      "status": "pending",
+      "pending": "#54 QA journeys; when it merges, set status to active and fold its doc changes into qa-automation",
+      "default": true,
+      "delete": ["apps/web/test/qa/README.md"]
+    },
+    {
+      "id": "production-instance",
+      "title": "The starter's production instance config",
+      "why": "apps/web/wrangler.jsonc and the deploy script carry the values of starter.flooper.me: its custom domain, D1 database id, Turnstile widget, sender, bootstrap admin and the starter owner's choices of workspace mode, sign-up, billing, two-factor and analytics. A project gets its own from the setup scripts; this resets them so nothing deploys onto the starter's resources by accident.",
+      "status": "active",
+      "default": true,
+      "wrangler": [
+        {
+          "env": "production",
+          "path": ["routes"],
+          "value": [
+            {
+              "pattern": "app.example.com",
+              "custom_domain": true
+            }
+          ],
+          "comment": "Served only on its custom domain: replace app.example.com with the project's hostname\n(the zone must be in this account; docs/guides/how-to-setup-web-app.md#deploy). The\nAPP_URL secret of this environment is https:// plus that hostname."
+        },
+        {
+          "env": "production",
+          "path": ["d1_databases", 0, "database_id"],
+          "value": "00000000-0000-0000-0000-000000000000"
+        },
+        {
+          "env": "production",
+          "path": ["vars", "TURNSTILE_SITE_KEY"],
+          "value": "1x00000000000000000000AA",
+          "comment": "Test key: replace with the production widget's site key (bun run doctor warns)."
+        },
+        {
+          "env": "production",
+          "path": ["vars", "STORAGE_RECONCILE"],
+          "value": "off"
+        },
+        {
+          "env": "production",
+          "path": ["vars", "AUTH_REQUIRE_EMAIL_VERIFICATION"],
+          "value": "false",
+          "comment": null
+        },
+        {
+          "env": "production",
+          "path": ["vars", "EMAIL_FROM"]
+        },
+        {
+          "env": "production",
+          "path": ["send_email", 0, "allowed_sender_addresses"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "TWO_FACTOR"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "TWO_FACTOR_EMAIL_OTP"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "TWO_FACTOR_TRUSTED_DEVICE_DAYS"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "PASSKEYS"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "WORKSPACE_MODE"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "SIGN_UP"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "SIGN_UP_DOMAINS"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "BOOTSTRAP_ADMIN_EMAIL"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "ADMIN_PORTAL"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "BILLING"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "ANALYTICS"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "WEB_ANALYTICS"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "WEB_ANALYTICS_TOKEN"]
+        }
+      ],
+      "json": [
+        {
+          "file": "apps/web/package.json",
+          "path": ["scripts", "deploy:production"],
+          "value": "CLOUDFLARE_ENV=production SITE_URL=https://app.example.com bun run build && wrangler deploy"
+        }
+      ],
+      "docs": [
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "action": "rewrite",
+          "note": "examples name starter.flooper.me; they are examples, replace them with your hostname when you like"
+        }
+      ],
+      "manual": [
+        "Set the production hostname: routes in env.production of apps/web/wrangler.jsonc (now app.example.com) and SITE_URL in the deploy:production script of apps/web/package.json.",
+        "Give the project its own resources and rate-limit namespace block: bun run setup:cloudflare --env all --dry-run, then without --dry-run (it writes the D1 ids and the namespace_ids; bun run doctor fails until then).",
+        "Choose the product settings per environment: bun run setup:auth --env <env> (a deploy refuses to start until you have), bun run setup:analytics --env <env>, bun run setup:storage.",
+        "Pick the sender per environment: bun run setup:email --env <env>; create the Turnstile widgets and put their site keys in the vars (bun run setup:cloudflare prints how)."
+      ]
+    },
+    {
+      "id": "marketing",
+      "title": "The starter's marketing: changelog, README, docs title",
+      "why": "The changelog is the starter's release history, the README's highlights sell the starter, and the docs site is titled and linked to the starter's repository. A project starts its own history and points its docs at its own repository; the docs themselves stay.",
+      "status": "active",
+      "default": true,
+      "files": [
+        {
+          "file": "CHANGELOG.md",
+          "content": "# Changelog\n\nWhat changed in each release of {{name}}. The format follows [Keep a Changelog 1.1](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Read it on the docs site at `/docs/changelog/`; how entries are added and releases cut is in [processes/development.md](docs/processes/development.md#changelog).\n\n## [Unreleased]\n\n### Added\n\n- **The project.** Created from the [Cloudflare starter](https://github.com/flooper68/cloudflare-starter) template ([how-to-start-a-project.md](docs/guides/how-to-start-a-project.md)).\n\n[Unreleased]: {{repoUrl}}/commits/HEAD\n"
+        }
+      ],
+      "text": [
+        {
+          "file": "apps/web/src/docs/docs.config.ts",
+          "find": "https://github.com/flooper68/cloudflare-starter",
+          "replace": "{{repoUrl}}"
+        },
+        {
+          "file": "apps/web/src/server/rate-limited-response.ts",
+          "find": "https://github.com/flooper68/cloudflare-starter",
+          "replace": "{{repoUrl}}"
+        },
+        {
+          "file": "apps/web/test/e2e-build/landing.spec.ts",
+          "find": "https://github.com/flooper68/cloudflare-starter",
+          "replace": "{{repoUrl}}"
+        },
+        {
+          "file": "apps/web/test/e2e/docs.spec.ts",
+          "find": "https://github.com/flooper68/cloudflare-starter",
+          "replace": "{{repoUrl}}"
+        }
+      ],
+      "docs": [
+        {
+          "file": "README.md",
+          "action": "replace",
+          "heading": "Cloudflare Starter",
+          "intro": true,
+          "content": "# {{name}}\n\nBuilt from the [Cloudflare starter](https://github.com/flooper68/cloudflare-starter): one Astro web Worker that serves the site, a Better Auth–protected React SPA, the API, a queue consumer and Cron Triggers, plus a shared feature package and a component library. Describe the product here."
+        },
+        {
+          "file": "README.md",
+          "action": "remove",
+          "heading": "Highlights"
+        },
+        {
+          "file": "README.md",
+          "action": "replace",
+          "heading": "Starting a new project from this starter",
+          "content": "## Starting from the starter\n\nHow this project was made from the template, what was stripped and what to keep or replace: [docs/guides/how-to-start-a-project.md](docs/guides/how-to-start-a-project.md)."
+        },
+        {
+          "file": "docs/guides/how-to-publish-docs-and-landing.md",
+          "action": "rewrite",
+          "note": "replace the starter's landing page with the product's (copy in apps/web/src/landing/content.ts, sections in apps/web/src/pages/index.astro): see Replace the landing page"
+        }
+      ],
+      "manual": [
+        "Replace the landing page at / with the product's: docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page (its copy, apps/web/src/landing/content.ts, and the feature list there describe the starter).",
+        "Decide what /docs becomes: keep publishing the repository's docs, point DOCS.sources at product docs, or remove it (same guide)."
+      ]
+    },
+    {
+      "id": "home-page-v2",
+      "title": "Home page v2",
+      "why": "In flight: the starter's new landing page. It markets the starter; a project replaces it with its own.",
+      "status": "pending",
+      "pending": "the home page v2 PR (not opened yet); when it merges, list what marketing must reset and set status to active",
+      "default": true
+    },
+    {
+      "id": "brand-name",
+      "title": "The name Cloudflare Starter",
+      "why": "The app calls itself Cloudflare Starter in page titles, mails, the authenticator issuer, the passkey name, the MCP server and the docs site. Replaced by the project's name (--name); the brand's mark, colours and fonts are a design step (docs/guides/how-to-define-branding.md).",
+      "status": "active",
+      "default": true,
+      "text": [
+        {
+          "file": "apps/web/src/server/auth.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "apps/web/src/server/auth-security.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "apps/web/src/server/mcp/server.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "apps/web/src/docs/docs.config.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "apps/web/wrangler.jsonc",
+          "find": "\"EMAIL_FROM_NAME\": \"Cloudflare Starter\"",
+          "replace": "\"EMAIL_FROM_NAME\": \"{{name}}\""
+        },
+        {
+          "file": "apps/web/.dev.vars.example",
+          "find": "EMAIL_FROM_NAME=Cloudflare Starter",
+          "replace": "EMAIL_FROM_NAME={{name}}"
+        },
+        {
+          "file": "apps/web/test/api-bindings.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "apps/web/test/api/modes.test.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "apps/web/test/e2e-build/search.spec.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "packages/features/src/platform/test-email.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        },
+        {
+          "file": "packages/features/src/platform/test-email.test.ts",
+          "find": "Cloudflare Starter",
+          "replace": "{{name}}"
+        }
+      ],
+      "manual": [
+        "Give the project its own brand: name, tagline, mark, accent, fonts and radius in packages/ui/src/brand/ (docs/guides/how-to-define-branding.md). The short name Starter is brand.name there.",
+        "Rename the cloudflare-starter-* resources in apps/web/wrangler.jsonc (Worker, databases, buckets, queues, datasets) before setup:cloudflare creates them, and the @cloudflare-starter/* package scope if you like."
+      ]
+    },
+    {
+      "id": "developer-demos",
+      "title": "Developer demos",
+      "why": "Small screens that exercise the bindings the starter sets up: the Developer demos page (/app/demos), the queue demo and the email demo. Products rarely keep them. The upload demo stays: it is the only UI of the file storage feature (strip it with file storage, README › Strip what the product does not use).",
+      "status": "active",
+      "default": true,
+      "delete": [
+        "apps/web/src/components/app/pages/DemosPage.tsx",
+        "apps/web/src/components/app/pages/QueueDemoPage.tsx",
+        "apps/web/src/components/app/pages/EmailDemoPage.tsx",
+        "apps/web/src/components/QueueDemoClient.tsx",
+        "apps/web/src/components/EmailDemoClient.tsx"
+      ],
+      "manual": [
+        "The queue demo's job (greetings, queue.enqueueHello and the enqueue_hello MCP tool) and the email demo's procedure stay as examples of a job and of sending mail; remove them when the product has its own (docs/guides/how-to-add-background-jobs.md)."
+      ],
+      "text": [
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "import { DemosPage } from \"./pages/DemosPage\";\nimport { EmailDemoPage } from \"./pages/EmailDemoPage\";\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "import { QueueDemoPage } from \"./pages/QueueDemoPage\";\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "const demosRoute = createRoute({\n  getParentRoute: () => appLayoutRoute,\n  path: \"/app/demos\",\n  component: DemosPage,\n});\n\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "const queueDemoRoute = createRoute({\n  getParentRoute: () => appLayoutRoute,\n  path: \"/app/queue-demo\",\n  component: QueueDemoPage,\n});\n\nconst emailDemoRoute = createRoute({\n  getParentRoute: () => appLayoutRoute,\n  path: \"/app/email-demo\",\n  component: EmailDemoPage,\n});\n\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "    demosRoute,\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "    queueDemoRoute,\n    emailDemoRoute,\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.ts",
+          "find": "  {\n    id: \"demos\",\n    label: \"Developer demos\",\n    title: \"Developer demos\",\n    to: \"/app/demos\",\n    icon: \"demos\",\n    sidebar: null,\n    palette: true,\n    visible: always,\n  },\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.ts",
+          "find": "  {\n    id: \"queue-demo\",\n    label: \"Queue\",\n    title: \"Queue demo\",\n    to: \"/app/queue-demo\",\n    icon: \"queue\",\n    sidebar: \"demos\",\n    palette: true,\n    keywords: [\"demo\", \"jobs\"],\n    visible: always,\n  },\n  {\n    id: \"email-demo\",\n    label: \"Email\",\n    title: \"Email demo\",\n    to: \"/app/email-demo\",\n    icon: \"email\",\n    sidebar: \"demos\",\n    palette: true,\n    keywords: [\"demo\", \"mail\"],\n    visible: always,\n  },\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.test.ts",
+          "find": "\"demos\"))).toEqual([\n      \"upload-demo\",\n      \"queue-demo\",\n      \"email-demo\",\n    ]);",
+          "replace": "\"demos\"))).toEqual([\"upload-demo\"]);"
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.test.ts",
+          "find": "      \"demos\",\n      \"upload-demo\",\n      \"queue-demo\",\n      \"email-demo\",\n    ]);",
+          "replace": "      \"upload-demo\",\n    ]);"
+        },
+        {
+          "file": "apps/web/src/components/app/pages/DashboardPage.tsx",
+          "find": "        <Destination\n          icon={<FlaskConical />}\n          title=\"Developer demos\"\n          description=\"Upload to R2, a queued job and a test email: the platform's bindings at work.\"\n        >\n          <Button asChild size=\"sm\">\n            <Link to=\"/app/demos\">Open demos</Link>\n          </Button>\n        </Destination>\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/pages/DashboardPage.tsx",
+          "find": "  FlaskConical,\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/test/e2e/app-states.spec.ts",
+          "find": "// MCP consent page, and the dashboard's developer demos. No sign-up here.",
+          "replace": "// MCP consent page. No sign-up here."
+        },
+        {
+          "file": "apps/web/test/e2e/app-states.spec.ts",
+          "find": "\ntest(\"the dashboard leads to the developer demos\", async ({ page }) => {\n  await open(page, \"/app/dashboard\");\n  await page.getByRole(\"link\", { name: \"Open demos\" }).click();\n  await expect(page).toHaveURL(/\\/app\\/demos$/);\n  await expect(\n    page.getByRole(\"heading\", { name: \"Developer demos\" })\n  ).toBeVisible();\n  await page.getByRole(\"link\", { name: \"Open queue demo\" }).click();\n  await expect(page).toHaveURL(/\\/app\\/queue-demo$/);\n});\n",
+          "replace": ""
+        }
+      ],
+      "docs": [
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "replace",
+          "heading": "Demos: queue and email",
+          "content": "### Background jobs and email\n\nGuides: [how-to-add-background-jobs.md](how-to-add-background-jobs.md), [how-to-setup-email.md](how-to-setup-email.md).\n\n1. Do something that queues a job or sends mail (an invitation, a password reset, a notification).\n2. The job shows as completed in the logs, and the mail arrives.\n\nExpected: the job completes within a minute; the mail arrives."
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "action": "rewrite",
+          "note": "Troubleshooting still names the queue and email demos; the upload demo stays"
+        }
+      ]
+    },
+    {
+      "id": "demo-mode",
+      "title": "Demo mode",
+      "why": "In flight: DEMO_MODE and its settings, so the public starter instance can be tried without an account. A product does not run as a public demo; strip it, or set it off.",
+      "status": "pending",
+      "pending": "the demo mode PR (not opened yet); when it merges, list DEMO_MODE and its files here and set status to active",
+      "default": true
+    },
+    {
+      "id": "containers",
+      "title": "Containers demo",
+      "why": "apps/container is a separate Worker with a Cloudflare Container (a Dockerized pi computation) that shows the pattern. Few products need a container; it costs Workers Paid, Docker and a second deploy.",
+      "status": "active",
+      "default": true,
+      "delete": ["apps/container", "docs/guides/how-to-setup-container.md"],
+      "json": [
+        {
+          "file": "package.json",
+          "path": ["scripts", "dev"],
+          "value": "bun run --filter @cloudflare-starter/web dev"
+        },
+        {
+          "file": "package.json",
+          "path": ["scripts", "dev:container"]
+        }
+      ],
+      "text": [
+        {
+          "file": "README.md",
+          "find": "- Cloudflare Container demo, deployed as its own Worker\n",
+          "replace": ""
+        },
+        {
+          "file": "README.md",
+          "find": "   | Containers                                     | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script                                                                                                                                                                                                                                                                                                                                                                                                                                   |\n",
+          "replace": ""
+        },
+        {
+          "file": "README.md",
+          "find": "| [apps/container](apps/container/README.md) | Cloudflare Container demo (Dockerized pi), its own Worker                                                               |\n",
+          "replace": ""
+        },
+        {
+          "file": "README.md",
+          "find": "- Docker Desktop (or compatible) for the container demo only\n",
+          "replace": ""
+        },
+        {
+          "file": "README.md",
+          "find": "| `bun run dev:container`                  | Starts the Container pi demo                                                                                                                                        |\n",
+          "replace": ""
+        },
+        {
+          "file": "README.md",
+          "find": "| `bun run dev`                            | Starts web + container in parallel ",
+          "replace": "| `bun run dev`                            | Starts the web Worker              "
+        },
+        {
+          "file": "docs/README.md",
+          "find": "| [how-to-setup-container.md](guides/how-to-setup-container.md)                         | you run or deploy the Container demo                                                                                                                                                                                                                                                                                                                |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": "| Container demo  | [apps/container](../../apps/container/README.md)                                          | A separate Worker with a Cloudflare Container, deployed on its own                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/processes/dependencies.md",
+          "find": "`compatibility_date` in `apps/web/wrangler.jsonc` and `apps/container/wrangler.jsonc`",
+          "replace": "`compatibility_date` in `apps/web/wrangler.jsonc`                                     "
+        },
+        {
+          "file": "docs/processes/dependencies.md",
+          "find": "| Container base image       | `FROM` in `apps/container/Dockerfile`                                                                                                                                    | Move to a current tag of the same image; rebuild and run the container demo ([how-to-setup-container.md](../guides/how-to-setup-container.md))                                                                                                                                                                                     |\n",
+          "replace": ""
+        },
+        {
+          "file": "test/architecture/qa-checklist.test.ts",
+          "find": "  \"how-to-setup-container.md\":\n    \"the Container demo is its own Worker, deployed separately\",\n",
+          "replace": ""
+        }
+      ]
+    },
+    {
+      "id": "container-workflow-demo",
+      "title": "Container workflow demo",
+      "why": "In flight: a Workflow that drives the container demo. Strip it with containers.",
+      "status": "pending",
+      "pending": "the container workflow demo PR (not opened yet); when it merges, list its files here and set status to active",
+      "default": true
+    },
+    {
+      "id": "tasks",
+      "title": "Tasks sample board",
+      "why": "Tasks (/app/tasks) is a sample kanban board with fixed data, a placeholder for where a product's own pages go. Kept by default as an example of a page; strip it once the product has its own.",
+      "status": "active",
+      "default": false,
+      "delete": ["apps/web/src/components/app/tasks"],
+      "text": [
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "import { TasksPage } from \"./tasks/TasksPage\";\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "const tasksRoute = createRoute({\n  getParentRoute: () => appLayoutRoute,\n  path: \"/app/tasks\",\n  component: TasksPage,\n});\n\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "    tasksRoute,\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.ts",
+          "find": "  {\n    id: \"tasks\",\n    label: \"Tasks\",\n    title: \"Tasks\",\n    to: \"/app/tasks\",\n    icon: \"tasks\",\n    sidebar: \"product\",\n    palette: true,\n    keywords: [\"issues\", \"board\", \"kanban\"],\n    visible: always,\n  },\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.test.ts",
+          "find": "\"product\"))).toEqual([\n      \"notes\",\n      \"tasks\",\n    ]);",
+          "replace": "\"product\"))).toEqual([\"notes\"]);"
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.test.ts",
+          "find": "      \"notes\",\n      \"tasks\",\n      \"notifications\",",
+          "replace": "      \"notes\",\n      \"notifications\","
+        },
+        {
+          "file": "apps/web/test/e2e/notes.spec.ts",
+          "find": "\ntest(\"tasks: the sample board switches to a list and filters\", async ({\n  page,\n}) => {\n  await open(page, \"/app/tasks\");\n  await expect(\n    page.getByRole(\"complementary\", { name: \"Placeholder app\" })\n  ).toContainText(\"nothing is saved\");\n  await expect(page.getByText(\"6 of 6 tasks\")).toBeVisible();\n  await page.getByRole(\"radio\", { name: \"List\" }).click();\n  await expect(page.getByRole(\"grid\", { name: \"Tasks\" })).toBeVisible();\n});\n",
+          "replace": ""
+        }
+      ]
+    },
+    {
+      "id": "notes",
+      "title": "Notes, the worked example",
+      "why": "Notes is a complete feature (table, use cases, tRPC, MCP tools, pages, tests) and the pattern every new feature copies. Keep it until the product's first real feature exists, then remove it by the guide; the strip does not, because removing it touches the schema and the migrations.",
+      "status": "active",
+      "default": false,
+      "manual": [
+        "Keep Notes as the pattern for the first feature (docs/guides/how-to-add-a-feature.md); remove it afterwards with the steps in how-to-add-a-feature.md#removing-notes-from-a-project."
+      ]
+    },
+    {
+      "id": "starter-repo",
+      "title": "The starter repository's own conventions",
+      "why": "Conventions of the starter's GitHub repository rather than of an app: the CI job that proves this strip, the orphan pr-evidence branch agents push screenshots to, and the self-hosted runner label cloudflare-starter.",
+      "status": "active",
+      "default": true,
+      "ci": [
+        {
+          "workflow": ".github/workflows/ci.yml",
+          "job": "starter-strip",
+          "why": "proves the starter's strip; a project has nothing left to strip"
+        }
+      ],
+      "docs": [
+        {
+          "file": "docs/processes/development.md",
+          "action": "rewrite",
+          "note": "4. Evidence: agents push files to the orphan pr-evidence branch; create that branch in the project's repository (git switch --orphan pr-evidence) or change the rule"
+        }
+      ],
+      "manual": [
+        "If the project uses self-hosted runners, give them its own label: CI_RUNS_ON (docs/guides/how-to-setup-ci.md#switch-ci-to-them) names cloudflare-starter in the examples.",
+        "Keep or drop the authorship rule (no AI agent as author or co-author, scripts/check-attribution.ts, the lint job); it is the starter owner's choice."
+      ]
+    }
+  ]
+}

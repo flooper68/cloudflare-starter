@@ -153,6 +153,19 @@ jobs:
             apps/web/test-results/build
           retention-days: 7
 
+  # The template never ships a strip that breaks the app: applies `bun run starter:strip`
+  # (the default set of starter-only.json) to a scratch copy of the repository, checks a
+  # second run changes nothing, then runs typecheck, lint and test there
+  # (scripts/starter-strip-check.ts, docs/processes/development.md#starter-only-parts).
+  starter-strip:
+    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+      - name: Strip the default set in a scratch copy, then typecheck, lint and test
+        run: bun run starter:strip:check -- --dir "$RUNNER_TEMP"
+
   # Builds and packages the web Worker for each environment without deploying: catches
   # broken wrangler.jsonc entries, missing bindings and bundling errors. Needs no
   # Cloudflare account; the token below only stops Wrangler from asking to log in.

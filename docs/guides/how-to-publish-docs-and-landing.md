@@ -45,6 +45,8 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 
 ## The landing page
 
+> **Starter-only, removed by `starter:strip`** (`marketing`): the landing page's copy describes the starter. The strip retitles the docs and resets the changelog; you replace this page by [the steps below](#replace-the-landing-page) ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
 `apps/web/src/pages/index.astro`, prerendered on `PublicLayout`: the starter's own page, built from `packages/ui` components (`Hero`, `FeatureGrid`, `Badge`, button styles) and the header with search, Storybook, GitHub, **Sign in** and **Open app**. All copy and links are in `apps/web/src/landing/content.ts`; the feature cards summarise the README's Highlights, so change both together. The hero's app picture is `apps/web/src/components/site/LandingPreview.astro` (decorative, `aria-hidden`).
 
 The page reads no session, so it is the same for everyone: a signed-in visitor sees "Open app" (`/app/dashboard`), and a signed-out one who clicks it lands on `/sign-in`. It ships no React; its only scripts are the theme and search ones.
@@ -62,6 +64,8 @@ A product built from the starter replaces this page with its own:
 4. Run `bun run build`, `bun run budget` and `bun run test:e2e:build` (landing, its policy, axe in both themes, phone width).
 
 ## Changelog
+
+> **Starter-only, removed by `starter:strip`** (`marketing`): `CHANGELOG.md` is the starter's history; the strip resets it to an empty Unreleased with one entry for the project ([how-to-start-a-project.md](how-to-start-a-project.md)).
 
 `/docs/changelog/` renders the root [CHANGELOG.md](../../CHANGELOG.md) (the docs collection reads it like any published file; there is no copy) as release notes: `apps/web/src/pages/docs/changelog.astro` parses it (`apps/web/src/docs/changelog.ts`) and renders `ReleaseNotes` from `packages/ui`, each release with its version, date and compare link, and each change type with its own label colour. Inline Markdown in an entry (`code`, **bold**, links) is rendered as elements (`src/docs/inline.ts`); relative links are rewritten like the rest of the docs. The page is in the navigation's Start section, the sitemap and the search index, and needs no script beyond the docs' own.
 
