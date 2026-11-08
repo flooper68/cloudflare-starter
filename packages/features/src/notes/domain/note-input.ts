@@ -42,3 +42,20 @@ export const listNotesInputSchema = z.object({
   limit: z.number().int().min(1).max(100).default(50),
 });
 export type ListNotesInput = z.input<typeof listNotesInputSchema>;
+
+/** Most hits one note search returns (the command palette shows a handful). */
+export const NOTE_SEARCH_LIMIT_MAX = 20;
+
+/**
+ * Searching a workspace's live notes by title and body (the app's command palette): a
+ * non-empty query and a small page size.
+ */
+export const searchNotesInputSchema = z.object({
+  query: z
+    .string()
+    .trim()
+    .min(1, "Type something to search")
+    .max(NOTE_TITLE_MAX),
+  limit: z.number().int().min(1).max(NOTE_SEARCH_LIMIT_MAX).default(8),
+});
+export type SearchNotesInput = z.input<typeof searchNotesInputSchema>;

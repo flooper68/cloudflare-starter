@@ -221,6 +221,20 @@ Guides: [how-to-configure-workspaces.md](how-to-configure-workspaces.md), [how-t
 Expected: no blank areas, no raw errors; the 403 and 404 views keep the sidebar.
 Mail: none.
 
+## Command palette
+
+Guide: [how-to-add-a-feature.md](how-to-add-a-feature.md#navigation-and-the-command-palette).
+
+1. As A on `/app/dashboard`, press ⌘K (Ctrl+K): the palette opens with the search focused and the groups Navigate, Workspaces (multi mode) and Actions.
+2. Type part of `QA <run> note`'s title: it shows under **Notes** (briefly "Searching notes…"); Enter opens it. A note in the trash is never listed.
+3. ⌘K, type `Settings`, Enter: **Account settings** opens. ↑ ↓, Home and End move the selection.
+4. Click **Search** in the top bar, press Esc: the palette closes and focus is back on Search. Type `zzzz`: **No results for "zzzz"**.
+5. As B (a member of `QA <run> shared`): ⌘K lists no **Settings: Workspace**, no **Invite member** and no **Admin**. As the admin, **Admin** is listed.
+6. At phone width (DevTools device mode): the trigger is a search icon without a key hint; the palette fills the screen with **Cancel**.
+
+Expected: works in both themes; selecting **Switch to the light theme** switches and remembers it after a reload.
+Mail: none.
+
 ## Demos: queue and email
 
 Guides: [how-to-add-background-jobs.md](how-to-add-background-jobs.md), [how-to-setup-email.md](how-to-setup-email.md).

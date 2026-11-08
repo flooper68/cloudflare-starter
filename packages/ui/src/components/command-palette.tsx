@@ -1,5 +1,5 @@
-import { Command as CommandPrimitive } from "cmdk";
-import { ChevronRight } from "lucide-react";
+import { Command as CommandPrimitive, useCommandState } from "cmdk";
+import { ChevronRight, CircleAlert, Search } from "lucide-react";
 import { Dialog as DialogPrimitive, VisuallyHidden } from "radix-ui";
 import {
   type ComponentProps,
@@ -19,8 +19,9 @@ import {
   CommandListSeparator,
   type CommandListSeparatorProps,
 } from "../lib/command-list";
-import { backdrop, menuItem } from "../lib/styles";
+import { backdrop, focusRing, menuItem } from "../lib/styles";
 import { cn } from "../lib/utils";
+import { Button } from "./button";
 import { Kbd, Shortcut } from "./kbd";
 import { Spinner } from "./spinner";
 
@@ -127,6 +128,18 @@ export interface CommandPaletteProps {
   /** CommandPage elements (or groups and items directly, for a single page). */
   readonly children: ReactNode;
   readonly className?: string;
+  /** Controlled search text (with `onSearchChange`); uncontrolled when left out. */
+  readonly search?: string;
+  readonly onSearchChange?: (search: string) => void;
+  /**
+   * `false` shows every item as given: the caller filters (fixed group order, or results
+   * that come from a server search and need no client-side match).
+   */
+  readonly shouldFilter?: boolean;
+  /** Below the `sm` breakpoint the palette fills the screen and gets a Cancel button. */
+  readonly fullScreenOnMobile?: boolean;
+  /** Where focus goes when the palette closes (Radix `onCloseAutoFocus`). */
+  readonly onCloseAutoFocus?: (event: Event) => void;
 }
 
 /**
@@ -144,11 +157,23 @@ export function CommandPalette({
   label = "Command palette",
   children,
   className,
+  search: searchProp,
+  onSearchChange,
+  shouldFilter = true,
+  fullScreenOnMobile = false,
+  onCloseAutoFocus,
 }: CommandPaletteProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const open = openProp ?? uncontrolledOpen;
   const [pages, setPages] = useState<readonly PageEntry[]>([{ id: ROOT_PAGE }]);
-  const [search, setSearch] = useState("");
+  const [uncontrolledSearch, setUncontrolledSearch] = useState("");
+  const search = searchProp ?? uncontrolledSearch;
+  const onSearchChangeRef = useRef(onSearchChange);
+  onSearchChangeRef.current = onSearchChange;
+  const setSearch = useCallback((next: string) => {
+    setUncontrolledSearch(next);
+    onSearchChangeRef.current?.(next);
+  }, []);
   const inputRef = useRef<HTMLInputElement>(null);
   const current = pages[pages.length - 1] ?? { id: ROOT_PAGE };
   const nested = pages.length > 1;
@@ -167,7 +192,7 @@ export function CommandPalette({
       setPages([{ id: ROOT_PAGE }]);
       setSearch("");
     }
-  }, [open]);
+  }, [open, setSearch]);
 
   const api = useMemo<CommandPagesApi>(
     () => ({
@@ -182,7 +207,7 @@ export function CommandPalette({
       },
       close: () => setOpen(false),
     }),
-    [current.id, setOpen]
+    [current.id, setOpen, setSearch]
   );
 
   // The list remounts per page; keep the caret in the input.
@@ -190,6 +215,20 @@ export function CommandPalette({
   useEffect(() => {
     inputRef.current?.focus();
   }, [current.id]);
+
+  // The input element of the open page (the dialog's portal mounts it after the first
+  // render, and each page mounts its own).
+  const [inputElement, setInputElement] = useState<HTMLInputElement | null>(
+    null
+  );
+  const setInput = useCallback((element: HTMLInputElement | null) => {
+    inputRef.current = element;
+    setInputElement(element);
+  }, []);
+  useEffect(
+    () => (inputElement ? repairActiveDescendant(inputElement) : undefined),
+    [inputElement]
+  );
 
   const [statusSlot, setStatusSlot] = useState<HTMLDivElement | null>(null);
 
@@ -208,10 +247,13 @@ export function CommandPalette({
                 api.pop();
               }
             }}
+            onCloseAutoFocus={onCloseAutoFocus}
             className={cn(
               "fixed top-[14vh] left-1/2 z-50 w-[calc(100%-2rem)] max-w-160 -translate-x-1/2",
               "overflow-hidden rounded-xl border border-line bg-overlay text-fg shadow-overlay outline-none",
               "data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out",
+              fullScreenOnMobile &&
+                "max-sm:inset-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:flex-col max-sm:rounded-none max-sm:border-0",
               className
             )}
           >
@@ -222,6 +264,11 @@ export function CommandPalette({
               key={current.id}
               label={label}
               loop
+              shouldFilter={shouldFilter}
+              className={cn(
+                fullScreenOnMobile &&
+                  "max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col"
+              )}
               onKeyDown={(event) => {
                 if (event.key === "Backspace" && search === "" && nested) {
                   event.preventDefault();
@@ -246,21 +293,45 @@ export function CommandPalette({
                   ))}
                 </div>
               ) : null}
-              <CommandPrimitive.Input
-                ref={inputRef}
-                value={search}
-                onValueChange={setSearch}
-                placeholder={current.placeholder ?? placeholder}
-                className="h-12 w-full border-b border-line bg-transparent px-4 text-base text-fg outline-none placeholder:text-fg-subtle"
-              />
+              <div className="flex items-center border-b border-line">
+                <CommandPrimitive.Input
+                  ref={setInput}
+                  value={search}
+                  onValueChange={setSearch}
+                  placeholder={current.placeholder ?? placeholder}
+                  className="h-12 w-full min-w-0 flex-1 bg-transparent px-4 text-base text-fg outline-none placeholder:text-fg-subtle"
+                />
+                {fullScreenOnMobile ? (
+                  <DialogPrimitive.Close
+                    className={cn(
+                      "mr-2 h-8 shrink-0 rounded-md px-2.5 text-sm text-fg-muted hover:bg-hover hover:text-fg sm:hidden",
+                      focusRing
+                    )}
+                  >
+                    Cancel
+                  </DialogPrimitive.Close>
+                ) : null}
+              </div>
               <StatusSlotContext.Provider value={statusSlot}>
-                <CommandList className="h-[min(var(--cmdk-list-height),min(24rem,calc(100dvh-16rem)))] scroll-py-1.5 overflow-y-auto overscroll-contain p-1.5 transition-[height] duration-100">
+                <CommandList
+                  className={cn(
+                    "h-[min(var(--cmdk-list-height),min(24rem,calc(100dvh-16rem)))] scroll-py-1.5 overflow-y-auto overscroll-contain p-1.5 transition-[height] duration-100",
+                    fullScreenOnMobile &&
+                      "max-sm:h-auto max-sm:min-h-0 max-sm:flex-1"
+                  )}
+                >
                   {children}
                 </CommandList>
+                <ResultCount />
               </StatusSlotContext.Provider>
               <div ref={setStatusSlot} role="status" />
               {footer === false ? null : (
-                <div className="flex h-9 items-center gap-4 border-t border-line px-3 text-2xs text-fg-subtle">
+                <div
+                  className={cn(
+                    "flex h-9 items-center gap-4 border-t border-line px-3 text-2xs text-fg-subtle",
+                    fullScreenOnMobile && "max-sm:hidden"
+                  )}
+                >
                   {footer ?? (
                     <>
                       <KeyHint keys={["↑", "↓"]}>Navigate</KeyHint>
@@ -278,6 +349,60 @@ export function CommandPalette({
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
     </CommandPaletteContext.Provider>
+  );
+}
+
+/**
+ * Keeps the input's `aria-activedescendant` pointing at the selected option. cmdk 1.1
+ * computes it before the new selection renders, so when typing replaces the selected
+ * option it can name the previous option, or one that no longer exists (axe
+ * aria-valid-attr-value; screen readers announce the wrong option or nothing). Watches
+ * the palette and points it at the option marked `aria-selected`, or drops it when none
+ * is.
+ */
+function repairActiveDescendant(input: HTMLInputElement): () => void {
+  const root = input.closest("[cmdk-root]") ?? input.parentElement;
+  if (!root) return () => {};
+  const repair = () => {
+    const selected = root.querySelector<HTMLElement>(
+      '[cmdk-item][aria-selected="true"]'
+    );
+    const current = input.getAttribute("aria-activedescendant");
+    if (selected?.id) {
+      if (current !== selected.id) {
+        input.setAttribute("aria-activedescendant", selected.id);
+      }
+    } else if (current !== null) {
+      input.removeAttribute("aria-activedescendant");
+    }
+  };
+  const observer = new MutationObserver(repair);
+  observer.observe(root, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ["aria-selected", "aria-activedescendant"],
+  });
+  repair();
+  return () => observer.disconnect();
+}
+
+/**
+ * How many options match, for screen readers, in the palette's status region (the visible
+ * list says it already). Silent before anything is typed and when nothing matches
+ * (CommandEmpty speaks then).
+ */
+function ResultCount() {
+  const count = useCommandState((state) =>
+    state.search === "" ? 0 : state.filtered.count
+  );
+  if (count === 0) return null;
+  return (
+    <StatusSlot>
+      <span className="sr-only">
+        {count === 1 ? "1 result" : `${count} results`}
+      </span>
+    </StatusSlot>
   );
 }
 
@@ -426,5 +551,105 @@ export function CommandLoading({
         {children}
       </div>
     </StatusSlot>
+  );
+}
+
+/**
+ * Render when an async search failed: a message safe to show and, with `onRetry`, a way
+ * to try again. Announced through the palette's status region, outside the listbox.
+ */
+export function CommandError({
+  children = "Search failed",
+  onRetry,
+  className,
+}: {
+  readonly children?: ReactNode;
+  readonly onRetry?: () => void;
+  readonly className?: string;
+}) {
+  return (
+    <StatusSlot>
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-center gap-2 px-4 py-6 text-center text-sm text-fg-muted",
+          className
+        )}
+      >
+        <CircleAlert className="size-4 shrink-0 text-danger" aria-hidden />
+        <span>{children}</span>
+        {onRetry ? (
+          <Button size="sm" variant="ghost" onClick={onRetry}>
+            Try again
+          </Button>
+        ) : null}
+      </div>
+    </StatusSlot>
+  );
+}
+
+/** A quiet line under the list, e.g. "No notes match" while other groups still match. */
+export function CommandNote({
+  children,
+  className,
+}: {
+  readonly children: ReactNode;
+  readonly className?: string;
+}) {
+  return (
+    <StatusSlot>
+      <div className={cn("px-4 py-2 text-xs text-fg-muted", className)}>
+        {children}
+      </div>
+    </StatusSlot>
+  );
+}
+
+export interface CommandPaletteTriggerProps
+  extends Omit<ComponentProps<"button">, "children"> {
+  /** Visible text; screen-reader only below the `sm` breakpoint, where an icon remains. */
+  readonly label?: string;
+  /**
+   * The shortcut that opens the palette, e.g. `["⌘", "K"]`. Shown only on devices with a
+   * fine pointer (a mouse or trackpad, so most likely a keyboard), never on touch screens.
+   */
+  readonly shortcut?: readonly string[];
+}
+
+/**
+ * The visible way into the palette, for the app's top bar: a search field look-alike on
+ * desktop, a search icon button on phones. Pass `onClick` to open the palette and a `ref`
+ * so focus can return to it when the palette closes.
+ */
+export function CommandPaletteTrigger({
+  label = "Search",
+  shortcut,
+  className,
+  ...props
+}: CommandPaletteTriggerProps) {
+  return (
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      className={cn(
+        "inline-flex h-8 items-center gap-2 rounded-md border border-line bg-input px-2.5 text-sm text-fg-muted",
+        "hover:bg-hover hover:text-fg sm:min-w-48",
+        "max-sm:w-8 max-sm:justify-center max-sm:px-0",
+        focusRing,
+        className
+      )}
+      {...props}
+    >
+      <Search className="size-4 shrink-0" aria-hidden />
+      <span className="truncate max-sm:sr-only">{label}</span>
+      {shortcut ? (
+        // Seen, not read: assistive tech gets the shortcut from `aria-keyshortcuts`.
+        <span
+          aria-hidden
+          className="ml-auto hidden shrink-0 pointer-fine:sm:inline-flex"
+        >
+          <Shortcut keys={shortcut} />
+        </span>
+      ) : null}
+    </button>
   );
 }

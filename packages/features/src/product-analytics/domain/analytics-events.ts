@@ -22,3 +22,39 @@ export const pageViewedEvent = defineEvent(
     description: "A page of the /app SPA was shown (route pattern only)",
   }
 );
+
+/** How the command palette was opened. */
+export const COMMAND_PALETTE_SOURCES = ["shortcut", "trigger"] as const;
+
+/** The kinds of command palette items: never an item's label, target or the query. */
+export const COMMAND_PALETTE_ITEM_KINDS = [
+  "navigate",
+  "note",
+  "workspace",
+  "action",
+] as const;
+
+/** The SPA's command palette opened, by the ⌘K / Ctrl+K shortcut or the search trigger. */
+export const commandPaletteOpenedEvent = defineEvent(
+  "app.command_palette_opened",
+  { strings: ["source"], numbers: [] },
+  z.object({ source: z.enum(COMMAND_PALETTE_SOURCES) }).strict(),
+  {
+    client: true,
+    description: "The command palette opened (shortcut or trigger)",
+  }
+);
+
+/**
+ * An item of the command palette was picked: only its kind (the palette group it is in),
+ * never the query text, the item's label or where it leads.
+ */
+export const commandPaletteItemSelectedEvent = defineEvent(
+  "app.command_palette_item_selected",
+  { strings: ["kind"], numbers: [] },
+  z.object({ kind: z.enum(COMMAND_PALETTE_ITEM_KINDS) }).strict(),
+  {
+    client: true,
+    description: "A command palette item was picked (its kind only)",
+  }
+);

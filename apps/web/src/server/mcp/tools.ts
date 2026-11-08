@@ -483,6 +483,13 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Lists the notes of the workspace, most recently changed first: id, title, an excerpt of the body, who created and last changed it and when, and the comment count. Optional query matches titles; limit up to 100. Notes in the trash are not listed (see list_trash)."
   ),
   direct(
+    "search_notes",
+    "read",
+    "notes.search",
+    "Search notes",
+    "Finds notes of the workspace whose title or body contains the query (case-insensitive, 1-200 characters): id, title, an excerpt and whether the title or the body matched; title matches first, then the most recently changed. limit up to 20 (default 8). Notes in the trash are never returned. Use list_notes for the full list."
+  ),
+  direct(
     "get_note",
     "read",
     "notes.get",
