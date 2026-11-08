@@ -36,6 +36,25 @@ test("a docs page renders under the prerendered page policy", async ({
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
 });
 
+test("a diagram is inlined and follows the theme switch", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/docs/processes/agentic-workflow/");
+  const diagram = page
+    .getByRole("figure", { name: /^Roles:/ })
+    .getByRole("img", { name: /^Roles:/ });
+  await expect(diagram).toBeVisible();
+  // Inline, not an <img>: its colours come from the site's tokens.
+  await expect(page.locator("img[src*='.svg']")).toHaveCount(0);
+  const title = diagram.locator("text.dg-t").first();
+  const fill = () =>
+    title.evaluate((element) => getComputedStyle(element).fill);
+  const dark = await fill();
+
+  await page.getByRole("button", { name: "Switch to the light theme" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect.poll(fill).not.toBe(dark);
+});
+
 test("an unknown path is the public 404 under the same policy", async ({
   page,
 }) => {

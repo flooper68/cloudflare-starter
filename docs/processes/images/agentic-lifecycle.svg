@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="438" viewBox="0 0 780 438" role="img" aria-label="The lifecycle of a change: plan (request, brief, worktree), build (implement, checks, evidence, independent review for risky changes), ship (pull request, CI and report, merge, deploy on the owner's yes), verify (smoke suite after every deploy, QA suite after production deploys, knowledge pages)"><title>The lifecycle of a change: plan (request, brief, worktree), build (implement, checks, evidence, independent review for risky changes), ship (pull request, CI and report, merge, deploy on the owner's yes), verify (smoke suite after every deploy, QA suite after production deploys, knowledge pages)</title>
+<style>.dg-bg{fill:var(--ui-surface-raised,#ffffff)}
+.dg-box{fill:var(--ui-surface,#f6f8fa);stroke:var(--ui-line-strong,#d0d7de);stroke-width:1}
+.dg-key{fill:var(--ui-accent-subtle,#e0f2ef);stroke:var(--ui-accent,#0f766e);stroke-width:1.5}
+.dg-gate{fill:var(--ui-surface,#f6f8fa);stroke:var(--ui-warning,#9a6700);stroke-width:1.5;stroke-dasharray:5 3}
+.dg-t{fill:var(--ui-fg,#1f2328);font:600 13px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-s{fill:var(--ui-fg-muted,#59636e);font:400 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-h{fill:var(--ui-fg-muted,#59636e);font:600 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);letter-spacing:.08em}
+.dg-a{stroke:var(--ui-fg-subtle,#818b98);stroke-width:1.5;fill:none}
+.dg-ah{fill:var(--ui-fg-subtle,#818b98)}
+.dg-sep{stroke:var(--ui-line,#d0d7de);stroke-width:1}
+@media (prefers-color-scheme:dark){.dg-bg{fill:var(--ui-surface-raised,#0d1117)}
+.dg-box{fill:var(--ui-surface,#161b22);stroke:var(--ui-line-strong,#3d444d);stroke-width:1}
+.dg-key{fill:var(--ui-accent-subtle,#0f2e2b);stroke:var(--ui-accent,#2dd4bf);stroke-width:1.5}
+.dg-gate{fill:var(--ui-surface,#161b22);stroke:var(--ui-warning,#d29922);stroke-width:1.5;stroke-dasharray:5 3}
+.dg-t{fill:var(--ui-fg,#f0f6fc);font:600 13px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-s{fill:var(--ui-fg-muted,#9198a1);font:400 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-h{fill:var(--ui-fg-muted,#9198a1);font:600 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);letter-spacing:.08em}
+.dg-a{stroke:var(--ui-fg-subtle,#8b949e);stroke-width:1.5;fill:none}
+.dg-ah{fill:var(--ui-fg-subtle,#8b949e)}
+.dg-sep{stroke:var(--ui-line,#3d444d);stroke-width:1}
+}</style>
+<rect class="dg-bg" x="0" y="0" width="780" height="438" rx="12"/>
+<defs>
+<marker id="dg-lifecycle-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-ah" d="M0 0L10 5L0 10z"/>
+</marker>
+</defs>
+<text class="dg-h" x="24" y="60">PLAN</text>
+<rect class="dg-key" x="104" y="28" width="146" height="56" rx="8"/>
+<text class="dg-t" x="177" y="53" text-anchor="middle">Request</text>
+<text class="dg-s" x="177" y="69" text-anchor="middle">the owner asks</text>
+<rect class="dg-box" x="272" y="28" width="146" height="56" rx="8"/>
+<text class="dg-t" x="345" y="53" text-anchor="middle">Brief</text>
+<text class="dg-s" x="345" y="69" text-anchor="middle">orchestrator writes it</text>
+<path class="dg-a" d="M252 56H270" marker-end="url(#dg-lifecycle-arrow)"/>
+<rect class="dg-box" x="440" y="28" width="146" height="56" rx="8"/>
+<text class="dg-t" x="513" y="53" text-anchor="middle">Worktree</text>
+<text class="dg-s" x="513" y="69" text-anchor="middle">one per task, own port</text>
+<path class="dg-a" d="M420 56H438" marker-end="url(#dg-lifecycle-arrow)"/>
+<path class="dg-a" d="M513 86V106H177V126" marker-end="url(#dg-lifecycle-arrow)"/>
+<text class="dg-h" x="24" y="160">BUILD</text>
+<rect class="dg-box" x="104" y="128" width="146" height="56" rx="8"/>
+<text class="dg-t" x="177" y="153" text-anchor="middle">Implement</text>
+<text class="dg-s" x="177" y="169" text-anchor="middle">code, tests, docs</text>
+<rect class="dg-box" x="272" y="128" width="146" height="56" rx="8"/>
+<text class="dg-t" x="345" y="153" text-anchor="middle">Checks</text>
+<text class="dg-s" x="345" y="169" text-anchor="middle">verify, build, budget</text>
+<path class="dg-a" d="M252 156H270" marker-end="url(#dg-lifecycle-arrow)"/>
+<rect class="dg-box" x="440" y="128" width="146" height="56" rx="8"/>
+<text class="dg-t" x="513" y="153" text-anchor="middle">Evidence</text>
+<text class="dg-s" x="513" y="169" text-anchor="middle">pr-evidence branch</text>
+<path class="dg-a" d="M420 156H438" marker-end="url(#dg-lifecycle-arrow)"/>
+<rect class="dg-gate" x="608" y="128" width="146" height="56" rx="8"/>
+<text class="dg-t" x="681" y="153" text-anchor="middle">Review</text>
+<text class="dg-s" x="681" y="169" text-anchor="middle">reviewer, risky tier</text>
+<path class="dg-a" d="M588 156H606" marker-end="url(#dg-lifecycle-arrow)"/>
+<path class="dg-a" d="M681 186V206H177V226" marker-end="url(#dg-lifecycle-arrow)"/>
+<text class="dg-h" x="24" y="260">SHIP</text>
+<rect class="dg-box" x="104" y="228" width="146" height="56" rx="8"/>
+<text class="dg-t" x="177" y="253" text-anchor="middle">Pull request</text>
+<text class="dg-s" x="177" y="269" text-anchor="middle">template, changelog</text>
+<rect class="dg-box" x="272" y="228" width="146" height="56" rx="8"/>
+<text class="dg-t" x="345" y="253" text-anchor="middle">CI and report</text>
+<text class="dg-s" x="345" y="269" text-anchor="middle">orchestrator checks</text>
+<path class="dg-a" d="M252 256H270" marker-end="url(#dg-lifecycle-arrow)"/>
+<rect class="dg-key" x="440" y="228" width="146" height="56" rx="8"/>
+<text class="dg-t" x="513" y="253" text-anchor="middle">Merge</text>
+<text class="dg-s" x="513" y="269" text-anchor="middle">merge commit</text>
+<path class="dg-a" d="M420 256H438" marker-end="url(#dg-lifecycle-arrow)"/>
+<rect class="dg-gate" x="608" y="228" width="146" height="56" rx="8"/>
+<text class="dg-t" x="681" y="253" text-anchor="middle">Deploy</text>
+<text class="dg-s" x="681" y="269" text-anchor="middle">on the owner's yes</text>
+<path class="dg-a" d="M588 256H606" marker-end="url(#dg-lifecycle-arrow)"/>
+<path class="dg-a" d="M681 286V306H177V326" marker-end="url(#dg-lifecycle-arrow)"/>
+<text class="dg-h" x="24" y="360">VERIFY</text>
+<rect class="dg-box" x="104" y="328" width="146" height="56" rx="8"/>
+<text class="dg-t" x="177" y="353" text-anchor="middle">Smoke suite</text>
+<text class="dg-s" x="177" y="369" text-anchor="middle">after every deploy</text>
+<rect class="dg-box" x="272" y="328" width="146" height="56" rx="8"/>
+<text class="dg-t" x="345" y="353" text-anchor="middle">QA suite</text>
+<text class="dg-s" x="345" y="369" text-anchor="middle">after production</text>
+<path class="dg-a" d="M252 356H270" marker-end="url(#dg-lifecycle-arrow)"/>
+<rect class="dg-box" x="440" y="328" width="146" height="56" rx="8"/>
+<text class="dg-t" x="513" y="353" text-anchor="middle">Knowledge</text>
+<text class="dg-s" x="513" y="369" text-anchor="middle">docs, wiki, canvas</text>
+<path class="dg-a" d="M420 356H438" marker-end="url(#dg-lifecycle-arrow)"/>
+<rect class="dg-key" x="104" y="404" width="14" height="12" rx="3"/>
+<text class="dg-s" x="124" y="414">start and merge</text>
+<rect class="dg-gate" x="234" y="404" width="14" height="12" rx="3"/>
+<text class="dg-s" x="254" y="414">needs a decision: risky changes only, or the owner's yes</text>
+</svg>

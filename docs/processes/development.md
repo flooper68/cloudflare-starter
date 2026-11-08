@@ -1,6 +1,6 @@
 # Development Process
 
-The loop every change follows, by a person or an agent: plan, implement, verify, produce evidence, audit docs, self-review, ship on the owner's yes. It also defines the plan schema for work handed to an agent and the definition of done. Use when you start any change, and again before you say it is finished.
+The loop every change follows, by a person or an agent: plan, implement, verify, produce evidence, audit docs, self-review, ship on the owner's yes. It also defines the plan schema for work handed to an agent and the definition of done. Use when you start any change, and again before you say it is finished. How an orchestrator agent runs this loop with implementer and reviewer subagents: [agentic-workflow.md](agentic-workflow.md).
 
 ## The loop
 
