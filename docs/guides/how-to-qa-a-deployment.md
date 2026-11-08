@@ -56,6 +56,8 @@ A journey is a `*.qa.ts` file in `apps/web/test/qa/` that imports from [support/
 
 Start every file with `qaTest.skip(qaSkipReason() !== null, qaSkipReason() ?? "")`, take `since` just before the action that sends mail, and never log a password or put one in an assertion message. [account-lifecycle.qa.ts](../../apps/web/test/qa/account-lifecycle.qa.ts) is the worked example (sign up → verify → dashboard → erase).
 
+Which file covers which checklist section, what each one skips and why, and the run's sign-up and mail budget: [apps/web/test/qa/README.md](../../apps/web/test/qa/README.md).
+
 ## The QA inbox
 
 A small Worker of its own, `cloudflare-starter-qa-inbox` ([apps/qa-inbox/](../../apps/qa-inbox/src/index.ts)), receives the QA suite's mail. It has one mailbox, `qa@qa.flooper.me`, and every QA address is a subaddress of it (`qa+<runId>-<role>@qa.flooper.me`, RFC 5233):
