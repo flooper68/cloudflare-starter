@@ -32,7 +32,7 @@ The producer side is [jobs/enqueue-job.ts](../../packages/features/src/jobs/enqu
 
 ![A cron run](diagrams/cron-run.svg)
 
-The handler is [server/cron.ts](../../apps/web/src/server/cron.ts), the entries [cron-catalog.ts](../../packages/features/src/cron-catalog.ts). Three schedules exist: hourly at minute 17 (`files.retry-cleanup`, `privacy.purge-exports`), daily at 03:17 UTC (audit, idempotency-key, notification, trash and QA outbox purges, trial expiry, storage reconciliation) and 08:00 UTC (`notifications.plan-digests`). `test/architecture/jobs.test.ts` keeps `triggers.crons` equal to the catalog's schedules. Guide: [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md).
+The handler is [server/cron.ts](../../apps/web/src/server/cron.ts), the entries [cron-catalog.ts](../../packages/features/src/cron-catalog.ts). Three schedules exist: hourly at minute 17 (`files.retry-cleanup`, `privacy.purge-exports`), daily at 03:17 UTC (audit, idempotency-key, notification, trash and QA outbox purges, trial expiry, storage reconciliation, demo retention with `DEMO_MODE=on`) and 08:00 UTC (`notifications.plan-digests`). `test/architecture/jobs.test.ts` keeps `triggers.crons` equal to the catalog's schedules. Guide: [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md).
 
 ## Sign-up to the dashboard
 

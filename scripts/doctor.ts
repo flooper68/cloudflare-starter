@@ -6,6 +6,11 @@ import { existsSync } from "node:fs";
 
 import { securitySettingsSchema } from "../packages/features/src/accounts/domain/security-policy";
 import { billingSettingsSchema } from "../packages/features/src/billing/domain/settings";
+import {
+  DEMO_PROTECTED_EMAILS_MAX,
+  DEMO_RETENTION_MAX_DAYS,
+  DEMO_RETENTION_MIN_DAYS,
+} from "../packages/features/src/demo/domain/settings";
 import { workspaceSettingsSchema } from "../packages/features/src/workspaces/domain/config";
 
 import {
@@ -291,6 +296,8 @@ if (!existsSync(DEV_VARS)) {
     value("ANALYTICS_ID_SECRET") ?? ""
   );
   checkStorageVar("local", vars.get("STORAGE_RECONCILE"));
+  // .dev.vars overrides the develop var; wrangler.jsonc's applies without the line.
+  checkDemoVars("local", (key) => vars.get(key) ?? topVars[key]);
   checkBillingVar("local", vars.get("BILLING"));
   checkSecurity("local", Object.fromEntries(vars));
 }
@@ -409,6 +416,7 @@ for (const env of ENVIRONMENTS) {
   namespaceIds.push(...ids);
   namespaceIdsByEnv.set(env, ids);
   checkStorageVar(env, vars.STORAGE_RECONCILE);
+  checkDemoVars(env, (key) => vars[key]);
   if (vars.TWO_FACTOR) checkSecurity(env, vars);
   else
     warn(
@@ -500,6 +508,60 @@ function checkQaBypass(
   else if ((secret("QA_TOKEN") ?? "").length < 32)
     error(
       `${label}: QA_BYPASS=on needs QA_TOKEN (32+ characters) in .dev.vars, or set QA_BYPASS=off there`
+    );
+}
+
+/**
+ * DEMO_MODE (off | on, required; docs/guides/how-to-run-a-public-demo.md) and, with on,
+ * DEMO_RETENTION_DAYS, DEMO_SAMPLE_DATA and DEMO_PROTECTED_EMAILS, as parseDemoConfig
+ * checks them. Starter-only: a project keeps off.
+ */
+function checkDemoVars(
+  label: string,
+  setting: (key: string) => string | undefined
+) {
+  const mode = setting("DEMO_MODE");
+  if (mode === "off") {
+    ok(`${label}: DEMO_MODE=off`);
+    return;
+  }
+  if (mode !== "on") {
+    error(
+      `${label}: DEMO_MODE must be off or on (it is ${mode ? `"${mode}"` : "missing"}; docs/guides/how-to-run-a-public-demo.md)`
+    );
+    return;
+  }
+  const days = setting("DEMO_RETENTION_DAYS") ?? "";
+  const n = Number(days);
+  const daysOk =
+    /^\d+$/.test(days) &&
+    n >= DEMO_RETENTION_MIN_DAYS &&
+    n <= DEMO_RETENTION_MAX_DAYS;
+  if (!daysOk)
+    error(
+      `${label}: DEMO_MODE=on needs DEMO_RETENTION_DAYS, a whole number from ${DEMO_RETENTION_MIN_DAYS} to ${DEMO_RETENTION_MAX_DAYS} (it is ${days ? `"${days}"` : "missing"})`
+    );
+  const sample = setting("DEMO_SAMPLE_DATA");
+  if (sample !== "on" && sample !== "off")
+    error(`${label}: DEMO_MODE=on needs DEMO_SAMPLE_DATA=on or off`);
+  const emails = (setting("DEMO_PROTECTED_EMAILS") ?? "")
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+  const bad = emails.filter(
+    (email) => !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(email)
+  );
+  if (bad.length)
+    error(
+      `${label}: DEMO_PROTECTED_EMAILS has entries that are not addresses: ${bad.join(", ")}`
+    );
+  if (emails.length > DEMO_PROTECTED_EMAILS_MAX)
+    error(
+      `${label}: DEMO_PROTECTED_EMAILS holds at most ${DEMO_PROTECTED_EMAILS_MAX} addresses`
+    );
+  if (daysOk && (sample === "on" || sample === "off"))
+    ok(
+      `${label}: DEMO_MODE=on: accounts erased after ${n} days (warned a day before), sample data ${sample}, ${emails.length} protected address${emails.length === 1 ? "" : "es"} besides admins, BOOTSTRAP_ADMIN_EMAIL and QA_EMAIL_DOMAIN`
     );
 }
 

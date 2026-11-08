@@ -1,12 +1,21 @@
 import { and, eq, sql } from "drizzle-orm";
+import type { AdminAuthGateway } from "../admin";
 import type { Database } from "../database";
-import type { Clock, Ids, JobEnvelope } from "../kernel";
+import type { DemoRuntime } from "../demo";
+import type {
+  BillingGate,
+  Clock,
+  Ids,
+  JobEnvelope,
+  RequestContext,
+} from "../kernel";
 import type {
   EmailService,
   ErrorReporter,
   JobQueue,
   Logger,
   Metrics,
+  ProductAnalytics,
 } from "../platform";
 import type { StorageReconcileMode } from "../storage-reconciliation";
 import {
@@ -44,6 +53,13 @@ export interface JobDeps {
   };
   /** The `FILES` bucket: purges remove orphanable objects after guarded row deletion. */
   readonly bucket: R2Bucket;
+  /** DEMO_MODE and its retention policy (the demo feature's jobs). */
+  readonly demo: DemoRuntime;
+  /** Better Auth's user deletion, for server-initiated erasure (its hooks complete it). */
+  readonly authUsers: Pick<AdminAuthGateway, "deleteUser">;
+  /** The BillingGate for the work a job does as a member (plan limits). */
+  readonly billing: (context: RequestContext) => BillingGate;
+  readonly analytics: ProductAnalytics;
 }
 
 /**

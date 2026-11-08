@@ -2,6 +2,7 @@ import {
   AppShell,
   AppTopBar,
   brand,
+  DemoBanner,
   EmptyState,
   ErrorState,
   ImpersonationBanner,
@@ -16,6 +17,11 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { connectivity } from "@/lib/connectivity";
+import {
+  demoBannerDismissed,
+  dismissDemoBanner,
+  STARTER_REPOSITORY_URL,
+} from "@/lib/demo-banner";
 import { trpc } from "@/lib/trpc/client";
 
 import { TrialBanner } from "../billing/TrialBanner";
@@ -68,6 +74,23 @@ function Impersonation() {
   );
 }
 
+/** DEMO_MODE=on: the demo notice, dismissible for the browser session. */
+function DemoNotice() {
+  const { demo } = useAuth();
+  const [dismissed, setDismissed] = useState(demoBannerDismissed);
+  if (!demo || dismissed) return null;
+  return (
+    <DemoBanner
+      retentionDays={demo.retentionDays}
+      repositoryUrl={STARTER_REPOSITORY_URL}
+      onDismiss={() => {
+        dismissDemoBanner();
+        setDismissed(true);
+      }}
+    />
+  );
+}
+
 /**
  * While the browser is offline or the app's requests get no response: says so, and
  * "Try again" sends one cheap request (any answer clears the notice).
@@ -114,6 +137,7 @@ export function AppLayout() {
       <AppShell sidebar={<AppSidebar />}>
         <Offline />
         <Impersonation />
+        <DemoNotice />
         <TrialBanner />
         <AppTopBar
           title={

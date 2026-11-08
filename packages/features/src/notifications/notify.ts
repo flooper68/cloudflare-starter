@@ -52,7 +52,7 @@ export async function notify<TData>(
     }
     if (recipients.length === 0) return { status: "nobody" };
 
-    const eventId = deps.ids.uuid();
+    const eventId = input.eventId ?? deps.ids.uuid();
     await enqueueJob(
       deps,
       dispatchNotificationJob,

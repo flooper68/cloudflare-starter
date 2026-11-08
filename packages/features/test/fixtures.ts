@@ -175,6 +175,25 @@ export function testBilling(mode: BillingMode = "off", at?: string) {
   });
 }
 
+/**
+ * The JobDeps a job of another feature does not use: demo mode off, a user deletion
+ * that only deletes the row, BILLING=off and a memory ProductAnalytics.
+ */
+export function testJobPorts() {
+  return {
+    demo: { mode: "off" } as const,
+    authUsers: {
+      async deleteUser(userId: string) {
+        await env.DB.prepare("DELETE FROM user WHERE id = ?")
+          .bind(userId)
+          .run();
+      },
+    },
+    billing: () => testBilling(),
+    analytics: createMemoryProductAnalytics(),
+  };
+}
+
 let depsRun = 0;
 
 /**
