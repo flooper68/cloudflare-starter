@@ -14,6 +14,15 @@
 import { withNoTransform } from "./cache-control";
 import { STATIC_CACHE_RULES } from "./static-cache";
 
+/**
+ * The theme script (public/site-theme.js): a blocking script in <head> that applies the
+ * saved theme before the first paint, on the public pages and on the account pages. The
+ * page policy allows exactly this file by its full URL, which matches no other path (a
+ * source without a trailing slash is an exact match); it is a build-owned static asset,
+ * never an upload (those are served under /api/files).
+ */
+export const THEME_SCRIPT_PATH = "/site-theme.js";
+
 /** Where browsers send violation reports (src/pages/api/csp-report.ts). */
 export const CSP_REPORT_PATH = "/api/csp-report";
 /** The Reporting API endpoint name of `report-to` and `Reporting-Endpoints`. */
@@ -181,7 +190,7 @@ export const STATIC_ASSET_PATHS = [
   "/_astro/*",
   // public/
   "/favicon.svg",
-  "/site-theme.js",
+  THEME_SCRIPT_PATH,
   // Prerendered non-HTML routes and the sitemap integration's files.
   "/robots.txt",
   "/sitemap-*",
@@ -235,6 +244,8 @@ export function pagePolicy(input: PagePolicyInput): string {
     : [
         // Our bundles, not all of 'self': /api/files serves user uploads from this origin.
         `${input.origin}/_astro/`,
+        // The theme script, this one file only.
+        `${input.origin}${THEME_SCRIPT_PATH}`,
         ...input.scriptHashes,
       ];
   if (input.turnstile) script.push(TURNSTILE_ORIGIN);

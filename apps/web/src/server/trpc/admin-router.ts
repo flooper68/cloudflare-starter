@@ -26,6 +26,7 @@ import {
   resetSecondFactor,
   revokeUserSessions,
   STORAGE_GRACE_MS,
+  sendAdminTestEmail,
   sendPasswordReset,
   setFlagRules,
   setUserRole,
@@ -45,6 +46,7 @@ import {
   impersonatorProcedure,
   router,
 } from "./init";
+import { requireFeature } from "./require-feature";
 
 const userId = z
   .string()
@@ -125,6 +127,19 @@ export const adminRouter = router({
   health: router({
     // A live readiness check with each failure's detail; nothing is stored.
     get: adminProcedure.query(({ ctx }) => ctx.readiness()),
+  }),
+
+  email: router({
+    // The real sending path to any address (the QA suite's weekly delivery check).
+    sendTest: adminProcedure
+      .input(z.object({ to: z.email().max(254) }))
+      .mutation(({ ctx, input }) =>
+        sendAdminTestEmail(
+          { ...ctx, email: requireFeature(ctx.email) },
+          ctx.admin,
+          { to: input.to, environment: ctx.config.APP_ENV }
+        )
+      ),
   }),
 
   settings: router({

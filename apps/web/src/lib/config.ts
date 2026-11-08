@@ -355,7 +355,7 @@ function parseQaBypass(env: PartialEnv): {
   if (!HOSTNAME.test(emailDomain)) {
     throw new ConfigError(
       "QA_EMAIL_DOMAIN",
-      `QA_BYPASS=on needs QA_EMAIL_DOMAIN, the lowercase mail domain of the QA inbox (e.g. qa.example.com), in the vars of apps/web/wrangler.jsonc${emailDomain ? `; "${emailDomain}" is not a hostname` : ""}`
+      `QA_BYPASS=on needs QA_EMAIL_DOMAIN, the lowercase mail domain of QA addresses (e.g. qa.example.com), in the vars of apps/web/wrangler.jsonc${emailDomain ? `; "${emailDomain}" is not a hostname` : ""}`
     );
   }
   return { token, emailDomain };

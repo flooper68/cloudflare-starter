@@ -12,7 +12,11 @@ describe("findAdminAccess", () => {
     await seedSession(ada.id, { minutesAgo: 90 });
     await seedSession(ada.id, { minutesAgo: 30 });
     await seedSession(ada.id, { minutesAgo: 1, impersonatedBy: "user-other" });
-    const access = await findAdminAccess(deps(), { userId: ada.id });
+    const access = await findAdminAccess(deps(), {
+      userId: ada.id,
+      qaAdminEmail: null,
+      sessionCreatedAt: null,
+    });
     expect(access.isAdmin).toBe(true);
     expect(access.lastSignInAt?.toISOString()).toBe("2026-10-28T11:30:00.000Z");
   });
@@ -29,12 +33,24 @@ describe("findAdminAccess", () => {
       banExpires: new Date(NOW.getTime() - 1000),
     });
     for (const userId of [user.id, suspended.id, "user-nobody"]) {
-      expect(await findAdminAccess(deps(), { userId })).toEqual({
+      expect(
+        await findAdminAccess(deps(), {
+          userId,
+          qaAdminEmail: null,
+          sessionCreatedAt: null,
+        })
+      ).toEqual({
         isAdmin: false,
         lastSignInAt: null,
       });
     }
-    expect(await findAdminAccess(deps(), { userId: lifted.id })).toEqual({
+    expect(
+      await findAdminAccess(deps(), {
+        userId: lifted.id,
+        qaAdminEmail: null,
+        sessionCreatedAt: null,
+      })
+    ).toEqual({
       isAdmin: true,
       lastSignInAt: null,
     });

@@ -337,6 +337,24 @@ export const auditEventSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     ...common,
+    action: z.literal("qa.admin.promoted"),
+    target: target("user"),
+    metadata: z.object({ previousRole: role }).strict(),
+  }),
+  z.object({
+    ...common,
+    action: z.literal("qa.admin.demoted"),
+    target: target("user"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
+    action: z.literal("admin.test_email_sent"),
+    target: target("email"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...common,
     action: z.literal("user.banned"),
     target: target("user"),
     metadata: z

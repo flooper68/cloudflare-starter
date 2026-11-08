@@ -137,7 +137,11 @@ describe("audit coverage", () => {
     // The audit hooks are composed with the workspace hooks on the same events.
     const auth = read("apps/web/src/server/auth.ts");
     expect(auth).toContain("const audit = auditDatabaseHooks(env);");
-    expect(auth).toContain("session: audit.session,");
+    // Session hooks: the audit's first, then the QA admin's (server/qa-admin.ts).
+    expect(auth).toContain("...audit.session,");
+    expect(auth).toContain(
+      "await audit.session?.create?.after?.(session, ctx);"
+    );
     expect(auth).toContain("await audit.user?.create?.after?.(user, ctx);");
     expect(auth).toMatch(
       /after: createAuthMiddleware\(\(ctx\) => auditAuthEndpoint\(env, ctx\)\)/

@@ -1,0 +1,93 @@
+---
+/**
+ * The header's menu on phones (below 768 px): a native <details> disclosure, so it opens
+ * and closes without JavaScript. It holds the links the header hides there, the theme
+ * (Dark, Light, System, through public/site-theme.js) and both calls to action. A small
+ * bundled script closes it on Escape, on a click outside and after a link is followed.
+ */
+import { buttonVariants, cn } from "@cloudflare-starter/ui";
+import { GitBranch, Menu, X } from "lucide-react";
+
+import { LINKS } from "@/landing/content";
+
+interface Props {
+  signedIn: boolean;
+  docs: boolean;
+}
+
+const { signedIn, docs } = Astro.props;
+const item =
+  "flex min-h-11 items-center rounded-md px-3 text-base font-medium text-fg hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
+const themes = [
+  { value: "dark", label: "Dark" },
+  { value: "light", label: "Light" },
+  { value: "system", label: "System" },
+] as const;
+---
+
+<details class="site-menu group md:hidden" data-site-menu="">
+  <summary
+    class={cn(
+      buttonVariants({ variant: "ghost", size: "sm" }),
+      "size-11 cursor-pointer list-none px-0 [&::-webkit-details-marker]:hidden"
+    )}
+  >
+    <Menu className="size-5 group-open:hidden" aria-hidden="true" />
+    <X className="hidden size-5 group-open:block" aria-hidden="true" />
+    <span class="sr-only">Menu</span>
+  </summary>
+  <div
+    class="absolute inset-x-0 top-full z-40 flex flex-col gap-4 border-b border-line bg-canvas px-4 pt-3 pb-5 shadow-overlay"
+  >
+    <nav aria-label="Menu" class="flex flex-col">
+      {!docs && <a class={item} href={LINKS.docs}>Docs</a>}
+      <a class={item} href={LINKS.changelog}>Changelog</a>
+      <a class={item} href={LINKS.github}>GitHub</a>
+      {!signedIn && <a class={item} href={LINKS.signIn}>Sign in</a>}
+    </nav>
+    <div class="flex items-center justify-between gap-3 px-3">
+      <span id="site-menu-theme" class="text-sm text-fg-muted">Theme</span>
+      <div
+        role="group"
+        aria-labelledby="site-menu-theme"
+        class="inline-flex gap-0.5 rounded-md border border-line bg-input p-0.5"
+      >
+        {
+          themes.map(({ value, label }) => (
+            <button
+              type="button"
+              data-theme-set={value}
+              aria-pressed="false"
+              class="h-9 rounded-sm px-3 text-sm font-medium text-fg-muted aria-pressed:bg-surface-raised aria-pressed:text-fg aria-pressed:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            >
+              {label}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+    <div class="flex flex-col gap-2">
+      <a
+        class={cn(buttonVariants({ variant: "primary", size: "lg" }), "h-11 w-full")}
+        href={signedIn ? LINKS.app : LINKS.demo}
+      >
+        {signedIn ? "Open app" : "Try the demo app"}
+      </a>
+      <a
+        class={cn(buttonVariants({ variant: "secondary", size: "lg" }), "h-11 w-full")}
+        href={LINKS.github}
+      >
+        <GitBranch aria-hidden="true" />View on GitHub
+      </a>
+    </div>
+  </div>
+</details>
+
+<script>
+  import { closeOnDismiss } from "./site-menu";
+
+  for (const menu of document.querySelectorAll<HTMLDetailsElement>(
+    "details[data-site-menu]"
+  ))
+    closeOnDismiss(menu);
+</script>

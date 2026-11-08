@@ -5,10 +5,10 @@
  *
  * Runs the automated QA suite (apps/web/test/qa, project `qa` of
  * apps/web/playwright.qa.config.ts) against a deployed app: real sign-ups and mail through
- * the QA inbox, every account erased afterwards. Needs QA_TOKEN, QA_INBOX_URL and
- * QA_INBOX_TOKEN in the environment (without them the journeys skip and say why); the URL
- * may come from QA_BASE_URL instead of --base-url. Pass `--project qa-cleanup` for the
- * nightly cleanup. The HTML report lands in apps/web/playwright-report/qa.
+ * the app's QA outbox, every account erased afterwards. Needs QA_TOKEN in the environment
+ * (without it the journeys skip and say why); the URL may come from QA_BASE_URL instead of
+ * --base-url. Pass `--project qa-cleanup` for the nightly cleanup, `--project qa-delivery`
+ * for the weekly real-delivery check. The HTML report lands in apps/web/playwright-report/qa.
  * docs/guides/how-to-qa-a-deployment.md
  */
 import { spawnSync } from "node:child_process";

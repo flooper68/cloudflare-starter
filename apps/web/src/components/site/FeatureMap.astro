@@ -1,0 +1,698 @@
+---
+/**
+ * The feature map, generated from src/content/features.ts: the app at the centre, the
+ * four pillars as areas, the seven capability groups as nodes, and the main flows
+ * between them (FLOWS: few edges on purpose). Hover, focus or tap a node: its flows light
+ * up and the card beside the map lists its features with "Read the docs". Pillar chips
+ * (or a pillar's label) filter. Arrow keys move between nodes; "List" shows the same
+ * content as a stacked list, which is all phones get (below 768 px).
+ *
+ * Shared: the docs can render it as it is (`<FeatureMap />`). Without JavaScript the map
+ * and the list both show. Behaviour: the <feature-map> element in feature-map.ts.
+ */
+import { Badge, buttonVariants, cn } from "@cloudflare-starter/ui";
+import { BookOpen, ChevronDown, LayoutList, Network } from "lucide-react";
+
+import {
+  docsHref,
+  type Feature,
+  FLOWS,
+  featuresOf,
+  GROUPS,
+  type GroupId,
+  groupsOf,
+  highlightsOf,
+  type MapNodeId,
+  PILLARS,
+  type PillarId,
+} from "@/content/features";
+
+interface Props {
+  /** Prefix of the element ids, for a page with more than one map. */
+  id?: string;
+}
+
+const { id = "fmap" } = Astro.props;
+
+// Layout, in a 1000 × 560 box: where each node sits, each pillar's area and how much a
+// long edge bends. Positions are percentages of the box when rendered.
+const W = 1000;
+const H = 560;
+const POSITIONS: Record<MapNodeId, { x: number; y: number }> = {
+  app: { x: 650, y: 250 },
+  "agents-mcp": { x: 135, y: 170 },
+  "developer-experience": { x: 135, y: 400 },
+  "accounts-security": { x: 395, y: 120 },
+  "workspaces-billing-admin": { x: 395, y: 280 },
+  "privacy-data": { x: 395, y: 440 },
+  "app-platform": { x: 650, y: 465 },
+  "observability-ops": { x: 885, y: 270 },
+};
+const AREAS: Record<PillarId, { x: number; y: number; w: number; h: number }> =
+  {
+    agents: { x: 20, y: 36, w: 230, h: 488 },
+    scaffold: { x: 275, y: 36, w: 240, h: 488 },
+    platform: { x: 525, y: 380, w: 250, h: 144 },
+    infra: { x: 790, y: 160, w: 190, h: 200 },
+  };
+const BEND: Partial<Record<string, number>> = {
+  "accounts-security>observability-ops": -0.12,
+};
+
+const pct = (value: number, total: number) =>
+  `${((value / total) * 100).toFixed(2)}%`;
+const pillarOf = (node: MapNodeId): PillarId | "" =>
+  node === "app" ? "" : (GROUPS.find((g) => g.id === node)?.pillar ?? "");
+
+function edgePath(from: MapNodeId, to: MapNodeId): string {
+  const a = POSITIONS[from];
+  const b = POSITIONS[to];
+  const bend = BEND[`${from}>${to}`] ?? 0;
+  if (bend === 0) return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+  const length = Math.hypot(b.x - a.x, b.y - a.y);
+  const nx = -(b.y - a.y) / length;
+  const ny = (b.x - a.x) / length;
+  const cx = (a.x + b.x) / 2 + nx * length * bend;
+  const cy = (a.y + b.y) / 2 + ny * length * bend;
+  return `M${a.x} ${a.y}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${b.x} ${b.y}`;
+}
+
+const edges = FLOWS.map((flow) => ({
+  ...flow,
+  d: edgePath(flow.from, flow.to),
+}));
+// The one idle pulse runs along the main flow, edge after edge.
+const mainPath = FLOWS.filter((flow) => flow.main)
+  .map((flow, index) => {
+    const path = edgePath(flow.from, flow.to);
+    return index === 0 ? path : path.replace(/^M[^LQ]+/, "");
+  })
+  .join("");
+
+const statusLabel = (status: Feature["status"]) =>
+  status === "demo" ? "Demo" : status === "planned" ? "Planned" : null;
+const pillarIndex = (pillar: PillarId) =>
+  PILLARS.findIndex((entry) => entry.id === pillar) + 1;
+// Keyboard order: the app, then each pillar followed by its groups.
+const groupNodes = GROUPS.map((group) => ({
+  ...group,
+  order:
+    pillarIndex(group.pillar) * 10 +
+    groupsOf(group.pillar).findIndex((entry) => entry.id === group.id) +
+    1,
+  pos: POSITIONS[group.id],
+  highlights: highlightsOf(group.id),
+  more: featuresOf(group.id).length - group.highlights.length,
+}));
+const cardId = `${id}-card`;
+const chip =
+  "inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium text-fg-muted hover:text-fg aria-pressed:border-transparent aria-pressed:bg-accent-subtle aria-pressed:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
+const pillarTone: Record<PillarId, string> = {
+  agents: "var(--ui-accent-text)",
+  scaffold: "var(--ui-info)",
+  platform: "var(--ui-warning)",
+  infra: "var(--ui-success)",
+};
+const readDocs = cn(
+  buttonVariants({ variant: "secondary", size: "sm" }),
+  "self-start"
+);
+---
+
+<feature-map class="fm block" id={id}>
+  <div class="fm-controls mb-4 flex flex-wrap items-center justify-between gap-3 max-md:hidden">
+    <div role="group" aria-label="Filter by pillar" class="flex flex-wrap gap-2">
+      <button type="button" class={chip} data-fm-filter="" aria-pressed="true">
+        All
+      </button>
+      {
+        PILLARS.map((pillar) => (
+          <button
+            type="button"
+            class={chip}
+            data-fm-filter={pillar.id}
+            aria-pressed="false"
+          >
+            <span class="fm-dot" style={`background:${pillarTone[pillar.id]}`} />
+            {pillar.title}
+          </button>
+        ))
+      }
+    </div>
+    <div
+      role="group"
+      aria-label="View"
+      class="fm-views inline-flex gap-0.5 rounded-md border border-line bg-input p-0.5"
+    >
+      <button type="button" data-fm-view="map" aria-pressed="true" class="fm-view">
+        <Network className="size-3.5" aria-hidden="true" />Map
+      </button>
+      <button type="button" data-fm-view="list" aria-pressed="false" class="fm-view">
+        <LayoutList className="size-3.5" aria-hidden="true" />List
+      </button>
+    </div>
+  </div>
+
+  <div class="fm-body">
+    <div class="fm-stage max-md:hidden">
+      <div class="fm-canvas" role="group" aria-label="Feature map">
+        <svg
+          class="fm-edges"
+          viewBox={`0 0 ${W} ${H}`}
+          aria-hidden="true"
+          focusable="false"
+        >
+          {
+            edges.map((edge) => (
+              <path
+                class="fm-edge"
+                d={edge.d}
+                data-fm-edge=""
+                data-from={edge.from}
+                data-to={edge.to}
+                data-from-pillar={pillarOf(edge.from)}
+                data-to-pillar={pillarOf(edge.to)}
+              />
+            ))
+          }
+          <path class="fm-pulse" d={mainPath} pathLength="100" />
+        </svg>
+        {
+          PILLARS.map((pillar) => {
+            const area = AREAS[pillar.id];
+            return (
+              <div
+                class="fm-area"
+                data-pillar={pillar.id}
+                style={`left:${pct(area.x, W)};top:${pct(area.y, H)};width:${pct(area.w, W)};height:${pct(area.h, H)};--tone:${pillarTone[pillar.id]}`}
+              >
+                <button
+                  type="button"
+                  class="fm-node fm-pillar"
+                  data-fm-node={pillar.id}
+                  data-pillar={pillar.id}
+                  data-order={pillarIndex(pillar.id) * 10}
+                  aria-controls={cardId}
+                  tabindex="-1"
+                >
+                  <span class="fm-n">{pillar.n}</span>
+                  {pillar.title}
+                </button>
+              </div>
+            );
+          })
+        }
+        <button
+          type="button"
+          class="fm-node fm-core"
+          data-fm-node="app"
+          data-pillar=""
+          data-order="0"
+          aria-controls={cardId}
+          aria-current="true"
+          tabindex="0"
+          style={`left:${pct(POSITIONS.app.x, W)};top:${pct(POSITIONS.app.y, H)}`}
+        >
+          Your app
+        </button>
+        {
+          groupNodes.map((group) => (
+            <button
+              type="button"
+              class="fm-node fm-group"
+              data-fm-node={group.id}
+              data-pillar={group.pillar}
+              data-order={group.order}
+              aria-controls={cardId}
+              tabindex="-1"
+              style={`left:${pct(group.pos.x, W)};top:${pct(group.pos.y, H)};--tone:${pillarTone[group.pillar]}`}
+            >
+              <span class="fm-dot" />
+              {group.short}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <aside class="fm-card max-md:hidden" id={cardId} aria-live="polite" aria-label="Details">
+      <div data-fm-card="app">
+        <span class="fm-kicker">One deploy on Cloudflare</span>
+        <h3 class="fm-title">Your app</h3>
+        <p class="fm-text">
+          The website, docs, app, API, agent endpoint, jobs and schedules run as one app,
+          with the database, files and email beside it.
+        </p>
+        <ul class="fm-list-items">
+          {PILLARS.map((pillar) => <li>{pillar.title}</li>)}
+        </ul>
+        <p class="fm-hint">Hover, tab or tap a part of the map to see what is in it.</p>
+        <a class={readDocs} href={docsHref("architecture/overview")}>
+          <BookOpen aria-hidden="true" />Read the docs
+        </a>
+      </div>
+      {
+        PILLARS.map((pillar) => (
+          <div data-fm-card={pillar.id} hidden>
+            <span class="fm-kicker" style={`color:${pillarTone[pillar.id]}`}>
+              Pillar {pillar.n}
+            </span>
+            <h3 class="fm-title">{pillar.title}</h3>
+            <p class="fm-text">{pillar.benefit}</p>
+            <ul class="fm-list-items">
+              {groupsOf(pillar.id).map((group) => <li>{group.title}</li>)}
+            </ul>
+            <a class={readDocs} href={docsHref(groupsOf(pillar.id)[0]?.docs ?? "")}>
+              <BookOpen aria-hidden="true" />Read the docs
+            </a>
+          </div>
+        ))
+      }
+      {
+        groupNodes.map((group) => (
+          <div data-fm-card={group.id} hidden>
+            <span class="fm-kicker" style={`color:${pillarTone[group.pillar]}`}>
+              {PILLARS.find((pillar) => pillar.id === group.pillar)?.title}
+            </span>
+            <h3 class="fm-title">{group.title}</h3>
+            <p class="fm-text">{group.benefit}</p>
+            <ul class="fm-list-items">
+              {group.highlights.map((item) => (
+                <li>
+                  {item.name}
+                  {statusLabel(item.status) && (
+                    <Badge tone="warning" className="ml-1.5">
+                      {statusLabel(item.status)}
+                    </Badge>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {group.more > 0 && <p class="fm-hint">And {group.more} more in the docs.</p>}
+            <a class={readDocs} href={docsHref(group.docs)}>
+              <BookOpen aria-hidden="true" />Read the docs
+            </a>
+          </div>
+        ))
+      }
+    </aside>
+
+    <div class="fm-list">
+      {
+        PILLARS.map((pillar) => (
+          <details class="fm-row">
+            <summary class="fm-summary">
+              <span class="fm-dot" style={`background:${pillarTone[pillar.id]}`} />
+              <span class="fm-n">{pillar.n}</span>
+              <span class="flex-1">{pillar.title}</span>
+              <ChevronDown className="fm-chevron size-4" aria-hidden="true" />
+            </summary>
+            <div class="fm-row-body">
+              <p class="fm-text">{pillar.benefit}</p>
+              {groupsOf(pillar.id).map((group) => (
+                <section class="fm-group-list" aria-label={group.title}>
+                  <h3 class="fm-group-title">
+                    <a href={docsHref(group.docs)}>{group.title}</a>
+                  </h3>
+                  <ul>
+                    {featuresOf(group.id as GroupId).map((item) => (
+                      <li>
+                        <a href={docsHref(item.docs)}>{item.name}</a>
+                        {statusLabel(item.status) && (
+                          <Badge tone="warning" className="ml-1.5">
+                            {statusLabel(item.status)}
+                          </Badge>
+                        )}
+                        <span class="fm-benefit">{item.benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</feature-map>
+
+<script>
+  import "./feature-map";
+</script>
+
+<style>
+  .fm-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 767px) {
+    .fm-body {
+      display: block;
+    }
+  }
+  .fm-stage {
+    min-width: 0;
+  }
+  .fm-canvas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1000 / 560;
+  }
+  .fm-edges {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .fm-edge {
+    fill: none;
+    stroke: color-mix(in oklab, var(--ui-accent) 40%, transparent);
+    stroke-width: 1.5;
+    transition:
+      opacity 0.2s,
+      stroke 0.2s;
+  }
+  .fm-pulse {
+    fill: none;
+    stroke: var(--ui-accent-text);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 3 97;
+    stroke-dashoffset: 100;
+    filter: drop-shadow(0 0 4px var(--ui-accent-text));
+    animation: fm-pulse 6s linear infinite;
+  }
+  @keyframes fm-pulse {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  .fm-area {
+    position: absolute;
+    border: 1px dashed color-mix(in oklab, var(--tone) 40%, transparent);
+    border-radius: 14px;
+    background: color-mix(in oklab, var(--tone) 4%, transparent);
+    transition: opacity 0.2s;
+  }
+  .fm-node {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--ui-line-strong);
+    background: var(--ui-surface-raised);
+    color: var(--ui-fg);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      opacity 0.2s,
+      box-shadow 0.2s,
+      border-color 0.2s;
+  }
+  .fm-group,
+  .fm-core {
+    position: absolute;
+    transform: translate(-50%, -50%);
+  }
+  .fm-group {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+  }
+  .fm-core {
+    height: 52px;
+    padding: 0 20px;
+    border-color: transparent;
+    border-radius: 14px;
+    background: var(--ui-accent);
+    color: var(--ui-accent-fg);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .fm-pillar {
+    margin: 8px 0 0 10px;
+    height: 28px;
+    padding: 0 10px;
+    border-color: transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ui-fg-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .fm-pillar .fm-n {
+    color: var(--tone);
+  }
+  .fm-n {
+    font-family: var(--brand-font-mono);
+    font-size: 11px;
+  }
+  .fm-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 99px;
+    background: var(--tone, var(--ui-accent-text));
+  }
+  .fm-node:hover,
+  .fm-node:focus-visible,
+  .fm-node[aria-current="true"] {
+    outline: none;
+    border-color: var(--ui-accent);
+    box-shadow: 0 0 0 3px var(--ui-focus);
+    z-index: 2;
+  }
+  .fm-pillar:hover,
+  .fm-pillar:focus-visible,
+  .fm-pillar[aria-current="true"] {
+    color: var(--ui-fg);
+  }
+
+  /* Highlight: the active node, its flows and its neighbours; the rest dims. */
+  .fm[data-active] .fm-edge {
+    opacity: 0.25;
+  }
+  .fm[data-active] .fm-edge.is-hot {
+    opacity: 1;
+    stroke: var(--ui-accent);
+    stroke-width: 2.5;
+  }
+  .fm[data-active] .fm-node.is-dim {
+    opacity: 0.35;
+  }
+  .fm .fm-node.is-near {
+    border-color: color-mix(in oklab, var(--ui-accent) 70%, transparent);
+  }
+  /* Filter: other pillars recede. */
+  .fm .fm-node.is-filtered,
+  .fm .fm-area.is-filtered {
+    opacity: 0.2;
+  }
+  .fm .fm-edge.is-filtered {
+    opacity: 0.08;
+  }
+
+  .fm-view {
+    display: inline-flex;
+    height: 28px;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ui-fg-muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .fm-view[aria-pressed="true"] {
+    background: var(--ui-surface-raised);
+    color: var(--ui-fg);
+    box-shadow: var(--ui-shadow-raised);
+  }
+  .fm-view:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--ui-focus);
+  }
+
+  .fm-card {
+    position: sticky;
+    top: 16px;
+    padding: 18px;
+    border: 1px solid var(--ui-line);
+    border-radius: 12px;
+    background: var(--ui-surface-raised);
+  }
+  .fm-card > div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .fm-card > div[hidden] {
+    display: none;
+  }
+  .fm-kicker {
+    color: var(--ui-accent-text);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .fm-title {
+    margin: 0;
+    color: var(--ui-fg);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+  .fm-text {
+    margin: 0;
+    color: var(--ui-fg-muted);
+    font-size: 14px;
+    line-height: 22px;
+  }
+  .fm-hint {
+    margin: 0;
+    color: var(--ui-fg-subtle);
+    font-size: 12px;
+  }
+  .fm-list-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0 0 0 18px;
+    color: var(--ui-fg);
+    font-size: 13px;
+    list-style: disc;
+  }
+  .fm-list-items li::marker {
+    color: var(--ui-accent-text);
+  }
+
+  /* List view and phones: the stacked pillar rows. */
+  .fm-list {
+    display: none;
+    grid-column: 1 / -1;
+    border: 1px solid var(--ui-line);
+    border-radius: 12px;
+    background: var(--ui-surface-raised);
+  }
+  @media (max-width: 767px) {
+    .fm-list {
+      display: block;
+    }
+  }
+  .fm:not([data-ready]) .fm-list,
+  .fm[data-view="list"] .fm-list {
+    display: block;
+  }
+  .fm[data-view="list"] .fm-stage,
+  .fm[data-view="list"] .fm-card {
+    display: none;
+  }
+  .fm:not([data-ready]) .fm-list {
+    margin-top: 20px;
+  }
+  .fm-row + .fm-row {
+    border-top: 1px solid var(--ui-line);
+  }
+  .fm-summary {
+    display: flex;
+    min-height: 56px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    color: var(--ui-fg);
+    font-size: 15px;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+    border-radius: 12px;
+  }
+  .fm-summary::-webkit-details-marker {
+    display: none;
+  }
+  .fm-summary:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--ui-focus);
+  }
+  .fm-summary .fm-n {
+    color: var(--ui-fg-subtle);
+  }
+  .fm-summary :global(.fm-chevron) {
+    color: var(--ui-fg-subtle);
+    transition: transform 0.2s;
+  }
+  .fm-row[open] .fm-summary :global(.fm-chevron) {
+    transform: rotate(180deg);
+  }
+  .fm-row-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 16px 18px;
+  }
+  .fm-group-title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .fm-group-title a,
+  .fm-group-list li a {
+    color: var(--ui-fg);
+    border-radius: 2px;
+  }
+  .fm-group-title a:hover,
+  .fm-group-list li a:hover {
+    color: var(--ui-accent-text);
+    text-decoration: underline;
+  }
+  .fm-group-title a:focus-visible,
+  .fm-group-list li a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--ui-focus);
+  }
+  .fm-group-list ul {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fm-group-list li {
+    display: flex;
+    min-height: 44px;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 4px;
+    padding: 6px 0;
+    border-top: 1px solid var(--ui-line);
+    font-size: 14px;
+  }
+  .fm-benefit {
+    flex-basis: 100%;
+    color: var(--ui-fg-muted);
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fm-pulse {
+      display: none;
+    }
+    .fm *,
+    .fm *::before,
+    .fm *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+</style>
