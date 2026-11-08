@@ -60,6 +60,14 @@ A product built from the starter replaces this page with its own:
    - remove the Docs links (header, landing, 404), `test/architecture/docs.test.ts`, `test/e2e/docs.spec.ts`, `test/e2e-build/search.spec.ts` and `docs.spec.ts`, the `/docs/` paths in `test/e2e-build/a11y.spec.ts` and `landing.spec.ts`, and the docs rows of the smoke suite.
 4. Run `bun run build`, `bun run budget` and `bun run test:e2e:build` (landing, its policy, axe in both themes, phone width).
 
+## Changelog
+
+`/docs/changelog/` renders the root [CHANGELOG.md](../../CHANGELOG.md) (the docs collection reads it like any published file; there is no copy) as release notes: `apps/web/src/pages/docs/changelog.astro` parses it (`apps/web/src/docs/changelog.ts`) and renders `ReleaseNotes` from `packages/ui`, each release with its version, date and compare link, and each change type with its own label colour. Inline Markdown in an entry (`code`, **bold**, links) is rendered as elements (`src/docs/inline.ts`); relative links are rewritten like the rest of the docs. The page is in the navigation's Start section, the sitemap and the search index, and needs no script beyond the docs' own.
+
+`/docs/changelog.xml` is an Atom feed of the released versions (not Unreleased), prerendered by `src/pages/docs/changelog.xml.ts`. Its URLs use `SITE_URL` (set for production); without it the feed has no self link and its entries point at the file on GitHub. It is served as a static asset, typed `application/xml`. The landing page's header and footer and the dashboard link to the changelog.
+
+What goes into the changelog and how a release is cut: [development.md](../processes/development.md#changelog).
+
 ## Theme
 
 The public pages follow the OS setting until the visitor picks a theme with the switch in the header; the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head. It is an external file, not inline code, so the pages' Content-Security-Policy allows it without `'unsafe-inline'`, a hash or a nonce. The docs pages are static assets; their policy is a `_headers` rule plus Astro's `<meta>` policy ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)). The `/app` theme is a user setting and separate.

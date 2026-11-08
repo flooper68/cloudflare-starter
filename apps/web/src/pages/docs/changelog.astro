@@ -1,0 +1,94 @@
+---
+/**
+ * /docs/changelog/: the root CHANGELOG.md (read through the docs collection, never
+ * copied) as designed release notes, in the docs shell. Indexed by Pagefind, in the
+ * sitemap, with an Atom feed at /docs/changelog.xml. docs/processes/development.md#changelog
+ */
+import { getCollection } from "astro:content";
+import { type ReleaseEntry, ReleaseNotes } from "@cloudflare-starter/ui";
+import { Rss } from "lucide-react";
+
+import {
+  CHANGELOG_PATH,
+  parseChangelog,
+  releaseId,
+  UNRELEASED,
+} from "@/docs/changelog";
+import { DOCS } from "@/docs/docs.config";
+import { renderInline } from "@/docs/inline";
+import { buildNav, docTitle } from "@/docs/nav";
+import DocsLayout from "@/layouts/DocsLayout.astro";
+
+export const prerender = true;
+
+const entries = await getCollection("docs");
+const titles = new Map(
+  entries.map((entry) => [entry.id, docTitle(entry.body ?? "") ?? entry.id])
+);
+const index = entries.find((entry) => entry.id === DOCS.navSource);
+const nav = buildNav(index?.body ?? "", titles);
+const source = entries.find((entry) => entry.id === CHANGELOG_PATH)?.body ?? "";
+const changelog = parseChangelog(source);
+
+const releases: ReleaseEntry[] = changelog.releases.map((release) => ({
+  id: releaseId(release.version),
+  version: release.version,
+  date: release.date ?? undefined,
+  href: changelog.links.get(release.version),
+  summary:
+    release.summary.length > 0
+      ? renderInline(release.summary.join(" "), CHANGELOG_PATH)
+      : undefined,
+  groups: release.groups.map((group) => ({
+    type: group.type,
+    items: group.items.map((item) => renderInline(item, CHANGELOG_PATH)),
+  })),
+}));
+const headings = changelog.releases
+  // An empty Unreleased section is not worth a link.
+  .filter(
+    (release) => release.version !== UNRELEASED || release.groups.length > 0
+  )
+  .map((release) => ({
+    depth: 2,
+    slug: releaseId(release.version),
+    text: release.version,
+  }));
+const latest = changelog.releases.find((release) => release.date);
+const description = latest
+  ? `What changed in each release of ${DOCS.siteName}. Latest: ${latest.version} (${latest.date}).`
+  : `What changed in each release of ${DOCS.siteName}.`;
+const feed = {
+  href: "/docs/changelog.xml",
+  title: `${DOCS.siteName} changelog`,
+};
+---
+
+<DocsLayout
+  path={CHANGELOG_PATH}
+  title="Changelog"
+  description={description}
+  nav={nav}
+  headings={headings}
+  feed={feed}
+>
+  <header class="mb-6 flex flex-col gap-3 border-b border-line pb-6">
+    <h1 class="text-2xl font-semibold tracking-tight text-fg">Changelog</h1>
+    <p class="text-base leading-7 text-fg-muted">
+      What changed in each release, newest first, grouped by what you get: new
+      capabilities, changes to existing ones, security and fixes. Versions follow{" "}
+      <a
+        class="text-accent-text underline underline-offset-2"
+        href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a
+      >; each release is a <code class="font-mono text-[0.92em]">vX.Y.Z</code> tag.
+    </p>
+    <a
+      href={feed.href}
+      class="inline-flex w-fit items-center gap-1.5 rounded-sm text-sm text-accent-text hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+    >
+      <Rss className="size-4" aria-hidden="true" />
+      Atom feed
+    </a>
+  </header>
+  <ReleaseNotes releases={releases} />
+</DocsLayout>

@@ -178,6 +178,22 @@ test.describe("docs", () => {
     }
   );
 
+  test(
+    "/docs/changelog/ renders the release notes",
+    smoke,
+    async ({ page }) => {
+      const response = await page.goto("/docs/changelog/");
+      expect(response?.status()).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        "Changelog"
+      );
+      await expect(
+        page.getByRole("heading", { level: 2, name: "Unreleased" })
+      ).toBeVisible();
+      await expect(page.locator("time[datetime]").first()).toBeVisible();
+    }
+  );
+
   test("search finds a page", smoke, async ({ page }) => {
     await page.goto("/docs/");
     await page.getByRole("button", { name: "Search docs" }).click();
@@ -208,6 +224,7 @@ test.describe("accessibility", () => {
     for (const path of [
       "/",
       "/docs/",
+      "/docs/changelog/",
       "/sign-in",
       "/sign-up",
       "/forgot-password",

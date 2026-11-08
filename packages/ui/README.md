@@ -24,7 +24,7 @@ src/
 │                 + prose.css (Shiki code colours per theme)
 ├── lib/          cn() and shared class recipes (controls, menus, overlays, focus)
 ├── components/   one component per file, stories next to it; patterns/ for app-level pieces
-│                 (site group: DocsNav, TableOfContents, Prose for the public docs site)
+│                 (site group: DocsNav, TableOfContents, Prose, ReleaseNotes, Hero, FeatureGrid for the public pages)
 ├── exports/      barrels per group, re-exported by index.ts
 └── stories/      foundations (brand, colours, type, elevation) and the intro page
 ```
