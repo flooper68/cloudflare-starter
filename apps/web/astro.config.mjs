@@ -8,6 +8,7 @@ import {
   docsDiagramsPlugin,
   docsLinksPlugin,
   docsTablesPlugin,
+  docsTaskListsPlugin,
 } from "./src/docs/markdown-plugins.ts";
 import { siteIntegrations } from "./src/docs/site-integrations.ts";
 import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
@@ -39,6 +40,7 @@ export default defineConfig({
       hastPlugins: [
         docsLinksPlugin(REPO_ROOT),
         docsTablesPlugin(),
+        docsTaskListsPlugin(),
         docsDiagramsPlugin(),
       ],
       // Off so text and heading ids match GitHub's ("--" stays "--"): links written

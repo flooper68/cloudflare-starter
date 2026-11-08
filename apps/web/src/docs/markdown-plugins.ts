@@ -6,6 +6,9 @@
  * - `docsTablesPlugin` wraps each table in a named, keyboard-scrollable region
  *   (`<section aria-label tabindex=0>`), the markup `Prose` (packages/ui) styles as a
  *   scroll box.
+ * - `docsTaskListsPlugin` hides the disabled checkboxes of `- [ ]` checklists from
+ *   assistive technology: they are decoration that cannot be ticked, the item's text says
+ *   it all, and an unlabelled form control fails axe's `label` rule.
  * - `docsDiagramsPlugin` replaces each ```mermaid block that has a text alternative with
  *   its inline SVG (diagrams.ts), rendered here at build time. astro.config.mjs keeps
  *   Shiki off mermaid blocks, so one without stays a plain code block.
@@ -87,4 +90,18 @@ export function docsDiagramsPlugin(): HastPluginEntry {
       },
     };
   };
+}
+
+export function docsTaskListsPlugin(): HastPluginEntry {
+  return () => ({
+    name: "docs-task-lists",
+    element: {
+      filter: ["input"],
+      visit(node, ctx) {
+        if (node.properties?.type !== "checkbox" || !node.properties.disabled)
+          return;
+        ctx.setProperty(node, "ariaHidden", "true");
+      },
+    },
+  });
 }
