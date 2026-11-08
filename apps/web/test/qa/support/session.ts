@@ -1,11 +1,12 @@
 /**
  * The app's navigation as the QA journeys use it, in one place: signing in and out,
  * opening settings, the workspace switcher and the few tRPC calls the UI has no control
- * for. When the shell's menus move (e.g. the account items into a profile menu), only
+ * for. When the shell's menus move, only
  * this file changes.
  */
 import type { Page } from "@playwright/test";
 
+import { openProfileMenu } from "../../e2e/helpers";
 import { qaEnv } from "./env";
 import { expect } from "./fixture";
 import { authPolicies, takeSlots } from "./limits";
@@ -50,21 +51,12 @@ export async function signIn(
   await expect(page).toHaveURL(landing, { timeout: AUTH_WAIT });
 }
 
-/** The shell's menu that holds Sign out: the profile menu once it exists, else the switcher. */
-async function accountMenu(page: Page) {
-  const profile = page.getByRole("button", {
-    name: /profile menu|account menu/i,
-  });
-  if ((await profile.count()) > 0) return profile.first();
-  return page.getByRole("button", { name: /workspace menu/ });
-}
-
-/** Signs out from the app shell; lands on `/`. */
+/** Signs out from the app shell's profile menu (the E2E suite's helper); lands on `/`. */
 export async function signOut(page: Page): Promise<void> {
   if (!new URL(page.url()).pathname.startsWith("/app")) {
     await open(page, "/app/dashboard");
   }
-  await (await accountMenu(page)).click();
+  await openProfileMenu(page);
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/$/, { timeout: AUTH_WAIT });
 }
@@ -97,7 +89,7 @@ export async function displayName(page: Page): Promise<string> {
 export function workspaceMenu(page: Page, workspace?: string) {
   return workspace
     ? page.getByRole("button", { name: `${workspace} workspace menu` })
-    : page.getByRole("button", { name: /workspace menu/ });
+    : page.getByRole("button", { name: /workspace menu$/ });
 }
 
 /** Creates a workspace from the switcher; it becomes the active one. */
