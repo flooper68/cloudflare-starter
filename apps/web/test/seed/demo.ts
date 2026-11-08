@@ -203,6 +203,9 @@ async function seedPeople(page: Page) {
       .context()
       .browser()
       ?.newContext({
+        // The page's origin: outside Playwright Test (the video recorder) no baseURL
+        // is configured for a new context.
+        baseURL: new URL(page.url()).origin,
         storageState: { cookies: [], origins: [] },
       });
     if (!context) throw new Error("no browser");
