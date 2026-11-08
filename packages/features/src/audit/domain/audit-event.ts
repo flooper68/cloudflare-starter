@@ -219,6 +219,18 @@ export const auditEventSchema = z.discriminatedUnion("action", [
   }),
   z.object({
     ...common,
+    outcome: z.literal("success").default("success"),
+    action: z.literal("qa.bypass.used"),
+    target: target("email"),
+    metadata: z
+      .object({
+        /** The human-checked form the automated QA suite skipped Turnstile on. */
+        form: z.enum(["sign-up", "sign-in", "password-reset"]),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...common,
     action: z.literal("auth.sign_up"),
     target: target("user"),
     metadata: z

@@ -59,6 +59,7 @@ import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
+import { qaBypassesHumanCheck } from "@/server/qa-bypass";
 
 export const AUTH_BASE_PATH = "/api/auth";
 export const MCP_PATH = "/mcp";
@@ -150,7 +151,8 @@ function isInProcessCall(ctx: {
 /**
  * The human check for `hooks.before` (TURNSTILE=on): refuses the human-checked endpoints
  * unless the verifier accepts the token, and records the refusal in the audit log. Fails
- * closed: an unavailable provider refuses the request too.
+ * closed: an unavailable provider refuses the request too. With QA_BYPASS=on the QA suite's
+ * requests skip it (server/qa-bypass.ts).
  */
 async function enforceHumanCheck(
   env: AppEnv,
@@ -164,6 +166,9 @@ async function enforceHumanCheck(
   const form = HUMAN_CHECKED_PATHS[ctx.path];
   if (!form) return;
   if (isInProcessCall(ctx)) return;
+  // The automated QA suite (QA_BYPASS=on, a QA address and the QA token) skips Turnstile
+  // only; everything after this hook still runs.
+  if (await qaBypassesHumanCheck(env, ctx, form)) return;
   const headers = ctx.headers ?? new Headers();
   const platform = buildPlatform(env);
   const requestContext = contextFor(env, ctx);

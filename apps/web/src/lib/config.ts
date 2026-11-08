@@ -218,23 +218,44 @@ export const RATE_LIMITERS = ["cloudflare", "none"] as const;
 /** Whether sign-up, sign-in and password reset need a Cloudflare Turnstile check. */
 export const TURNSTILE_SETTINGS = ["on", "off"] as const;
 
+/** Whether the automated QA suite may skip the human check (QA_BYPASS). */
+export const QA_BYPASS_SETTINGS = ["on", "off"] as const;
+
+/** QA_TOKEN is a shared secret: at least this many characters (`openssl rand -hex 32`). */
+export const QA_TOKEN_MIN_LENGTH = 32;
+
+/** A lowercase hostname with at least two labels, e.g. `qa.flooper.me`. */
+const HOSTNAME =
+  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+
 export interface AbuseConfig {
   readonly RATE_LIMITING: (typeof RATE_LIMITERS)[number];
   readonly TURNSTILE: (typeof TURNSTILE_SETTINGS)[number];
   readonly TURNSTILE_SITE_KEY: string | null;
   readonly TURNSTILE_SECRET_KEY: string | null;
+  readonly QA_BYPASS: (typeof QA_BYPASS_SETTINGS)[number];
+  /** With QA_BYPASS=on: the shared secret and the mail domain it covers; else null. */
+  readonly qaBypass: {
+    readonly token: string;
+    readonly emailDomain: string;
+  } | null;
 }
 
 /**
  * Abuse protection settings (docs/guides/how-to-configure-abuse-protection.md). Required,
  * no defaults; with TURNSTILE=on the site key (var) and secret key (secret) are required too.
+ * QA_BYPASS (on | off) is required as well; with on, the QA_TOKEN secret (32+ characters)
+ * and QA_EMAIL_DOMAIN (a hostname) are required, and both are ignored with off.
  */
 export function parseAbuseConfig(env: PartialEnv): AbuseConfig {
+  const qaBypass = requiredChoice(env, "QA_BYPASS", QA_BYPASS_SETTINGS);
   const config: AbuseConfig = {
     RATE_LIMITING: requiredChoice(env, "RATE_LIMITING", RATE_LIMITERS),
     TURNSTILE: requiredChoice(env, "TURNSTILE", TURNSTILE_SETTINGS),
     TURNSTILE_SITE_KEY: env.TURNSTILE_SITE_KEY || null,
     TURNSTILE_SECRET_KEY: env.TURNSTILE_SECRET_KEY || null,
+    QA_BYPASS: qaBypass,
+    qaBypass: qaBypass === "on" ? parseQaBypass(env) : null,
   };
   if (config.TURNSTILE === "on" && !config.TURNSTILE_SITE_KEY) {
     throw new ConfigError(
@@ -249,6 +270,28 @@ export function parseAbuseConfig(env: PartialEnv): AbuseConfig {
     );
   }
   return config;
+}
+
+/** QA_BYPASS=on: the QA_TOKEN secret and QA_EMAIL_DOMAIN, both required and checked. */
+function parseQaBypass(env: PartialEnv): {
+  readonly token: string;
+  readonly emailDomain: string;
+} {
+  const token = env.QA_TOKEN ?? "";
+  if (token.length < QA_TOKEN_MIN_LENGTH) {
+    throw new ConfigError(
+      "QA_TOKEN",
+      `QA_BYPASS=on needs the QA_TOKEN secret (${QA_TOKEN_MIN_LENGTH}+ characters, e.g. openssl rand -hex 32): bun run setup:secrets --env <env>, or set QA_BYPASS to off`
+    );
+  }
+  const emailDomain = env.QA_EMAIL_DOMAIN ?? "";
+  if (!HOSTNAME.test(emailDomain)) {
+    throw new ConfigError(
+      "QA_EMAIL_DOMAIN",
+      `QA_BYPASS=on needs QA_EMAIL_DOMAIN, the lowercase mail domain of the QA inbox (e.g. qa.example.com), in the vars of apps/web/wrangler.jsonc${emailDomain ? `; "${emailDomain}" is not a hostname` : ""}`
+    );
+  }
+  return { token, emailDomain };
 }
 
 /** Where product events go: Workers Analytics Engine (ANALYTICS_EVENTS), or nowhere. */

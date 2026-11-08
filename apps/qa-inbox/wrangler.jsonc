@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The automated QA suite's test inbox: Email Routing's rule qa@<QA mail domain>, with
+  // subaddressing on so qa+<tag>@ matches it too, delivers here (email() handler), messages are kept 24 hours in its own D1 database,
+  // and a bearer-token API lets the suite read and clear them. Never forwards anything.
+  // Its own Worker: it is deployed and scaled apart from the app, and holds no app data.
+  // Set up with `bun run setup:qa-inbox` (docs/guides/how-to-qa-a-deployment.md#the-qa-inbox).
+  "name": "cloudflare-starter-qa-inbox",
+  "main": "./src/index.ts",
+  "compatibility_date": "2026-10-01",
+  // The API is served on workers.dev only (QA_INBOX_URL); no custom domain.
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true }
+  },
+  "vars": {
+    // Only mail to this domain is stored; anything else Email Routing hands over is
+    // rejected. Equal to QA_EMAIL_DOMAIN of apps/web/wrangler.jsonc.
+    "QA_EMAIL_DOMAIN": "qa.flooper.me"
+  },
+  // Secret QA_INBOX_TOKEN (32+ characters): `bunx wrangler secret put QA_INBOX_TOKEN` in
+  // apps/qa-inbox. Without it every API request is refused.
+  //
+  // D1, not KV: the suite reads a message seconds after it arrives, usually from another
+  // Cloudflare location than the one that received it; D1 reads are consistent while KV
+  // can serve a stale list for up to a minute. Filtering by recipient, time and subject is
+  // one indexed query. Its own database (not the app's): written by `setup:qa-inbox`.
+  "d1_databases": [
+    {
+      "binding": "INBOX",
+      "database_name": "cloudflare-starter-qa-inbox",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  // Hourly: delete messages older than 24 hours (reads never return them either).
+  "triggers": { "crons": ["41 * * * *"] }
+}

@@ -235,6 +235,17 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "Content-Security-Policy violation reports (/api/csp-report), per IP: anonymous and each report is a log line",
   },
+  "qa.bypass": {
+    // The automated QA suite signs up a handful of accounts per run from one runner IP;
+    // a guesser of the token gets this many tries a minute and nothing else.
+    limit: 30,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_QA_BYPASS",
+    description:
+      "Requests that carry the QA bypass header (x-qa-token) on a human-checked auth endpoint, per IP, counted before the token is compared (QA_BYPASS=on only)",
+  },
 } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
 
 export type RateLimitPolicyId = keyof typeof RATE_LIMIT_POLICIES;

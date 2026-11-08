@@ -203,6 +203,28 @@ describe("GET /health/ready", () => {
     );
   });
 
+  it.each([
+    ["QA_BYPASS", { QA_BYPASS: undefined }],
+    ["QA_TOKEN", { QA_TOKEN: undefined }],
+    ["QA_EMAIL_DOMAIN", { QA_EMAIL_DOMAIN: "not a domain" }],
+  ])(
+    "fails the settings check naming %s, in the admin view only",
+    async (name, change) => {
+      const broken = { ...env, ...change } as AppEnv;
+      const publicBody = await readinessReport(broken, fromNewIp());
+      const adminBody = await readinessReport(broken, fromNewIp(), {
+        detail: true,
+      });
+      expect(publicBody.checks["settings:configuration"]?.[0]).toMatchObject({
+        status: "fail",
+        output: "error",
+      });
+      const detail = adminBody.checks["settings:configuration"]?.[0]?.output;
+      expect(detail).toContain(name);
+      expect(detail).not.toContain(env.QA_TOKEN as string);
+    }
+  );
+
   it("fails a check that does not answer in time", async () => {
     const d1 = readinessProbes(env).filter(
       (probe) => probe.name === "d1:responseTime"

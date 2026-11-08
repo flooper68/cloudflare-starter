@@ -1,10 +1,11 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-// `bun run test` runs three projects (docs/architecture/testing.md):
+// `bun run test` runs four projects (docs/architecture/testing.md):
 // - unit: domain rules, pure helpers, architecture tests (Node)
 // - features-integration: use cases against real D1/R2 in workerd (packages/features)
 // - web-api: tRPC, HTTP routes, auth and /mcp in workerd (apps/web)
+// - qa-inbox: the QA test inbox Worker in workerd (apps/qa-inbox)
 export default defineConfig({
   test: {
     projects: [
@@ -17,7 +18,12 @@ export default defineConfig({
           exclude: [
             "**/node_modules/**",
             "**/*.integration.test.ts",
-            "apps/web/test/**",
+            // apps/web/test runs in workerd (api) or Playwright (e2e, qa); only the QA
+            // suite's pure helpers are unit tests.
+            "apps/web/test/api/**",
+            "apps/web/test/e2e/**",
+            "apps/web/test/e2e-build/**",
+            "apps/qa-inbox/**",
             "apps/web/public/**",
             // Agents' git worktrees: each is a full checkout with its own tests.
             ".claude/worktrees/**",
@@ -26,6 +32,7 @@ export default defineConfig({
       },
       "packages/features/vitest.config.ts",
       "apps/web/vitest.config.ts",
+      "apps/qa-inbox/vitest.config.ts",
     ],
   },
 });

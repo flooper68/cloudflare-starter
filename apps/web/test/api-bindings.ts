@@ -32,6 +32,11 @@ export const API_TEST_BINDINGS = {
   TURNSTILE: "on",
   TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
   TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+  // The QA suite's human-check bypass, on as in the develop vars, with a test token
+  // (test/api/qa-bypass.test.ts; tests of QA_BYPASS=off override it).
+  QA_BYPASS: "on",
+  QA_EMAIL_DOMAIN: "qa.flooper.me",
+  QA_TOKEN: "api-test-qa-token-0123456789abcdefghij",
   // Not in wrangler.jsonc (setup:auth writes them per environment); tests of other modes
   // or with the admin portal off override them (test/api/helpers.ts envWith).
   WORKSPACE_MODE: "multi",

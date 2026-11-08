@@ -30,6 +30,7 @@
     "setup:privacy-storage": "bun scripts/setup-privacy-storage.ts",
     "setup:storage": "bun scripts/setup-storage.ts",
     "setup:admin": "bun scripts/setup-admin.ts",
+    "setup:qa-inbox": "bun scripts/setup-qa-inbox.ts",
     "doctor": "bun scripts/doctor.ts",
     "runner:up": "bun scripts/runner.ts up",
     "runner:down": "bun scripts/runner.ts down",
@@ -41,7 +42,8 @@
     "test:components": "bun run --filter @cloudflare-starter/storybook test",
     "test:e2e": "bun run --filter @cloudflare-starter/web test:e2e",
     "test:e2e:build": "bun run --filter @cloudflare-starter/web test:e2e:build",
-    "test:smoke": "bun scripts/smoke.ts"
+    "test:smoke": "bun scripts/smoke.ts",
+    "test:qa": "bun scripts/qa.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

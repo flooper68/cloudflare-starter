@@ -102,6 +102,11 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: email,
     metadata: { form: "sign-up", reason: "rejected" },
   },
+  "qa.bypass.used": {
+    action: "qa.bypass.used",
+    target: email,
+    metadata: { form: "sign-up" },
+  },
   "auth.sign_up": {
     action: "auth.sign_up",
     target: user,

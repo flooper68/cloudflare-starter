@@ -68,7 +68,14 @@
     // always-pass test key: replace it with your widget's (bun run setup:cloudflare prints how).
     "RATE_LIMITING": "cloudflare",
     "TURNSTILE": "on",
-    "TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
+    "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+    // The automated QA suite's bypass of the human check (required, no default: on | off;
+    // docs/guides/how-to-configure-abuse-protection.md#qa-bypass). With on, a request with
+    // the QA_TOKEN secret in X-QA-Token for an address @QA_EMAIL_DOMAIN skips Turnstile only.
+    // develop: on, so the QA suite can run against a develop deploy before production
+    // (needs the QA_TOKEN secret there). Local dev overrides it to off in .dev.vars.
+    "QA_BYPASS": "on",
+    "QA_EMAIL_DOMAIN": "qa.flooper.me"
   },
   // Create with `bunx wrangler d1 create <name>` and paste the id (docs/guides/how-to-setup-d1.md).
   // The placeholder id is enough for local dev.
@@ -128,7 +135,7 @@
   // (test/architecture/abuse.test.ts). Periods are 10 or 60 s. namespace_id is a positive
   // integer that must be unique in the whole Cloudflare ACCOUNT, not just this file: every
   // Worker binding the same id shares its counters. No resource to create. These ids
-  // (7001–7012 develop, 8001–8012 staging, 9001–9012 production) are the starter's own; a
+  // (7001–7013 develop, 8001–8013 staging, 9001–9013 production) are the starter's own; a
   // project built from it gets its own block from `bun run setup:cloudflare` (or
   // --namespace-base). Simulated locally.
   "ratelimits": [
@@ -191,6 +198,11 @@
       "name": "RL_CSP_REPORT",
       "namespace_id": "7012",
       "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "RL_QA_BYPASS",
+      "namespace_id": "7013",
+      "simple": { "limit": 30, "period": 60 }
     }
   ],
   // Cron Triggers (UTC): exactly the schedules of packages/features/src/cron-catalog.ts.
@@ -220,7 +232,11 @@
         "RATE_LIMITING": "cloudflare",
         "TURNSTILE": "on",
         // Test key: replace with the staging widget's site key (bun run doctor warns).
-        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
+        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+        // staging: off. No staging deployment runs the QA suite yet; switch to on with its
+        // own QA_TOKEN secret when one does.
+        "QA_BYPASS": "off",
+        "QA_EMAIL_DOMAIN": "qa.flooper.me"
       },
       "send_email": [{ "name": "EMAIL" }],
       "d1_databases": [
@@ -322,6 +338,11 @@
           "name": "RL_CSP_REPORT",
           "namespace_id": "8012",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_QA_BYPASS",
+          "namespace_id": "8013",
+          "simple": { "limit": 30, "period": 60 }
         }
       ],
       "triggers": { "crons": ["0 8 * * *", "17 * * * *", "17 3 * * *"] }
@@ -356,6 +377,11 @@
         "TURNSTILE": "on",
         // Production widget cloudflare-starter-production (managed, starter.flooper.me).
         "TURNSTILE_SITE_KEY": "0x4AAAAAAF4nZzkSjYIfXj5g",
+        // production: on (owner decision): the automated QA suite runs here after every
+        // production deploy. Only addresses @qa.flooper.me with the QA_TOKEN secret skip
+        // Turnstile; everyone else still solves it.
+        "QA_BYPASS": "on",
+        "QA_EMAIL_DOMAIN": "qa.flooper.me",
         "EMAIL_FROM": "starter@flooper.me",
         "TWO_FACTOR": "optional",
         "TWO_FACTOR_EMAIL_OTP": "on",
@@ -475,6 +501,11 @@
         {
           "name": "RL_CSP_REPORT",
           "namespace_id": "9012",
+          "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_QA_BYPASS",
+          "namespace_id": "9013",
           "simple": { "limit": 30, "period": 60 }
         }
       ],

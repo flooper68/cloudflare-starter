@@ -14,16 +14,16 @@ export const STARTER_WORKER_NAME = "cloudflare-starter-web";
  * project in the same account that does too, so `setup:cloudflare` replaces them.
  */
 export const STARTER_SHIPPED_NAMESPACE_IDS: ReadonlySet<string> = new Set(
-  // Earlier blocks of ten, then blocks of eleven (RL_HEALTH is 7011/8011/9011), now twelve
-  // (RL_CSP_REPORT is 7012/8012/9012).
+  // Earlier blocks of ten, then eleven (RL_HEALTH is 7011/8011/9011), twelve (RL_CSP_REPORT
+  // is 7012/8012/9012), now thirteen (RL_QA_BYPASS is 7013/8013/9013).
   (
     [
       [1000, 10],
       [2000, 10],
       [3000, 10],
-      [7000, 12],
-      [8000, 12],
-      [9000, 12],
+      [7000, 13],
+      [8000, 13],
+      [9000, 13],
     ] as const
   ).flatMap(([base, count]) =>
     Array.from({ length: count }, (_, index) => String(base + index + 1))
