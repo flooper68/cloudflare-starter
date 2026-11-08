@@ -8,6 +8,7 @@
 import { getCollection, render } from "astro:content";
 import {
   Breadcrumbs,
+  brand,
   DocsNav,
   Prose,
   TableOfContents,
@@ -54,7 +55,7 @@ const crumbs =
 ---
 
 <PublicLayout
-  title={`${title} · ${DOCS.siteName} docs`}
+  title={`${title}${brand.titleSeparator}${DOCS.siteName} docs`}
   description={description}
   type={href === "/docs/" ? "website" : "article"}
 >

@@ -110,6 +110,85 @@ export const Brand: Story = {
   ),
 };
 
+/** The candidates sketched for the Starter mark; "Stack" shipped as LogoMark. */
+const markOptions: readonly {
+  readonly name: string;
+  readonly note: string;
+  readonly glyph: React.ReactNode;
+}[] = [
+  {
+    name: "Stack (shipped)",
+    note: "Three layers widening to a base: a stack ready to build on. Reads at 16px and is unlike other marks.",
+    glyph: (
+      <>
+        <rect x="9" y="5.5" width="6" height="3" rx="1.5" />
+        <rect x="7.25" y="10.5" width="9.5" height="3" rx="1.5" opacity=".8" />
+        <rect x="5.5" y="15.5" width="13" height="3" rx="1.5" opacity=".6" />
+      </>
+    ),
+  },
+  {
+    name: "Liftoff",
+    note: "A chevron rising from a launch pad. Clear, but close to the generic 'collapse' and 'eject' icons.",
+    glyph: (
+      <>
+        <path
+          d="M7.25 13 12 8.25 16.75 13"
+          fill="none"
+          stroke="var(--brand-accent-fg)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <rect x="8.5" y="16" width="7" height="2.5" rx="1.25" opacity=".6" />
+      </>
+    ),
+  },
+  {
+    name: "Steps",
+    note: "Three rising blocks, a project taking its first steps. Reads as a bar chart, i.e. analytics.",
+    glyph: (
+      <>
+        <rect x="5.5" y="14" width="3.5" height="4.5" rx="1" opacity=".6" />
+        <rect x="10.25" y="10" width="3.5" height="8.5" rx="1" opacity=".8" />
+        <rect x="15" y="5.5" width="3.5" height="13" rx="1" />
+      </>
+    ),
+  },
+];
+
+/** The logo mark candidates, each at favicon, navigation and large size. */
+export const MarkOptions: Story = {
+  render: () => (
+    <div className="flex max-w-3xl flex-col gap-4">
+      {markOptions.map((option) => (
+        <div
+          key={option.name}
+          className="flex items-center gap-6 rounded-lg border border-line bg-surface p-4"
+        >
+          {[16, 24, 48].map((size) => (
+            <svg
+              key={size}
+              viewBox="0 0 24 24"
+              width={size}
+              height={size}
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect width="24" height="24" rx="6" fill="var(--brand-accent)" />
+              <g fill="var(--brand-accent-fg)">{option.glyph}</g>
+            </svg>
+          ))}
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-semibold text-fg">{option.name}</h3>
+            <p className="text-xs text-fg-muted">{option.note}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+};
+
 export const Colors: Story = {
   render: () => (
     <div className="flex max-w-4xl flex-col gap-8">

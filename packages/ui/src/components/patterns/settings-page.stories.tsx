@@ -215,7 +215,7 @@ export const Workspace: Story = {
             <Input
               id="ws-url"
               size="sm"
-              defaultValue="acme"
+              defaultValue="starter"
               leading={<span className="text-xs">app/</span>}
               className="w-56"
             />

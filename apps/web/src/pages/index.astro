@@ -7,6 +7,7 @@
  */
 import {
   Badge,
+  brand,
   buttonVariants,
   FeatureGrid,
   Hero,
@@ -168,7 +169,8 @@ const footerLink =
     >
       <span class="inline-flex items-center gap-2 text-fg-muted">
         <LogoMark className="size-4.5" />
-        {DOCS.siteName}
+        <span class="font-medium text-fg">{DOCS.siteName}</span>
+        <span class="max-sm:hidden">{brand.tagline}</span>
       </span>
       <span class="flex-1"></span>
       <a class={footerLink} href={LINKS.docs}>Docs</a>

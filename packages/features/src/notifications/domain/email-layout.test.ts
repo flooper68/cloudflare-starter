@@ -28,6 +28,9 @@ describe("notificationMail", () => {
     expect(mail.subject).toBe(content.subject);
     expect(mail.text).toContain(`Unsubscribe from these mails: ${link}`);
     expect(mail.html).toContain(content.html);
+    expect(mail.html).toMatch(
+      />Cloudflare Starter<\/p>.*Grace<\/strong> accepted/
+    );
     expect(mail.html).toContain(`<a href="${link}">Unsubscribe</a>`);
     expect(mail.html).toContain(
       `href="${appUrl}/app/notifications/preferences"`
