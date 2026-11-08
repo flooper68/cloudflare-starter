@@ -2,6 +2,14 @@
 
 Index of the repository's documentation. Each entry says when to read it. Where each kind of doc belongs is in [processes/documentation.md](processes/documentation.md). Use when you are looking for how to do something, why something is the way it is, or how work is done here.
 
+## Start a project
+
+Paste this into a coding agent in an empty folder, with your app's name for `<name>`; it runs the `start-project` skill ([how-to-start-a-project.md](guides/how-to-start-a-project.md) has what it does and the steps by hand):
+
+```text
+Create a new agent-native app called <name> from the template https://github.com/flooper68/cloudflare-starter. Read its AGENTS.md first, then follow its start-project skill (.claude/skills/start-project/SKILL.md). Ask me for each decision it needs, and before every change to my GitHub or Cloudflare account.
+```
+
 ## Working with agents
 
 How coding agents build this repository as a team, and the skills and subagents they use.
@@ -17,6 +25,7 @@ How to set up or do something; read while doing it.
 
 | Guide                                                                                 | Use when …                                                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [how-to-start-a-project.md](guides/how-to-start-a-project.md)                         | you create a new product from the template: the start prompt for a coding agent, what `bun run starter:strip` removes, and the steps by hand                                                                                                                                                                                                                                                              |
 | [how-to-setup-web-app.md](guides/how-to-setup-web-app.md)                             | you run the app locally for the first time or deploy it                                                                                                                                                                                                                                                                                                                                                   |
 | [how-to-add-a-feature.md](guides/how-to-add-a-feature.md)                             | you add a product feature end to end, add a page to the app navigation or a search to the command palette, replace a placeholder app (Notes, Tasks), or review whether a new feature is complete                                                                                                                                                                                                          |
 | [how-to-add-background-jobs.md](guides/how-to-add-background-jobs.md)                 | you add a background job or cron entry, debug a failed job, inspect or replay the dead-letter queue, or weigh jobs vs Workflows                                                                                                                                                                                                                                                                           |

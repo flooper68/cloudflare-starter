@@ -119,6 +119,7 @@ A new person or agent must be able to set up, run and deploy from the repository
 - [ ] Every setup step, env var, secret, binding, Cloudflare resource, script, deployment or CI change is documented where the [docs index](../README.md) leads.
 - [ ] `apps/web/.dev.vars.example`, `wrangler.jsonc` comments, `scripts/setup-*.ts`, `scripts/doctor.ts`, `.claude/skills/` and the guides are updated in the same PR.
 - [ ] Renamed or removed names no longer appear in docs (the author's docs-audit search covers them).
+- [ ] A new part that exists only for the starter's own instance or repository (its QA, demos, marketing, production values) is in `starter-only.json`, so `starter:strip` removes it from new projects ([development.md](development.md#starter-only-parts)); its guide carries the starter-only note.
 - [ ] Decisions that need an ADR have one ([adrs.md](adrs.md)); the architecture doc states the current rule.
 - [ ] No knowledge lives only in chat or PR comments.
 - [ ] A change a user or adopter notices has a line under `## [Unreleased]` in `CHANGELOG.md`, in the right group and in plain words ([development.md](development.md#changelog)).

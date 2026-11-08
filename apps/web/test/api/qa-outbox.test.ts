@@ -29,12 +29,15 @@ import { API_TEST_BINDINGS } from "../api-bindings";
 import {
   APP_URL,
   browserCallerFor,
-  env,
   humanHeaders,
   signUp,
   type TestUser,
+  env as testEnv,
   testRequestContext,
 } from "./helpers";
+
+/** QA_BYPASS=on whatever the test bindings say (a project made from the template ships off). */
+const env = { ...testEnv, QA_BYPASS: "on" } as AppEnv;
 
 const TOKEN = API_TEST_BINDINGS.QA_TOKEN;
 const DOMAIN = API_TEST_BINDINGS.QA_EMAIL_DOMAIN;

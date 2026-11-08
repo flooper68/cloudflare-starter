@@ -83,6 +83,8 @@ Per environment (`develop`, `staging`, `production`); every script takes `--dry-
    "workers_dev": false,
    ```
 
+   > **Starter-only, removed by `starter:strip`** (`production-instance`): `starter.flooper.me`, its D1 id, Turnstile key, sender and product settings are the starter's production; the strip resets them to placeholders ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
    A project replaces that hostname with its own (or removes both lines to stay on `workers.dev`). `wrangler deploy --dry-run` lists bindings, not routes: after `CLOUDFLARE_ENV=production bun run deploy:dry-run` in `apps/web`, the route is in `routes` of the built `dist/server/wrangler.json`.
 
    Email, if the environment sends mail ([how-to-setup-email.md](./how-to-setup-email.md#choosing-the-sender)). The sender's domain must be onboarded to Email Service; it can differ from the app's hostname (the starter's production sends as `starter@flooper.me`):
