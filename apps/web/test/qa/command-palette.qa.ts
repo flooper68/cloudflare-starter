@@ -92,17 +92,25 @@ test("the Search trigger opens it, Esc returns focus to it, and nonsense finds n
 });
 
 test("the theme action switches at once and is remembered after a reload", async () => {
+  // The palette offers the theme the page is not in: switch to it, reload, switch back.
+  const switchTheme = async () => {
+    await page.keyboard.press("ControlOrMeta+k");
+    await page.keyboard.type("theme");
+    const option = palette().getByRole("option", {
+      name: /^Switch to the (light|dark) theme$/,
+    });
+    const name = (await option.textContent()) ?? "";
+    const theme = /light/.test(name) ? "light" : "dark";
+    await option.click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    return theme;
+  };
   await open(page, "/app/dashboard");
-  await page.keyboard.press("ControlOrMeta+k");
-  await page.keyboard.type("light theme");
-  await page.getByRole("option", { name: /Switch to the light theme/ }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  const first = await switchTheme();
   await open(page, "/app/dashboard");
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page.keyboard.press("ControlOrMeta+k");
-  await page.keyboard.type("dark theme");
-  await page.getByRole("option", { name: /Switch to the dark theme/ }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", first);
+  const second = await switchTheme();
+  expect(second).not.toBe(first);
 });
 
 test("at phone width the trigger is an icon without a key hint and the palette fills the screen", async () => {

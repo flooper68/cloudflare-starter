@@ -70,11 +70,17 @@ test("the name changes and the shell shows it at once", async () => {
 
 test("an avatar uploads and is removed; a file that is no image is refused", async () => {
   await openSettings(page, "account");
+  const uploaded = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/account/avatar" &&
+      response.request().method() === "POST"
+  );
   await page.getByLabel("Upload avatar").setInputFiles({
     name: "avatar.png",
     mimeType: "image/png",
     buffer: tinyPng(7),
   });
+  expect((await uploaded).status()).toBe(200);
   await expect(
     page.getByRole("button", { name: "Remove avatar" })
   ).toBeVisible();
