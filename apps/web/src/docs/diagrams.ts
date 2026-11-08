@@ -1,121 +1,43 @@
 /**
- * Mermaid diagrams of the docs site, rendered to inline SVG at build time
- * (`docsDiagramsPlugin` in markdown-plugins.ts runs this on every ```mermaid block). GitHub
- * renders the same block with its own Mermaid, so the Markdown stays the one source and the
- * site's output cannot go stale. The page ships no diagram JavaScript.
- *
- * The SVG comes from beautiful-mermaid (no DOM, no browser) and is made fit for the docs
- * pages here:
- * - no `<style>` element and no `style` attribute: the renderer's own stylesheet imports a
- *   web font from Google, which `font-src 'self'` refuses; its colour variables are set by
- *   packages/ui/src/styles/prose.css from the theme tokens instead, so the diagram follows
- *   the light and dark theme without a re-render;
- * - ids are prefixed per diagram, so several diagrams on one page keep unique ids;
- * - a block becomes a diagram only with Mermaid's `accTitle:` and `accDescr:` lines (GitHub
- *   reads them too): they become the SVG's `<title>` and `<desc>` (`role="img"`), the text
- *   alternative screen readers announce, and the figure's caption. A block without them
- *   stays a code block, and diagrams.test.ts fails for it unless it is in
- *   UNDESCRIBED_DIAGRAMS with a reason.
- * - the SVG keeps its natural size inside a keyboard-scrollable region, so a wide diagram
- *   scrolls on a phone instead of shrinking its text.
- *
+ * Diagrams in the docs: a paragraph that is only an image of a repository `.svg`
+ * (`![The lifecycle](images/agentic-lifecycle.svg)`) is shown on the site as the SVG
+ * itself, inlined into the page, instead of an `<img>`. GitHub shows the same file as an
+ * image. Inline, the SVG's `<style>` can read the site's tokens (`var(--ui-fg, …)`), so
+ * the diagram follows the site's theme switch; as an image on GitHub it falls back to its
+ * own colours and `prefers-color-scheme`. The docs pages allow inline styles
+ * (`style-src 'unsafe-inline'`), and an SVG never runs script here: one with a
+ * `<script>`, an event handler or a `javascript:` URL is refused.
+ * Pure, so the Markdown plugin (markdown-plugins.ts) and its test share it.
  * docs/guides/how-to-publish-docs-and-landing.md#diagrams
  */
-import { renderMermaidSVG } from "beautiful-mermaid";
+import { parseRepoLink } from "./links";
 
-export interface DiagramText {
-  /** `accTitle:`: a short name, the caption and the SVG's `<title>`. */
-  readonly title: string;
-  /** `accDescr:` (one line or a `{ … }` block): what the diagram shows, in prose. */
-  readonly description: string;
-  /** The diagram without its accessibility lines, for the renderer. */
-  readonly body: string;
-}
-
-const ACC_TITLE = /^[ \t]*accTitle[ \t]*:[ \t]*(.+?)[ \t]*$/m;
-const ACC_DESCR_LINE = /^[ \t]*accDescr[ \t]*:[ \t]*(.+?)[ \t]*$/m;
-const ACC_DESCR_BLOCK = /^[ \t]*accDescr[ \t]*\{([\s\S]*?)\}[ \t]*$/m;
-
-/**
- * Files whose ```mermaid blocks may stay code blocks, without a text alternative, each
- * with its reason. Every other block must have one (diagrams.test.ts).
- */
-export const UNDESCRIBED_DIAGRAMS: Readonly<Record<string, string>> = {
-  "docs/processes/adrs.md":
-    "The ADR status diagram; docs/processes/ belongs to the process docs, which add its accTitle and accDescr",
-};
-
-/**
- * The accessibility lines of a Mermaid source, and the source without them; null when
- * either is missing.
- */
-export function diagramText(source: string): DiagramText | null {
-  const title = ACC_TITLE.exec(source)?.[1];
-  const block = ACC_DESCR_BLOCK.exec(source);
-  const line = ACC_DESCR_LINE.exec(source);
-  const description = (block?.[1] ?? line?.[1])?.replace(/\s+/g, " ").trim();
-  if (!title || !description) return null;
-  const body = source
-    .replace(ACC_DESCR_BLOCK, "")
-    .replace(ACC_TITLE, "")
-    .replace(ACC_DESCR_LINE, "")
-    .split("\n")
-    .filter((text) => text.trim() !== "")
-    .join("\n");
-  return { title, description, body };
-}
-
-const escapeHtml = (text: string) =>
-  text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-
-/**
- * The SVG for the docs pages: no stylesheet, no inline style, ids under `prefix`, and
- * `role="img"` named by a `<title>` and described by a `<desc>`.
- */
-export function adaptSvg(svg: string, prefix: string, text: DiagramText) {
-  const titleId = `${prefix}-title`;
-  const descId = `${prefix}-desc`;
-  return svg
-    .replace(/<style>[\s\S]*?<\/style>\s*/g, "")
-    .replace(/\sid="([^"]+)"/g, ` id="${prefix}-$1"`)
-    .replace(/url\(#([^)]+)\)/g, `url(#${prefix}-$1)`)
-    .replace(
-      /<svg\b([^>]*?)\sstyle="[^"]*"([^>]*)>/,
-      (_match, before: string, after: string) =>
-        `<svg${before}${after} role="img" aria-labelledby="${titleId} ${descId}" focusable="false" data-diagram-svg="">` +
-        `<title id="${titleId}">${escapeHtml(text.title)}</title>` +
-        `<desc id="${descId}">${escapeHtml(text.description)}</desc>`
-    );
+/** The repository path of the `.svg` an image URL in `from` names, or null. */
+export function diagramPath(from: string, url: string): string | null {
+  const link = parseRepoLink(from, url);
+  if (!link || link.folder || !link.path.toLowerCase().endsWith(".svg"))
+    return null;
+  return link.path;
 }
 
 /**
- * One ```mermaid block as the figure the docs page shows, or null when it has no text
- * alternative (it then stays a code block). `index` numbers the diagrams of a page
- * (1, 2, …): unique ids and region names.
+ * The HTML that replaces the image: the SVG on one line (a blank line would end the
+ * Markdown HTML block) in a keyboard-scrollable `<figure>` named by the image's alt
+ * text, so a phone can scroll a wide diagram instead of shrinking its text. Throws when
+ * the file is not a usable diagram, which fails the build.
  */
-export function renderDiagram(source: string, index: number): string | null {
-  const text = diagramText(source);
-  if (!text) return null;
-  // The colours are CSS variables that prose.css sets from the theme tokens.
-  const svg = renderMermaidSVG(text.body, {
-    bg: "var(--diagram-bg)",
-    fg: "var(--diagram-fg)",
-    transparent: true,
-  });
-  if (!/<svg\b[^>]*\sstyle="/.test(svg)) {
-    throw new Error("beautiful-mermaid's SVG changed shape: check adaptSvg");
-  }
-  const title = escapeHtml(text.title);
-  return [
-    `<figure data-diagram="">`,
-    `<section data-diagram-scroll="" tabindex="0" aria-label="Diagram ${index}: ${title}">`,
-    adaptSvg(svg, `diagram-${index}`, text),
-    `</section>`,
-    `<figcaption>${title}</figcaption>`,
-    `</figure>`,
-  ].join("");
+export function diagramHtml(path: string, svg: string, alt: string): string {
+  const source = svg.replace(/^\s*<\?xml[^>]*\?>/, "").trim();
+  const problems: string[] = [];
+  if (!source.startsWith("<svg")) problems.push("does not start with <svg>");
+  if (!/<title>[^<]+<\/title>/.test(source))
+    problems.push("has no <title> (its accessible name)");
+  if (/<script|\son[a-z]+\s*=|javascript:/i.test(source))
+    problems.push("contains script");
+  if (!alt.trim()) problems.push("is linked without alt text");
+  if (problems.length > 0)
+    throw new Error(`Docs diagram ${path} ${problems.join(", ")}`);
+  const oneLine = source.replace(/\s*\n\s*/g, " ");
+  const label = alt.trim().replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+  return `<figure data-docs-diagram="" tabindex="0" aria-label="${label}">${oneLine}</figure>`;
 }

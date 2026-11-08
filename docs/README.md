@@ -2,6 +2,15 @@
 
 Index of the repository's documentation. Each entry says when to read it. Where each kind of doc belongs is in [processes/documentation.md](processes/documentation.md). Use when you are looking for how to do something, why something is the way it is, or how work is done here.
 
+## Working with agents
+
+How coding agents build this repository as a team, and the skills and subagents they use.
+
+| Doc                                                            | Use when …                                                                                                                                                            |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [processes/agentic-workflow.md](processes/agentic-workflow.md) | you lead agents on this repository, write a brief for a subagent, run agents in parallel, check what an agent may do without asking, or decide when a request is done |
+| [processes/agent-skills.md](processes/agent-skills.md)         | you look for a skill before a setup task, decide whether to use the `reviewer` subagent, or add, rename or remove a skill or subagent in `.claude/`                   |
+
 ## Guides
 
 How to set up or do something; read while doing it.
@@ -57,7 +66,7 @@ Contracts and principles that hold regardless of the current code, and the diagr
 
 ## Processes
 
-How work is planned, reviewed, documented and decided, and how dependencies are kept current.
+How work is planned, reviewed, documented and decided, and how dependencies are kept current. How agents run these as a team: [Working with agents](#working-with-agents).
 
 | Doc                                                      | Use when …                                                                                                                  |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -75,11 +84,11 @@ How work is planned, reviewed, documented and decided, and how dependencies are 
 
 ## Elsewhere
 
-| Doc                                                            | Use when …                                                                                |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [../README.md](../README.md)                                   | you start a new project from the starter or need the list of scripts                      |
-| [../AGENTS.md](../AGENTS.md)                                   | you are an agent starting work here                                                       |
-| [../packages/ui/CONVENTIONS.md](../packages/ui/CONVENTIONS.md) | you write or review a UI component or its stories                                         |
-| [../packages/ui/README.md](../packages/ui/README.md)           | you need the UI package layout and imports                                                |
-| [../apps/web/README.md](../apps/web/README.md)                 | you work in the web app                                                                   |
-| [../.claude/skills/](../.claude/skills/)                       | you are an agent setting up auth (`setup-auth`), D1 (`setup-d1`) or email (`setup-email`) |
+| Doc                                                            | Use when …                                                                                                           |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| [../README.md](../README.md)                                   | you start a new project from the starter or need the list of scripts                                                 |
+| [../AGENTS.md](../AGENTS.md)                                   | you are an agent starting work here                                                                                  |
+| [../packages/ui/CONVENTIONS.md](../packages/ui/CONVENTIONS.md) | you write or review a UI component or its stories                                                                    |
+| [../packages/ui/README.md](../packages/ui/README.md)           | you need the UI package layout and imports                                                                           |
+| [../apps/web/README.md](../apps/web/README.md)                 | you work in the web app                                                                                              |
+| [../.claude/](../.claude/)                                     | you want the skills and subagents themselves; what each does: [processes/agent-skills.md](processes/agent-skills.md) |

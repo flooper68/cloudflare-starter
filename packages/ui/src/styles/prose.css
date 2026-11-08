@@ -23,35 +23,3 @@
     color: var(--shiki-light);
   }
 }
-
-/*
- * Diagrams in Prose: inline SVG rendered at build time from ```mermaid blocks
- * (apps/web/src/docs/diagrams.ts). The SVG paints with the variables below, set from the
- * theme tokens, so it follows data-theme like the rest of the page. Text uses the
- * readable foreground tokens, never a faded mix of them.
- */
-[data-diagram-svg] {
-  --diagram-bg: var(--ui-surface-raised);
-  --diagram-fg: var(--ui-fg);
-  --bg: var(--diagram-bg);
-  --fg: var(--diagram-fg);
-  --_text: var(--ui-fg);
-  --_text-sec: var(--ui-fg-muted);
-  --_text-muted: var(--ui-fg-muted);
-  --_text-faint: var(--ui-fg-subtle);
-  --_line: var(--ui-fg-subtle);
-  --_arrow: var(--ui-fg-muted);
-  --_node-fill: var(--ui-surface);
-  --_node-stroke: var(--ui-line-strong);
-  --_group-fill: var(--ui-surface-raised);
-  --_group-hdr: var(--ui-hover);
-  --_inner-stroke: var(--ui-line);
-  --_key-badge: var(--ui-active);
-  display: block;
-  max-width: none;
-  font-family: var(--brand-font-sans);
-}
-
-[data-diagram-svg] text {
-  font-family: var(--brand-font-sans);
-}

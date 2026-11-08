@@ -196,3 +196,65 @@ export const WideTable: Story = {
     ),
   ],
 };
+
+/**
+ * A diagram as the docs pipeline inlines it (apps/web/src/docs/diagrams.ts): the SVG in
+ * a named, focusable figure that scrolls when the column is narrower than the diagram.
+ */
+export const Diagram: Story = {
+  args: {
+    children: (
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: a scroll box must be reachable by keyboard (axe scrollable-region-focusable); the static docs HTML cannot add the tab stop at runtime.
+      <figure data-docs-diagram="" tabIndex={0} aria-label="Plan, then build">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="600"
+          height="96"
+          viewBox="0 0 600 96"
+          role="img"
+          aria-label="Plan, then build"
+        >
+          <title>Plan, then build</title>
+          <rect
+            className="fill-surface-raised"
+            width="600"
+            height="96"
+            rx="12"
+          />
+          {["Plan", "Build"].map((label, i) => (
+            <g key={label}>
+              <rect
+                className="fill-surface stroke-line-strong"
+                x={24 + i * 312}
+                y="20"
+                width="240"
+                height="56"
+                rx="8"
+              />
+              <text
+                className="fill-fg font-semibold text-sm"
+                x={144 + i * 312}
+                y="53"
+                textAnchor="middle"
+              >
+                {label}
+              </text>
+            </g>
+          ))}
+          <path
+            className="stroke-fg-subtle"
+            d="M268 48H332"
+            strokeWidth="1.5"
+          />
+        </svg>
+      </figure>
+    ),
+  },
+  decorators: [
+    (Story) => (
+      <div className="w-[360px]">
+        <Story />
+      </div>
+    ),
+  ],
+};
