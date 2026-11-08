@@ -217,7 +217,7 @@ export function ContainerRunList({
             key={run.id}
             className={cn(
               "flex items-center gap-3 border-b border-line px-3 py-2 last:border-b-0",
-              run.id === selectedId && "bg-active"
+              run.id === selectedId && "shadow-[inset_2px_0_0_var(--ui-accent)]"
             )}
           >
             <button
