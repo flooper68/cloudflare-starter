@@ -1,33 +1,37 @@
 ---
 /**
- * Header of the public pages. `docs` adds the Docs badge and full-width layout of the
- * docs site; the `search` slot holds the docs search trigger. Links point at the
- * repository, the docs and Storybook; nothing depends on a session.
+ * The public header, on every public and account page: the logo and name, Docs,
+ * Changelog and GitHub, the theme switch, a small Sign in link and one "Try the demo"
+ * button (Open app instead of both when the page knows the visitor is signed in). On
+ * phones: the logo, the button and a menu (SiteMenu). `docs` adds the Docs badge, the
+ * wider layout and the `search` slot. The theme switch needs public/site-theme.js, which
+ * every page's policy allows (docs/guides/how-to-publish-docs-and-landing.md#theme).
  */
 import { Badge, buttonVariants, cn, LogoMark } from "@cloudflare-starter/ui";
-import { GitBranch, Layers } from "lucide-react";
 
 import { DOCS } from "@/docs/docs.config";
+import { LINKS } from "@/landing/content";
 
+import SiteMenu from "./SiteMenu.astro";
 import ThemeToggle from "./ThemeToggle.astro";
 
 interface Props {
   variant?: "site" | "docs";
   /**
-   * The theme switch; it needs public/site-theme.js, which the per-request account pages'
-   * policy does not allow (their scripts come only from /_astro/), so Layout.astro turns
-   * it off.
+   * Known only on pages rendered per request (Layout.astro). Prerendered pages leave it
+   * false: their "Try the demo" leads to /sign-up, which sends a signed-in visitor on to
+   * the app.
    */
-  themeToggle?: boolean;
+  signedIn?: boolean;
 }
 
-const { variant = "site", themeToggle = true } = Astro.props;
+const { variant = "site", signedIn = false } = Astro.props;
 const docs = variant === "docs";
 const link =
   "rounded-sm font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
 ---
 
-<header class="border-b border-line bg-canvas">
+<header class="relative border-b border-line bg-canvas">
   <div
     class={cn(
       "mx-auto flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 sm:px-6",
@@ -36,42 +40,50 @@ const link =
   >
     <a
       href="/"
-      class="inline-flex items-center gap-2.5 rounded-md font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      class="inline-flex shrink-0 items-center gap-2.5 rounded-md font-semibold text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
     >
       <LogoMark className="size-6" />
-      <span>{DOCS.siteName}</span>
+      <span class={cn(docs && "max-sm:sr-only")}>{DOCS.siteName}</span>
       {docs && <Badge>Docs</Badge>}
     </a>
-    {
-      !docs && (
-        <nav aria-label="Site" class="flex items-center gap-5 text-sm">
-          <a class={link} href="/docs/">
+    <nav aria-label="Site" class="flex items-center gap-5 text-sm max-md:hidden">
+      {
+        !docs && (
+          <a class={link} href={LINKS.docs}>
             Docs
           </a>
-          <a class={link} href="/docs/changelog/">
-            Changelog
-          </a>
-        </nav>
-      )
-    }
+        )
+      }
+      <a class={link} href={LINKS.changelog}>Changelog</a>
+      <a class={link} href={LINKS.github}>GitHub</a>
+    </nav>
     <slot name="search" />
-    <span class="flex-1"></span>
-    <div class="flex flex-wrap items-center gap-2">
-      {/* Phones: Storybook stays in the footer and the docs; the header must not overflow. */}
-      <a
-        class={cn(buttonVariants({ variant: "ghost", size: "sm" }), "max-sm:hidden")}
-        href="/_storybook/"
-      >
-        <Layers aria-hidden="true" />Storybook
-      </a>
-      <a
-        class={buttonVariants({ variant: "secondary", size: "sm" })}
-        href={DOCS.repoUrl}
-      >
-        <GitBranch aria-hidden="true" />GitHub
-      </a>
-      <slot name="actions" />
-      {themeToggle && <ThemeToggle />}
+    <span class="flex-1 max-md:hidden"></span>
+    <div class="ml-auto flex shrink-0 items-center gap-2">
+      <span class="contents max-md:hidden"><ThemeToggle /></span>
+      {
+        signedIn ? (
+          <a
+            class={buttonVariants({ variant: "primary", size: "sm" })}
+            href={LINKS.app}
+          >
+            Open app
+          </a>
+        ) : (
+          <>
+            <a class={cn(link, "px-1 text-sm max-md:hidden")} href={LINKS.signIn}>
+              Sign in
+            </a>
+            <a
+              class={buttonVariants({ variant: "primary", size: "sm" })}
+              href={LINKS.demo}
+            >
+              Try the demo
+            </a>
+          </>
+        )
+      }
+      <SiteMenu signedIn={signedIn} docs={docs} />
     </div>
   </div>
 </header>

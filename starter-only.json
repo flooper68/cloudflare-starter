@@ -286,6 +286,11 @@
           "file": "CHANGELOG.md",
           "find": "[apps/web/test/qa/README.md](apps/web/test/qa/README.md)",
           "replace": "`apps/web/test/qa/README.md`"
+        },
+        {
+          "file": "docs/processes/agent-skills.md",
+          "find": "abuse protection and `QA_BYPASS`, the admin portal",
+          "replace": "abuse protection, the admin portal"
         }
       ]
     },
@@ -529,10 +534,19 @@
     {
       "id": "home-page-v2",
       "title": "Home page v2",
-      "why": "In flight: the starter's new landing page. It markets the starter; a project replaces it with its own.",
-      "status": "pending",
-      "pending": "the home page v2 PR (not opened yet); when it merges, list what marketing must reset and set status to active",
-      "default": true
+      "why": "The landing page (#56) markets the starter: its hero scene, the feature map and pillars from one feature data module (apps/web/src/landing/content.ts), the What's new strip and the footer. A product replaces it with its own; the strip does not write a landing page for you, it prints the steps.",
+      "status": "active",
+      "default": true,
+      "manual": [
+        "Replace the home page with the product's: the copy and feature data in apps/web/src/landing/content.ts, the sections of apps/web/src/pages/index.astro and its components (HeroScene.astro, FeatureMap.astro), and apps/web/test/e2e-build/landing.spec.ts with them (docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page)."
+      ],
+      "docs": [
+        {
+          "file": "docs/guides/how-to-publish-docs-and-landing.md",
+          "action": "rewrite",
+          "note": "The landing page section describes the starter's home page; rewrite it for the product's"
+        }
+      ]
     },
     {
       "id": "brand-name",
