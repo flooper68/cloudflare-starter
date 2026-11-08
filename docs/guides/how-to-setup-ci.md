@@ -86,6 +86,21 @@ gh secret set CLOUDFLARE_ACCOUNT_ID --env production
 
 Repeat for `develop` and `staging`. Do not pass the token with `--body`; it ends up in your shell history. The workflow only exposes the secrets to the two Wrangler steps, and GitHub masks them in logs.
 
+### 4. The QA environment
+
+After a production deploy whose smoke suite passed, the Deploy workflow calls the **QA** workflow (`.github/workflows/qa.yml`, job `qa`): the automated QA suite against production. The same workflow runs it by hand and runs the nightly cleanup of leftover QA accounts (job `cleanup`). Both jobs run on GitHub-hosted runners only and read their secrets from a GitHub environment `qa` (deployment branches: `main` only, no required reviewers):
+
+```sh
+gh api -X PUT repos/<owner>/<repo>/environments/qa   # then restrict it to main in Settings › Environments
+gh secret set QA_TOKEN --env qa          # = the production Worker secret QA_TOKEN
+gh secret set QA_INBOX_URL --env qa      # https://cloudflare-starter-qa-inbox.<account>.workers.dev
+gh secret set QA_INBOX_TOKEN --env qa    # = the inbox Worker secret QA_INBOX_TOKEN
+gh secret set QA_ADMIN_EMAIL --env qa    # the QA admin, for the nightly cleanup
+gh secret set QA_ADMIN_PASSWORD --env qa
+```
+
+A missing secret fails the job. The report is uploaded as `qa-report-<run id>` only after `scripts/qa-scrub-artifacts.py` removed the token and the QA passwords from it. What each secret is, the inbox and the QA admin: [how-to-qa-a-deployment.md](how-to-qa-a-deployment.md#ci).
+
 ## Self-hosted runners
 
 By default every job runs on GitHub's `ubuntu-latest`. You can run your own runners on a machine with Docker and point CI at them with one repository variable. Each runner ("worker") is a container built from `ops/runner/Dockerfile`, running one job at a time; you choose how many.

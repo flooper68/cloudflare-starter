@@ -35,6 +35,7 @@ Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config
 | `BETTER_AUTH_SECRET`                       | yes                               | 32+ characters, one per environment                 |
 | `TURNSTILE_SECRET_KEY`                     | with `TURNSTILE=on`               | The Turnstile widget's secret key                   |
 | `ANALYTICS_ID_SECRET`                      | with `ANALYTICS=analytics-engine` | 32+ characters; keys the pseudonymous analytics ids |
+| `QA_TOKEN`                                 | with `QA_BYPASS=on`               | 32+ characters; the QA suite's human-check bypass ([how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md#qa-bypass)) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no                                | Enables Google sign-in                              |
 | `R2_*`                                     | no                                | Presigned R2 URLs                                   |
 

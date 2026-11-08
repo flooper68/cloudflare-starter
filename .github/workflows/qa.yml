@@ -1,0 +1,134 @@
+name: QA
+
+# The automated QA suite against a deployed app (apps/web/test/qa, docs/guides/how-to-qa-a-deployment.md):
+# - job `qa`: every journey, with real accounts and real mail through the QA inbox. Runs
+#   after every production deploy (the Deploy workflow calls this one) and by hand
+#   (Actions → QA → Run workflow).
+# - job `cleanup`: nightly, erases QA accounts that aborted runs left behind, as the QA
+#   admin through the admin portal's API (never SQL).
+# Secrets live in the GitHub environment `qa` (deployment branches: main only, no required
+# reviewers): QA_TOKEN, QA_INBOX_URL, QA_INBOX_TOKEN, and for the cleanup QA_ADMIN_EMAIL
+# and QA_ADMIN_PASSWORD. GitHub-hosted runners only: the suite talks to production with a
+# token that skips the human check, so it never runs on a self-hosted machine, and only
+# from the repository itself (no pull_request trigger at all).
+on:
+  workflow_call:
+    inputs:
+      base_url:
+        description: The deployed app to test
+        type: string
+        default: https://starter.flooper.me
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: The deployed app to test
+        type: string
+        default: https://starter.flooper.me
+      cleanup:
+        description: Also run the leftover-account cleanup
+        type: boolean
+        default: false
+  schedule:
+    # 03:37 UTC, after the app's own nightly jobs (cron catalog: 03:17).
+    - cron: "37 3 * * *"
+
+permissions:
+  contents: read
+
+# One QA run against an environment at a time (they share its per-IP rate limits); a new
+# one waits instead of cancelling a run halfway through its cleanup.
+concurrency:
+  group: qa-${{ inputs.base_url || 'https://starter.flooper.me' }}
+  cancel-in-progress: false
+
+jobs:
+  qa:
+    name: QA suite
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: qa
+    env:
+      BASE_URL: ${{ inputs.base_url || 'https://starter.flooper.me' }}
+      QA_TOKEN: ${{ secrets.QA_TOKEN }}
+      QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
+      QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+      - run: bun scripts/ci-playwright-install.ts
+      # Without them every journey would skip and the run would pass: fail instead.
+      - name: QA secrets are set
+        run: |
+          missing=""
+          for name in QA_TOKEN QA_INBOX_URL QA_INBOX_TOKEN; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secrets in the GitHub environment qa:$missing (docs/guides/how-to-qa-a-deployment.md#ci)"
+            exit 1
+          fi
+      - name: QA suite
+        timeout-minutes: 40
+        # --forbid-only and no retries come from playwright.qa.config.ts (CI is set).
+        run: bun run test:qa -- --base-url "$BASE_URL"
+      # Traces and the HTML report record request headers and typed text: remove the QA
+      # token and every QA password before anything leaves the runner. Fails if any is left.
+      - name: Scrub secrets from the report
+        id: scrub
+        if: always()
+        run: python3 -I scripts/qa-scrub-artifacts.py apps/web/playwright-report/qa apps/web/test-results/qa
+      - name: Upload the QA report
+        if: always() && steps.scrub.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qa-report-${{ github.run_id }}
+          path: |
+            apps/web/playwright-report/qa
+            apps/web/test-results/qa
+          if-no-files-found: ignore
+          retention-days: 14
+
+  cleanup:
+    name: Erase leftover QA accounts
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.cleanup)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: qa
+    env:
+      BASE_URL: ${{ inputs.base_url || 'https://starter.flooper.me' }}
+      QA_TOKEN: ${{ secrets.QA_TOKEN }}
+      QA_INBOX_URL: ${{ secrets.QA_INBOX_URL }}
+      QA_INBOX_TOKEN: ${{ secrets.QA_INBOX_TOKEN }}
+      QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+      QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+      - run: bun scripts/ci-playwright-install.ts
+      - name: QA secrets are set
+        run: |
+          missing=""
+          for name in QA_TOKEN QA_INBOX_URL QA_INBOX_TOKEN QA_ADMIN_EMAIL QA_ADMIN_PASSWORD; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secrets in the GitHub environment qa:$missing (docs/guides/how-to-qa-a-deployment.md#nightly-cleanup)"
+            exit 1
+          fi
+      - name: Erase leftovers
+        run: bun run test:qa -- --base-url "$BASE_URL" --project qa-cleanup
+      - name: Scrub secrets from the report
+        id: scrub
+        if: always()
+        run: python3 -I scripts/qa-scrub-artifacts.py apps/web/playwright-report/qa apps/web/test-results/qa
+      - name: Upload the cleanup report
+        if: failure() && steps.scrub.outcome == 'success'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qa-cleanup-report-${{ github.run_id }}
+          path: |
+            apps/web/playwright-report/qa
+            apps/web/test-results/qa
+          if-no-files-found: ignore
+          retention-days: 14

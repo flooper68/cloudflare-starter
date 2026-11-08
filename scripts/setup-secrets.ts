@@ -83,6 +83,12 @@ const SECRETS: readonly Secret[] = [
         : undefined,
   },
   {
+    name: "QA_TOKEN",
+    prompt:
+      "QA bypass token (required with QA_BYPASS=on, 32+ chars; type the same value you store as the QA_TOKEN GitHub secret, e.g. openssl rand -hex 32; Enter keeps the current one or skips it)",
+    hidden: true,
+  },
+  {
     name: "ANALYTICS_ID_SECRET",
     prompt:
       "Key of the pseudonymous analytics ids (32+ chars; needed with ANALYTICS=analytics-engine; locally Enter generates one; deployed, Enter keeps the current one, so type a key the first time (openssl rand -base64 32) and never rotate it)",
@@ -138,6 +144,9 @@ if (
   collected.ANALYTICS_ID_SECRET.length < 32
 ) {
   fail("ANALYTICS_ID_SECRET must be at least 32 characters");
+}
+if (collected.QA_TOKEN && collected.QA_TOKEN.length < 32) {
+  fail("QA_TOKEN must be at least 32 characters (openssl rand -hex 32)");
 }
 
 const names = Object.keys(collected);

@@ -40,6 +40,7 @@ function memoryPlatform() {
     rateLimiter: noopRateLimiter,
     humanVerifier: noopHumanVerifier,
     turnstile: null,
+    qaBypass: null,
     productAnalytics: () => noopProductAnalytics,
     webAnalytics: null,
   };
