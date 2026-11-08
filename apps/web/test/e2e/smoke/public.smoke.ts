@@ -162,6 +162,76 @@ test.describe("security headers", () => {
   }
 });
 
+/**
+ * Cloudflare's edge can inject its Web Analytics beacon into every HTML page of a zone
+ * ("automatic setup", shared with the owner's other sites). Every HTML response says
+ * `Cache-Control: no-transform` so it does not
+ * (docs/guides/how-to-configure-security-headers.md#edge-injected-web-analytics). With
+ * WEB_ANALYTICS=none a page's HTML must hold no beacon at all; with cloudflare, only the
+ * app's own one. Which is set is read from /sign-in's policy, rendered per request: it
+ * allows the beacon only with WEB_ANALYTICS=cloudflare (the prerendered pages always do,
+ * so there only this HTML check, not the CSP guard, catches an injected beacon). Under
+ * CSP_MODE=report-only the policy is in the report-only header.
+ */
+const BEACON_SCRIPT = /<script\b[^>]*\bsrc=["']?[^"'\s>]*cloudflareinsights/gi;
+
+test.describe("edge-injected Web Analytics", () => {
+  for (const path of [
+    "/",
+    "/docs/",
+    "/docs/changelog/",
+    "/no-such-page",
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+  ]) {
+    test(
+      `${path} carries no beacon the app did not add`,
+      smoke,
+      async ({ page, request }) => {
+        const signIn = await request.get("/sign-in");
+        const webAnalytics =
+          /script-src[^;]*static\.cloudflareinsights\.com/.test(
+            signIn.headers()["content-security-policy-report-only"] ??
+              signIn.headers()["content-security-policy"] ??
+              ""
+          );
+
+        // The raw HTML, fetched with the browser's user agent (the edge injects only for
+        // browsers). A 404 is not opened in the page: Chromium logs every 404 document
+        // as a console error, which the fixture would count.
+        const notFound = path === "/no-such-page";
+        const response = await request.get(path, {
+          headers: { accept: "text/html" },
+        });
+        expect(response.status()).toBe(notFound ? 404 : 200);
+        expect(response.headers()["cache-control"] ?? "").toContain(
+          "no-transform"
+        );
+        const beacons = (await response.text()).match(BEACON_SCRIPT) ?? [];
+        if (webAnalytics) {
+          expect(beacons.length, "the app's beacon, once").toBeLessThanOrEqual(
+            1
+          );
+        } else {
+          expect(beacons, "WEB_ANALYTICS=none: no beacon in the HTML").toEqual(
+            []
+          );
+        }
+        if (notFound) return;
+        // In the browser too, under the CSP guard: an injected beacon the policy blocks
+        // fails the test as a violation.
+        await page.goto(path);
+        if (!webAnalytics) {
+          await expect(
+            page.locator('script[src*="cloudflareinsights"]')
+          ).toHaveCount(0);
+        }
+      }
+    );
+  }
+});
+
 test.describe("docs", () => {
   test(
     "/docs/ renders the index with its navigation",

@@ -93,14 +93,15 @@ The header's "Search docs" button (or ⌘K / Ctrl+K) opens a dialog that searche
 
 `apps/web/public/_headers` sets `Cache-Control` for static assets (Workers static assets honour `_headers`; the Astro Cloudflare adapter appends the `/_astro/*` rule). The file is generated: the cache rules are `STATIC_CACHE_RULES` in `apps/web/src/server/static-cache.ts`, rendered after the security rules by `bun apps/web/scripts/write-static-headers.ts` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#static-assets)):
 
-| Path                                                                          | Cache-Control                         | Why                                              |
-| ----------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------ |
-| `/_astro/*`                                                                   | `public, max-age=31536000, immutable` | content-hashed file names (added by the adapter) |
-| `/pagefind/*`                                                                 | `public, max-age=31536000, immutable` | index chunks and fragments are content-hashed    |
-| `/pagefind/pagefind.js`, `/pagefind/pagefind-*` (entry, worker, UI), `wasm.*` | `public, max-age=300`                 | fixed names that change with every build         |
-| `/`, `/docs/*`                                                                | `public, max-age=0, must-revalidate`  | a deploy shows at once; the ETag makes it cheap  |
+| Path                                                                          | Cache-Control                                      | Why                                                                                                                                                          |
+| ----------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/_astro/*`                                                                   | `public, max-age=31536000, immutable`              | content-hashed file names (added by the adapter)                                                                                                             |
+| `/pagefind/*`                                                                 | `public, max-age=31536000, immutable`              | index chunks and fragments are content-hashed                                                                                                                |
+| `/pagefind/pagefind.js`, `/pagefind/pagefind-*` (entry, worker, UI), `wasm.*` | `public, max-age=300`                              | fixed names that change with every build                                                                                                                     |
+| `/`, `/docs/*`, `/404`, `/_storybook/`, `/_storybook/iframe` (static HTML)    | `public, max-age=0, must-revalidate, no-transform` | a deploy shows at once; the ETag makes it cheap; the edge may not rewrite the HTML ([why](how-to-configure-security-headers.md#edge-injected-web-analytics)) |
+| `/docs/changelog.xml`                                                         | `public, max-age=0, must-revalidate`               | the feed is not HTML                                                                                                                                         |
 
-The rules apply only to responses served from the static assets, not to pages the Worker renders on request (sign-in, `/app`, the API). Check them with `curl -I` against `bunx astro preview` (it serves the build like Cloudflare does) or a deployment.
+The rules apply only to responses served from the static assets, not to pages the Worker renders on request (sign-in, `/app`, the API); those get `no-transform` from the middleware. Check them with `curl -I` against `bunx astro preview` (it serves the build like Cloudflare does) or a deployment.
 
 ## Bundle budget
 
