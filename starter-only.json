@@ -458,8 +458,13 @@
         },
         {
           "file": "docs/processes/dependencies.md",
-          "find": "[README](../../README.md#starting-a-new-project-from-this-starter)",
-          "replace": "[start-a-project guide](../guides/how-to-start-a-project.md#1-create-the-repository-from-the-template)"
+          "find": "../../README.md#starting-a-new-project-from-this-starter",
+          "replace": "../guides/how-to-start-a-project.md#1-create-the-repository-from-the-template"
+        },
+        {
+          "file": "docs/processes/dependencies.md",
+          "find": "Keep the holds named in the [README](",
+          "replace": "Keep the holds named in the [start-a-project guide]("
         }
       ],
       "docs": [
