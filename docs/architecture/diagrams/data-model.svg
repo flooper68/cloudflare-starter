@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 2185.542 933.4" width="2186" height="934" role="img" data-natural-width="">
+<title>D1 tables by feature</title>
+<desc>Two tables anchor everything. user (Better Auth) owns its sessions, accounts, second factors, passkeys, settings, OAuth clients and consents, notification preferences and settings, all deleted with it. workspaces own their members, invitations, subscription, add-ons, entitlement overrides, usage counters, notes, files and notifications, all deleted with the workspace. workspace_members joins users to workspaces with a role. note_comments belong to notes. feature_flag_rules belong to feature_flags. audit_events, job_idempotency_keys, data_requests, erasure_records, privacy_erasure_lock and pending_file_cleanup have no foreign keys, so they survive the deletions they record. qa_outbox, the mail kept for the QA suite, has none either.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="2185.542" height="933.4" rx="12"/>
+<defs>
+<marker id="dg-data-model-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-data-model-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<g class="subgraph" data-id="Auth" data-label="accounts: Better Auth">
+<rect x="40" y="203.2" width="709.6469999999999" height="245.70000000000002" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="40" y="203.2" width="709.6469999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="52" y="217.2" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">accounts: Better Auth</text>
+</g>
+<g class="subgraph" data-id="Tenancy" data-label="workspaces">
+<rect x="904.1249999999999" y="226.875" width="496.74600000000004" height="197.65" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="904.1249999999999" y="226.875" width="496.74600000000004" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="916.1249999999999" y="240.875" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">workspaces</text>
+</g>
+<g class="subgraph" data-id="Billing" data-label="billing">
+<rect x="1586.237" y="229.8" width="559.3049999999998" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="1586.237" y="229.8" width="559.3049999999998" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="1598.237" y="243.8" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">billing</text>
+</g>
+<g class="subgraph" data-id="Notes" data-label="notes">
+<rect x="1586.237" y="354.70000000000005" width="379.00800000000004" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="1586.237" y="354.70000000000005" width="379.00800000000004" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="1598.237" y="368.70000000000005" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">notes</text>
+</g>
+<g class="subgraph" data-id="Files" data-label="files">
+<rect x="1562.237" y="40" width="199.92" height="161.8" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="1562.237" y="40" width="199.92" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="1574.237" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">files</text>
+</g>
+<g class="subgraph" data-id="Notifications" data-label="notifications">
+<rect x="1562.237" y="479.6" width="338.4869999999999" height="161.8" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="1562.237" y="479.6" width="338.4869999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="1574.237" y="493.6" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">notifications</text>
+</g>
+<g class="subgraph" data-id="Platform" data-label="audit, jobs, privacy, qa">
+<rect x="451.76099999999997" y="476.9" width="410.3639999999999" height="291.6" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="451.76099999999997" y="476.9" width="410.3639999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="463.76099999999997" y="490.9" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">audit, jobs, privacy, qa</text>
+</g>
+<g class="subgraph" data-id="Flags" data-label="feature flags">
+<rect x="40.00000000000034" y="796.5" width="447.192" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="40.00000000000034" y="796.5" width="447.192" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="52.00000000000034" y="810.5" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">feature flags</text>
+</g>
+<polyline class="edge" data-from="User" data-to="Members" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="user_id" points="126.108,368.1357142857143 162.108,368.1357142857143 162.108,372 791.6469999999999,372 791.6469999999999,278.325 1173.541,278.32499999999993 1173.541,283.17499999999995 1209.541,283.17499999999995" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="Workspaces" data-to="Plans" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="workspace_id" points="1036.175,338.48928571428576 1072.175,338.48928571428576 1072.175,334.625 1442.871,334.625 1442.871,292.25 1590.237,292.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="Workspaces" data-to="NotesT" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="workspace_id" points="1036.175,343.7607142857143 1072.175,343.7607142857143 1072.175,347.625 1442.871,347.625 1442.871,417.15000000000003 1590.237,417.15000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="Workspaces" data-to="FilesT" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="workspace_id" points="1036.175,333.21785714285716 1060.175,333.21785714285716 1060.175,321.625 1418.871,321.625 1418.871,167.35000000000005 1590.237,167.35000000000008" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="Workspaces" data-to="Inbox" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="workspace_id" points="1036.175,349.0321428571429 1060.175,349.0321428571429 1060.175,360.625 1418.871,360.625 1418.871,531.55 1544.237,531.55 1544.237,535.9000000000001 1590.237,535.9000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="User" data-to="Inbox" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="user_id" points="126.108,373.40714285714284 150.108,373.40714285714284 150.108,385 874.1249999999999,385 874.1249999999999,552.2 1544.237,552.2 1544.237,548.2 1590.237,548.2" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="User" data-to="Prefs" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="user_id" points="126.108,362.8642857142857 162.108,362.8642857142857 162.108,359 886.1249999999999,359 886.1249999999999,606.95 1590.237,606.95" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="User" data-to="Creds" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="user_id" points="126.108,352.32142857142856 138.108,352.32142857142856 138.108,265.65 268.586,265.65" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="User" data-to="OAuth" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="user_id" points="126.108,357.59285714285716 150.108,357.59285714285716 150.108,330.54999999999995 268.586,330.55" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="User" data-to="Settings" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="user_id" points="126.108,378.67857142857144 138.108,378.67857142857144 138.108,414.45 268.586,414.45" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="Workspaces" data-to="Members" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="workspace_id" points="1036.175,327.94642857142856 1048.175,327.94642857142856 1048.175,300.325 1173.541,300.325 1173.541,295.475 1209.541,295.475" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="Workspaces" data-to="Invitations" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="workspace_id" points="1036.175,354.30357142857144 1048.175,354.30357142857144 1048.175,390.07500000000005 1209.541,390.07500000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="NotesT" data-to="Comments" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="note_id" points="1664.7910000000002,417.15000000000003 1816.893,417.15000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<polyline class="edge" data-from="FlagsT" data-to="Rules" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="flag_key" points="175.01400000000035,858.95 321.0560000000004,858.95" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-data-model-arrowhead)" />
+<g class="edge-label" data-from="User" data-to="Members" data-label="user_id">
+<rect x="799.6469999999999" y="262.325" width="54.478" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="826.886" y="277.47499999999997" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">user_id</text>
+</g>
+<g class="edge-label" data-from="Workspaces" data-to="Plans" data-label="workspace_id">
+<rect x="1450.871" y="276.25" width="85.36600000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1493.554" y="291.4" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">workspace_id</text>
+</g>
+<g class="edge-label" data-from="Workspaces" data-to="NotesT" data-label="workspace_id">
+<rect x="1450.871" y="401.15" width="85.36600000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1493.554" y="416.29999999999995" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">workspace_id</text>
+</g>
+<g class="edge-label" data-from="Workspaces" data-to="FilesT" data-label="workspace_id">
+<rect x="1426.871" y="151.35000000000005" width="85.36600000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1469.554" y="166.50000000000006" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">workspace_id</text>
+</g>
+<g class="edge-label" data-from="Workspaces" data-to="Inbox" data-label="workspace_id">
+<rect x="1426.871" y="515.55" width="85.36600000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1469.554" y="530.6999999999999" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">workspace_id</text>
+</g>
+<g class="edge-label" data-from="User" data-to="Inbox" data-label="user_id">
+<rect x="1368.393" y="536.2" width="54.478" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1395.632" y="551.35" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">user_id</text>
+</g>
+<g class="edge-label" data-from="User" data-to="Prefs" data-label="user_id">
+<rect x="1457.759" y="590.95" width="54.478" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1484.998" y="606.1" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">user_id</text>
+</g>
+<g class="edge-label" data-from="User" data-to="Creds" data-label="user_id">
+<rect x="170.108" y="249.64999999999995" width="54.478" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="197.347" y="264.79999999999995" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">user_id</text>
+</g>
+<g class="edge-label" data-from="User" data-to="OAuth" data-label="user_id">
+<rect x="170.108" y="314.55" width="54.478" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="197.347" y="329.7" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">user_id</text>
+</g>
+<g class="edge-label" data-from="User" data-to="Settings" data-label="user_id">
+<rect x="170.108" y="398.45000000000005" width="54.478" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="197.347" y="413.6" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">user_id</text>
+</g>
+<g class="edge-label" data-from="Workspaces" data-to="Members" data-label="workspace_id">
+<rect x="1080.175" y="284.32500000000005" width="85.36600000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1122.858" y="299.475" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">workspace_id</text>
+</g>
+<g class="edge-label" data-from="Workspaces" data-to="Invitations" data-label="workspace_id">
+<rect x="1080.175" y="374.07500000000005" width="85.36600000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1122.858" y="389.225" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">workspace_id</text>
+</g>
+<g class="edge-label" data-from="NotesT" data-to="Comments" data-label="note_id">
+<rect x="1720.7910000000002" y="401.1500000000001" width="52.102000000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="1746.842" y="416.30000000000007" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">note_id</text>
+</g>
+<g class="edge-label" data-from="FlagsT" data-to="Rules" data-label="flag_key">
+<rect x="219.01400000000035" y="842.95" width="58.042" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="248.03500000000037" y="858.1" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">flag_key</text>
+</g>
+<g class="node" data-id="User" data-label="user" data-shape="rectangle">
+<rect x="56" y="347.04999999999995" width="70.108" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="91.054" y="365.49999999999994" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">user</text>
+</g>
+<g class="node" data-id="Creds" data-label="session, account, two_factor, passkey" data-shape="rectangle">
+<rect x="268.586" y="247.2" width="264.991" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="401.0815" y="265.65" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">session, account, two_factor, passkey</text>
+</g>
+<g class="node" data-id="OAuth" data-label="oauth_client, oauth_consent, oauth_access_token, oauth_refresh_token" data-shape="rectangle">
+<rect x="268.586" y="312.1" width="465.06099999999986" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="501.1165" y="330.55" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">oauth_client, oauth_consent, oauth_access_token, oauth_refresh_token</text>
+</g>
+<g class="node" data-id="Settings" data-label="user_settings" data-shape="rectangle">
+<rect x="268.586" y="396" width="123.46" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="330.31600000000003" y="414.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">user_settings</text>
+</g>
+<g class="node" data-id="Workspaces" data-label="workspaces" data-shape="rectangle">
+<rect x="920.1249999999999" y="322.675" width="116.05" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="978.1499999999999" y="341.125" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">workspaces</text>
+</g>
+<g class="node" data-id="Members" data-label="workspace_members" data-shape="rectangle">
+<rect x="1209.541" y="270.875" width="169.402" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1294.242" y="289.325" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">workspace_members</text>
+</g>
+<g class="node" data-id="Invitations" data-label="workspace_invitations" data-shape="rectangle">
+<rect x="1209.541" y="371.625" width="175.32999999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1297.206" y="390.075" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">workspace_invitations</text>
+</g>
+<g class="node" data-id="Plans" data-label="workspace_subscription, workspace_addon, entitlement_override, usage_counter" data-shape="rectangle">
+<rect x="1590.237" y="273.8" width="527.3049999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1853.8895" y="292.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">workspace_subscription, workspace_addon, entitlement_override, usage_counter</text>
+</g>
+<g class="node" data-id="NotesT" data-label="notes" data-shape="rectangle">
+<rect x="1590.237" y="398.70000000000005" width="74.554" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1627.5140000000001" y="417.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notes</text>
+</g>
+<g class="node" data-id="Comments" data-label="note_comments" data-shape="rectangle">
+<rect x="1816.893" y="398.70000000000005" width="132.352" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1883.069" y="417.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">note_comments</text>
+</g>
+<g class="node" data-id="FilesT" data-label="files" data-shape="rectangle">
+<rect x="1590.237" y="148.9" width="65.662" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1623.068" y="167.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">files</text>
+</g>
+<g class="node" data-id="Pending" data-label="pending_file_cleanup" data-shape="rectangle">
+<rect x="1590.237" y="84" width="167.92" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1674.1970000000001" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">pending_file_cleanup</text>
+</g>
+<g class="node" data-id="Inbox" data-label="notifications" data-shape="rectangle">
+<rect x="1590.237" y="523.6" width="111.604" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1646.039" y="542.0500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notifications</text>
+</g>
+<g class="node" data-id="Prefs" data-label="notification_preferences, notification_settings" data-shape="rectangle">
+<rect x="1590.237" y="588.5" width="306.4869999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1743.4805000000001" y="606.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notification_preferences, notification_settings</text>
+</g>
+<g class="node" data-id="Audit" data-label="audit_events" data-shape="rectangle">
+<rect x="601.5114999999998" y="585.8" width="117.53200000000001" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="660.2774999999998" y="604.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">audit_events</text>
+</g>
+<g class="node" data-id="Jobs" data-label="job_idempotency_keys" data-shape="rectangle">
+<rect x="567.7959999999999" y="650.7" width="178.29399999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="656.943" y="669.1500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">job_idempotency_keys</text>
+</g>
+<g class="node" data-id="Privacy" data-label="data_requests, erasure_records, privacy_erasure_lock" data-shape="rectangle">
+<rect x="467.76099999999997" y="520.9" width="378.3639999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="656.943" y="539.35" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">data_requests, erasure_records, privacy_erasure_lock</text>
+</g>
+<g class="node" data-id="Qa" data-label="qa_outbox" data-shape="rectangle">
+<rect x="601.5114999999998" y="715.6" width="104.194" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="653.6084999999998" y="734.0500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">qa_outbox</text>
+</g>
+<g class="node" data-id="FlagsT" data-label="feature_flags" data-shape="rectangle">
+<rect x="56.00000000000034" y="840.5" width="119.01400000000001" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="115.50700000000035" y="858.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">feature_flags</text>
+</g>
+<g class="node" data-id="Rules" data-label="feature_flag_rules" data-shape="rectangle">
+<rect x="321.0560000000004" y="840.5" width="150.136" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="396.12400000000036" y="858.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">feature_flag_rules</text>
+</g>
+</svg>

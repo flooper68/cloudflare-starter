@@ -31,6 +31,7 @@
     "setup:storage": "bun scripts/setup-storage.ts",
     "setup:admin": "bun scripts/setup-admin.ts",
     "doctor": "bun scripts/doctor.ts",
+    "docs:diagrams": "bun apps/web/scripts/render-diagrams.ts",
     "runner:up": "bun scripts/runner.ts up",
     "runner:down": "bun scripts/runner.ts down",
     "runner:logs": "bun scripts/runner.ts logs",

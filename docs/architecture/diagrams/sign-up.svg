@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 849.7945 630" width="850" height="630" role="img" data-natural-width="">
+<title>Sign-up, verification, workspace and dashboard</title>
+<desc>The sign-up form posts to /api/auth/sign-up/email with a Turnstile token. The route counts the request per IP (auth.ip), then Better Auth's before hook verifies the token with Turnstile Siteverify and applies Better Auth's own limit, stored in D1. The user.create.before hook checks the sign-up policy. Better Auth inserts the user. The user.create.after hook provisions the workspace (a personal workspace, or membership of the single workspace), starts the plan's trial, records the audit events and tracks auth.signed_up. Better Auth sends the verification mail through Email Sending. With verification required there is no session yet and the form shows check your inbox. The link verifies the address, signs the user in and lands on /email-verified, which continues to /app. The dashboard's tRPC queries resolve the actor; resolveActor provisions the workspace again if the sign-up hook failed.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="849.7945" height="630" rx="12"/>
+<defs>
+<marker id="dg-sign-up-seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+</marker>
+<marker id="dg-sign-up-seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+</marker>
+</defs>
+<line class="lifeline" data-actor="B" x1="72.91" y1="70" x2="72.91" y2="600" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="A" x1="212.91" y1="70" x2="212.91" y2="600" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="T" x1="352.90999999999997" y1="70" x2="352.90999999999997" y2="600" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="D" x1="492.90999999999997" y1="70" x2="492.90999999999997" y2="600" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="E" x1="632.91" y1="70" x2="632.91" y2="600" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="W" x1="775.4024999999999" y1="70" x2="775.4024999999999" y2="600" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="B" data-to="A" data-label="POST sign-up/email, Turnstile token" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="72.91" y1="90" x2="212.91" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="142.91" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">POST sign-up/email, Turnstile token</text>
+</g>
+<g class="message" data-from="A" data-to="T" data-label="Siteverify" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="145" x2="352.90999999999997" y2="145" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="282.90999999999997" y="135" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Siteverify</text>
+</g>
+<g class="message" data-from="A" data-to="D" data-label="Better Auth limiter" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="185" x2="492.90999999999997" y2="185" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="352.90999999999997" y="175" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">Better Auth limiter</text>
+</g>
+<g class="message" data-from="A" data-to="D" data-label="insert user and account" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="240" x2="492.90999999999997" y2="240" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="352.90999999999997" y="230" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">insert user and account</text>
+</g>
+<g class="message" data-from="A" data-to="D" data-label="user.create.after: provisionUser, trial, audit" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="280" x2="492.90999999999997" y2="280" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="352.90999999999997" y="270" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">user.create.after: provisionUser, trial, audit</text>
+</g>
+<g class="message" data-from="A" data-to="E" data-label="verification mail" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="320" x2="632.91" y2="320" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="422.90999999999997" y="310" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">verification mail</text>
+</g>
+<g class="message" data-from="A" data-to="B" data-label="no session, check your inbox" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="360" x2="72.91" y2="360" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="142.91" y="350" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">no session, check your inbox</text>
+</g>
+<g class="message" data-from="B" data-to="A" data-label="GET verify-email link" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="72.91" y1="400" x2="212.91" y2="400" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="142.91" y="390" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">GET verify-email link</text>
+</g>
+<g class="message" data-from="A" data-to="D" data-label="email verified, session created" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="440" x2="492.90999999999997" y2="440" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="352.90999999999997" y="430" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">email verified, session created</text>
+</g>
+<g class="message" data-from="A" data-to="B" data-label="302 /email-verified, then /app" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="212.91" y1="480" x2="72.91" y2="480" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="142.91" y="470" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">302 /email-verified, then /app</text>
+</g>
+<g class="message" data-from="B" data-to="W" data-label="/app/dashboard" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="72.91" y1="520" x2="775.4024999999999" y2="520" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="424.15624999999994" y="510" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">/app/dashboard</text>
+</g>
+<g class="message" data-from="W" data-to="D" data-label="tRPC queries, resolveActor" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="775.4024999999999" y1="560" x2="492.90999999999997" y2="560" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-sign-up-seq-arrow)" />
+<text x="634.15625" y="550" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">tRPC queries, resolveActor</text>
+</g>
+<g class="note" data-position="over" data-actors="A">
+<polygon points="165.039,98 254.781,98 260.781,104 260.781,121 165.039,121" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="254.781,98 260.781,104 254.781,104" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="212.91" y="109.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">rate limit auth.ip</text>
+</g>
+<g class="note" data-position="over" data-actors="A">
+<polygon points="120.78599999999999,193 299.034,193 305.034,199 305.034,216 120.78599999999999,216" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="299.034,193 305.034,199 299.034,199" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="212.91" y="204.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">user.create.before: sign-up policy</text>
+</g>
+<g class="actor" data-id="B" data-label="Browser" data-type="participant">
+<rect x="30" y="30" width="85.82" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="72.91" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Browser</text>
+</g>
+<g class="actor" data-id="A" data-label="/api/auth" data-type="participant">
+<rect x="170.74099999999999" y="30" width="84.338" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="212.91" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">/api/auth</text>
+</g>
+<g class="actor" data-id="T" data-label="Turnstile" data-type="participant">
+<rect x="309.25899999999996" y="30" width="87.30199999999999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="352.90999999999997" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Turnstile</text>
+</g>
+<g class="actor" data-id="D" data-label="D1" data-type="participant">
+<rect x="452.90999999999997" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="492.90999999999997" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">D1</text>
+</g>
+<g class="actor" data-id="E" data-label="Email Sending" data-type="participant">
+<rect x="574.8095" y="30" width="116.20099999999998" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="632.91" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Email Sending</text>
+</g>
+<g class="actor" data-id="W" data-label="/app SPA" data-type="participant">
+<rect x="731.0104999999999" y="30" width="88.78399999999999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="775.4024999999999" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">/app SPA</text>
+</g>
+</svg>

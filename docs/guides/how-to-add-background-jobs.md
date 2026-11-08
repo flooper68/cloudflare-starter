@@ -4,15 +4,7 @@ How the web Worker runs work in the background: typed jobs on Cloudflare Queues,
 
 ## How it fits together
 
-```mermaid
-flowchart LR
-  P["use case / cron entry"] -->|"enqueueJob(definition, payload)"| Q[["APP_QUEUE"]]
-  Q --> C["queue consumer (apps/web/src/server/queue.ts)"]
-  C -->|"runJob: idempotency claim, handler"| H["job handler (a use case)"]
-  C -->|"failed: retry({ delaySeconds })"| Q
-  C -->|"final attempt failed: report"| R["ErrorReporter"]
-  Q -->|"after max_retries"| D[["dead-letter queue (no consumer, 14 days)"]]
-```
+![How a job moves through the queue](diagrams/job-queue.svg)
 
 | Piece            | Where                                                                         | What it does                                                                                                     |
 | ---------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |

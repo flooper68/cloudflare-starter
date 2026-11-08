@@ -1,0 +1,23 @@
+sequenceDiagram
+  accTitle: Sign-up, verification, workspace and dashboard
+  accDescr: The sign-up form posts to /api/auth/sign-up/email with a Turnstile token. The route counts the request per IP (auth.ip), then Better Auth's before hook verifies the token with Turnstile Siteverify and applies Better Auth's own limit, stored in D1. The user.create.before hook checks the sign-up policy. Better Auth inserts the user. The user.create.after hook provisions the workspace (a personal workspace, or membership of the single workspace), starts the plan's trial, records the audit events and tracks auth.signed_up. Better Auth sends the verification mail through Email Sending. With verification required there is no session yet and the form shows check your inbox. The link verifies the address, signs the user in and lands on /email-verified, which continues to /app. The dashboard's tRPC queries resolve the actor; resolveActor provisions the workspace again if the sign-up hook failed.
+  participant B as Browser
+  participant A as /api/auth
+  participant T as Turnstile
+  participant D as D1
+  participant E as Email Sending
+  participant W as /app SPA
+  B->>A: POST sign-up/email, Turnstile token
+  Note over A: rate limit auth.ip
+  A->>T: Siteverify
+  A->>D: Better Auth limiter
+  Note over A: user.create.before: sign-up policy
+  A->>D: insert user and account
+  A->>D: user.create.after: provisionUser, trial, audit
+  A->>E: verification mail
+  A-->>B: no session, check your inbox
+  B->>A: GET verify-email link
+  A->>D: email verified, session created
+  A-->>B: 302 /email-verified, then /app
+  B->>W: /app/dashboard
+  W->>D: tRPC queries, resolveActor

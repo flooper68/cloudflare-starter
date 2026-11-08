@@ -1,0 +1,8 @@
+stateDiagram-v2
+  accTitle: ADR statuses
+  accDescr: A new ADR is Proposed. The owner accepts it, or it is rejected and deleted or kept as Rejected. An Accepted ADR becomes Superseded when a new ADR replaces it, or Deprecated when it is no longer relevant and nothing replaces it.
+  [*] --> Proposed
+  Proposed --> Accepted: owner accepts
+  Proposed --> [*]: rejected (file deleted or kept as Rejected)
+  Accepted --> Superseded: new ADR replaces it
+  Accepted --> Deprecated: no longer relevant, nothing replaces it

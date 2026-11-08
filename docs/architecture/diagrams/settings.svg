@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 1140.1370000000002 246.70000000000002" width="1141" height="247" role="img" data-natural-width="">
+<title>Settings, from definition to check</title>
+<desc>Settings are declared per environment in wrangler.jsonc vars, in .dev.vars locally, and as Worker secrets; setup scripts write some of them. The app parses them in apps/web/src/lib/config.ts, which has no defaults for required settings. buildPlatform builds the adapters once per isolate from the settings; a missing or invalid one fails every request with a 500 that names it, and is not cached, so the fix applies on the next request. The readiness endpoint reports it as the settings:configuration check, and bun run doctor checks the same settings locally and per environment before a deploy.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="1140.1370000000002" height="246.70000000000002" rx="12"/>
+<defs>
+<marker id="dg-settings-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-settings-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<polyline class="edge" data-from="Vars" data-to="Config" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="302.02699999999993,58.45 323.02699999999993,58.45 323.02699999999993,129.5 344.027,129.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<polyline class="edge" data-from="DevVars" data-to="Config" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="290.02699999999993,123.35000000000001 317.02699999999993,123.35000000000001 317.02699999999993,129.5 344.027,129.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<polyline class="edge" data-from="Secrets" data-to="Config" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="314.02699999999993,188.25 326.02699999999993,188.25 326.02699999999993,138.72500000000002 344.027,138.72500000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<polyline class="edge" data-from="Config" data-to="Platform" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="560.853,129.5 575.8530000000001,129.5 575.8530000000001,186.71250000000003 590.8530000000001,186.71250000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<polyline class="edge" data-from="Platform" data-to="Error" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="invalid" points="806.9380000000001,186.71250000000003 931.476,186.71250000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<polyline class="edge" data-from="Config" data-to="Health" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="560.853,129.5 575.8530000000001,129.5 575.8530000000001,121.81250000000001 590.8530000000001,121.81250000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<polyline class="edge" data-from="Vars" data-to="Doctor" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="302.02699999999993,58.45 323.02699999999993,58.45 323.02699999999993,58.45 344.027,58.45" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<polyline class="edge" data-from="DevVars" data-to="Doctor" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="290.02699999999993,123.35000000000001 317.02699999999993,123.35000000000001 317.02699999999993,58.45 344.027,58.45" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-settings-arrowhead)" />
+<g class="edge-label" data-from="Platform" data-to="Error" data-label="invalid">
+<rect x="838.938" y="170.7125" width="48.538000000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="863.207" y="185.8625" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">invalid</text>
+</g>
+<g class="node" data-id="Vars" data-label="wrangler.jsonc vars, per environment" data-shape="rectangle">
+<rect x="40" y="40" width="262.02699999999993" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="171.01349999999996" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">wrangler.jsonc vars, per environment</text>
+</g>
+<g class="node" data-id="DevVars" data-label=".dev.vars, local" data-shape="rectangle">
+<rect x="158.41599999999994" y="104.9" width="131.611" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="224.22149999999993" y="123.35000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">.dev.vars, local</text>
+</g>
+<g class="node" data-id="Secrets" data-label="Worker secrets: setup:secrets" data-shape="rectangle">
+<rect x="92.01399999999992" y="169.8" width="222.013" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="203.0204999999999" y="188.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Worker secrets: setup:secrets</text>
+</g>
+<g class="node" data-id="Config" data-label="lib/config.ts: parse, no defaults" data-shape="rectangle">
+<rect x="344.027" y="111.05000000000001" width="216.826" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="452.44" y="129.5" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">lib/config.ts: parse, no defaults</text>
+</g>
+<g class="node" data-id="Platform" data-label="buildPlatform: once per isolate" data-shape="rectangle">
+<rect x="590.8530000000001" y="168.26250000000002" width="216.08499999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="698.8955000000001" y="186.71250000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">buildPlatform: once per isolate</text>
+</g>
+<g class="node" data-id="Error" data-label="500 naming the setting" data-shape="rectangle">
+<rect x="931.476" y="168.26250000000002" width="168.661" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1015.8065" y="186.71250000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">500 naming the setting</text>
+</g>
+<g class="node" data-id="Health" data-label="/health/ready: settings:configuration" data-shape="rectangle">
+<rect x="590.8530000000001" y="103.36250000000001" width="251.65299999999993" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="716.6795000000001" y="121.81250000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">/health/ready: settings:configuration</text>
+</g>
+<g class="node" data-id="Doctor" data-label="bun run doctor" data-shape="rectangle">
+<rect x="344.027" y="40" width="127.90599999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="407.97999999999996" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">bun run doctor</text>
+</g>
+</svg>

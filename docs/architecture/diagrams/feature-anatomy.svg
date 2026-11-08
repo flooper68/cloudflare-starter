@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 1364.8124523809522 1272.4" width="1365" height="1273" role="img" data-natural-width="">
+<title>The Notes feature across the layers</title>
+<desc>In packages/ui, the NoteList and NoteEditor components. In the SPA, NotesPage and NoteDetailPage render them, are routed in routes.tsx and listed in navigation.ts and the command palette, and call the notes tRPC procedures. On the server, notesRouter holds workspace procedures and the MCP tools list_notes, create_note and the others call the same procedures in process. Each procedure calls one use case in packages/features/src/notes, such as createNote. The use cases apply the pure rules in notes/domain, ask the workspaces feature for the permission, billing for the notes limit, record audit events and track product events, and read and write the notes and note_comments tables in D1. The composition roots register the feature: database.ts its tables, trash-catalog.ts its trash entity, analytics-events.ts its event, data-catalog.ts its export and erasure, and billing's measure-metric.ts its countWorkspaceNotes measure.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="1364.8124523809522" height="1272.4" rx="12"/>
+<defs>
+<marker id="dg-feature-anatomy-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-feature-anatomy-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<g class="subgraph" data-id="UI" data-label="packages/ui">
+<rect x="520.674369047619" y="281.8" width="190.287" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="520.674369047619" y="281.8" width="190.287" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="532.674369047619" y="295.8" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">packages/ui</text>
+</g>
+<g class="subgraph" data-id="SPA" data-label="apps/web SPA">
+<rect x="565.5237023809524" y="40" width="313.29299999999995" height="181.8" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="565.5237023809524" y="40" width="313.29299999999995" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="577.5237023809524" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">apps/web SPA</text>
+</g>
+<g class="subgraph" data-id="Server" data-label="apps/web/src/server">
+<rect x="476.8263690476191" y="432.70000000000005" width="356.7532499999999" height="250.1" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="476.8263690476191" y="432.70000000000005" width="356.7532499999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="488.8263690476191" y="446.70000000000005" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">apps/web/src/server</text>
+</g>
+<g class="subgraph" data-id="Feature" data-label="packages/features/src/notes">
+<rect x="518.4341190476191" y="893.7" width="806.3783333333331" height="181.8" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="518.4341190476191" y="893.7" width="806.3783333333331" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="530.4341190476191" y="907.7" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">packages/features/src/notes</text>
+</g>
+<g class="subgraph" data-id="Shared" data-label="other features">
+<rect x="40" y="1135.5" width="931.434" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="40" y="1135.5" width="931.434" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="52" y="1149.5" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">other features</text>
+</g>
+<g class="subgraph" data-id="Roots" data-label="composition roots">
+<rect x="738.759119047619" y="736.8000000000001" width="554.1179999999997" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="738.759119047619" y="736.8000000000001" width="554.1179999999997" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="750.759119047619" y="750.8000000000001" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">composition roots</text>
+</g>
+<polyline class="edge" data-from="Screens" data-to="Components" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="688.3790357142857,205.8 688.3790357142857,263.8 615.8178690476191,263.8 615.8178690476191,325.80000000000007" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Screens" data-to="Router" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="tRPC" points="755.961369047619,205.8 755.961369047619,593.9000000000001 730.9782857142857,593.9000000000001 730.9782857142857,629.9000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Router" data-to="UseCases" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="687.677619047619,666.8000000000001 687.677619047619,937.7" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Permission" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="687.677619047619,974.6 687.677619047619,998.6 172.19349999999997,998.6 172.19349999999997,1179.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Billing" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="687.677619047619,974.6 687.677619047619,998.6 409.9799999999999,998.6 409.9799999999999,1179.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Audit" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="687.677619047619,974.6 687.677619047619,998.6 621.8315,998.6 621.8315,1179.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Analytics" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="687.677619047619,974.6 687.677619047619,998.6 847.762,998.6 847.762,1179.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Schema" data-to="D1" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="828.1214523809523,1059.5 828.1214523809523,1105.5 1093.027,1105.5 1093.027,1129.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Catalogs" data-to="Schema" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1015.8181190476189,817.7 1015.8181190476189,877.7 828.1214523809523,877.7 828.1214523809523,1022.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Catalogs" data-to="Trash" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1015.8181190476189,817.7 1015.8181190476189,877.7 1016.3181190476189,877.7 1016.3181190476189,937.7" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Catalogs" data-to="Domain" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1015.8181190476189,817.7 1015.8181190476189,877.7 1116.6664523809523,877.7 1116.6664523809523,1022.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Nav" data-to="Screens" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="722.1702023809523,120.9 722.1702023809523,168.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="Tools" data-to="Router" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="createCaller" points="619.3938690476191,513.6 619.3938690476191,593.9000000000001 644.3769523809524,593.9000000000001 644.3769523809524,629.9000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Domain" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="687.677619047619,974.6 687.677619047619,998.6 1116.6664523809523,998.6 1116.6664523809523,1022.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<polyline class="edge" data-from="UseCases" data-to="Schema" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="687.677619047619,974.6 687.677619047619,998.6 828.1214523809523,998.6 828.1214523809523,1022.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-feature-anatomy-arrowhead)" />
+<g class="edge-label" data-from="Screens" data-to="Router" data-label="tRPC">
+<rect x="734.961369047619" y="353.4" width="41.41" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="755.666369047619" y="368.54999999999995" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">tRPC</text>
+</g>
+<g class="edge-label" data-from="Tools" data-to="Router" data-label="createCaller">
+<rect x="580.3938690476191" y="556.6" width="77.05000000000001" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="618.9188690476191" y="571.75" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">createCaller</text>
+</g>
+<g class="node" data-id="D1" data-label="D1: notes, note_comments" data-shape="cylinder">
+<rect x="999.434" y="1136.5" width="187.18599999999998" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+<line x1="999.434" y1="1136.5" x2="999.434" y2="1173.4" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="1186.62" y1="1136.5" x2="1186.62" y2="1173.4" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1093.027" cy="1173.4" rx="93.59299999999999" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="1093.027" cy="1136.5" rx="93.59299999999999" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1093.027" y="1154.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">D1: notes, note_comments</text>
+</g>
+<g class="node" data-id="Components" data-label="NoteList, NoteEditor" data-shape="rectangle">
+<rect x="536.674369047619" y="325.8" width="158.287" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="615.8178690476191" y="344.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">NoteList, NoteEditor</text>
+</g>
+<g class="node" data-id="Screens" data-label="NotesPage, NoteDetailPage" data-shape="rectangle">
+<rect x="620.7967023809524" y="168.9" width="202.74699999999996" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="722.1702023809523" y="187.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">NotesPage, NoteDetailPage</text>
+</g>
+<g class="node" data-id="Nav" data-label="routes.tsx, navigation.ts, command palette" data-shape="rectangle">
+<rect x="581.5237023809524" y="84" width="281.29299999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="722.1702023809523" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">routes.tsx, navigation.ts, command palette</text>
+</g>
+<g class="node" data-id="Router" data-label="notesRouter: workspace procedures" data-shape="rectangle">
+<rect x="557.7756190476191" y="629.9000000000001" width="259.804" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="687.6776190476191" y="648.3500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notesRouter: workspace procedures</text>
+</g>
+<g class="node" data-id="Tools" data-label="MCP tools: list_notes, create_note, ..." data-shape="rectangle">
+<rect x="492.8263690476191" y="476.70000000000005" width="253.13499999999993" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="619.3938690476191" y="495.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">MCP tools: list_notes, create_note, ...</text>
+</g>
+<g class="node" data-id="UseCases" data-label="use cases: createNote, listNotes, trashNote, ..." data-shape="rectangle">
+<rect x="534.4341190476191" y="937.7" width="306.4869999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="687.677619047619" y="956.1500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">use cases: createNote, listNotes, trashNote, ...</text>
+</g>
+<g class="node" data-id="Domain" data-label="domain/: note-input, note-summary, errors, analytics-events" data-shape="rectangle">
+<rect x="924.5204523809523" y="1022.6" width="384.2919999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1116.6664523809523" y="1041.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">domain/: note-input, note-summary, errors, analytics-events</text>
+</g>
+<g class="node" data-id="Schema" data-label="notes.schema.ts" data-shape="rectangle">
+<rect x="759.7224523809523" y="1022.6" width="136.798" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="828.1214523809523" y="1041.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">notes.schema.ts</text>
+</g>
+<g class="node" data-id="Trash" data-label="trash.ts: noteTrash" data-shape="rectangle">
+<rect x="939.397619047619" y="937.7" width="153.841" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1016.3181190476189" y="956.1500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">trash.ts: noteTrash</text>
+</g>
+<g class="node" data-id="Permission" data-label="workspaces: requirePermission" data-shape="rectangle">
+<rect x="56" y="1179.5" width="232.38699999999994" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="172.19349999999997" y="1197.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">workspaces: requirePermission</text>
+</g>
+<g class="node" data-id="Billing" data-label="billing: requireLimit notes" data-shape="rectangle">
+<rect x="316.38699999999994" y="1179.5" width="187.18599999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="409.9799999999999" y="1197.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">billing: requireLimit notes</text>
+</g>
+<g class="node" data-id="Audit" data-label="audit: recordAuditEvent" data-shape="rectangle">
+<rect x="531.573" y="1179.5" width="180.51699999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="621.8315" y="1197.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">audit: recordAuditEvent</text>
+</g>
+<g class="node" data-id="Analytics" data-label="product-analytics: trackEvent" data-shape="rectangle">
+<rect x="740.0899999999999" y="1179.5" width="215.344" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="847.762" y="1197.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">product-analytics: trackEvent</text>
+</g>
+<g class="node" data-id="Catalogs" data-label="database.ts, trash-catalog.ts, analytics-events.ts, data-catalog.ts, measure-metric.ts" data-shape="rectangle">
+<rect x="754.759119047619" y="780.8000000000001" width="522.1179999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1015.8181190476189" y="799.2500000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">database.ts, trash-catalog.ts, analytics-events.ts, data-catalog.ts, measure-metric.ts</text>
+</g>
+</svg>
