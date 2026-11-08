@@ -41,7 +41,10 @@ export const DOCS = {
     items: [
       { path: "docs/README.md", label: "Overview" },
       { path: "README.md", label: "Start a project" },
-      { path: "CHANGELOG.md", label: "Changelog" },
+      {
+        path: "docs/guides/how-to-setup-web-app.md",
+        label: "Run locally and deploy",
+      },
     ],
   },
   /**

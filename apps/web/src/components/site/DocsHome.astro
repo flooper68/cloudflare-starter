@@ -1,0 +1,149 @@
+---
+/**
+ * The top of the docs home (/docs/, docs/README.md): "What do you want to do?", one card
+ * per section of the docs, and the feature map from the home page (FeatureMap.astro,
+ * the same data as the docs' Features section). The index's own Markdown follows it:
+ * "Start in three steps" and every doc with when to read it.
+ */
+import {
+  BookOpen,
+  Bot,
+  Boxes,
+  History,
+  Library,
+  Network,
+  Rocket,
+} from "lucide-react";
+
+import FeatureMap from "@/components/site/FeatureMap.astro";
+
+const INTENTS = [
+  {
+    title: "Start",
+    line: "Run it locally, then deploy. About ten minutes.",
+    href: "/docs/guides/how-to-setup-web-app/",
+    icon: Rocket,
+  },
+  {
+    title: "Features",
+    line: "What each part does, with screenshots.",
+    href: "#features",
+    icon: Boxes,
+  },
+  {
+    title: "Guides",
+    line: "Step by step: add a feature, a job, a tool.",
+    href: "#guides",
+    icon: BookOpen,
+  },
+  {
+    title: "Architecture",
+    line: "How it fits together, and why.",
+    href: "/docs/architecture/overview/",
+    icon: Network,
+  },
+  {
+    title: "Reference",
+    line: "Processes, code layout, conventions.",
+    href: "#reference",
+    icon: Library,
+  },
+  {
+    title: "Changelog",
+    line: "What changed in each release.",
+    href: "/docs/changelog/",
+    icon: History,
+  },
+  {
+    title: "Working with agents",
+    line: "How coding agents build this repository.",
+    href: "/docs/processes/agentic-workflow/",
+    icon: Bot,
+  },
+] as const;
+---
+
+<div class="docs-home">
+  <header class="flex flex-col gap-2">
+    <h1 class="text-2xl font-semibold tracking-tight text-fg sm:text-3xl">
+      What do you want to do?
+    </h1>
+    <p class="text-sm text-fg-muted">
+      Build a small app your agents can use. Start here, or jump straight to a
+      feature.
+    </p>
+  </header>
+
+  <nav aria-label="Docs sections">
+    <ul class="docs-intents">
+      {
+        INTENTS.map(({ title, line, href, icon: Icon }) => (
+          <li>
+            <a href={href} class="docs-intent">
+              <Icon className="size-5 text-accent-text" aria-hidden="true" />
+              <span class="text-sm font-semibold text-fg">{title}</span>
+              <span class="text-xs text-fg-muted">{line}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <section aria-labelledby="docs-map-title" class="flex flex-col gap-3">
+    <div class="flex flex-col gap-1">
+      <h2 id="docs-map-title" class="text-lg font-semibold text-fg">
+        Every feature, mapped
+      </h2>
+      <p class="text-sm text-fg-muted">
+        Pick a group to see its features and open its page.
+      </p>
+    </div>
+    <FeatureMap id="docs-fmap" />
+  </section>
+</div>
+
+<style>
+  .docs-home {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+  }
+
+  /* The docs column is narrower than the home page: the map takes the full width and
+     its card goes under it. */
+  .docs-home :global(.fm-body) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .docs-intents {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .docs-intent {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    height: 100%;
+    padding: 1rem;
+    border: 1px solid var(--ui-line);
+    border-radius: 0.75rem;
+    background: var(--ui-surface-raised);
+    transition: border-color 0.15s;
+  }
+
+  .docs-intent:hover {
+    border-color: var(--ui-line-strong);
+  }
+
+  .docs-intent:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--ui-focus);
+  }
+</style>
