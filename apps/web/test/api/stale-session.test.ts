@@ -118,7 +118,7 @@ describe.each(CASES)("the session of $account", ({ end }) => {
         "/api/trpc/workspace.list",
         await staleCookie()
       );
-      const response = await handleAppRequest(context, env, () =>
+      const response = await handleAppRequest(context, env, async () =>
         trpcGet({ ...context, params: {} } as unknown as APIContext)
       );
       expect(response.status).toBe(401);
