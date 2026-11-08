@@ -1,6 +1,6 @@
 flowchart TB
   accTitle: System overview
-  accDescr: Four kinds of callers reach the app. Browsers load the prerendered landing page, docs, 404, SPA bundle and Storybook as static assets, without running the Worker, and send everything else to the one web Worker; with presigned uploads on they also put files straight into R2. MCP clients such as Claude call /mcp with an OAuth token. Mail recipients follow links and one-click unsubscribe posts back to the Worker. Cron Triggers call its scheduled handler. Inside the Worker, the Astro middleware builds the request context, session and security headers for the server-rendered pages, /api/auth (Better Auth), /api/trpc, /mcp, which calls the tRPC procedures in process, and the other routes. The adapters, the queue consumer and the cron handler call the use cases in packages/features, which use D1, R2, Queues with a dead-letter queue, Email Sending and Analytics Engine; the abuse feature's enforceRateLimit and verifyHuman, called by the adapters and Better Auth's hook, reach Workers Rate Limiting and Turnstile. Everything logs to Workers Logs, with traces.
+  accDescr: Four kinds of callers reach the app. Browsers load the prerendered landing page, docs, 404, SPA bundle and Storybook as static assets, without running the Worker, and send everything else to the one web Worker; with presigned uploads on they also put files straight into R2. MCP clients such as Claude call /mcp with an OAuth token. Mail recipients follow links and one-click unsubscribe posts back to the Worker. Cron Triggers call its scheduled handler. Inside the Worker, the Astro middleware builds the request context, session and security headers for the server-rendered pages, /api/auth (Better Auth), /api/trpc, /mcp, which calls the tRPC procedures in process, and the other routes. The adapters, the queue consumer and the cron handler call the use cases in packages/features, which use D1, R2, Queues with a dead-letter queue, Email Sending and Analytics Engine; the abuse feature's enforceRateLimit and verifyHuman, called by the adapters and Better Auth's hook, reach Workers Rate Limiting and Turnstile. With QA_BYPASS on, mail to QA addresses is kept in D1 instead of sent, for the QA suite to read through /api/qa. Everything logs to Workers Logs, with traces.
 
   subgraph Callers["Callers"]
     Browser["Browser"]
@@ -17,7 +17,7 @@ flowchart TB
     Auth["/api/auth: Better Auth"]
     TRPC["/api/trpc"]
     MCP["/mcp"]
-    Routes["/api/files, webhook, unsubscribe, /health"]
+    Routes["/api/files, webhook, unsubscribe, /health, /api/qa"]
     Consumer["queue(): job consumer"]
     Scheduled["scheduled(): cron catalog"]
     UseCases["use cases: packages/features"]

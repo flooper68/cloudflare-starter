@@ -15,7 +15,6 @@ const CHECKLIST = "docs/guides/how-to-qa-a-deployment.md";
 const EXEMPT: Readonly<Record<string, string>> = {
   "how-to-qa-a-deployment.md": "the checklist itself",
   "how-to-setup-web-app.md": "first-time local setup and deploy steps",
-  "how-to-setup-d1.md": "database creation and migrations; no UI",
   "how-to-setup-ci.md":
     "CI and the deploy workflow, which runs the smoke suite",
   "how-to-setup-logging.md":

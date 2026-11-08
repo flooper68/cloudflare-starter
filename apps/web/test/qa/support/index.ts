@@ -5,6 +5,7 @@ export {
   createVerifiedAccount,
   eraseQaAccount,
   type QaAccount,
+  qaCleanup,
 } from "./accounts";
 export { currentRunId, isQaAddress, newRunId, qaAddress } from "./address";
 export { callApp, open, signIn } from "./app";

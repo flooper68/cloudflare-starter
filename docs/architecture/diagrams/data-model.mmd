@@ -1,6 +1,6 @@
 flowchart LR
   accTitle: D1 tables by feature
-  accDescr: Two tables anchor everything. user (Better Auth) owns its sessions, accounts, second factors, passkeys, settings, OAuth clients and consents, notification preferences and settings, all deleted with it. workspaces own their members, invitations, subscription, add-ons, entitlement overrides, usage counters, notes, files and notifications, all deleted with the workspace. workspace_members joins users to workspaces with a role. note_comments belong to notes. feature_flag_rules belong to feature_flags. audit_events, job_idempotency_keys, data_requests, erasure_records, privacy_erasure_lock and pending_file_cleanup have no foreign keys, so they survive the deletions they record.
+  accDescr: Two tables anchor everything. user (Better Auth) owns its sessions, accounts, second factors, passkeys, settings, OAuth clients and consents, notification preferences and settings, all deleted with it. workspaces own their members, invitations, subscription, add-ons, entitlement overrides, usage counters, notes, files and notifications, all deleted with the workspace. workspace_members joins users to workspaces with a role. note_comments belong to notes. feature_flag_rules belong to feature_flags. audit_events, job_idempotency_keys, data_requests, erasure_records, privacy_erasure_lock and pending_file_cleanup have no foreign keys, so they survive the deletions they record. qa_outbox, the mail kept for the QA suite, has none either.
 
   subgraph Auth["accounts: Better Auth"]
     User["user"]
@@ -34,10 +34,11 @@ flowchart LR
     Prefs["notification_preferences, notification_settings"]
   end
 
-  subgraph Platform["audit, jobs, privacy"]
+  subgraph Platform["audit, jobs, privacy, qa"]
     Audit["audit_events"]
     Jobs["job_idempotency_keys"]
     Privacy["data_requests, erasure_records, privacy_erasure_lock"]
+    Qa["qa_outbox"]
   end
 
   subgraph Flags["feature flags"]

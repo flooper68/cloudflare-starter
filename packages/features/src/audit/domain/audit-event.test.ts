@@ -107,6 +107,13 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: email,
     metadata: { form: "sign-up" },
   },
+  "qa.admin.promoted": {
+    action: "qa.admin.promoted",
+    target: user,
+    metadata: { previousRole: "user" },
+  },
+  "qa.admin.demoted": { action: "qa.admin.demoted", target: user },
+  "admin.test_email_sent": { action: "admin.test_email_sent", target: email },
   "auth.sign_up": {
     action: "auth.sign_up",
     target: user,

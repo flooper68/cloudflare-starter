@@ -40,6 +40,7 @@ import {
   purgeDataExports,
   purgeDataExportsJob,
 } from "./privacy";
+import { purgeQaOutbox, purgeQaOutboxJob } from "./qa";
 import {
   reconcileStorage,
   reconcileStorageJob,
@@ -89,6 +90,10 @@ export const jobCatalog = createJobCatalog<JobDeps>([
     return result;
   }),
   registerJob(helloJob, sayHello),
+  // The cutoff comes from the cron run's time, so every retry purges the same mail.
+  registerJob(purgeQaOutboxJob, (deps: JobDeps, payload) =>
+    purgeQaOutbox({ db: deps.db, clock: { now: () => new Date(payload.asOf) } })
+  ),
   // The cutoff comes from the cron run's time, so every retry purges the same events.
   registerJob(purgeAuditEventsJob, (deps: JobDeps, payload) =>
     purgeAuditEvents({
