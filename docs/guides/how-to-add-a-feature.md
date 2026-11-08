@@ -70,7 +70,7 @@ The architecture tests catch most missed steps: `use-cases.test.ts` and `test-pr
 
 ## Deploying a new table
 
-The starter now adds numbered, additive migrations (`0001_container_runs` was the first): its production holds real accounts, so it is never reset ([how-to-setup-d1.md](how-to-setup-d1.md#changing-the-schema)). An environment without real data may still be reset to a regenerated `0000_init`. A project with real data adds a numbered migration too; the deploy workflow applies migrations (`wrangler d1 migrations apply DB --remote`) before the code, so the tables exist when the Worker that reads them starts. A new current metric is measured from the first request: an empty table measures 0.
+The starter keeps one regenerated `0000_init` and no data migrations: an environment without real data is reset to the new `0000_init` before the deploy ([how-to-setup-d1.md](how-to-setup-d1.md#changing-the-schema)). A project with real data adds a numbered migration instead; the deploy workflow applies migrations (`wrangler d1 migrations apply DB --remote`) before the code, so the tables exist when the Worker that reads them starts. A new current metric is measured from the first request: an empty table measures 0.
 
 ## Removing Notes from a project
 
