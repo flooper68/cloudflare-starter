@@ -1,7 +1,7 @@
 /**
  * axe (any violation fails) on the public pages as built, in the dark and the light
- * theme: the landing page, the docs index, a guide with code blocks and tables, and the
- * open search dialog with results.
+ * theme: the landing page, the docs index, a guide with code blocks and tables, a page
+ * with inline diagrams, and the open search dialog with results.
  */
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "../e2e/fixtures";
@@ -22,6 +22,7 @@ for (const colorScheme of ["dark", "light"] as const) {
       "/",
       "/docs/",
       "/docs/guides/how-to-configure-workspaces/",
+      "/docs/processes/agentic-workflow/",
     ])
       test(`${path} passes axe`, async ({ page }) => {
         await page.goto(path);

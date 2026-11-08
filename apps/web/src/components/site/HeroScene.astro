@@ -1,0 +1,378 @@
+---
+/**
+ * The home page's hero picture (variant C, "One app, isometric"): the app in the middle,
+ * drawn as the logo's three layers in CSS 3D, with agents, the database, files, jobs,
+ * email and analytics around it and requests flowing between them. One labelled image to
+ * assistive technology; the parts inside are decoration.
+ *
+ * Motion, CSS first; the base style is the finished scene, so the first frame is complete
+ * and `prefers-reduced-motion: reduce` gets it static:
+ * - idle: requests flow, the services pulse, the app bobs (CSS keyframes);
+ * - scroll: through the first 45% of the viewport height the scene builds out, the app's
+ *   layers lift apart, then the services rise and connect, then the requests brighten
+ *   (`animation-timeline: scroll(root)`; where that is unsupported, hero-scene.ts adds
+ *   `is-built` when the hero leaves the view, with a CSS transition);
+ * - pointer: the scene tilts a few degrees toward a fine pointer and services lift on
+ *   hover (hero-scene.ts, one requestAnimationFrame loop while it moves). Not on touch.
+ */
+import {
+  Bot,
+  ChartColumn,
+  Database,
+  Files,
+  ListChecks,
+  Mail,
+} from "lucide-react";
+
+interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+
+// Plane coordinates (420 × 420, the app at 210, 210).
+const tiles = [
+  { name: "Agents", icon: Bot, x: 210, y: 45 },
+  { name: "Database", icon: Database, x: 353, y: 128 },
+  { name: "Files", icon: Files, x: 353, y: 292 },
+  { name: "Jobs", icon: ListChecks, x: 210, y: 375 },
+  { name: "Email", icon: Mail, x: 67, y: 292 },
+  { name: "Analytics", icon: ChartColumn, x: 67, y: 127 },
+];
+const C = 210;
+const connectors = tiles.map(({ x, y }) => ({
+  length: Math.hypot(x - C, y - C),
+  angle: (Math.atan2(y - C, x - C) * 180) / Math.PI,
+}));
+// Requests: in from the agents and from people (off the left edge), out to the services.
+const flows = [
+  { from: [210, 45], to: [C, C], delay: 0 },
+  { from: [C, C], to: [353, 128], delay: 0.4 },
+  { from: [C, C], to: [353, 292], delay: 0.8 },
+  { from: [C, C], to: [210, 375], delay: 1.2 },
+  { from: [C, C], to: [67, 292], delay: 1.6 },
+  { from: [C, C], to: [67, 127], delay: 2.0 },
+  { from: [-40, 180], to: [C, C], delay: 0, person: true },
+  { from: [-40, 210], to: [C, C], delay: 0.8, person: true },
+  { from: [-40, 240], to: [C, C], delay: 1.6, person: true },
+];
+const px = (value: number) => `${value}px`;
+---
+
+<div class="hero-scene" data-hero-scene="" role="img" aria-label={label}>
+  <div class="hs-tilt">
+    <div class="hs-plane">
+      {
+        connectors.map(({ length, angle }) => (
+          <span
+            class="hs-link"
+            style={`width:${px(length)};transform:translateZ(1px) rotate(${angle}deg)`}
+          />
+        ))
+      }
+      <div class="hs-core">
+        <span class="hs-slab hs-slab-1"></span>
+        <span class="hs-slab hs-slab-2"></span>
+        <span class="hs-slab hs-slab-3"></span>
+      </div>
+      {
+        tiles.map(({ name, icon: Icon, x, y }, index) => (
+          <div
+            class="hs-tile"
+            style={`left:${px(x)};top:${px(y)};animation-delay:${index * 0.8}s,0s`}
+          >
+            <Icon className="size-5" aria-hidden="true" />
+            <span>{name}</span>
+          </div>
+        ))
+      }
+      <div class="hs-flows">
+        {
+          flows.map(({ from, to, delay, person }) => (
+            <i
+              class:list={["hs-dot", person && "hs-dot-person"]}
+              style={`--x0:${px(from[0])};--y0:${px(from[1])};--x1:${px(to[0])};--y1:${px(to[1])};animation-delay:${delay}s`}
+            />
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { animateHeroScene } from "./hero-scene";
+
+  const scene = document.querySelector<HTMLElement>("[data-hero-scene]");
+  if (scene) animateHeroScene(scene);
+</script>
+
+<style>
+  .hero-scene {
+    --scale: 1;
+    position: relative;
+    display: flex;
+    height: 470px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    perspective: 1400px;
+    user-select: none;
+  }
+  @media (max-width: 640px) {
+    .hero-scene {
+      --scale: 0.68;
+      height: 330px;
+    }
+  }
+  .hs-tilt {
+    transform: rotateX(var(--hs-ry, 0deg)) rotateY(var(--hs-rx, 0deg))
+      scale(var(--scale));
+    transform-style: preserve-3d;
+  }
+  .hs-plane {
+    position: relative;
+    width: 420px;
+    height: 420px;
+    border: 1px solid var(--ui-line);
+    border-radius: 28px;
+    background-color: var(--ui-surface);
+    background-image:
+      linear-gradient(var(--ui-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ui-line) 1px, transparent 1px);
+    background-size: 30px 30px;
+    transform: rotateX(58deg) rotateZ(-45deg);
+    transform-style: preserve-3d;
+  }
+  .hs-link {
+    position: absolute;
+    top: 210px;
+    left: 210px;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: color-mix(in oklab, var(--ui-accent) 45%, transparent);
+    opacity: 0.5;
+    transform-origin: 0 50%;
+  }
+  .hs-core {
+    position: absolute;
+    top: 150px;
+    left: 150px;
+    width: 120px;
+    height: 120px;
+    transform-style: preserve-3d;
+    animation: hs-bob 4s ease-in-out infinite;
+  }
+  .hs-slab {
+    position: absolute;
+    border-radius: 10px;
+    background: var(--ui-accent);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25);
+    transform: translateZ(var(--z));
+    transform-style: preserve-3d;
+  }
+  .hs-slab-1 {
+    --z: 0px;
+    --z-built: 0px;
+    inset: 0;
+    opacity: 0.55;
+  }
+  .hs-slab-2 {
+    --z: 26px;
+    --z-built: 48px;
+    inset: 14px;
+    opacity: 0.8;
+  }
+  .hs-slab-3 {
+    --z: 52px;
+    --z-built: 96px;
+    inset: 28px;
+  }
+  .hs-tile {
+    position: absolute;
+    display: flex;
+    width: 84px;
+    height: 84px;
+    margin: -42px 0 0 -42px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 14px;
+    background: var(--ui-surface-raised);
+    color: var(--ui-fg);
+    font-size: 11px;
+    font-weight: 600;
+    transform: translateZ(8px);
+    translate: 0 0 0;
+    transition: translate 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: hs-pulse 4.8s ease-in-out infinite;
+  }
+  .hs-tile :global(svg) {
+    color: var(--ui-accent-text);
+  }
+  .hs-dot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 99px;
+    background: var(--ui-accent-text);
+    box-shadow: 0 0 12px var(--ui-accent-text);
+    opacity: 0;
+    transform: translate(var(--x1), var(--y1)) translateZ(14px);
+    animation: hs-flow 2.4s linear infinite;
+  }
+  .hs-dot-person {
+    background: var(--ui-fg);
+    box-shadow: 0 0 12px var(--ui-fg);
+  }
+  .hs-flows {
+    transform-style: preserve-3d;
+    opacity: 0.75;
+  }
+  @keyframes hs-bob {
+    50% {
+      transform: translateZ(10px);
+    }
+  }
+  @keyframes hs-pulse {
+    50% {
+      box-shadow:
+        0 0 0 6px var(--ui-accent-subtle),
+        0 0 24px var(--ui-accent-subtle);
+    }
+  }
+  @keyframes hs-flow {
+    0% {
+      opacity: 0;
+      transform: translate(var(--x0), var(--y0)) translateZ(14px);
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--x1), var(--y1)) translateZ(14px);
+    }
+  }
+
+  /* Pointer: services lift under a fine pointer. */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .hs-tile:hover {
+      translate: 0 0 18px;
+    }
+  }
+
+  /* Scroll: the build plays forward as the page scrolls, and back when it scrolls up. */
+  @keyframes hs-plane-build {
+    to {
+      transform: rotateX(52deg) rotateZ(-38deg);
+    }
+  }
+  @keyframes hs-slab-build {
+    to {
+      transform: translateZ(var(--z-built));
+    }
+  }
+  @keyframes hs-tile-build {
+    to {
+      transform: translateZ(30px);
+      border-color: color-mix(in oklab, var(--ui-accent) 60%, transparent);
+    }
+  }
+  @keyframes hs-link-build {
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes hs-flows-build {
+    to {
+      opacity: 1;
+    }
+  }
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hs-plane,
+      .hs-slab,
+      .hs-link,
+      .hs-flows {
+        animation-timeline: scroll(root);
+        animation-fill-mode: both;
+        animation-timing-function: linear;
+      }
+      .hs-plane {
+        animation-name: hs-plane-build;
+        animation-range: 0 45vh;
+      }
+      .hs-slab {
+        animation-name: hs-slab-build;
+        animation-range: 0 20vh;
+      }
+      .hs-tile {
+        animation:
+          hs-pulse 4.8s ease-in-out infinite,
+          hs-tile-build linear both;
+        animation-timeline: auto, scroll(root);
+        animation-range: normal, 10vh 32vh;
+      }
+      .hs-link {
+        animation-name: hs-link-build;
+        animation-range: 10vh 32vh;
+      }
+      .hs-flows {
+        animation-name: hs-flows-build;
+        animation-range: 22vh 45vh;
+      }
+    }
+  }
+  /* Without scroll timelines: hero-scene.ts adds is-built once the hero scrolls away. */
+  @supports not (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hs-plane,
+      .hs-slab,
+      .hs-link,
+      .hs-flows {
+        transition:
+          transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+          opacity 0.9s ease;
+      }
+      .hs-slab {
+        transition-delay: 0s;
+      }
+      .hs-link {
+        transition-delay: 0.3s;
+      }
+      .hs-flows {
+        transition-delay: 0.6s;
+      }
+      .is-built .hs-plane {
+        transform: rotateX(52deg) rotateZ(-38deg);
+      }
+      .is-built .hs-slab {
+        transform: translateZ(var(--z-built));
+      }
+      .is-built .hs-link,
+      .is-built .hs-flows {
+        opacity: 1;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-scene *,
+    .hero-scene *::before,
+    .hero-scene *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .hs-dot {
+      display: none;
+    }
+  }
+</style>

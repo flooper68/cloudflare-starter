@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="430" viewBox="0 0 780 430" role="img" aria-label="Roles: the owner talks to the orchestrator agent; the orchestrator briefs implementer agents, each in its own worktree, sends risky diffs to the reviewer agent, reads CI status and keeps the docs and knowledge current"><title>Roles: the owner talks to the orchestrator agent; the orchestrator briefs implementer agents, each in its own worktree, sends risky diffs to the reviewer agent, reads CI status and keeps the docs and knowledge current</title>
+<style>.dg-bg{fill:var(--ui-surface-raised,#ffffff)}
+.dg-box{fill:var(--ui-surface,#f6f8fa);stroke:var(--ui-line-strong,#d0d7de);stroke-width:1}
+.dg-key{fill:var(--ui-accent-subtle,#e0f2ef);stroke:var(--ui-accent,#0f766e);stroke-width:1.5}
+.dg-gate{fill:var(--ui-surface,#f6f8fa);stroke:var(--ui-warning,#9a6700);stroke-width:1.5;stroke-dasharray:5 3}
+.dg-t{fill:var(--ui-fg,#1f2328);font:600 13px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-s{fill:var(--ui-fg-muted,#59636e);font:400 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-h{fill:var(--ui-fg-muted,#59636e);font:600 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);letter-spacing:.08em}
+.dg-a{stroke:var(--ui-fg-subtle,#818b98);stroke-width:1.5;fill:none}
+.dg-ah{fill:var(--ui-fg-subtle,#818b98)}
+.dg-sep{stroke:var(--ui-line,#d0d7de);stroke-width:1}
+@media (prefers-color-scheme:dark){.dg-bg{fill:var(--ui-surface-raised,#0d1117)}
+.dg-box{fill:var(--ui-surface,#161b22);stroke:var(--ui-line-strong,#3d444d);stroke-width:1}
+.dg-key{fill:var(--ui-accent-subtle,#0f2e2b);stroke:var(--ui-accent,#2dd4bf);stroke-width:1.5}
+.dg-gate{fill:var(--ui-surface,#161b22);stroke:var(--ui-warning,#d29922);stroke-width:1.5;stroke-dasharray:5 3}
+.dg-t{fill:var(--ui-fg,#f0f6fc);font:600 13px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-s{fill:var(--ui-fg-muted,#9198a1);font:400 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}
+.dg-h{fill:var(--ui-fg-muted,#9198a1);font:600 11px var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);letter-spacing:.08em}
+.dg-a{stroke:var(--ui-fg-subtle,#8b949e);stroke-width:1.5;fill:none}
+.dg-ah{fill:var(--ui-fg-subtle,#8b949e)}
+.dg-sep{stroke:var(--ui-line,#3d444d);stroke-width:1}
+}</style>
+<rect class="dg-bg" x="0" y="0" width="780" height="430" rx="12"/>
+<defs>
+<marker id="dg-roles-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-ah" d="M0 0L10 5L0 10z"/>
+</marker>
+</defs>
+<rect class="dg-key" x="290" y="24" width="200" height="56" rx="8"/>
+<text class="dg-t" x="390" y="49" text-anchor="middle">Owner</text>
+<text class="dg-s" x="390" y="65" text-anchor="middle">product, accounts, secrets</text>
+<rect class="dg-key" x="270" y="150" width="240" height="60" rx="8"/>
+<text class="dg-t" x="390" y="177" text-anchor="middle">Orchestrator agent</text>
+<text class="dg-s" x="390" y="193" text-anchor="middle">lead: briefs, merges, deploys, docs</text>
+<rect class="dg-box" x="40" y="300" width="150" height="56" rx="8"/>
+<text class="dg-t" x="115" y="325" text-anchor="middle">Implementer 1</text>
+<text class="dg-s" x="115" y="341" text-anchor="middle">own worktree and branch</text>
+<rect class="dg-box" x="208" y="300" width="150" height="56" rx="8"/>
+<text class="dg-t" x="283" y="325" text-anchor="middle">Implementer 2</text>
+<text class="dg-s" x="283" y="341" text-anchor="middle">own worktree and branch</text>
+<rect class="dg-box" x="376" y="300" width="150" height="56" rx="8"/>
+<text class="dg-t" x="451" y="325" text-anchor="middle">Implementer 3</text>
+<text class="dg-s" x="451" y="341" text-anchor="middle">own worktree and branch</text>
+<rect class="dg-gate" x="560" y="300" width="180" height="56" rx="8"/>
+<text class="dg-t" x="650" y="325" text-anchor="middle">Reviewer agent</text>
+<text class="dg-s" x="650" y="341" text-anchor="middle">contract + diff only</text>
+<rect class="dg-box" x="40" y="150" width="170" height="60" rx="8"/>
+<text class="dg-t" x="125" y="177" text-anchor="middle">CI</text>
+<text class="dg-s" x="125" y="193" text-anchor="middle">ci.yml, deploy.yml, qa.yml</text>
+<rect class="dg-box" x="586" y="150" width="170" height="60" rx="8"/>
+<text class="dg-t" x="671" y="177" text-anchor="middle">Docs and knowledge</text>
+<text class="dg-s" x="671" y="193" text-anchor="middle">repo docs; outside pages</text>
+<path class="dg-a" d="M370 82V148" marker-end="url(#dg-roles-arrow)"/>
+<path class="dg-a" d="M410 148V82" marker-end="url(#dg-roles-arrow)"/>
+<text class="dg-s" x="362" y="118" text-anchor="end">requests, decisions, yes</text>
+<text class="dg-s" x="418" y="118">big questions, accounts</text>
+<path class="dg-a" d="M390 212C390 255 115 255 115 298" marker-end="url(#dg-roles-arrow)"/>
+<path class="dg-a" d="M390 212C390 255 283 255 283 298" marker-end="url(#dg-roles-arrow)"/>
+<path class="dg-a" d="M390 212C390 255 451 255 451 298" marker-end="url(#dg-roles-arrow)"/>
+<text class="dg-s" x="110" y="238">brief out; report and PR back</text>
+<path class="dg-a" d="M470 212C470 255 650 255 650 298" marker-end="url(#dg-roles-arrow)"/>
+<text class="dg-s" x="640" y="240">contract and diff out;</text>
+<text class="dg-s" x="640" y="254">findings back</text>
+<path class="dg-a" d="M212 180H268" marker-end="url(#dg-roles-arrow)" marker-start="url(#dg-roles-arrow)"/>
+<text class="dg-s" x="240" y="172" text-anchor="middle">status</text>
+<path class="dg-a" d="M512 180H584" marker-end="url(#dg-roles-arrow)"/>
+<text class="dg-s" x="548" y="172" text-anchor="middle">updates</text>
+<path class="dg-a" d="M70 298V212" marker-end="url(#dg-roles-arrow)"/>
+<text class="dg-s" x="76" y="272">push</text>
+<text class="dg-s" x="292" y="388" text-anchor="middle">parallel implementers code against a shared module's contract; one of them owns it</text>
+<line class="dg-sep" x1="40" y1="372" x2="530" y2="372"/>
+</svg>

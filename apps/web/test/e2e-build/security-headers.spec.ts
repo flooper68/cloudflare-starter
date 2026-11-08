@@ -38,7 +38,9 @@ for (const path of PAGES) {
   test(`${path} renders under the enforced page policy`, async ({ page }) => {
     const response = await page.request.get(path);
     const policy = response.headers()["content-security-policy"] ?? "";
-    expect(policy).toMatch(/script-src \S+\/_astro\/ 'sha256-/);
+    expect(policy).toMatch(
+      /script-src \S+\/_astro\/ \S+\/site-theme\.js 'sha256-/
+    );
     expect(policy).toContain("frame-ancestors 'none'");
     expect(policy).not.toMatch(/script-src[^;]*unsafe-inline/);
     expect(response.headers()["x-frame-options"]).toBe("DENY");

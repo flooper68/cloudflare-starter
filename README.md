@@ -99,6 +99,10 @@ Packages:
 | [packages/features](packages/features/README.md) | Server feature code: use cases, domain rules, tables, ports and adapters      |
 | [packages/ui](packages/ui/README.md)             | Component library: tokens, brand, components, app patterns, Storybook stories |
 
+## Built for coding agents
+
+The repository is set up for coding agents to develop it, not only for an app that agents use. An orchestrator agent leads, implementer subagents build one item each in their own worktree, a `reviewer` subagent checks risky diffs, and CI, the architecture tests and the production smoke and QA suites catch what an agent misses; the owner decides and approves. How it works, with the brief template and what needs the owner's yes: [agentic workflow](docs/processes/agentic-workflow.md). The skills and subagents in `.claude/`: [catalogue](docs/processes/agent-skills.md).
+
 ## Working on this repo (people and agents)
 
 [AGENTS.md](AGENTS.md) points agents to the [documentation index](docs/README.md). The [development process](docs/processes/development.md) covers how work is done; [architecture principles](docs/architecture/overview.md#principles) define the system's contracts, including MCP coverage for APIs ([MCP guide](docs/guides/how-to-setup-mcp.md)). Agents also get skills for setting up auth, D1 and email in [.claude/skills](.claude/skills).
