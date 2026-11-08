@@ -20,6 +20,7 @@ What changed in each release of the starter, for people evaluating it or buildin
 
 ### Fixed
 
+- **A suspended or erased account's browser is signed out instead of seeing an error.** With the session cookie of an account an admin suspended, or one that was deleted, `/sign-in` and the app answered 500 ("Session expired") while the one-minute session cookie cache lasted. Now the session counts as signed out on the next request: pages redirect to `/sign-in`, which renders, APIs answer 401, and the stale session cookies are expired.
 - **Settings and other in-app links no longer reload the page.** The settings section navigation used plain links that loaded the whole document; it now routes client-side like the rest of the app, and a test fails on a plain link to an /app page.
 - **A trial shows its full length on the day it starts.** Billing showed "Trial · 13 days left" on the first day of a 14-day trial; days left now count a started day, so the last day shows 1 and an ended trial 0.
 - **New note puts the cursor in Title**, from the Notes page and from the command palette.

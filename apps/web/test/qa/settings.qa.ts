@@ -1,10 +1,4 @@
-import {
-  createVerifiedAccount,
-  currentRunId,
-  eraseQaAccount,
-  inbox,
-  qaAddress,
-} from "./support";
+import { currentRunId, eraseQaAccount, qaAddress } from "./support";
 import { tinyPng } from "./support/files";
 import {
   expect,
@@ -14,7 +8,7 @@ import {
   skipWithoutQaEnv,
   test,
 } from "./support/journey";
-import { expectMail } from "./support/mail";
+import { expectMail, linkTo } from "./support/mail";
 import {
   type Account,
   AUTH_WAIT,
@@ -130,20 +124,14 @@ test("the email changes after the confirmation mail, and the new address signs i
   const confirmLink = confirm.links.find((href) => href.includes("/api/auth/"));
   const confirmed = new Date();
   await page.goto(confirmLink as string);
-  const verify = await inbox
-    .waitFor({
-      to: newEmail,
-      subject: "Verify your email",
-      since: confirmed,
-      timeoutMs: 30_000,
-    })
-    .catch(() => null);
-  if (verify) {
-    const verifyLink = verify.links.find((href) =>
-      href.includes("/api/auth/verify-email")
-    );
-    await page.goto(verifyLink as string);
-  }
+  // Better Auth then verifies the new address before it changes anything.
+  const verify = await expectMail(
+    newEmail,
+    "Verify your email",
+    confirmed,
+    false
+  );
+  await page.goto(linkTo(verify, "/api/auth/verify-email"));
   await openSettings(page, "account");
   await expect(page.getByText(newEmail).first()).toBeVisible();
   account.email = newEmail;
