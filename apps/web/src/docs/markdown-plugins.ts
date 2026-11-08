@@ -6,12 +6,16 @@
  * - `docsTablesPlugin` wraps each table in a named, keyboard-scrollable region
  *   (`<section aria-label tabindex=0>`), the markup `Prose` (packages/ui) styles as a
  *   scroll box.
+ * - `docsDiagramsPlugin` replaces each ```mermaid block that has a text alternative with
+ *   its inline SVG (diagrams.ts), rendered here at build time. astro.config.mjs keeps
+ *   Shiki off mermaid blocks, so one without stays a plain code block.
  */
 import { relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { SatteriProcessorOptions } from "@astrojs/markdown-satteri";
 
+import { renderDiagram } from "./diagrams";
 import { rewriteHref } from "./links";
 
 type HastPluginEntry = NonNullable<
@@ -53,6 +57,32 @@ export function docsTablesPlugin(): HastPluginEntry {
           ctx.wrapNode(node, {
             raw: `<section data-table-scroll="" tabindex="0" aria-label="Table ${count}"></section>`,
           });
+        },
+      },
+    };
+  };
+}
+
+export function docsDiagramsPlugin(): HastPluginEntry {
+  return () => {
+    // One counter per document: ids and region names must be unique on the page.
+    let count = 0;
+    return {
+      name: "docs-diagrams",
+      element: {
+        filter: ["pre"],
+        visit(node, ctx) {
+          const code = node.children.find(
+            (child) => child.type === "element" && child.tagName === "code"
+          );
+          if (code?.type !== "element") return;
+          const classes = code.properties?.className;
+          if (!Array.isArray(classes) || !classes.includes("language-mermaid"))
+            return;
+          const figure = renderDiagram(ctx.textContent(code), count + 1);
+          if (figure === null) return;
+          count += 1;
+          ctx.replaceNode(node, { type: "raw", value: figure });
         },
       },
     };

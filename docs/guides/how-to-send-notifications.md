@@ -6,6 +6,8 @@ How a feature tells users that something happened: the in-app inbox (bell, inbox
 
 ```mermaid
 flowchart LR
+  accTitle: How a notification is sent
+  accDescr: A use case calls deps.notify, which validates the data, drops the actor and enqueues one notifications.dispatch job keyed by the event id. The dispatcher applies preferences and writes inbox rows. Mail due now becomes a notifications.send-email job; daily-cadence rows are marked pending_digest. The 08:00 UTC cron entry notifications.plan-digests enqueues notifications.send-digest per user and day, which reads those rows. Both mail jobs send through the Email port.
   U["use case (producer)"] -->|"deps.notify(definition, { recipients, data, context })"| N["notify: validate, drop actor"]
   N -->|"enqueueJob notifications.dispatch (key = event id)"| Q[["APP_QUEUE"]]
   Q --> D["dispatchNotification: preferences, inbox rows"]

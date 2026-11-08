@@ -6,6 +6,8 @@ How the web Worker runs work in the background: typed jobs on Cloudflare Queues,
 
 ```mermaid
 flowchart LR
+  accTitle: How a job moves through the queue
+  accDescr: A use case or cron entry calls enqueueJob, which sends the job to APP_QUEUE. The queue consumer in apps/web/src/server/queue.ts runs it with runJob, claiming its idempotency key, then the handler, a use case. A failure goes back to the queue with a delay; a failed final attempt is reported to the ErrorReporter, and after max_retries the queue moves the message to the dead-letter queue, which has no consumer and keeps it 14 days.
   P["use case / cron entry"] -->|"enqueueJob(definition, payload)"| Q[["APP_QUEUE"]]
   Q --> C["queue consumer (apps/web/src/server/queue.ts)"]
   C -->|"runJob: idempotency claim, handler"| H["job handler (a use case)"]

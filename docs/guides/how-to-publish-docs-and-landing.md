@@ -25,7 +25,18 @@ Write links as you always do: relative paths between files (`[testing.md](../arc
 - any other file becomes its GitHub page (`…/blob/main/apps/web/wrangler.jsonc`), a folder (`../.claude/skills/`) its GitHub tree;
 - absolute URLs, site paths (`/app`) and `#fragments` stay as they are.
 
-Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks are shown as code.
+Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks become diagrams ([Diagrams](#diagrams)).
+
+## Diagrams
+
+Draw a diagram as a ` ```mermaid ` block in the Markdown, with an `accTitle:` and an `accDescr:` line (Mermaid's accessibility syntax: a short name, then what the diagram shows in prose). GitHub renders the block with its own Mermaid; the docs site renders it at build time to an inline SVG (`docsDiagramsPlugin` in `apps/web/src/docs/markdown-plugins.ts`, `apps/web/src/docs/diagrams.ts`, with [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid), which needs no browser). The Markdown is the only source, so the picture cannot go stale, and the page ships no diagram JavaScript.
+
+- **Theme.** The SVG has no stylesheet or inline style (the renderer's own imports a Google font, which the CSP refuses); `packages/ui/src/styles/prose.css` colours it from the theme tokens, so it follows the theme switch.
+- **Screen readers.** `accTitle` and `accDescr` become the SVG's `<title>` and `<desc>` (`role="img"`) and the caption. Write the description as the diagram's content in sentences, not "a diagram of…". A block without both lines stays a code block, and `apps/web/src/docs/diagrams.test.ts` fails unless its file is in `UNDESCRIBED_DIAGRAMS` with a reason.
+- **Phones.** The SVG keeps its natural size in a keyboard-scrollable box, like a table.
+- **Supported.** Flowcharts, sequence, state, class and ER diagrams. Keep to plain syntax: no `classDef`, `style` or `click` (they would add inline styles or script), and quote labels with punctuation (`A["/api/trpc"]`).
+
+`bun run test:unit` renders every diagram of the published docs, so a syntax error fails there before the build; `bun run test:e2e:build` checks the architecture pages for CSP violations and axe in both themes.
 
 ## Add, move or remove a doc
 

@@ -1,6 +1,85 @@
 # Architecture Overview
 
-How the starter is built and the rules every change follows: the parts, how a request moves through them, the environments, the architecture principles, and checklists for extending the system. It describes the target shape; the [Current state vs target](#current-state-vs-target) section lists where the code still differs. Use when you plan a change, review one, or need to know where something belongs.
+How the starter is built and the rules every change follows: the system at a glance, the parts, how a request moves through them, the environments, the architecture principles, and checklists for extending the system. It describes the target shape; the [Current state vs target](#current-state-vs-target) section lists where the code still differs. Use when you plan a change, review one, or need to know where something belongs.
+
+## System
+
+```mermaid
+flowchart TB
+  accTitle: System overview
+  accDescr: Four kinds of callers reach the app. Browsers load the prerendered landing page, docs, 404, SPA bundle and Storybook as static assets, without running the Worker, and send everything else to the one web Worker; with presigned uploads on they also put files straight into R2. MCP clients such as Claude call /mcp with an OAuth token. Mail recipients follow links and one-click unsubscribe posts back to the Worker. Cron Triggers call its scheduled handler. Inside the Worker, the Astro middleware builds the request context, session and security headers for the server-rendered pages, /api/auth (Better Auth), /api/trpc, /mcp, which calls the tRPC procedures in process, and the other routes. The adapters, the queue consumer and the cron handler call the use cases in packages/features, which use D1, R2, Queues with a dead-letter queue, Email Sending and Analytics Engine; the abuse feature's enforceRateLimit and verifyHuman, called by the adapters and Better Auth's hook, reach Workers Rate Limiting and Turnstile. Everything logs to Workers Logs, with traces.
+
+  subgraph Callers["Callers"]
+    Browser["Browser"]
+    Agent["MCP client"]
+    Recipient["Mail recipient"]
+    Cron["Cron Triggers"]
+  end
+
+  Assets["Static assets: landing, /docs, 404, SPA bundle, /_storybook"]
+
+  subgraph Worker["Web Worker: apps/web/src/worker.ts"]
+    Middleware["Astro middleware: context, session, headers"]
+    Pages["SSR pages: /app, /admin, /sign-in, /consent"]
+    Auth["/api/auth: Better Auth"]
+    TRPC["/api/trpc"]
+    MCP["/mcp"]
+    Routes["/api/files, webhook, unsubscribe, /health"]
+    Consumer["queue(): job consumer"]
+    Scheduled["scheduled(): cron catalog"]
+    UseCases["use cases: packages/features"]
+  end
+
+  D1[("D1: DB")]
+  R2[("R2: FILES")]
+  Queue[["Queues: APP_QUEUE and DLQ"]]
+  Email["Email Sending: EMAIL"]
+  AE["Analytics Engine: metrics, product events"]
+  RL["Workers Rate Limiting: RL_*"]
+  Turnstile["Turnstile Siteverify"]
+  Logs["Workers Logs and traces"]
+
+  Browser --> Assets
+  Browser --> Middleware
+  Browser -.->|presigned PUT| R2
+  Agent --> Middleware
+  Recipient --> Middleware
+  Cron --> Scheduled
+  Middleware --> Pages
+  Middleware --> Auth
+  Middleware --> TRPC
+  Middleware --> MCP
+  Middleware --> Routes
+  MCP -->|createCaller| TRPC
+  Auth --> UseCases
+  TRPC --> UseCases
+  Routes --> UseCases
+  Consumer --> UseCases
+  Scheduled --> UseCases
+  UseCases --> D1
+  UseCases --> R2
+  UseCases --> Queue
+  Queue --> Consumer
+  UseCases --> Email
+  UseCases --> AE
+  UseCases -->|enforceRateLimit| RL
+  UseCases -->|verifyHuman| Turnstile
+  Worker -.-> Logs
+```
+
+One Worker serves everything: the Astro pages, the React SPA under `/app`, Better Auth, tRPC, `/mcp`, the queue consumer and the cron handler ([apps/web/src/worker.ts](../../apps/web/src/worker.ts)). Prerendered pages never reach it; every other request passes the Astro middleware, then a thin adapter that calls use cases in `packages/features`, which reach Cloudflare's services through bindings and ports. `/mcp` runs the same tRPC procedures in process, so an agent gets the web app's checks and errors. The Container demo (`apps/container`) and the QA inbox (`apps/qa-inbox`) are separate Workers outside this picture; the starter uses no Workflows or Durable Objects in the web Worker.
+
+### How to read the diagrams
+
+Boxes are code or Cloudflare services that exist on `main`; solid arrows are calls or imports, dashed arrows optional or indirect paths (a presigned upload, log output, type-only imports). Cylinders are storage. Every diagram names its files below it and links the guide to read next. Each one is written in Mermaid in the Markdown itself: GitHub renders it, and the docs site turns it into an inline SVG at build time that follows the light and dark theme and scrolls sideways on a phone.
+
+| Page                                           | Shows                                                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [layers.md](layers.md)                         | The monorepo layers, which may import which, and the rule or test that enforces each          |
+| [request-lifecycles.md](request-lifecycles.md) | A page, a tRPC mutation, an MCP tool call, a background job, a cron run, sign-up to dashboard |
+| [data-model.md](data-model.md)                 | The D1 tables by feature and the foreign keys between them                                    |
+| [cross-cutting.md](cross-cutting.md)           | Settings, observability, security layers, privacy, environments                               |
+| [feature-anatomy.md](feature-anatomy.md)       | The Notes feature across every layer                                                          |
 
 ## Parts
 
@@ -9,7 +88,7 @@ How the starter is built and the rules every change follows: the parts, how a re
 | Web Worker      | [apps/web](../../apps/web/README.md)                                                      | The one deployed Worker: Astro SSR pages, the React SPA under `/app/*`, Better Auth, tRPC, REST routes, `/mcp`, the queue consumer and cron                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Worker entry    | `apps/web/src/worker.ts`                                                                  | `fetch` (Astro handler), `queue` and `scheduled` handlers in one export                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Server adapters | `apps/web/src/server/`                                                                    | Auth config, tRPC routers, MCP endpoint and tools, queue consumer and cron handler. Thin: they parse, authorize, call use cases, map errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| HTTP routes     | `apps/web/src/pages/`                                                                     | Astro pages (`.astro`, prerendered with `prerender = true` for `/`, `/docs/*` and the 404) and endpoints (`.ts`): `/robots.txt` (prerendered), `/api/auth/*`, `/api/trpc/*`, `/api/files/*`, `/api/hello`, `/.well-known/*`, `/mcp`, `/health/*`                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| HTTP routes     | `apps/web/src/pages/`                                                                     | Astro pages (`.astro`, prerendered with `prerender = true` for `/`, `/docs/*` and the 404) and endpoints (`.ts`): `/robots.txt` and `/docs/changelog.xml` (prerendered), `/api/auth/*`, `/api/trpc/*`, `/api/files/*`, `/api/account/avatar/*`, `/api/workspaces/:id/logo/*`, `/api/privacy/exports/:id`, `/api/notifications/unsubscribe`, `/api/billing/webhook`, `/api/csp-report`, `/api/hello`, `/.well-known/*`, `/mcp`, `/health/*`                                                                                                                                                                                                                                                                             |
 | Public pages    | `apps/web/src/pages/index.astro`, `pages/docs/`, `404.astro`, `src/docs/`, `src/landing/` | Prerendered, session-free pages: the landing page at `/` (`pages/index.astro`, copy in `src/landing/content.ts`), the docs site at `/docs` built from the repository's Markdown (with `CHANGELOG.md` as release notes at `/docs/changelog` and an Atom feed) (`src/content.config.ts`, navigation from `docs/README.md`, links rewritten for the site by `src/docs/markdown-plugins.ts`) and the public 404, on `layouts/PublicLayout.astro`. [Public pages](#public-pages), [how-to-publish-docs-and-landing.md](../guides/how-to-publish-docs-and-landing.md)                                                                                                                                                        |
 | Features        | `packages/features/src/<feature>/`                                                        | Vertical slices of server logic: pure `domain/`, one use case per file, the feature's Drizzle tables. `jobs/` is background jobs: envelope, retries, idempotency, cron types                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Platform        | `packages/features/src/platform/`                                                         | Shared infrastructure the features receive as dependencies: D1 client, ids, clock, random, request context; the ports (Logger, ErrorReporter, Metrics, Tracer, JobQueue, FeatureFlags, RateLimiter, HumanVerifier, ProductAnalytics, Email, BillingProvider, Zip) and their adapters ([Ports and adapters](#ports-and-adapters))                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -24,66 +103,23 @@ How the starter is built and the rules every change follows: the parts, how a re
 | CI and deploy   | `.github/workflows/`                                                                      | `ci.yml` (lint, typecheck, test, components, e2e, migrations, build, deploy dry-run) and `deploy.yml` (manual, per environment)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Agent skills    | `.claude/skills/`                                                                         | `setup-auth`, `setup-d1`, `setup-email`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
-## Runtime
-
-```mermaid
-flowchart LR
-  Browser["Browser (web app, SPA)"]
-  Claude["Claude / MCP client"]
-
-  subgraph Worker["Web Worker (apps/web)"]
-    Pages["Astro pages and /app SPA"]
-    Auth["/api/auth/* (Better Auth)"]
-    TRPC["/api/trpc/*"]
-    Files["/api/files/*"]
-    MCP["/mcp"]
-    Queue["queue consumer"]
-    Cron["scheduled (cron)"]
-    UseCases["use cases (packages/features)"]
-  end
-
-  D1[("D1: DB")]
-  R2[("R2: FILES")]
-  Q[["Queue: APP_QUEUE + DLQ"]]
-  Email["Email Service: EMAIL"]
-
-  Browser --> Pages
-  Browser --> Auth
-  Browser --> TRPC
-  Browser --> Files
-  Claude --> Auth
-  Claude --> MCP
-
-  TRPC --> UseCases
-  MCP -->|createCaller| TRPC
-  Files --> UseCases
-  Queue --> UseCases
-  Cron --> UseCases
-  Auth --> D1
-  Auth --> Email
-
-  UseCases --> D1
-  UseCases --> R2
-  UseCases --> Q
-  UseCases --> Email
-  Q --> Queue
-```
-
 ## Main flows
+
+Each flow below is drawn step by step in [request-lifecycles.md](request-lifecycles.md).
 
 **Request context.** Every unit of work gets a `RequestContext` at its edge (`packages/features/src/kernel/request-context.ts`): `middleware.ts` builds it for every on-demand HTTP request (`apps/web/src/server/app-middleware.ts`, `http.ts`), the queue consumer for each message, the scheduled handler for each run. Its identity is a [W3C Trace Context](https://www.w3.org/TR/trace-context/): a `traceId` (continued from a valid incoming `traceparent`, else new; correlation only, never trusted) and its own `spanId`. There is no separate request id: the trace id is the reference, returned on every HTTP response as `x-request-id` next to `traceparent`, carried as `traceparent` by queue messages so the consumer continues the trace, and on every log record and error report (`trace_id`, `span_id`). An incoming `x-request-id` is ignored. An unexpected failure answers 500 with `reference` (the trace id) instead of the error; tRPC puts it in `error.data.reference`, MCP tool errors and the file routes in `reference`, and `ErrorState` shows it.
 
 **Security headers.** Whatever `middleware.ts` answers (page, redirect, API, `/mcp`, auth, health, a 500) leaves with the OWASP-recommended headers (`apps/web/src/server/security-headers.ts`); HTML pages get a Content-Security-Policy built per request from the settings (`TURNSTILE`, `WEB_ANALYTICS`, presigned uploads, `CSP_MODE`) and the hashes Astro computed for the page's inline code, everything else a policy that loads nothing. Static assets, which never reach the Worker, get the same from the generated `public/_headers`. Violations go to `/api/csp-report` and become `csp.violation` logs. [how-to-configure-security-headers.md](../guides/how-to-configure-security-headers.md)
 
-**Web request with a session.** `middleware.ts` resolves the Better Auth cookie into `Astro.locals.user`; anonymous `/app/*` requests redirect to `/sign-in`. The SPA calls `/api/trpc/*` with the `x-trpc-source: app` header (POSTs without it get 403). The tRPC context carries the user and the platform deps; a `protectedProcedure` refuses requests without a user, and a `workspaceProcedure` also resolves the actor (user, workspace, role) for the request's workspace and adds the workspace to the request context. The procedure calls a use case.
+**Web request with a session.** `middleware.ts` resolves the Better Auth cookie into `Astro.locals.user`; anonymous `/app/*` requests redirect to `/sign-in`, and a session whose security state requires a second factor is sent to `/two-factor` (or refused on `/api/files`). The SPA calls `/api/trpc/*` with the `x-trpc-source: app` header (POSTs without it get 403). The tRPC context carries the user and the platform deps; a `protectedProcedure` refuses requests without a user, and a `workspaceProcedure` also resolves the actor (user, workspace, role) for the request's workspace and adds the workspace to the request context. The procedure calls a use case.
 
-**MCP request.** The client discovers the OAuth server through `/.well-known/*`, registers, sends the user through `/sign-in` and `/consent`, and gets a JWT bound to `<APP_URL>/mcp` that names the browser session which granted it (`starter_session_id`). `/mcp` verifies the token with the in-process JWKS, reloads the user from D1, rechecks that exact session ([Account security](#account-security)), builds `appRouter.createCaller(context)` for that user and serves the tools. Each tool calls procedures in-process: same input schema, auth check and errors as the web app. Results wrap user data in `<untrusted-data>`.
+**MCP request.** The client discovers the OAuth server through `/.well-known/*`, registers, sends the user through `/sign-in` and `/consent`, and gets a JWT bound to `<APP_URL>/mcp` that names the browser session which granted it (`starter_session_id`). `/mcp` counts the request per IP (`mcp.ip`), verifies the token with the in-process JWKS, reloads the user from D1, counts it per user (`mcp.user`), rechecks that exact session and the user's consent for the client ([Account security](#account-security)), builds `appRouter.createCaller(context)` for that user and serves the tools. Each tool calls procedures in-process: same input schema, auth check and errors as the web app. Results wrap user data in `<untrusted-data>`.
 
 **Background job.** A feature declares a job with `defineJob` (type, zod payload, backoff, optional idempotency key) in its domain and registers its handler, a use case, in `packages/features/src/job-catalog.ts`. A use case enqueues it with `enqueueJob`, which validates the payload and sends a CloudEvents envelope carrying the caller's `traceparent`, user and workspace (a workspace procedure's `ctx.requestContext` carries the actor's workspace) through the JobQueue port to `APP_QUEUE`; nothing else sends to the queue. The `queue` handler (`apps/web/src/server/queue.ts`) parses each envelope, continues the producer's trace, runs the job (claiming its idempotency key in D1 first, if it has one) and acks it. A failure is retried with the job's exponential backoff (`retry({ delaySeconds })`); a permanent failure (malformed, unknown type, invalid payload, `DomainError` of kind invalid_input, forbidden, not_found) is reported and acked; a failure on the final attempt is reported and goes to the dead-letter queue, which has no consumer and keeps messages 14 days. No job history is stored. [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md)
 
 **Cron.** `triggers.crons` in `wrangler.jsonc` fires `scheduled`; the handler (`apps/web/src/server/cron.ts`) runs every entry of the cron catalog (`packages/features/src/cron-catalog.ts`) whose schedule equals `controller.cron` (several entries may share one schedule, listed once in `triggers.crons`), each in a new trace with `controller.scheduledTime` as its time. Entries fan out by enqueueing jobs: hourly `files.retry-cleanup` and `privacy.purge-exports`; daily `audit.purge-events`, `jobs.purge-idempotency-keys`, `billing.expire-trials`, `notifications.purge`, `trash.purge-expired` and `storage.reconcile` (which enqueues nothing with `STORAGE_RECONCILE=off`); and `notifications.plan-digests` at the digest hour. A failing entry is reported, the others still run, and the run fails.
 
-**Rate-limited or human-checked request.** `/api/auth/*`, `/mcp`, `POST /api/files`, `/health*` (`health.ip`) and `/api/csp-report` (`csp.report`) count the request against their edge policy first and answer 429 (Problem Details, `Retry-After`, `RateLimit` header fields) when it is over; every tRPC mutation does the same in the `limitMutations` middleware (TOO_MANY_REQUESTS). Better Auth then applies its own per-path limits and, on sign-up, sign-in and password reset, verifies the Turnstile token. See [Abuse protection](#abuse-protection).
+**Rate-limited or human-checked request.** `/api/auth/*`, `/mcp`, the uploads (`POST /api/files`, avatar and logo), `/api/billing/webhook`, `/api/notifications/unsubscribe`, the token pages (`/invite/:token`, `/unsubscribe`), `/health*` (`health.ip`) and `/api/csp-report` (`csp.report`) count the request against their edge policy first (`ROUTE_POLICIES`) and answer 429 (Problem Details, `Retry-After`, `RateLimit` header fields) when it is over; every tRPC mutation does the same in the `limitMutations` middleware (TOO_MANY_REQUESTS). Better Auth then applies its own per-path limits and, on sign-up, sign-in and password reset, verifies the Turnstile token. See [Abuse protection](#abuse-protection).
 
 **Product event.** A use case calls `trackEvent(deps, context, <event>, properties)` after the change it describes (the sign-up hook in `server/auth-audit.ts` does the same for `auth.signed_up`); the SPA batches `client: true` events through `analytics.track`. The ProductAnalytics port writes one Analytics Engine data point per event to `ANALYTICS_EVENTS`, under pseudonymous user and workspace ids, without waiting and without ever failing the request. Nothing in the app reads the data back. See [Product analytics](#product-analytics).
 
@@ -132,7 +168,7 @@ Each principle is the rule that holds now; a project records why it changes one 
 12. **UI is token-only.** Components use theme tokens, never raw palette classes or hex values; brand lives in `packages/ui/src/brand/`. `lint/rules/tokens-only.grit` (enforced in CI). [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md)
 13. **Outside services only through a port.** Logging, error reporting, metrics, tracing and every later outside service (rate limiting, analytics, feature flags, billing) are reached through an interface in `packages/features/src/platform/ports/`; vendor code lives only in `platform/adapters/<vendor>/`, and only the Cloudflare adapters write to the console. See [Ports and adapters](#ports-and-adapters). Dependency-cruiser `vendor-sdks-only-in-adapters` (packages/features outside an adapter folder imports only zod, drizzle-orm and aws4fetch) and `vendor-sdks-not-in-app-server` (a denylist of vendor SDKs in `apps/web/src/server`), GritQL `lint/rules/no-console.grit` (packages/features and `apps/web/src/server`, tests and the Cloudflare adapters aside), and `test/architecture/test-presence.test.ts` (every adapter runs its port's contract suite) (enforced in CI).
 14. **Dependencies are explicit; no ambient request state.** Code receives the `RequestContext`, clock, ids and bindings as arguments; nothing reads them from a global or from `AsyncLocalStorage`. One exception, at the adapter edge: Better Auth calls its hooks itself and gives them no way to receive our context, so `apps/web/src/server/request-scope.ts` keeps the current request's context in an `AsyncLocalStorage` that `withRequestContext` (`server/http.ts`) sets and only `server/auth-audit.ts` reads, to give audit events the request's trace id. A new library callback that needs the context goes through the same bridge only with a reason in the PR. GritQL `lint/rules/request-scope-at-auth-edge.grit` (no `AsyncLocalStorage`, `node:async_hooks` or `request-scope` import in packages/features or apps/web outside those three files) (enforced in CI).
-15. **Data belongs to a workspace.** Every table has a non-null `workspace_id` (auth tables, the `workspaces` table, the platform tables `audit_events` and `job_idempotency_keys`, and the user-scoped notification tables `notifications` (optional `workspace_id`), `notification_preferences` and `notification_settings` excepted, each with its reason in the test), every procedure on data is a `workspaceProcedure`, and use cases take the actor and check `can()`. See [Tenancy and authorization](#tenancy-and-authorization). `test/architecture/workspace-scope.test.ts` (enforced in CI).
+15. **Data belongs to a workspace.** Every table has a non-null `workspace_id`, except the auth tables and the tables listed with a reason in `TABLES_WITHOUT_WORKSPACE` of the test (among them `workspaces`, `audit_events`, `job_idempotency_keys`, the user-scoped notification tables, `user_settings`, the feature-flag tables and the privacy and cleanup tables `data_requests`, `erasure_records`, `privacy_erasure_lock` and `pending_file_cleanup`), every procedure on data is a `workspaceProcedure`, and use cases take the actor and check `can()`. See [Tenancy and authorization](#tenancy-and-authorization). `test/architecture/workspace-scope.test.ts` (enforced in CI).
 16. **Background work only through `enqueueJob`.** Jobs are declared with `defineJob`, registered in the job catalog and enqueued with `enqueueJob`; scheduled work is an entry of the cron catalog that enqueues jobs. No code reads `APP_QUEUE` or calls `.send(` on a queue outside `packages/features/src/jobs/`, the Cloudflare JobQueue adapter and `buildPlatform`. Every consumer has a dead-letter queue and `max_retries` equal to `JOB_MAX_RETRIES`; `triggers.crons` equals the cron catalog's schedules in every environment. GritQL `lint/rules/no-direct-queue-send.grit` and `test/architecture/jobs.test.ts` (enforced in CI). [how-to-add-background-jobs.md](../guides/how-to-add-background-jobs.md)
 17. **Trashed rows never reach a live read.** A trashable table (one of `TRASH_CATALOG`, `packages/features/src/trash-catalog.ts`) has `deleted_at` and `deleted_by`; every read of it goes through `liveIn(table, actor)` or `trashedIn(table, actor)` (`trash/`), never a bare workspace filter, unless the file is listed with a reason (erasure, the storage metric). Deleting is a move to the trash; data leaves for good only through the trash (permanent delete, empty, the daily retention purge) or erasure, which calls the entity's `purge` directly. `test/architecture/trash.test.ts` (enforced in CI). [how-to-use-trash.md](../guides/how-to-use-trash.md)
 
@@ -217,6 +253,7 @@ packages/features/src/
 │   ├── job-delay.ts             assertJobDelay: the 0..86400 s delay every JobQueue adapter enforces
 │   ├── clock.ts                 systemClock
 │   ├── random.ts                mathRandom
+│   ├── hash.ts                  sha256Hex: store tokens by their hash
 │   └── ids.ts                   randomIds
 ├── accounts/                    Better Auth tables (generated, including two-factor and passkeys), user
 │                                settings and avatars (user-settings.schema.ts), own sessions, security

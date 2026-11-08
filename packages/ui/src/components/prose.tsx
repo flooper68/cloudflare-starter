@@ -28,6 +28,10 @@ const proseClasses = [
   // Tables: a scroll box around each (see the JSDoc), quiet rows.
   "[&_[data-table-scroll]]:overflow-x-auto [&_[data-table-scroll]]:rounded-lg [&_[data-table-scroll]]:border [&_[data-table-scroll]]:border-line [&_[data-table-scroll]]:bg-surface-raised",
   "[&_[data-table-scroll]:focus-visible]:outline-none [&_[data-table-scroll]:focus-visible]:ring-2 [&_[data-table-scroll]:focus-visible]:ring-focus",
+  // Diagrams: inline SVG at its natural size in a scroll box like the tables (see the JSDoc).
+  "[&_[data-diagram-scroll]]:overflow-x-auto [&_[data-diagram-scroll]]:rounded-lg [&_[data-diagram-scroll]]:border [&_[data-diagram-scroll]]:border-line [&_[data-diagram-scroll]]:bg-surface-raised [&_[data-diagram-scroll]]:p-3",
+  "[&_[data-diagram-scroll]:focus-visible]:outline-none [&_[data-diagram-scroll]:focus-visible]:ring-2 [&_[data-diagram-scroll]:focus-visible]:ring-focus",
+  "[&_figcaption]:mt-2 [&_figcaption]:text-xs [&_figcaption]:text-fg-muted",
   "[&_table]:w-full [&_table]:border-collapse [&_table]:text-left",
   "[&_th]:border-b [&_th]:border-line [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-medium [&_th]:text-fg-muted",
   "[&_td]:border-b [&_td]:border-line [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_tr:last-child>td]:border-b-0",
@@ -42,7 +46,9 @@ export interface ProseProps extends HTMLAttributes<HTMLDivElement> {
  * Typography for rendered Markdown (the docs site): headings, lists, links, tables,
  * inline code and Shiki code blocks in both themes, all from tokens. Wrap each table in
  * a `<section>` with `data-table-scroll`, `tabindex="0"` and a unique `aria-label`, so
- * a wide table scrolls in its own box and keyboard users can scroll it.
+ * a wide table scrolls in its own box and keyboard users can scroll it. Diagrams are a
+ * `<figure data-diagram>` holding such a region (`data-diagram-scroll`) around an SVG
+ * with `data-diagram-svg`, whose colours come from styles/prose.css, and a `<figcaption>`.
  */
 export function Prose({ className, ...props }: ProseProps) {
   return <div className={cn(proseClasses, className)} {...props} />;
