@@ -154,8 +154,9 @@ jobs:
           retention-days: 7
 
   # The template never ships a strip that breaks the app: applies `bun run starter:strip`
-  # (the default set of starter-only.json) to a scratch copy of the repository, checks a
-  # second run changes nothing, then runs typecheck, lint and test there
+  # (the default set of starter-only.json, which regenerates 0000_init) to a scratch copy
+  # of the repository, checks a second run changes nothing, that the migrations match the
+  # schema and apply to a fresh local D1, then runs typecheck, lint and test there
   # (scripts/starter-strip-check.ts, docs/processes/development.md#starter-only-parts).
   starter-strip:
     runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest') || fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}

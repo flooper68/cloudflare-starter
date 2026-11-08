@@ -447,7 +447,9 @@ warn(
     ...namespaceIdsByEnv,
   ]
     .map(([env, ids]) => `${env} ${describeIds(ids)}`)
-    .join(", ")} (docs/reference/abuse-protection.md#namespace-ids)`
+    .join(
+      ", "
+    )} (docs/guides/how-to-configure-abuse-protection.md#namespace-ids)`
 );
 const workerName = String(config.name ?? "");
 if (
@@ -486,7 +488,7 @@ function checkQaBypass(
   }
   if (bypass !== "on") {
     error(
-      `${label}: QA_BYPASS must be on or off (it is ${bypass ? `"${bypass}"` : "missing"}; docs/reference/abuse-protection.md#qa-bypass)`
+      `${label}: QA_BYPASS must be on or off (it is ${bypass ? `"${bypass}"` : "missing"}; docs/guides/how-to-configure-abuse-protection.md#qa-bypass)`
     );
     return;
   }

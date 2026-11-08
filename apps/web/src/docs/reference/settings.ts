@@ -377,6 +377,7 @@ export const SETTINGS: readonly Setting[] = [
     values: DEMO_MODES,
     description: "The starter's public demo; apps built from it keep off.",
     doc: "docs/guides/how-to-run-a-public-demo.md",
+    starterOnly: true,
   },
   {
     name: "DEMO_RETENTION_DAYS",
@@ -385,6 +386,7 @@ export const SETTINGS: readonly Setting[] = [
     description:
       "With the demo on: days before a demo account is erased, 2 to 365.",
     doc: "docs/guides/how-to-run-a-public-demo.md",
+    starterOnly: true,
   },
   {
     name: "DEMO_SAMPLE_DATA",
@@ -394,6 +396,7 @@ export const SETTINGS: readonly Setting[] = [
     description:
       "With the demo on: new demo workspaces start with sample data.",
     doc: "docs/guides/how-to-run-a-public-demo.md",
+    starterOnly: true,
   },
   {
     name: "DEMO_PROTECTED_EMAILS",
@@ -402,6 +405,7 @@ export const SETTINGS: readonly Setting[] = [
     description:
       "With the demo on: addresses the demo never erases, comma separated.",
     doc: "docs/guides/how-to-run-a-public-demo.md",
+    starterOnly: true,
   },
   {
     name: "QA_BYPASS",
@@ -411,6 +415,7 @@ export const SETTINGS: readonly Setting[] = [
     description:
       "Lets the automated QA suite skip the bot check, with QA_TOKEN.",
     doc: "docs/guides/how-to-qa-a-deployment.md",
+    starterOnly: true,
   },
   {
     name: "QA_TOKEN",
@@ -418,6 +423,7 @@ export const SETTINGS: readonly Setting[] = [
     kind: "secret",
     description: "The QA suite's token; 32+ characters.",
     doc: "docs/guides/how-to-qa-a-deployment.md",
+    starterOnly: true,
   },
   {
     name: "QA_EMAIL_DOMAIN",

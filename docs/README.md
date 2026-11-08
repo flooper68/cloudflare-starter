@@ -140,7 +140,6 @@ The reference half of each guide: the guide shows how, this shows everything.
 | [reference/adding-a-feature.md](reference/adding-a-feature.md)       | you need the seventeen steps as Notes does them, navigation, removing Notes                                  |
 | [reference/docs-site.md](reference/docs-site.md)                     | you need what is published, docs components, screenshots, the landing page, the feature map, search, caching |
 | [reference/branding.md](reference/branding.md)                       | you need brand versus system, choosing values, the checklist                                                 |
-| [reference/start-a-project.md](reference/start-a-project.md)         | you need what the strip removes, starting by hand, when the strip fails                                      |
 
 ### Processes
 

@@ -29,7 +29,7 @@ export async function findAdminAccess(
     /**
      * The QA admin's address while QA_BYPASS=on, else null. Any other `qa+admin@` account
      * (the bypass off, or an old QA_EMAIL_DOMAIN) is no admin whatever its stored role
-     * (docs/reference/abuse-protection.md#the-qa-admin). Required, so no
+     * (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin). Required, so no
      * caller can forget it.
      */
     readonly qaAdminEmail: string | null;
