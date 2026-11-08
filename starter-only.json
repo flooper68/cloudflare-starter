@@ -4,50 +4,32 @@
     {
       "id": "qa-automation",
       "title": "Automated QA of the starter's production",
-      "why": "The starter tests its own deployment at starter.flooper.me with real accounts and real mail: a QA suite, a QA inbox Worker on qa.flooper.me, a QA workflow with a GitHub environment, and a token that lets the suite skip Turnstile. A new project has none of that infrastructure; the bypass would be an unused hole in the human check.",
+      "why": "The starter tests its own deployment at starter.flooper.me with real accounts: a QA suite (apps/web/test/qa), a QA workflow with a GitHub environment, and QA_BYPASS=on, which lets the suite skip Turnstile for QA addresses and keeps their mail in an outbox. A new project has no QA suite: the strip removes the suite, its workflow and scripts, and sets QA_BYPASS off everywhere. The bypass, outbox and QA admin code stays, inert with QA_BYPASS=off (its endpoints answer 404).",
       "status": "active",
       "default": true,
       "delete": [
-        "apps/qa-inbox",
         "apps/web/playwright.qa.config.ts",
-        "apps/web/src/server/qa-bypass.ts",
-        "packages/features/src/abuse/check-qa-bypass.ts",
-        "packages/features/src/abuse/domain/qa-bypass.ts",
         "scripts/qa.ts",
-        "scripts/qa-inbox-plan.ts",
-        "scripts/setup-qa-inbox.ts",
         "scripts/qa-scrub-artifacts.py",
         ".github/workflows/qa.yml"
       ],
-      "tests": [
-        "apps/web/test/qa",
-        "apps/web/test/api/qa-bypass.test.ts",
-        "packages/features/src/abuse/check-qa-bypass.test.ts",
-        "packages/features/src/abuse/domain/qa-bypass.test.ts",
-        "scripts/qa-inbox-plan.test.ts",
-        "scripts/qa-scrub-artifacts.test.ts"
-      ],
-      "patch": "scripts/starter-only/qa-automation.patch",
+      "tests": ["apps/web/test/qa", "scripts/qa-scrub-artifacts.test.ts"],
       "wrangler": [
         {
           "env": "all",
           "path": ["vars", "QA_BYPASS"],
-          "comment": null
+          "value": "off",
+          "comment": "The QA suite's bypass of the human check and its mail outbox (required: on | off;\ndocs/guides/how-to-configure-abuse-protection.md#qa-bypass). off: this project runs no QA suite."
         },
         {
           "env": "all",
           "path": ["vars", "QA_EMAIL_DOMAIN"]
         }
       ],
-      "rateLimits": ["RL_QA_BYPASS"],
       "json": [
         {
           "file": "package.json",
           "path": ["scripts", "test:qa"]
-        },
-        {
-          "file": "package.json",
-          "path": ["scripts", "setup:qa-inbox"]
         }
       ],
       "secrets": [
@@ -56,7 +38,7 @@
           "where": ["develop", "staging", "production"]
         },
         {
-          "name": "QA_TOKEN, QA_INBOX_URL, QA_INBOX_TOKEN, QA_ADMIN_EMAIL, QA_ADMIN_PASSWORD",
+          "name": "QA_TOKEN, QA_ADMIN_EMAIL, QA_ADMIN_PASSWORD",
           "where": ["github"],
           "note": "and the GitHub environment qa that holds them"
         }
@@ -66,12 +48,6 @@
           "workflow": ".github/workflows/deploy.yml",
           "job": "qa",
           "why": "calls the QA workflow after a production deploy"
-        },
-        {
-          "workflow": ".github/workflows/ci.yml",
-          "job": "deploy-dry-run",
-          "step": "Dry-run deploy of the QA inbox",
-          "why": "packages the QA inbox Worker"
         }
       ],
       "docs": [
@@ -86,11 +62,6 @@
           "file": "docs/guides/how-to-qa-a-deployment.md",
           "action": "remove",
           "heading": "The automated suite"
-        },
-        {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "action": "remove",
-          "heading": "The QA inbox"
         },
         {
           "file": "docs/guides/how-to-qa-a-deployment.md",
@@ -122,150 +93,19 @@
           "note": "the checklist sections still name the starter's QA addresses (qa+<runId>-a@qa.flooper.me); read them as your own test accounts, or rewrite them"
         },
         {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "action": "remove",
-          "heading": "QA Bypass"
-        },
-        {
           "file": "docs/guides/how-to-setup-ci.md",
           "action": "remove",
           "heading": "4. The QA environment"
         }
       ],
       "manual": [
-        "Delete the QA inbox Worker cloudflare-starter-qa-inbox and its Email Routing rule only if this account ran the starter's QA (a new project never deployed them)."
+        "The QA bypass, the QA outbox (packages/features/src/qa, its qa_outbox table), the QA admin and /api/qa/* stay, inert with QA_BYPASS=off. Remove them only if you want the code gone: it touches the schema and the first migration."
       ],
       "text": [
-        {
-          "file": ".claude/skills/setup-auth/SKILL.md",
-          "find": " `QA_BYPASS` (`on`|`off`, required, no default) is the automated QA suite's bypass of Turnstile for `@QA_EMAIL_DOMAIN` addresses; with `on` the `QA_TOKEN` secret (32+ characters) and `QA_EMAIL_DOMAIN` are required too, or the Worker refuses every request, so have the user store `QA_TOKEN` with `bun run setup:secrets --env <env>` before deploying, or set `QA_BYPASS` to `off`. Local dev keeps `QA_BYPASS=off` in `.dev.vars`.",
-          "replace": ""
-        },
-        {
-          "file": "docs/README.md",
-          "find": "you release to staging or production, run the production smoke suite or the automated QA suite, write a QA journey, set up the QA inbox (`setup:qa-inbox`), the QA workflow or the QA admin, or clean up QA accounts",
-          "replace": "you release to staging or production, run the production smoke suite, or check a deployment by hand with the QA checklist"
-        },
-        {
-          "file": "docs/architecture/overview.md",
-          "find": ", `RL_CSP_REPORT`, `RL_QA_BYPASS` (`ratelimits`)",
-          "replace": ", `RL_CSP_REPORT` (`ratelimits`)"
-        },
-        {
-          "file": "docs/architecture/overview.md",
-          "find": ", `QA_BYPASS` (`on` | `off`, required, no default) and `QA_EMAIL_DOMAIN` (with `on`: [the QA bypass](../guides/how-to-configure-abuse-protection.md#qa-bypass)), and the workspace",
-          "replace": ", and the workspace"
-        },
-        {
-          "file": "docs/architecture/overview.md",
-          "find": " `QA_TOKEN` (with `QA_BYPASS=on`),",
-          "replace": ""
-        },
         {
           "file": "docs/architecture/testing.md",
           "find": " Features that need an account are the automated QA suite in [how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md).",
           "replace": " Features that need an account are the QA checklist in [how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md)."
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": " the Cloudflare setup per environment, the automated QA suite's bypass of the human check, how to change",
-          "replace": " the Cloudflare setup per environment, how to change"
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": ", or debug a 429 or a failed human check, or turn the QA bypass on or off.",
-          "replace": ", or debug a 429 or a failed human check."
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": ", `RL_CSP_REPORT`, `RL_QA_BYPASS` (`ratelimits`)",
-          "replace": ", `RL_CSP_REPORT` (`ratelimits`)"
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": " (catalog validity, keys, Better Auth rules, QA addresses, constant-time comparison); `packages/features/src/abuse/check-qa-bypass.test.ts`",
-          "replace": " (catalog validity, keys, Better Auth rules, constant-time comparison)"
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "; `apps/web/test/api/qa-bypass.test.ts` (the QA bypass: off, wrong token, wrong domain, accepted and audited, rate limited)",
-          "replace": ""
-        },
-        {
-          "file": "docs/guides/how-to-setup-web-app.md",
-          "find": ", `RL_CSP_REPORT`, `RL_QA_BYPASS` (`ratelimits`",
-          "replace": ", `RL_CSP_REPORT` (`ratelimits`"
-        },
-        {
-          "file": "docs/guides/how-to-setup-web-app.md",
-          "find": "7. Secrets, including `TURNSTILE_SECRET_KEY`, `ANALYTICS_ID_SECRET` and `QA_TOKEN` (required while the environment has `QA_BYPASS=on`, as production and develop ship; without it the Worker refuses every request, so set it or switch `QA_BYPASS` to `off` first) (asks",
-          "replace": "7. Secrets, including `TURNSTILE_SECRET_KEY` and `ANALYTICS_ID_SECRET` (asks"
-        },
-        {
-          "file": "docs/guides/how-to-setup-web-app.md",
-          "find": "| `QA_TOKEN` | with `QA_BYPASS=on`",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-use-the-audit-log.md",
-          "find": "| `qa.bypass.used` | `hooks.before` letting the automated QA suite skip Turnstile on sign-up, sign-in or password reset (QA_BYPASS=on, server/qa-bypass.ts)",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-use-the-audit-log.md",
-          "find": "| `qa.bypass.used` | by `metadata.form`: sign-in Authentication (3002), sign-up and password-reset Account Change (3001)",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/architecture/overview.md",
-          "find": "| QA inbox | [apps/qa-inbox](../../apps/qa-inbox/src/index.ts)",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/architecture/overview.md",
-          "find": "- **One bypass, for the QA suite.** With `QA_BYPASS=on`, a request to a human-checked endpoint with the `QA_TOKEN` secret in `X-QA-Token` (constant-time compare, limited by `qa.bypass`) for a `qa+<tag>@QA_EMAIL_DOMAIN` address skips the Turnstile check only, recorded as `qa.bypass.used`; anything else falls back to the check ([security model](../guides/how-to-configure-abuse-protection.md#qa-bypass)).",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| The same three endpoints with `X-QA-Token`, while `QA_BYPASS=on` (the automated QA suite) | `qa.bypass` (30 a minute per IP, counted before the token is compared); the Turnstile check is skipped only for the right token and an address `qa+…@QA_EMAIL_DOMAIN`",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_BYPASS` | var",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_EMAIL_DOMAIN` | var",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_TOKEN` | secret (Worker secret)",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_BYPASS=on needs the QA_TOKEN secret`, `… needs QA_EMAIL_DOMAIN` | `bun run setup:secrets --env <env>` (`QA_TOKEN`), or set `QA_BYPASS` to `off`.",
-          "replace": "",
-          "line": true
-        },
-        {
-          "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| The QA suite fails sign-up with \"The human check did not pass\" | `qa.bypass.rejected` in Workers Logs says why: the GitHub `QA_TOKEN` differs from the Worker secret, or the address is not `@QA_EMAIL_DOMAIN`.",
-          "replace": "",
-          "line": true
         },
         {
           "file": "docs/guides/how-to-qa-a-deployment.md",
@@ -273,24 +113,9 @@
           "replace": "check by hand"
         },
         {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "find": "As the QA admin (the account of the [nightly cleanup](#nightly-cleanup)); act only on the QA accounts and workspaces of the run.",
-          "replace": "As a platform admin; act only on the test accounts and workspaces of the run."
-        },
-        {
-          "file": "scripts/cloudflare-plan.test.ts",
-          "find": "\"= 9001–9013 kept\"",
-          "replace": "\"= 9001–9012 kept\""
-        },
-        {
           "file": "CHANGELOG.md",
           "find": "[apps/web/test/qa/README.md](apps/web/test/qa/README.md)",
           "replace": "`apps/web/test/qa/README.md`"
-        },
-        {
-          "file": "docs/processes/agent-skills.md",
-          "find": "abuse protection and `QA_BYPASS`, the admin portal",
-          "replace": "abuse protection, the admin portal"
         },
         {
           "file": "docs/processes/agentic-workflow.md",
@@ -303,10 +128,12 @@
     {
       "id": "qa-outbox",
       "title": "QA outbox",
-      "why": "In flight: the QA suite's outbox for the starter's production QA. Part of the QA automation; strip it with it.",
-      "status": "pending",
-      "pending": "the QA outbox PR (not opened yet); when it merges, list its files here and set status to active",
-      "default": true
+      "why": "The QA outbox (#59): with QA_BYPASS=on, mail to QA addresses is kept in the app (qa_outbox table) for the QA suite instead of being sent, plus the QA admin and /api/qa/*. The code stays in a project, inert with QA_BYPASS=off (qa-automation sets it off); nothing else to strip automatically.",
+      "status": "active",
+      "default": true,
+      "manual": [
+        "To remove the QA outbox code as well: packages/features/src/qa (and its table in the first migration), apps/web/src/pages/api/qa, apps/web/src/server/qa-admin.ts and qa-endpoint.ts, withQaOutbox in apps/web/src/lib/env.ts, its jobs and cron entry, MCP tools and audit events; regenerate the migration (docs/guides/how-to-setup-d1.md)."
+      ]
     },
     {
       "id": "qa-journeys",

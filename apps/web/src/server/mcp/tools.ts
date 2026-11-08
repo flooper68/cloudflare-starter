@@ -691,6 +691,14 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     { outward: true }
   ),
   direct(
+    "admin_send_test_email",
+    "write",
+    "admin.email.sendTest",
+    "Admin: send test email",
+    "Platform admins only. Sends the deployment's test email to any address (checks that mail from this deployment arrives). Confirm the address with the user before calling.",
+    { outward: true }
+  ),
+  direct(
     "admin_list_workspaces",
     "read",
     "admin.workspaces.list",
@@ -780,6 +788,10 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
     "public liveness probe for uptime monitors; touches no dependency, nothing for an agent to do",
   "health/ready.ts":
     "public readiness check for uptime monitors (IETF application/health+json); platform admins' agents use admin_get_health",
+  "api/qa/cleanup.ts":
+    "the automated QA suite's erasure of its own run accounts (QA_BYPASS=on), authorized by the QA token, not a user; admins use admin_remove_user",
+  "api/qa/outbox.ts":
+    "the automated QA suite's read of the QA outbox (QA_BYPASS=on), authorized by the QA token, not a user; no MCP client reads it",
   "api/csp-report.ts":
     "browsers post Content-Security-Policy violation reports here; nothing an agent does",
   "docs/changelog.xml.ts":

@@ -26,7 +26,7 @@ export const LINKS = {
 } as const;
 
 /**
- * The hook. Measured on 8 Nov 2026 from a fresh clone to the local sign-up page: about
+ * The hook. Measured on 8 Nov 2026 by hand from a fresh clone to the local sign-up page: about
  * 45 s with Bun's cache warm (clone 27 s, install 3 s, migrate 3 s, dev server and first
  * page 8 s) and about 80 s cold (install 41 s). A deploy needs a Cloudflare login,
  * resources and secrets and was not timed, so the headline says "today", not minutes.
@@ -58,17 +58,13 @@ export const SECTIONS = {
   costs: {
     kicker: "What it costs",
     title: "One platform, one bill.",
-    lead: "Everything on this page runs on Cloudflare's Workers Paid plan: $5 a month, plus usage above the included allowances. A small app stays inside them; above them you pay for what you use, for example $0.35 per 1,000 emails after the first 3,000 a month.",
+    lead: "Your app runs on Cloudflare's Workers Paid plan. A small app stays inside the included allowances; above them you pay per use.",
     note: "Prices from Cloudflare's docs, checked 8 Nov 2026. Your domain is extra.",
   },
   start: {
     kicker: "Start in minutes",
-    title: "Running locally in under two minutes",
-    lead: "The database, files, email, queue and schedules all run locally. Nothing else to install but Bun.",
-    agent:
-      "AGENTS.md points your coding agent to the docs; its skills set up sign-in, the database and email.",
-    measured:
-      "Measured from a fresh clone to the sign-up page: about 45 seconds with Bun's cache warm, 80 seconds cold.",
+    title: "Start with one prompt",
+    lead: "Paste this into Claude Code or your coding agent. It sets everything up and asks before touching your accounts.",
   },
   closing: {
     title: "Start from a working app",
@@ -76,61 +72,52 @@ export const SECTIONS = {
   },
 } as const;
 
-/** The included allowances that matter first, from docs/start costs. */
-export const COSTS: readonly {
-  readonly what: string;
+/**
+ * The receipt in "What it costs": what the $5 plan covers, the included allowance in short
+ * form, and the price above it. Numbers as sourced from Cloudflare's pricing pages on
+ * 8 Nov 2026 (plans/home-docs-v2.md, section 6); keep them exact when you update them.
+ */
+export const RECEIPT: readonly {
+  readonly item: string;
   readonly included: string;
-  readonly after: string;
+  readonly above: string;
 }[] = [
-  { what: "Requests", included: "10 million", after: "$0.30 / million" },
   {
-    what: "Database",
-    included: "25 billion rows read · 50 million written · 5 GB",
-    after: "$1 / million writes",
+    item: "App, API and agents",
+    included: "10M requests",
+    above: "then $0.30 / million",
   },
   {
-    what: "File storage",
+    item: "Database",
+    included: "5 GB · 25B reads · 50M writes",
+    above: "then $1 / million writes",
+  },
+  {
+    item: "File storage",
     included: "10 GB · free egress",
-    after: "$0.015 / GB-month",
+    above: "then $0.015 / GB-month",
   },
   {
-    what: "Background jobs",
-    included: "1 million queue operations (about 330,000 jobs)",
-    after: "$0.40 / million",
+    item: "Jobs and schedules",
+    included: "1M queue ops",
+    above: "then $0.40 / million",
   },
-  { what: "Email", included: "3,000 emails", after: "$0.35 / 1,000" },
+  { item: "Email", included: "3,000 emails", above: "then $0.35 / 1,000" },
   {
-    what: "Analytics and metrics",
-    included: "10 million data points",
-    after: "Not billed yet",
+    item: "Analytics and metrics",
+    included: "10M data points",
+    above: "not billed yet",
   },
+  { item: "Logs", included: "20M events", above: "then $0.60 / million" },
+  { item: "Bot checks", included: "unlimited", above: "free" },
 ];
 
-/** The receipt beside the cost table: what the $5 covers. */
-export const RECEIPT: readonly string[] = [
-  "Website, docs and app",
-  "Agent endpoint",
-  "Database",
-  "File storage",
-  "Job queue and schedules",
-  "Email",
-  "Analytics, logs and traces",
-  "Rate limits and bot checks",
-];
-
-export const STEPS: readonly {
-  readonly title: string;
-  readonly command: string;
-}[] = [
-  { title: "Clone it", command: `git clone ${DOCS.repoUrl} my-app` },
-  { title: "Install", command: "cd my-app && bun install" },
-  {
-    title: "Add local settings",
-    command:
-      "cp apps/web/.dev.vars.example apps/web/.dev.vars && bun run db:migrate:local",
-  },
-  { title: "Run it", command: "bun run dev:web" },
-];
+/**
+ * The prompt the home page offers instead of manual setup steps: a coding agent reads
+ * AGENTS.md and the start-project skill and does the rest, asking before it touches any
+ * account. Its one source is start-prompt.ts (README and the docs quote the same text).
+ */
+export { START_PROMPT } from "./start-prompt";
 
 export const PRODUCTION_CHECKS: readonly string[] = [
   "Tested at every layer, in CI",

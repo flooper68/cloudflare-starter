@@ -17,7 +17,6 @@ const EXEMPT: Readonly<Record<string, string>> = {
   "how-to-setup-web-app.md": "first-time local setup and deploy steps",
   "how-to-start-a-project.md":
     "starting a project from the template; nothing in the app",
-  "how-to-setup-d1.md": "database creation and migrations; no UI",
   "how-to-setup-ci.md":
     "CI and the deploy workflow, which runs the smoke suite",
   "how-to-setup-logging.md":

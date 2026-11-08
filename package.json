@@ -30,7 +30,6 @@
     "setup:privacy-storage": "bun scripts/setup-privacy-storage.ts",
     "setup:storage": "bun scripts/setup-storage.ts",
     "setup:admin": "bun scripts/setup-admin.ts",
-    "setup:qa-inbox": "bun scripts/setup-qa-inbox.ts",
     "doctor": "bun scripts/doctor.ts",
     "starter:strip": "bun scripts/starter-strip.ts",
     "starter:strip:check": "bun scripts/starter-strip-check.ts",

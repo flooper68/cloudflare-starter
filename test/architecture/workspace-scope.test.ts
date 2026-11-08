@@ -41,6 +41,8 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
     "a user's own settings across workspaces; rows cascade with the user",
   notification_settings:
     "a user's own settings across workspaces; rows cascade with the user",
+  qa_outbox:
+    "platform table: test mail to the QA suite's own addresses, kept 24 hours, belongs to no workspace",
   job_idempotency_keys:
     "platform table of the job queue: keys are per job type and payload, the workspace travels in the job envelope",
 };
