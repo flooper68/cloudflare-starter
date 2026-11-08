@@ -115,11 +115,9 @@ export const RECEIPT: readonly {
 /**
  * The prompt the home page offers instead of manual setup steps: a coding agent reads
  * AGENTS.md and the start-project skill and does the rest, asking before it touches any
- * account. Placeholder until the start-project skill's canonical prompt lands in its
- * shared place (PR #55); then import it from there instead of keeping a copy here.
+ * account. Its one source is start-prompt.ts (README and the docs quote the same text).
  */
-export const START_PROMPT =
-  "Create a new agent-native app called <name> from github.com/flooper68/cloudflare-starter. Read AGENTS.md first, then follow the start-project skill.";
+export { START_PROMPT } from "./start-prompt";
 
 export const PRODUCTION_CHECKS: readonly string[] = [
   "Tested at every layer, in CI",

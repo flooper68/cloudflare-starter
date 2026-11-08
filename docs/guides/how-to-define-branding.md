@@ -10,6 +10,8 @@ JetBrains Mono, 8px corners, dark-first. Longer copy calls it "Cloudflare Starte
 (`APP_NAME`, the docs `siteName`, `EMAIL_FROM_NAME`). It is the starter's identity, not
 yours: replace it when you start a product, with the steps below.
 
+> **Starter-only, removed by `starter:strip`** (`brand-name`): `starter:strip --name <name>` replaces "Cloudflare Starter" (`APP_NAME`, the docs `siteName`, `EMAIL_FROM_NAME`, the authenticator issuer, the passkey and MCP names); the mark, colours and fonts are the steps below ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
 ## What Is Brand And What Is System
 
 | Layer                                                                                                           | File                                            | Who changes it                                |

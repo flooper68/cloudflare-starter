@@ -14,7 +14,9 @@ test.describe("docs site", () => {
       .click();
 
     await expect(page).toHaveURL(/\/docs\/$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Docs");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "What do you want to do?"
+    );
     const nav = page.getByRole("navigation", { name: "Docs", exact: true });
     await expect(
       nav.getByRole("link", { name: "Overview", exact: true })

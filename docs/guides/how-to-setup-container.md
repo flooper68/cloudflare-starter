@@ -2,6 +2,8 @@
 
 This guide explains how to run and deploy the Cloudflare Container demo in this repo.
 
+> **Starter-only, removed by `starter:strip`** (`containers`): the demo and this guide are stripped by default; keep them with `--keep containers` ([how-to-start-a-project.md](how-to-start-a-project.md)).
+
 The demo lives in [apps/container](../../apps/container) and exposes a Worker that forwards requests into a Dockerized Python container. The container starts a child process on each request, computes digits of pi, and returns JSON.
 
 ## What You Need
