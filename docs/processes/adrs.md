@@ -31,14 +31,7 @@ One decision per ADR, about one page. Copy [decisions/0000-template.md](../decis
 
 ## Statuses and immutability
 
-```mermaid
-stateDiagram-v2
-  [*] --> Proposed
-  Proposed --> Accepted: owner accepts
-  Proposed --> [*]: rejected (file deleted or kept as Rejected)
-  Accepted --> Superseded: new ADR replaces it
-  Accepted --> Deprecated: no longer relevant, nothing replaces it
-```
+![ADR statuses](images/adr-status.svg)
 
 - Once **Accepted**, an ADR is not edited except for typos and broken links. To change the decision, write a new ADR and set the old one's status to `Superseded by NNNN` (the only other permitted edit).
 - A rejected proposal may be kept with status `Rejected` when the reasoning is worth keeping; otherwise delete it.

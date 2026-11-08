@@ -36,6 +36,8 @@ const proseClasses = [
   "[&_[data-docs-diagram]]:overflow-x-auto [&_[data-docs-diagram]]:rounded-lg",
   "[&_[data-docs-diagram]:focus-visible]:outline-none [&_[data-docs-diagram]:focus-visible]:ring-2 [&_[data-docs-diagram]:focus-visible]:ring-focus",
   "[&_[data-docs-diagram]_svg]:block [&_[data-docs-diagram]_svg]:h-auto [&_[data-docs-diagram]_svg]:w-full [&_[data-docs-diagram]_svg]:min-w-xl",
+  // Generated from Mermaid (data-natural-width): its own size, so wide diagrams scroll rather than shrink their text.
+  "[&_[data-docs-diagram]_svg[data-natural-width]]:w-auto [&_[data-docs-diagram]_svg[data-natural-width]]:min-w-0 [&_[data-docs-diagram]_svg[data-natural-width]]:max-w-none",
 ].join(" ");
 
 export interface ProseProps extends HTMLAttributes<HTMLDivElement> {
@@ -47,7 +49,9 @@ export interface ProseProps extends HTMLAttributes<HTMLDivElement> {
  * inline code and Shiki code blocks in both themes, all from tokens. Wrap each table in
  * a `<section>` with `data-table-scroll`, `tabindex="0"` and a unique `aria-label`, so
  * a wide table scrolls in its own box and keyboard users can scroll it. A diagram is an
- * inline `<svg>` in a `<figure data-docs-diagram>` with the same tab stop and a label.
+ * inline `<svg>` in a `<figure data-docs-diagram>` with the same tab stop and a label; it
+ * fills the column, unless it has `data-natural-width` (diagrams generated from Mermaid),
+ * which keeps its own size and scrolls.
  */
 export function Prose({ className, ...props }: ProseProps) {
   return <div className={cn(proseClasses, className)} {...props} />;

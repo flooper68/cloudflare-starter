@@ -4,74 +4,13 @@ How the starter is built and the rules every change follows: the system at a gla
 
 ## System
 
-```mermaid
-flowchart TB
-  accTitle: System overview
-  accDescr: Four kinds of callers reach the app. Browsers load the prerendered landing page, docs, 404, SPA bundle and Storybook as static assets, without running the Worker, and send everything else to the one web Worker; with presigned uploads on they also put files straight into R2. MCP clients such as Claude call /mcp with an OAuth token. Mail recipients follow links and one-click unsubscribe posts back to the Worker. Cron Triggers call its scheduled handler. Inside the Worker, the Astro middleware builds the request context, session and security headers for the server-rendered pages, /api/auth (Better Auth), /api/trpc, /mcp, which calls the tRPC procedures in process, and the other routes. The adapters, the queue consumer and the cron handler call the use cases in packages/features, which use D1, R2, Queues with a dead-letter queue, Email Sending and Analytics Engine; the abuse feature's enforceRateLimit and verifyHuman, called by the adapters and Better Auth's hook, reach Workers Rate Limiting and Turnstile. Everything logs to Workers Logs, with traces.
-
-  subgraph Callers["Callers"]
-    Browser["Browser"]
-    Agent["MCP client"]
-    Recipient["Mail recipient"]
-    Cron["Cron Triggers"]
-  end
-
-  Assets["Static assets: landing, /docs, 404, SPA bundle, /_storybook"]
-
-  subgraph Worker["Web Worker: apps/web/src/worker.ts"]
-    Middleware["Astro middleware: context, session, headers"]
-    Pages["SSR pages: /app, /admin, /sign-in, /consent"]
-    Auth["/api/auth: Better Auth"]
-    TRPC["/api/trpc"]
-    MCP["/mcp"]
-    Routes["/api/files, webhook, unsubscribe, /health"]
-    Consumer["queue(): job consumer"]
-    Scheduled["scheduled(): cron catalog"]
-    UseCases["use cases: packages/features"]
-  end
-
-  D1[("D1: DB")]
-  R2[("R2: FILES")]
-  Queue[["Queues: APP_QUEUE and DLQ"]]
-  Email["Email Sending: EMAIL"]
-  AE["Analytics Engine: metrics, product events"]
-  RL["Workers Rate Limiting: RL_*"]
-  Turnstile["Turnstile Siteverify"]
-  Logs["Workers Logs and traces"]
-
-  Browser --> Assets
-  Browser --> Middleware
-  Browser -.->|presigned PUT| R2
-  Agent --> Middleware
-  Recipient --> Middleware
-  Cron --> Scheduled
-  Middleware --> Pages
-  Middleware --> Auth
-  Middleware --> TRPC
-  Middleware --> MCP
-  Middleware --> Routes
-  MCP -->|createCaller| TRPC
-  Auth --> UseCases
-  TRPC --> UseCases
-  Routes --> UseCases
-  Consumer --> UseCases
-  Scheduled --> UseCases
-  UseCases --> D1
-  UseCases --> R2
-  UseCases --> Queue
-  Queue --> Consumer
-  UseCases --> Email
-  UseCases --> AE
-  UseCases -->|enforceRateLimit| RL
-  UseCases -->|verifyHuman| Turnstile
-  Worker -.-> Logs
-```
+![System overview](diagrams/system.svg)
 
 One Worker serves everything: the Astro pages, the React SPA under `/app`, Better Auth, tRPC, `/mcp`, the queue consumer and the cron handler ([apps/web/src/worker.ts](../../apps/web/src/worker.ts)). Prerendered pages never reach it; every other request passes the Astro middleware, then a thin adapter that calls use cases in `packages/features`, which reach Cloudflare's services through bindings and ports. `/mcp` runs the same tRPC procedures in process, so an agent gets the web app's checks and errors. The Container demo (`apps/container`) and the QA inbox (`apps/qa-inbox`) are separate Workers outside this picture; the starter uses no Workflows or Durable Objects in the web Worker.
 
 ### How to read the diagrams
 
-Boxes are code or Cloudflare services that exist on `main`; solid arrows are calls or imports, dashed arrows optional or indirect paths (a presigned upload, log output, type-only imports). Cylinders are storage. Every diagram names its files below it and links the guide to read next. Each one is written in Mermaid in the Markdown itself: GitHub renders it, and the docs site turns it into an inline SVG at build time that follows the light and dark theme and scrolls sideways on a phone.
+Boxes are code or Cloudflare services that exist on `main`; solid arrows are calls or imports, dashed arrows optional or indirect paths (a presigned upload, log output, type-only imports). Cylinders are storage. Every diagram names its files below it and links the guide to read next. Each is a Mermaid source (`diagrams/*.mmd`) rendered to the SVG beside it by `bun run docs:diagrams`; a test fails when the two disagree. On the site the SVG follows the light and dark theme and scrolls sideways on a phone; its title and description are the text alternative.
 
 | Page                                           | Shows                                                                                         |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------- |

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 669.991 378" width="670" height="378" role="img" data-natural-width="">
+<title>A cron run</title>
+<desc>A Cron Trigger from triggers.crons in wrangler.jsonc fires the Worker's scheduled handler with the schedule. The handler finds every cron catalog entry with that schedule, and runs each in a new trace and its own span. Each entry enqueues jobs, so the queue does the work. A failing entry is reported and the others still run; the run then fails. The run's metrics are flushed at the end.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="669.991" height="378" rx="12"/>
+<defs>
+<marker id="dg-cron-run-seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+</marker>
+<marker id="dg-cron-run-seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+</marker>
+</defs>
+<g class="block" data-type="loop" data-label="each entry with this schedule">
+<rect x="181.755" y="160" width="458.236" height="100" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="181.755" y="160" width="197.82999999999998" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="187.755" y="169" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">loop [each entry with this schedule]</text>
+</g>
+<g class="block" data-type="alt" data-label="an entry failed">
+<rect x="30" y="268" width="275.359" height="60" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="30" y="268" width="110.71000000000002" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="36" y="277" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [an entry failed]</text>
+</g>
+<line class="lifeline" data-actor="T" x1="95.8775" y1="70" x2="95.8775" y2="348" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="S" x1="243.557" y1="70" x2="243.557" y2="348" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="E" x1="406.427" y1="70" x2="406.427" y2="348" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="Q" x1="573.7429999999999" y1="70" x2="573.7429999999999" y2="348" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="T" data-to="S" data-label="controller.cron, scheduledTime" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="95.8775" y1="90" x2="243.557" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-cron-run-seq-arrow)" />
+<text x="169.71724999999998" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">controller.cron, scheduledTime</text>
+</g>
+<g class="message" data-from="S" data-to="E" data-label="run(deps, scheduledTime)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="243.557" y1="200" x2="406.427" y2="200" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-cron-run-seq-arrow)" />
+<text x="324.992" y="190" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">run(deps, scheduledTime)</text>
+</g>
+<g class="message" data-from="E" data-to="Q" data-label="enqueueJob(...)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="406.427" y1="240" x2="573.7429999999999" y2="240" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-cron-run-seq-arrow)" />
+<text x="490.085" y="230" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">enqueueJob(...)</text>
+</g>
+<g class="message" data-from="S" data-to="T" data-label="report, rethrow, run fails" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="243.557" y1="308" x2="95.8775" y2="308" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-cron-run-seq-arrow)" />
+<text x="169.71724999999998" y="298" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">report, rethrow, run fails</text>
+</g>
+<g class="note" data-position="over" data-actors="S">
+<polygon points="159.74899999999997,98 321.365,98 327.365,104 327.365,121 159.74899999999997,121" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="321.365,98 327.365,104 321.365,104" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="243.55699999999996" y="109.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">cronEntriesFor(catalog, cron)</text>
+</g>
+<g class="note" data-position="over" data-actors="S">
+<polygon points="168.36199999999997,125 312.75199999999995,125 318.75199999999995,131 318.75199999999995,148 168.36199999999997,148" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="312.75199999999995,125 318.75199999999995,131 312.75199999999995,131" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="243.55699999999996" y="136.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">new trace, span cron name</text>
+</g>
+<g class="actor" data-id="T" data-label="Cron Trigger" data-type="participant">
+<rect x="40" y="30" width="111.755" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="95.8775" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Cron Trigger</text>
+</g>
+<g class="actor" data-id="S" data-label="scheduled()" data-type="participant">
+<rect x="191.755" y="30" width="103.604" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="243.557" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">scheduled()</text>
+</g>
+<g class="actor" data-id="E" data-label="Cron catalog entry" data-type="participant">
+<rect x="335.35900000000004" y="30" width="142.136" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="406.427" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Cron catalog entry</text>
+</g>
+<g class="actor" data-id="Q" data-label="APP_QUEUE" data-type="participant">
+<rect x="517.4949999999999" y="30" width="112.49599999999998" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="573.7429999999999" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">APP_QUEUE</text>
+</g>
+</svg>

@@ -4,45 +4,7 @@ The layers of the monorepo and which may import which, with the lint rule or tes
 
 ## Who may import whom
 
-```mermaid
-flowchart TB
-  accTitle: Layers and allowed imports
-  accDescr: Arrows point from the importing layer to the imported one. In apps/web, the Astro pages call the server adapters and render packages/ui; the React SPA renders packages/ui and imports the tRPC router's types only. The server adapters call the feature use cases and build the platform adapters. In packages/features, the composition roots list the use cases; use cases call their own domain, the kernel and the ports; domain imports only the kernel and zod; adapters implement the ports and are the only code that touches vendor SDKs and the console. packages/ui and packages/features never import each other, and no package imports apps.
-
-  subgraph Web["apps/web"]
-    Pages["src/pages: Astro pages and endpoints"]
-    SPA["src/components: React SPA and admin portal"]
-    Server["src/server: tRPC, MCP, auth, queue, cron, buildPlatform"]
-  end
-
-  subgraph Features["packages/features/src"]
-    Roots["composition roots: database.ts, *-catalog.ts"]
-    UseCases["feature use cases: one function per file"]
-    Domain["feature domain/: pure rules"]
-    Ports["platform/ports: interfaces"]
-    Adapters["platform/adapters: cloudflare, fflate, noop, memory"]
-    Kernel["kernel/: pure shared types"]
-  end
-
-  UI["packages/ui: components, tokens, brand"]
-  Vendors["vendor SDKs and Workers bindings"]
-
-  Pages --> Server
-  Pages --> UI
-  SPA --> UI
-  SPA -.->|types only| Server
-  Server --> UseCases
-  Server --> Roots
-  Server -->|buildPlatform| Adapters
-  Roots --> UseCases
-  UseCases --> Domain
-  UseCases --> Ports
-  UseCases --> Kernel
-  Domain --> Kernel
-  Ports --> Kernel
-  Adapters --> Ports
-  Adapters --> Vendors
-```
+![Layers and allowed imports](diagrams/layers.svg)
 
 Read an arrow as "may import". Anything without an arrow is forbidden: a feature never imports `packages/ui`, `platform/` never imports a feature, `domain/` never does I/O, and `apps/web` never queries D1 itself. A feature imports another feature only through its `index.ts`. The code: [apps/web/src/server/](../../apps/web/src/server/), [packages/features/src/](../../packages/features/src/), [packages/ui/src/](../../packages/ui/src/); the rules in prose: [Principles](overview.md#principles).
 

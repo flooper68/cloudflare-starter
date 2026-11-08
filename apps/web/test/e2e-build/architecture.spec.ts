@@ -1,8 +1,9 @@
 /**
- * The architecture pages as built: every ```mermaid block is an inline SVG diagram
- * (src/docs/diagrams.ts) under the prerendered page policy with zero CSP violations (the
- * fixtures' guard), named for screen readers, coloured by the theme, scrolling in its own
- * box on a phone, and passing axe in both themes.
+ * The architecture pages as built: each diagram (an SVG generated from Mermaid,
+ * src/docs/mermaid-svg.ts) is inlined by the docs pipeline (src/docs/diagrams.ts) under
+ * the prerendered page policy with zero CSP violations (the fixtures' guard), named for
+ * screen readers, coloured by the theme, scrolling in its own box on a phone, and
+ * passing axe in both themes.
  */
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "../e2e/fixtures";
@@ -29,24 +30,26 @@ for (const [path, count] of PAGES)
   test(`${path} renders its diagrams as SVG`, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    const diagrams = page.locator("figure[data-diagram] svg[role=img]");
+    const diagrams = page.locator("figure[data-docs-diagram] svg[role=img]");
     await expect(diagrams).toHaveCount(count);
-    // No diagram source left as a code block, and each SVG has its text alternative.
+    // No diagram left as a Mermaid code block; each SVG has its title and description.
     await expect(page.locator("pre code.language-mermaid")).toHaveCount(0);
     for (const svg of await diagrams.all()) {
-      const name = await svg.evaluate((element) =>
-        (element.getAttribute("aria-labelledby") ?? "")
-          .split(" ")
-          .map((id) => document.getElementById(id)?.textContent ?? "")
-      );
-      expect(name.every((text) => text.trim().length > 0)).toBe(true);
+      await expect(svg.locator(":scope > title")).not.toBeEmpty();
+      await expect(svg.locator(":scope > desc")).not.toBeEmpty();
+      // Its own size: wide diagrams scroll instead of shrinking their text.
+      const { rendered, natural } = await svg.evaluate((element) => ({
+        rendered: element.getBoundingClientRect().width,
+        natural: Number(element.getAttribute("width")),
+      }));
+      expect(Math.round(rendered)).toBe(natural);
     }
   });
 
 test("diagram colours follow the theme switch", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("/docs/architecture/layers/");
-  const text = page.locator("figure[data-diagram] svg text").first();
+  const text = page.locator("figure[data-docs-diagram] svg text").first();
   const fill = () => text.evaluate((element) => getComputedStyle(element).fill);
   const dark = await fill();
   await page.getByRole("button", { name: "Switch to the light theme" }).click();
@@ -70,7 +73,7 @@ test.describe("phone width", () => {
 
   test("a wide diagram scrolls in its box, not the page", async ({ page }) => {
     await page.goto("/docs/architecture/overview/");
-    const box = page.locator("[data-diagram-scroll]").first();
+    const box = page.locator("figure[data-docs-diagram]").first();
     expect(
       await box.evaluate((element) => element.scrollWidth > element.clientWidth)
     ).toBe(true);

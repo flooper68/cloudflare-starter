@@ -1,0 +1,27 @@
+sequenceDiagram
+  accTitle: A tRPC mutation, notes.create
+  accDescr: The SPA posts notes.create to /api/trpc with the x-trpc-source header, after the middleware resolved the session. The procedure chain opens a span, counts the mutation against its rate limit (mutation.user), requires a user, checks the session's security state, and resolves the actor (user, workspace, role) from the workspace membership. The createNote use case checks the notes.write permission and the plan's notes limit, inserts the note, records the note.created audit event and tracks the notes.created product event without waiting. The response carries RateLimit-Policy; the request's metrics are flushed when it ends.
+  participant B as SPA
+  participant T as /api/trpc
+  participant R as Procedure chain
+  participant L as Rate Limiting
+  participant U as createNote
+  participant D as D1
+  participant E as Analytics Engine
+  B->>T: POST notes.create, x-trpc-source app
+  Note over T: 403 without the header
+  T->>R: createAppContext(user, request context)
+  Note over R: span and rpc.server.call.duration
+  R->>L: limitMutations: mutation.user
+  R->>D: protectedProcedure: getSecurityState
+  R->>D: workspaceProcedure: resolveActor
+  R->>U: createNote(ctx, actor, input)
+  Note over U: requirePermission notes.write
+  U->>D: billing.requireLimit notes
+  U->>D: insert into notes
+  U->>D: recordAuditEvent note.created
+  U-)E: trackEvent notes.created
+  U-->>R: id, createdAt
+  Note over R: DomainError mapped to a tRPC error
+  R-->>T: result
+  T-->>B: 200, RateLimit-Policy

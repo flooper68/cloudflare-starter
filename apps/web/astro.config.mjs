@@ -8,6 +8,7 @@ import {
   docsDiagramsPlugin,
   docsLinksPlugin,
   docsTablesPlugin,
+  docsTaskListsPlugin,
 } from "./src/docs/markdown-plugins.ts";
 import { siteIntegrations } from "./src/docs/site-integrations.ts";
 import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
@@ -37,7 +38,11 @@ export default defineConfig({
   markdown: {
     processor: satteri({
       mdastPlugins: [docsDiagramsPlugin(REPO_ROOT)],
-      hastPlugins: [docsLinksPlugin(REPO_ROOT), docsTablesPlugin()],
+      hastPlugins: [
+        docsLinksPlugin(REPO_ROOT),
+        docsTablesPlugin(),
+        docsTaskListsPlugin(),
+      ],
       // Off so text and heading ids match GitHub's ("--" stays "--"): links written
       // for GitHub then work on the site, and test/architecture/docs.test.ts models both.
       features: { smartPunctuation: false },

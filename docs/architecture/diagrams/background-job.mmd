@@ -1,0 +1,31 @@
+sequenceDiagram
+  accTitle: A background job, from enqueue to the dead-letter queue
+  accDescr: A use case calls enqueueJob, which validates the payload and sends a CloudEvents envelope, carrying the caller's traceparent, user, workspace and an optional idempotency key, through the JobQueue port to APP_QUEUE. The queue delivers batches to the Worker's queue handler. For each message the consumer parses the envelope, continues the producer's trace and, if the job has an idempotency key, claims it in D1; a key already done is acked as skipped. It runs the handler, a use case. Success marks the key done and acks. A transient failure releases the claim and retries with the job's backoff. A permanent failure is reported and acked. A failure on the final attempt is reported and moved to the dead-letter queue, which has no consumer and keeps messages 14 days.
+  participant U as Use case
+  participant J as enqueueJob
+  participant Q as APP_QUEUE
+  participant C as queue() consumer
+  participant D as D1
+  participant H as Job handler
+  participant X as Dead-letter queue
+  U->>J: enqueueJob(job, payload, context)
+  J->>Q: CloudEvents envelope, traceparent, idempotencykey
+  Q->>C: batch of up to 10 messages
+  Note over C: parse envelope, continue the trace
+  C->>D: claim the idempotency key
+  alt key already done
+    C-->>Q: ack, skipped
+  end
+  C->>H: run(deps, payload)
+  alt success
+    C->>D: mark key done for 7 days
+    C-->>Q: ack
+  else transient failure
+    C->>D: release the claim
+    C-->>Q: retry after the job's backoff
+  else permanent failure
+    C-->>Q: report, ack
+  else final attempt fails
+    C-->>Q: report, retry once more
+    Q->>X: kept 14 days, no consumer
+  end

@@ -1,0 +1,24 @@
+sequenceDiagram
+  accTitle: A page request through the middleware
+  accDescr: Prerendered pages (landing, docs, 404) are static assets served with the headers of public/_headers, without running the Worker. A server-rendered page such as /app/notes goes through the middleware. It builds the request context and trace id and opens the server span, resolves the Better Auth cookie into a session, redirects an anonymous /app request to /sign-in, checks the session's security state (second factor), renders the page, and adds the security headers, including a per-page Content-Security-Policy with Astro's script hashes, plus x-request-id and traceparent. Pages are not rate limited, except the token pages /invite and /unsubscribe.
+  participant B as Browser
+  participant S as Static assets
+  participant M as Middleware
+  participant A as Better Auth
+  participant D as D1
+  participant P as Astro page
+  B->>S: GET /docs/... (prerendered)
+  S-->>B: HTML with the _headers CSP, Worker not run
+  B->>M: GET /app/notes
+  Note over M: request context, trace id, server span
+  M->>A: getSession(cookie)
+  A->>D: session (cookie cache 60 s)
+  A-->>M: user and session, or none
+  alt no session on /app
+    M-->>B: 302 /sign-in
+  end
+  M->>D: getSecurityState: session valid, second factor
+  M->>P: next()
+  P-->>M: HTML
+  Note over M: security headers, CSP with Astro's hashes
+  M-->>B: 200, x-request-id, traceparent

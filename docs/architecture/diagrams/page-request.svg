@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 868.5854999999999 618" width="869" height="618" role="img" data-natural-width="">
+<title>A page request through the middleware</title>
+<desc>Prerendered pages (landing, docs, 404) are static assets served with the headers of public/_headers, without running the Worker. A server-rendered page such as /app/notes goes through the middleware. It builds the request context and trace id and opens the server span, resolves the Better Auth cookie into a session, redirects an anonymous /app request to /sign-in, checks the session's security state (second factor), renders the page, and adds the security headers, including a per-page Content-Security-Policy with Astro's script hashes, plus x-request-id and traceparent. Pages are not rate limited, except the token pages /invite and /unsubscribe.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="868.5854999999999" height="618" rx="12"/>
+<defs>
+<marker id="dg-page-request-seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+</marker>
+<marker id="dg-page-request-seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+</marker>
+</defs>
+<g class="block" data-type="alt" data-label="no session on /app">
+<rect x="30" y="333" width="400.1685" height="60" rx="0" ry="0" fill="none" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="30" y="333" width="135.79" height="18" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="36" y="342" font-size="11" font-weight="600" fill="var(--_text-sec)" dy="3.8499999999999996">alt [no session on /app]</text>
+</g>
+<line class="lifeline" data-actor="B" x1="82.91" y1="70" x2="82.91" y2="588" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="S" x1="222.91" y1="70" x2="222.91" y2="588" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="M" x1="368.73699999999997" y1="70" x2="368.73699999999997" y2="588" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="A" x1="509.37699999999995" y1="70" x2="509.37699999999995" y2="588" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="D" x1="649.377" y1="70" x2="649.377" y2="588" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="P" x1="789.377" y1="70" x2="789.377" y2="588" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="B" data-to="S" data-label="GET /docs/... (prerendered)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="82.91" y1="90" x2="222.91" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="152.91" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">GET /docs/... (prerendered)</text>
+</g>
+<g class="message" data-from="S" data-to="B" data-label="HTML with the _headers CSP, Worker not run" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="222.91" y1="130" x2="82.91" y2="130" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="152.91" y="120" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">HTML with the _headers CSP, Worker not run</text>
+</g>
+<g class="message" data-from="B" data-to="M" data-label="GET /app/notes" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="82.91" y1="170" x2="368.73699999999997" y2="170" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="225.82349999999997" y="160" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">GET /app/notes</text>
+</g>
+<g class="message" data-from="M" data-to="A" data-label="getSession(cookie)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="368.73699999999997" y1="225" x2="509.37699999999995" y2="225" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="439.05699999999996" y="215" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">getSession(cookie)</text>
+</g>
+<g class="message" data-from="A" data-to="D" data-label="session (cookie cache 60 s)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="509.37699999999995" y1="265" x2="649.377" y2="265" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="579.377" y="255" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">session (cookie cache 60 s)</text>
+</g>
+<g class="message" data-from="A" data-to="M" data-label="user and session, or none" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="509.37699999999995" y1="305" x2="368.73699999999997" y2="305" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="439.05699999999996" y="295" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">user and session, or none</text>
+</g>
+<g class="message" data-from="M" data-to="B" data-label="302 /sign-in" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="368.73699999999997" y1="373" x2="82.91" y2="373" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="225.82349999999997" y="363" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">302 /sign-in</text>
+</g>
+<g class="message" data-from="M" data-to="D" data-label="getSecurityState: session valid, second factor" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="368.73699999999997" y1="413" x2="649.377" y2="413" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="509.05699999999996" y="403" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">getSecurityState: session valid, second factor</text>
+</g>
+<g class="message" data-from="M" data-to="P" data-label="next()" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="368.73699999999997" y1="453" x2="789.377" y2="453" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="579.057" y="443" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">next()</text>
+</g>
+<g class="message" data-from="P" data-to="M" data-label="HTML" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="789.377" y1="493" x2="368.73699999999997" y2="493" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="579.057" y="483" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">HTML</text>
+</g>
+<g class="message" data-from="M" data-to="B" data-label="200, x-request-id, traceparent" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="368.73699999999997" y1="548" x2="82.91" y2="548" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-page-request-seq-arrow)" />
+<text x="225.82349999999997" y="538" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">200, x-request-id, traceparent</text>
+</g>
+<g class="note" data-position="over" data-actors="M">
+<polygon points="268.2969999999999,178 463.17699999999996,178 469.17699999999996,184 469.17699999999996,201 268.2969999999999,201" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="463.17699999999996,178 469.17699999999996,184 463.17699999999996,184" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="368.73699999999997" y="189.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">request context, trace id, server span</text>
+</g>
+<g class="note" data-position="over" data-actors="M">
+<polygon points="255.82299999999998,501 475.65099999999995,501 481.65099999999995,507 481.65099999999995,524 255.82299999999998,524" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="475.65099999999995,501 481.65099999999995,507 475.65099999999995,507" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="368.73699999999997" y="512.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">security headers, CSP with Astro&#39;s hashes</text>
+</g>
+<g class="actor" data-id="B" data-label="Browser" data-type="participant">
+<rect x="40" y="30" width="85.82" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="82.91" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Browser</text>
+</g>
+<g class="actor" data-id="S" data-label="Static assets" data-type="participant">
+<rect x="168.5145" y="30" width="108.79099999999998" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="222.91" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Static assets</text>
+</g>
+<g class="actor" data-id="M" data-label="Middleware" data-type="participant">
+<rect x="317.30549999999994" y="30" width="102.863" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="368.73699999999997" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Middleware</text>
+</g>
+<g class="actor" data-id="A" data-label="Better Auth" data-type="participant">
+<rect x="460.16849999999994" y="30" width="98.41699999999999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="509.37699999999995" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Better Auth</text>
+</g>
+<g class="actor" data-id="D" data-label="D1" data-type="participant">
+<rect x="609.377" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="649.377" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">D1</text>
+</g>
+<g class="actor" data-id="P" data-label="Astro page" data-type="participant">
+<rect x="740.1685" y="30" width="98.41699999999999" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="789.377" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Astro page</text>
+</g>
+</svg>
