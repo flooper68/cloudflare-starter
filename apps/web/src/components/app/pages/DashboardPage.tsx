@@ -9,7 +9,13 @@ import {
   GettingStartedChecklistSkeleton,
 } from "@cloudflare-starter/ui";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, FlaskConical, ShieldCheck, UserRound } from "lucide-react";
+import {
+  BookOpen,
+  FileText,
+  FlaskConical,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useAuth } from "@/components/shared/spa/auth-context";
@@ -168,6 +174,20 @@ export function DashboardPage() {
               Open Storybook
             </a>
           </Button>
+        </Destination>
+        <Destination
+          icon={<FileText />}
+          title="Docs and changelog"
+          description="Guides for every part of the starter, and what changed in each release."
+        >
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <a href="/docs/">Read the docs</a>
+            </Button>
+            <Button asChild size="sm" variant="ghost">
+              <a href="/docs/changelog/">Changelog</a>
+            </Button>
+          </div>
         </Destination>
         <Destination
           icon={<UserRound />}

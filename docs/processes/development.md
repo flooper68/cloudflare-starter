@@ -52,6 +52,7 @@ Producing evidence is part of done, before asking to ship.
 2. For each old and new name, search: `grep -rn "<name>" docs README.md AGENTS.md apps/*/README.md packages/*/README.md .claude apps/web/.dev.vars.example apps/web/wrangler.jsonc scripts`.
 3. Update every hit, in this PR. New knowledge goes where the [docs index](../README.md) leads ([documentation.md](documentation.md)).
 4. Write "nothing to update" only after the search, and list what you searched.
+5. If a user or adopter would notice the change, add a line under `## [Unreleased]` in [CHANGELOG.md](../../CHANGELOG.md) ([Changelog](#changelog)).
 
 ### 6. Self-review
 
@@ -60,6 +61,28 @@ Per [code-review.md](code-review.md): pick the risk tier, run the six checklists
 ### 7. Ship
 
 Commit, push, open a PR, run a deploy, change the owner's Cloudflare account, create resources, set secrets or change GitHub settings only on the owner's explicit yes for that action. Dry-run first (`--dry-run` on the setup scripts). The PR uses [the template](../../.github/pull_request_template.md).
+
+## Changelog
+
+[CHANGELOG.md](../../CHANGELOG.md) at the repository root records what changed in each release for people evaluating the starter or building on it. It follows [Keep a Changelog 1.1](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and the docs site renders it as release notes at `/docs/changelog/` with an Atom feed at `/docs/changelog.xml` ([how-to-publish-docs-and-landing.md](../guides/how-to-publish-docs-and-landing.md#changelog)).
+
+**Every PR that changes something a user or adopter notices adds a line under `## [Unreleased]`**: a new capability, a changed behaviour, setting, command, route or default, a removal or deprecation, a security change, a fix of something people could hit. Internal refactors, test-only changes and docs typo fixes need none.
+
+- Put it under the right group, in this order: `### Added`, `### Changed`, `### Deprecated`, `### Removed`, `### Fixed`, `### Security`. Add the group if it is missing.
+- One bullet per capability, in plain words, naming what someone gets or must do ("`STORAGE_RECONCILE` is now required"), not the PR or the files. A **bold lead** naming the area helps in long groups.
+- Say what an adopter must change in a `Changed` or `Removed` line (a renamed setting, a migration to run).
+- No PR numbers, no agent or tool names, no marketing.
+
+`test/architecture/changelog.test.ts` fails when the structure breaks: the `# Changelog` title, one `## [Unreleased]` first, `## [X.Y.Z] - YYYY-MM-DD` releases newest first, only the six group headings in their order and never empty, plain `- ` bullets, and a link reference per release with the right compare or tag URL.
+
+### Releasing a version
+
+The owner decides when to release and which number (SemVer: a breaking change for adopters is a major, before 1.0.0 a minor; new capabilities a minor; only fixes a patch).
+
+1. In a PR, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` (the release date), add a new empty `## [Unreleased]` above it, and optionally a one-paragraph summary under the version heading.
+2. Update the link references at the bottom: `[Unreleased]` compares `vX.Y.Z...HEAD`, and `[X.Y.Z]` compares the previous tag with `vX.Y.Z` (the first release links `releases/tag/vX.Y.Z`). `bun run test:unit` checks them.
+3. After the PR is merged, tag the merge commit and push the tag: `git tag -a vX.Y.Z -m "vX.Y.Z" <commit>` and `git push origin vX.Y.Z`. Optionally create a GitHub release from the tag with the section's text.
+4. Deploy as usual; the release notes and the feed update with the deploy.
 
 ## Authorship and attribution
 
@@ -78,6 +101,7 @@ On an unexpected error, first search the docs and skills for the exact error tex
 - [ ] `bun run verify` passes; `bun run build` passes if app code or config changed; commands and results recorded.
 - [ ] Evidence captured and attached to the PR.
 - [ ] Docs audit done; docs, `.dev.vars.example`, `wrangler.jsonc` comments, scripts and skills updated in the same PR.
+- [ ] A user- or adopter-visible change has its line under `## [Unreleased]` in `CHANGELOG.md`.
 - [ ] ADR written or "not needed because …" ([adrs.md](adrs.md)).
 - [ ] Self-review done; Critical/High findings fixed; Medium/Low listed for the owner.
 - [ ] Machine clean (below).

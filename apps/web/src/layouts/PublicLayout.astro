@@ -22,9 +22,17 @@ interface Props {
   type?: "website" | "article";
   /** False on pages search engines should not list (the 404). */
   indexable?: boolean;
+  /** An Atom feed of the page (the changelog), advertised for feed readers. */
+  feed?: { href: string; title: string };
 }
 
-const { title, description, type = "website", indexable = true } = Astro.props;
+const {
+  title,
+  description,
+  type = "website",
+  indexable = true,
+  feed,
+} = Astro.props;
 const canonical = Astro.site
   ? new URL(Astro.url.pathname, Astro.site).href
   : null;
@@ -46,6 +54,16 @@ const canonical = Astro.site
     {canonical && indexable && <meta property="og:url" content={canonical} />}
     <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {
+      feed && (
+        <link
+          rel="alternate"
+          type="application/atom+xml"
+          title={feed.title}
+          href={feed.href}
+        />
+      )
+    }
     <script is:inline src="/site-theme.js"></script>
   </head>
   <body class="flex min-h-screen flex-col bg-canvas text-fg">

@@ -60,6 +60,7 @@ describe("buildNav", () => {
     expect(nav[0].items.map((item) => item.href)).toEqual([
       "/docs/",
       "/docs/start/",
+      "/docs/changelog/",
     ]);
   });
 
@@ -92,7 +93,7 @@ describe("locate", () => {
   it("finds the section and the neighbours in reading order", () => {
     const location = locate(nav, "docs/guides/how-to-a.md");
     expect(location.section?.title).toBe("Guides");
-    expect(location.previous?.path).toBe("README.md");
+    expect(location.previous?.path).toBe("CHANGELOG.md");
     expect(location.next?.path).toBe("docs/guides/how-to-b.md");
   });
 

@@ -9,6 +9,7 @@ import { DOCS } from "@/docs/docs.config";
 export const LINKS = {
   docs: "/docs/",
   start: "/docs/start/",
+  changelog: "/docs/changelog/",
   github: DOCS.repoUrl,
   storybook: "/_storybook/",
   signIn: "/sign-in",
