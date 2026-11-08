@@ -113,7 +113,7 @@ describe.each(CASES)("the session of $account", ({ end }) => {
       expect(expiredCookies(response)).toEqual(expiresTheToken);
     });
 
-    it("the tRPC API answers 401 and expires the session cookies", async () => {
+    it("the tRPC API answers 401 and leaves the cookies to the next page load", async () => {
       const context = middlewareContext(
         "/api/trpc/workspace.list",
         await staleCookie()
@@ -126,7 +126,9 @@ describe.each(CASES)("the session of $account", ({ end }) => {
         error: { data: { code: string } };
       };
       expect(body.error.data.code).toBe("UNAUTHORIZED");
-      expect(expiredCookies(response)).toEqual(expiresTheToken);
+      // An API call can answer after the browser got a new session (stop impersonating):
+      // expiring cookies there would sign that new session out.
+      expect(expiredCookies(response)).toEqual([]);
     });
 
     it("Better Auth's /get-session answers null and expires the session cookies", async () => {

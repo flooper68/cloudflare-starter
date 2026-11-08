@@ -811,12 +811,46 @@ function createAuth(env: AppEnv) {
 export type Auth = ReturnType<typeof createAuth>;
 export type AuthSession = Auth["$Infer"]["Session"];
 
+/**
+ * How long a cached Better Auth instance may stay unbuilt before the next request builds a
+ * fresh one. Building it (`auth.$context`) queries D1 (the OAuth provider plugin's init),
+ * and that query belongs to the request that started it: if that request ends early (the
+ * browser navigated away), the query is cancelled and `$context` never settles, so every
+ * request awaiting it would hang for the isolate's lifetime. Better Auth 1.7.14 has no
+ * option to build the context eagerly or per request.
+ */
+export const AUTH_CONTEXT_STALL_MS = 10_000;
+
 /** Per-isolate cache, like the database client. */
-let cache: { readonly env: AppEnv; readonly auth: Auth } | undefined;
+let cache:
+  | {
+      readonly env: AppEnv;
+      readonly auth: Auth;
+      readonly createdAt: number;
+      settled: boolean;
+    }
+  | undefined;
 
 export function getAuth(env: AppEnv): Auth {
-  if (!cache || cache.env !== env) {
-    cache = { env, auth: createAuth(env) };
+  const now = Date.now();
+  const stalled =
+    cache !== undefined &&
+    !cache.settled &&
+    now - cache.createdAt > AUTH_CONTEXT_STALL_MS;
+  if (!cache || cache.env !== env || stalled) {
+    const entry = {
+      env,
+      auth: createAuth(env),
+      createdAt: now,
+      settled: false,
+    };
+    entry.auth.$context.then(
+      () => {
+        entry.settled = true;
+      },
+      () => undefined
+    );
+    cache = entry;
   }
   return cache.auth;
 }

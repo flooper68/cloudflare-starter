@@ -43,9 +43,19 @@ function stateDir(): string {
   return dir;
 }
 
+/** Better Auth endpoints behind the human check (HUMAN_CHECKED_PATHS in server/auth.ts). */
+const HUMAN_CHECKED = [
+  "/sign-up/email",
+  "/sign-in/email",
+  "/request-password-reset",
+];
+
 /** The policies a request to `/api/auth<path>` counts against. */
 export function authPolicies(path: string): RateLimitPolicyId[] {
   const policies: RateLimitPolicyId[] = ["auth.ip"];
+  // The human-checked endpoints a QA run reaches through the QA bypass count against
+  // `qa.bypass` too, with the outbox reads (inbox.ts) and the cleanup.
+  if (HUMAN_CHECKED.includes(path)) policies.push("qa.bypass");
   for (const [id, policy] of Object.entries(RATE_LIMIT_POLICIES)) {
     const pattern = (policy as { authPath?: string }).authPath;
     if (!pattern) continue;

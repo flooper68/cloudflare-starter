@@ -60,8 +60,13 @@ async function memberRow(page: Page, email: string) {
 
 test("A creates the shared workspace and switches between it and the personal one", async () => {
   await open(a, "/app/dashboard");
-  const label = (await workspaceMenu(a).getAttribute("aria-label")) ?? "";
-  const personal = label.replace(/ workspace menu$/, "");
+  // The personal workspace's name from the API: the switcher shows the brand's name
+  // until the workspace list has loaded.
+  const { items } = await callApp<{
+    items: { name: string; kind: "personal" | "shared" }[];
+  }>(a, "query", "workspace.list", {});
+  const personal = items.find((item) => item.kind === "personal")?.name ?? "";
+  expect(personal).not.toBe("");
   await createWorkspace(a, shared);
   await workspaceMenu(a).click();
   await expect(
