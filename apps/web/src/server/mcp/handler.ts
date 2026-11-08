@@ -146,36 +146,37 @@ export async function handleMcp(
     typeof claims.starter_session_id === "string"
       ? claims.starter_session_id
       : null;
-  const security = await getSecurityState(
-    { db: getDb(env), clock: systemClock },
-    {
-      userId: user.id,
-      sessionId: authSessionId,
-      settings: buildRequiredConfig(env).security,
-    }
-  );
+  // The person must also still allow this client: Settings › Connected agents deletes the
+  // consent, so a disconnected agent's unexpired token is refused from its next request
+  // (a request in flight, such as the disconnect itself, completes). Both reads run at once.
+  const agentClientId = String(claims.azp);
+  const [security, granted] = await Promise.all([
+    getSecurityState(
+      { db: getDb(env), clock: systemClock },
+      {
+        userId: user.id,
+        sessionId: authSessionId,
+        settings: buildRequiredConfig(env).security,
+      }
+    ),
+    typeof claims.iat === "number"
+      ? hasAgentGrant(
+          { db: getDb(env) },
+          {
+            userId: user.id,
+            clientId: agentClientId,
+            issuedAtSeconds: claims.iat,
+          }
+        )
+      : Promise.resolve(false),
+  ]);
   if (
     !authSessionId ||
     !security.sessionValid ||
-    security.decision !== "allowed"
+    security.decision !== "allowed" ||
+    !granted
   )
     return unauthorized(appUrl, "invalid_token");
-
-  // The person must still allow this client: Settings › Connected agents deletes the
-  // consent, so a disconnected agent's unexpired token is refused from its next request
-  // (a request in flight, such as the disconnect itself, completes).
-  const agentClientId = String(claims.azp);
-  const granted =
-    typeof claims.iat === "number" &&
-    (await hasAgentGrant(
-      { db: getDb(env) },
-      {
-        userId: user.id,
-        clientId: agentClientId,
-        issuedAtSeconds: claims.iat,
-      }
-    ));
-  if (!granted) return unauthorized(appUrl, "invalid_token");
 
   const context = createAppContext(user, requestContext, env, {
     authSessionId,
