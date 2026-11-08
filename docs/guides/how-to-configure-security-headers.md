@@ -95,7 +95,13 @@ Expect some noise: browser extensions inject scripts and styles into pages and t
 
 ## Static assets
 
-Workers Static Assets serves `/_astro/*`, `/favicon.svg` and `/_storybook/*` without running the Worker, so the middleware cannot add headers there. `apps/web/public/_headers` does: Astro copies it into the build output, the Cloudflare adapter only prepends its `Cache-Control: immutable` rule for `/_astro/*` to it (verified with `@astrojs/cloudflare` 14.4), and Workers Static Assets applies it (`wrangler dev` and `astro preview` too). Every asset gets the base headers and the policy that loads nothing; HSTS is always in the file because deployed builds are served over HTTPS and browsers ignore HSTS on plain HTTP.
+Workers Static Assets serves `/_astro/*`, `/favicon.svg` and `/_storybook/*` without running the Worker, so the middleware cannot add headers there. `apps/web/public/_headers` does: Astro copies it into the build output, the Cloudflare adapter leaves it alone (it adds a `Cache-Control: immutable` block for `/_astro/*` only when no rule sets one; ours does, since a second block for the same path would replace the first; verified with `@astrojs/cloudflare` 14.4), and Workers Static Assets applies it (`wrangler dev` and `astro preview` too). HSTS is always in the file because deployed builds are served over HTTPS and browsers ignore HSTS on plain HTTP.
+
+Cloudflare applies every rule whose path matches, appends a header a second rule sets again (a second `Content-Security-Policy`, which browsers both enforce), and does not apply the rules in the file's order: production applied `/` before `/*`, so a `/*` policy that `/` detached with `! Content-Security-Policy` came back and the landing page loaded nothing. `astro preview` applies them in file order and hides this. So:
+
+- `/*` carries only the headers that are the same on every path (the base headers and HSTS).
+- `Content-Security-Policy` and `X-Frame-Options` are set per path group, in rules that never overlap, and nothing detaches them: the policy that loads nothing on `STATIC_ASSET_PATHS` (`/_astro/*`, `/favicon.svg`, `/site-theme.js`, `/robots.txt`, `/sitemap-*`), the prerendered page policy on `/`, `/docs/*` and the 404, Pagefind's and Storybook's on theirs.
+- A new file in `public/` (or a new non-HTML route) needs its path in `STATIC_ASSET_PATHS`. `security-headers.test.ts` fails for a public file no rule covers, and `test/e2e-build/security-headers.spec.ts` runs every built file through `test/static-headers-model.ts` (Cloudflare's matching, in file, lexicographic and reverse order) and fails on a missing, doubled or order-dependent header.
 
 The file is generated: change `security-headers.ts`, then run
 
@@ -107,7 +113,7 @@ bun apps/web/scripts/write-static-headers.ts
 
 ## Prerendered pages
 
-The pages Astro prerenders (the landing page `/`, `/docs/*`, and the 404 the Worker answers unknown paths with, served as `/404`; [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md)) are static assets too, so they get their policy from `_headers`: `PRERENDERED_PAGE_PATHS` in `security-headers.ts` replace the asset policy with `PRERENDERED_PAGE_CSP` (`default-src 'self'`, scripts from this origin only, `script-src-attr 'none'`, inline styles allowed, the Web Analytics origins, no plugins, no framing, `report-uri /api/csp-report`). Astro also writes its policy into each prerendered page as a `<meta http-equiv="content-security-policy">` (script hashes, and the `style-src` of `security.csp.styleDirective`); the browser enforces both. Differences from the per-request page policy, because a static file knows neither the origin nor the settings:
+The pages Astro prerenders (the landing page `/`, `/docs/*`, and the 404 the Worker answers unknown paths with, served as `/404`; [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md)) are static assets too, so they get their policy from `_headers`: `PRERENDERED_PAGE_PATHS` in `security-headers.ts` get `PRERENDERED_PAGE_CSP` (`default-src 'self'`, scripts from this origin only, `script-src-attr 'none'`, inline styles allowed, the Web Analytics origins, no plugins, no framing, `report-uri /api/csp-report`). Astro also writes its policy into each prerendered page as a `<meta http-equiv="content-security-policy">` (script hashes, and the `style-src` of `security.csp.styleDirective`); the browser enforces both. Differences from the per-request page policy, because a static file knows neither the origin nor the settings:
 
 - `script-src 'self'` instead of `<origin>/_astro/`: a source with a path needs the origin. The pages hold no user content, so nothing on them can point a script at `/api/files`.
 - The Web Analytics origins are always allowed (the rule is the same in every environment).
@@ -120,7 +126,7 @@ The docs search runs in a Web Worker started from `/pagefind/`, and a worker run
 
 ## Storybook
 
-`/_storybook/*` (static, built by `storybook build`) has its own policy, set in `_headers` by removing the asset policy (`! Content-Security-Policy`) and adding:
+`/_storybook/*` (static, built by `storybook build`) has its own policy, set in `_headers` on `/_storybook/*`:
 
 ```text
 default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
@@ -128,7 +134,7 @@ img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src
 worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 ```
 
-with `X-Frame-Options: SAMEORIGIN`, because the manager frames the preview (`iframe.html`). This is the one place with `'unsafe-inline'` ([exceptions](#exceptions)). Storybook loads nothing from other origins and holds no user data; a project that wants it private protects the path with Cloudflare Access ([how-to-use-storybook.md](how-to-use-storybook.md#access)).
+with `X-Frame-Options: SAMEORIGIN` instead of `DENY`, because the manager frames the preview (`iframe.html`). This is the one place with `'unsafe-inline'` ([exceptions](#exceptions)). Storybook loads nothing from other origins and holds no user data; a project that wants it private protects the path with Cloudflare Access ([how-to-use-storybook.md](how-to-use-storybook.md#access)).
 
 ## Inline scripts and styles
 

@@ -167,6 +167,27 @@ export const PRERENDERED_PAGE_PATHS = [
 ] as const;
 
 /**
+ * The static files that are not HTML pages, outside the paths that have their own
+ * policy (/pagefind/*, /_storybook/*): they get NON_HTML_CSP. Listed, not `/*`: a `/*`
+ * policy also matches every HTML file, and taking it off there with
+ * `! Content-Security-Policy` only works when `/*` is applied first. Cloudflare's asset
+ * layer does not keep the file's order (production applied `/` before `/*` and served
+ * the landing page with both policies, which browsers both enforce). A file public/ or
+ * the build adds must be covered here; security-headers.test.ts and the build journeys
+ * fail otherwise.
+ */
+export const STATIC_ASSET_PATHS = [
+  // Bundles (their immutable Cache-Control is in static-cache.ts).
+  "/_astro/*",
+  // public/
+  "/favicon.svg",
+  "/site-theme.js",
+  // Prerendered non-HTML routes and the sitemap integration's files.
+  "/robots.txt",
+  "/sitemap-*",
+] as const;
+
+/**
  * `/pagefind/*` (the docs search index and its client, written by the build): Pagefind
  * searches in a Web Worker started from `/pagefind/`, and a worker runs under the policy
  * of its own script's response, not the page's. It may fetch the index from this origin
@@ -379,39 +400,39 @@ export function presignedUploadOrigin(r2: {
 
 /**
  * `public/_headers`: the same headers for static assets, which Workers Static Assets serves
- * without running the Worker. Cloudflare applies every matching rule in order; `! Name`
- * removes a header an earlier rule set. Deployed builds are served over HTTPS only, and
- * browsers ignore HSTS over plain HTTP, so the static rules always carry it.
+ * without running the Worker. Cloudflare applies every rule whose path matches; a
+ * header a second rule sets again is appended, not replaced, and the order the rules
+ * are applied in is not the file's (production applied `/` before `/*`). So `/*`
+ * carries only the headers that are the same everywhere, and each path group sets its
+ * own Content-Security-Policy and X-Frame-Options in rules that never overlap: no
+ * response can get two policies, whatever the order, and none relies on `! Name`.
+ * Deployed builds are served over HTTPS only, and browsers ignore HSTS over plain HTTP,
+ * so the static rules always carry it.
  */
 export function renderStaticHeaders(): string {
-  const base = Object.entries({
-    ...baseSecurityHeaders({ hsts: true }),
-    "Content-Security-Policy": NON_HTML_CSP,
-  }).map(([name, value]) => `${name}: ${value}`);
+  const { "X-Frame-Options": _sameEverywhereExceptStorybook, ...common } =
+    baseSecurityHeaders({ hsts: true });
+  const base = Object.entries(common).map(
+    ([name, value]) => `${name}: ${value}`
+  );
+  const policy = (csp: string, frameOptions = "DENY") => [
+    `Content-Security-Policy: ${csp}`,
+    `X-Frame-Options: ${frameOptions}`,
+  ];
   // One block per path: a second block for the same path replaces the first in
   // Workers Static Assets, so a path's cache lines join its security block.
   const blocks = new Map<string, string[]>([
     ["/*", base],
+    ...STATIC_ASSET_PATHS.map((path): [string, string[]] => [
+      path,
+      policy(NON_HTML_CSP),
+    ]),
     ...PRERENDERED_PAGE_PATHS.map((path): [string, string[]] => [
       path,
-      [
-        "! Content-Security-Policy",
-        `Content-Security-Policy: ${PRERENDERED_PAGE_CSP}`,
-      ],
+      policy(PRERENDERED_PAGE_CSP),
     ]),
-    [
-      "/pagefind/*",
-      ["! Content-Security-Policy", `Content-Security-Policy: ${PAGEFIND_CSP}`],
-    ],
-    [
-      "/_storybook/*",
-      [
-        "! Content-Security-Policy",
-        "! X-Frame-Options",
-        `Content-Security-Policy: ${STORYBOOK_CSP}`,
-        "X-Frame-Options: SAMEORIGIN",
-      ],
-    ],
+    ["/pagefind/*", policy(PAGEFIND_CSP)],
+    ["/_storybook/*", policy(STORYBOOK_CSP, "SAMEORIGIN")],
   ]);
   for (const rule of STATIC_CACHE_RULES) {
     const lines = [

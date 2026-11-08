@@ -1,5 +1,17 @@
+import { readdirSync, readFileSync } from "node:fs";
+
+import {
+  NON_HTML_CSP,
+  PRERENDERED_PAGE_CSP,
+  STORYBOOK_CSP,
+} from "../../src/server/security-headers";
 import { expect, type Page, takeCspViolations, test } from "../e2e/fixtures";
 import { newAccount } from "../e2e/helpers";
+import {
+  parseHeaders,
+  securityHeaderProblems,
+  servedPath,
+} from "../static-headers-model";
 
 // The built app (playwright.build.config.ts): Astro's hashes, the page policy, the static
 // assets' public/_headers and Storybook's own policy, in Chromium. Every test also fails
@@ -211,4 +223,41 @@ test("every HTML response says no-transform; other responses keep their Cache-Co
   const redirect = await request.get("/app/dashboard", { maxRedirects: 0 });
   expect(redirect.status()).toBe(302);
   expect(redirect.headers()["cache-control"]).toBeUndefined();
+});
+
+// Every file of the build, through the built _headers (with the adapter's /_astro/* rule)
+// as Cloudflare applies it in any rule order (test/static-headers-model.ts): exactly one
+// policy each, and an HTML page never the asset one. `astro preview` applies the rules
+// in file order only, which hid two policies on / in production.
+test("every built file gets exactly one policy, whatever order the edge applies _headers in", () => {
+  const client = new URL("../../dist/client/", import.meta.url);
+  const rules = parseHeaders(readFileSync(new URL("_headers", client), "utf8"));
+  // Workers Static Assets keeps one block per path: a second one (the adapter's
+  // /_astro/* Cache-Control, say) would replace the first.
+  const patterns = rules.map((rule) => rule.pattern);
+  expect(patterns.length).toBe(new Set(patterns).size);
+  const files = readdirSync(client, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name !== "_headers")
+    .map((entry) =>
+      `${entry.parentPath}/${entry.name}`.slice(client.pathname.length)
+    );
+  expect(files.length).toBeGreaterThan(100);
+  const problems: string[] = [];
+  for (const file of files) {
+    const path = servedPath(file);
+    const result = securityHeaderProblems(rules, path);
+    problems.push(...result.problems);
+    if (file.endsWith(".html")) {
+      const expected = path.startsWith("/_storybook/")
+        ? STORYBOOK_CSP
+        : PRERENDERED_PAGE_CSP;
+      if (result.csp !== expected)
+        problems.push(`${path}: not its page policy`);
+    } else if (!result.csp) {
+      problems.push(`${path}: no policy`);
+    }
+  }
+  expect(problems).toEqual([]);
+  // Sanity: assets outside the policy groups get the policy that loads nothing.
+  expect(securityHeaderProblems(rules, "/favicon.svg").csp).toBe(NON_HTML_CSP);
 });

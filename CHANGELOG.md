@@ -16,6 +16,7 @@ What changed in each release of the starter, for people evaluating it or buildin
 ### Fixed
 
 - **No more blocked Web Analytics beacon on zones with automatic setup.** Every HTML response now sends `Cache-Control: no-transform` (merged into its existing value, without adding `public`), so Cloudflare's edge no longer injects its beacon into the app's pages when the zone has Web Analytics automatic setup on for other sites. Before, the Content Security Policy blocked it on every page view, with a console error and a `csp.violation` log. HTML is no longer compressed at the edge as a result ([how-to-configure-security-headers.md](docs/guides/how-to-configure-security-headers.md#edge-injected-web-analytics)).
+- **The landing page loads its styles and scripts again on Cloudflare.** The deployed `/` carried two Content-Security-Policy headers, the page's and the static assets' one that loads nothing, because Cloudflare does not apply `_headers` rules in file order. Each static path now gets exactly one policy from rules that never overlap; a new file in `apps/web/public/` needs its path in `STATIC_ASSET_PATHS` ([how-to-configure-security-headers.md](docs/guides/how-to-configure-security-headers.md#static-assets)).
 
 ## [0.1.0] - 2026-11-08
 
