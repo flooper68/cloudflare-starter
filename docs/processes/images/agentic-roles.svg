@@ -48,7 +48,7 @@
 <text class="dg-s" x="125" y="193" text-anchor="middle">ci.yml, deploy.yml, qa.yml</text>
 <rect class="dg-box" x="586" y="150" width="170" height="60" rx="8"/>
 <text class="dg-t" x="671" y="177" text-anchor="middle">Docs and knowledge</text>
-<text class="dg-s" x="671" y="193" text-anchor="middle">repo docs, wiki, canvas</text>
+<text class="dg-s" x="671" y="193" text-anchor="middle">repo docs; outside pages</text>
 <path class="dg-a" d="M370 82V148" marker-end="url(#dg-roles-arrow)"/>
 <path class="dg-a" d="M410 148V82" marker-end="url(#dg-roles-arrow)"/>
 <text class="dg-s" x="362" y="118" text-anchor="end">requests, decisions, yes</text>

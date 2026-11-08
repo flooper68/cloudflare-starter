@@ -8,13 +8,13 @@ The starter is agent-native in two ways. The app lets agents act on it, through 
 
 ![Roles: the owner talks to the orchestrator agent; the orchestrator briefs implementer agents, each in its own worktree, sends risky diffs to the reviewer agent, reads CI status and keeps the docs and knowledge current](images/agentic-roles.svg)
 
-| Role                 | Who                                                              | Does                                                                                                                                                                                                                | Never                                                                                 |
-| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Owner                | The person the work is for                                       | Decides product and scope, answers the big questions, says yes to ship, changes accounts and secrets or approves each change, accepts Medium and Low findings, accepts ADRs                                         | Gets asked about what the docs already settle                                         |
-| Orchestrator         | One agent session acting as lead or PM                           | Talks to the owner, makes the small product decisions, writes briefs, starts implementers, reads their reports, checks CI and attribution, merges, deploys on the owner's yes, keeps the docs and knowledge current | Merges with CI red; asks the owner what it can decide itself                          |
-| Implementer subagent | One agent per item, in its own git worktree and branch           | Follows the brief and the [development loop](development.md#the-loop), runs the checks, captures evidence, opens one PR, reports back                                                                               | Merges, deploys, changes accounts, works outside its brief                            |
-| Reviewer subagent    | [`.claude/agents/reviewer.md`](../../.claude/agents/reviewer.md) | Reviews a risky diff against [code-review.md](code-review.md), seeing only the task contract and the diff                                                                                                           | Edits files, sees the conversation                                                    |
-| CI                   | [`.github/workflows/`](../../.github/workflows/)                 | `ci.yml` on every pull request and push to `main`; `deploy.yml` by hand, then its smoke suite; `qa.yml` after a production deploy and nightly ([how-to-setup-ci.md](../guides/how-to-setup-ci.md))                  | Deploys on its own: a deploy only starts by hand                                      |
+| Role                 | Who                                                              | Does                                                                                                                                                                                                                | Never                                                        |
+| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Owner                | The person the work is for                                       | Decides product and scope, answers the big questions, says yes to ship, changes accounts and secrets or approves each change, accepts Medium and Low findings, accepts ADRs                                         | Gets asked about what the docs already settle                |
+| Orchestrator         | One agent session acting as lead or PM                           | Talks to the owner, makes the small product decisions, writes briefs, starts implementers, reads their reports, checks CI and attribution, merges, deploys on the owner's yes, keeps the docs and knowledge current | Merges with CI red; asks the owner what it can decide itself |
+| Implementer subagent | One agent per item, in its own git worktree and branch           | Follows the brief and the [development loop](development.md#the-loop), runs the checks, captures evidence, opens one PR, reports back                                                                               | Merges, deploys, changes accounts, works outside its brief   |
+| Reviewer subagent    | [`.claude/agents/reviewer.md`](../../.claude/agents/reviewer.md) | Reviews a risky diff against [code-review.md](code-review.md), seeing only the task contract and the diff                                                                                                           | Edits files, sees the conversation                           |
+| CI                   | [`.github/workflows/`](../../.github/workflows/)                 | `ci.yml` on every pull request and push to `main`; `deploy.yml` by hand, then its smoke suite; `qa.yml` after a production deploy and nightly ([how-to-setup-ci.md](../guides/how-to-setup-ci.md))                  | Deploys on its own: a deploy only starts by hand             |
 
 ## The lifecycle of a change
 
@@ -39,14 +39,14 @@ The starter is agent-native in two ways. The app lets agents act on it, through 
 
 ## What agents may do on their own
 
-The owner's request is the yes for the actions it names ("build X and open a PR", "merge it when CI is green", "deploy to production"). Anything it does not name waits for a yes of its own ([development.md, Ship](development.md#7-ship)).
+The owner's request is the yes for the actions it names ("build X and open a PR", "merge it when CI is green", "deploy to production"), and a brief written from it passes that yes on to the implementer. Anything it does not name waits for a yes of its own ([development.md, Ship](development.md#7-ship)).
 
 | Action                                                                      | Implementer            | Orchestrator                                                  |
 | --------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------- |
 | Read the repository, run tests, the dev server and `bun run doctor`         | Yes                    | Yes                                                           |
-| Commit on its own branch, in its own worktree                               | Yes                    | Yes                                                           |
+| Commit on its own branch, in its own worktree                               | When the brief says so | When the request covers it                                    |
 | Push its branch and open a PR                                               | When the brief says so | When the request covers it                                    |
-| Push evidence to `pr-evidence`                                              | Yes                    | Yes                                                           |
+| Push evidence to `pr-evidence`                                              | When the brief says so | When the request covers it                                    |
 | Run a setup script with `--dry-run`                                         | Yes                    | Yes                                                           |
 | Run the read-only smoke suite against a deployed app                        | Yes                    | Yes                                                           |
 | Merge a PR                                                                  | No                     | When the request covers it                                    |
@@ -77,6 +77,7 @@ The brief is everything the implementer knows: it does not see the conversation.
 - **Point, do not paste.** Name the docs, files and closest existing code to read; the repository holds the facts.
 - **Done is checkable.** Name the commands that must pass and the evidence to capture.
 - **Rules are explicit**, every time, even when they are in the docs.
+- **The [Plan schema](development.md#plan-schema) is the checklist.** The template below covers its goal, scope and tests; add Approach (with the options rejected), Blast radius, Key shapes (path and symbol), Risks and assumptions (with the default to take) and ADR wherever the item needs them, in the brief or in the plan the implementer writes first.
 
 ```markdown
 ## Goal

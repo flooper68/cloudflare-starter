@@ -82,7 +82,7 @@
 <path class="dg-a" d="M252 356H270" marker-end="url(#dg-lifecycle-arrow)"/>
 <rect class="dg-box" x="440" y="328" width="146" height="56" rx="8"/>
 <text class="dg-t" x="513" y="353" text-anchor="middle">Knowledge</text>
-<text class="dg-s" x="513" y="369" text-anchor="middle">docs, wiki, canvas</text>
+<text class="dg-s" x="513" y="369" text-anchor="middle">docs; outside pages if kept</text>
 <path class="dg-a" d="M420 356H438" marker-end="url(#dg-lifecycle-arrow)"/>
 <rect class="dg-key" x="104" y="404" width="14" height="12" rx="3"/>
 <text class="dg-s" x="124" y="414">start and merge</text>
