@@ -34,6 +34,14 @@ export function takeCspViolations(): CspViolation[] {
   return violations.splice(0);
 }
 
+/**
+ * Frames whose documents are a third party's, under that third party's own policy, not
+ * ours: Turnstile's challenge iframe on challenges.cloudflare.com reports violations of
+ * Cloudflare's policy (with a production site key it blocks its own `data:` fetches).
+ * Our policy on the embedding page still applies and is still watched.
+ */
+const THIRD_PARTY_FRAMES = [/^https:\/\/challenges\.cloudflare\.com\//];
+
 /** Reports every `securitypolicyviolation` event of the context's pages and frames. */
 export async function watchCsp(context: BrowserContext): Promise<void> {
   if (watched.has(context)) return;
@@ -41,7 +49,9 @@ export async function watchCsp(context: BrowserContext): Promise<void> {
   await context.exposeBinding(
     "__e2eCspViolation",
     (source, violation: Omit<CspViolation, "page">) => {
-      violations.push({ page: source.frame.url(), ...violation });
+      const page = source.frame.url();
+      if (THIRD_PARTY_FRAMES.some((pattern) => pattern.test(page))) return;
+      violations.push({ page, ...violation });
     }
   );
   await context.addInitScript(() => {

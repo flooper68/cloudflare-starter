@@ -1,6 +1,11 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-
+import {
+  parseHeaders,
+  patternMatches,
+  securityHeaderProblems,
+  servedPath,
+} from "../../test/static-headers-model";
 import {
   baseSecurityHeaders,
   CSP_REPORT_GROUP,
@@ -17,6 +22,8 @@ import {
   REPORT_ONLY_BASELINE_CSP,
   renderStaticHeaders,
   type SecurityHeaderSettings,
+  STATIC_ASSET_PATHS,
+  STORYBOOK_CSP,
   securityHeadersFor,
 } from "./security-headers";
 import { STATIC_HTML_PATHS } from "./static-cache";
@@ -390,7 +397,6 @@ describe("public/_headers", () => {
     const rules = renderStaticHeaders().split("\n\n");
     for (const path of PRERENDERED_PAGE_PATHS) {
       const rule = rules.find((candidate) => candidate.startsWith(`${path}\n`));
-      expect(rule, path).toContain("! Content-Security-Policy");
       expect(rule, path).toContain(PRERENDERED_PAGE_CSP);
     }
     expect(PRERENDERED_PAGE_CSP).not.toMatch(/script-src[^;]*'unsafe-inline'/);
@@ -443,9 +449,88 @@ describe("public/_headers", () => {
   it("gives Storybook its own policy instead of the asset one", () => {
     const rules = renderStaticHeaders().split("\n\n");
     const storybook = rules.find((rule) => rule.startsWith("/_storybook/*"));
-    expect(storybook).toContain("! Content-Security-Policy");
     expect(storybook).toContain("frame-ancestors 'self'");
     expect(storybook).toContain("object-src 'none'");
     expect(storybook).toContain("X-Frame-Options: SAMEORIGIN");
+  });
+
+  describe("as Cloudflare applies it, in any rule order", () => {
+    const rules = parseHeaders(renderStaticHeaders());
+    // Every kind of static path, and every file in public/.
+    const publicFiles = readdirSync(new URL("../../public", import.meta.url), {
+      recursive: true,
+      withFileTypes: true,
+    })
+      .filter((entry) => entry.isFile())
+      .map(
+        (entry) =>
+          `${entry.parentPath}/${entry.name}`.split("/public/")[1] ?? ""
+      )
+      .filter(
+        (file) =>
+          file !== "" &&
+          !["_headers", ".assetsignore"].includes(file) &&
+          // Storybook's build output, copied in by `bun run build`.
+          !file.startsWith("_storybook/")
+      )
+      .map(servedPath);
+    const pages: readonly (readonly [string, string])[] = [
+      ["/", PRERENDERED_PAGE_CSP],
+      ["/docs/", PRERENDERED_PAGE_CSP],
+      ["/docs/guides/how-to-setup-d1/", PRERENDERED_PAGE_CSP],
+      ["/docs/changelog/", PRERENDERED_PAGE_CSP],
+      ["/404", PRERENDERED_PAGE_CSP],
+      ["/404.html", PRERENDERED_PAGE_CSP],
+      ["/_storybook/", STORYBOOK_CSP],
+      ["/_storybook/iframe", STORYBOOK_CSP],
+    ];
+    const assets: readonly (readonly [string, string])[] = [
+      ["/_astro/PublicLayout.abc123.css", NON_HTML_CSP],
+      ["/_astro/client.abc123.js", NON_HTML_CSP],
+      ["/robots.txt", NON_HTML_CSP],
+      ["/sitemap-index.xml", NON_HTML_CSP],
+      ["/sitemap-0.xml", NON_HTML_CSP],
+      ["/pagefind/pagefind.js", PAGEFIND_CSP],
+      ["/pagefind/index/en_1.pf_index", PAGEFIND_CSP],
+      ["/_storybook/sb-manager/runtime.js", STORYBOOK_CSP],
+      // The Atom feed sits under /docs/*: the page policy, harmless on XML.
+      ["/docs/changelog.xml", PRERENDERED_PAGE_CSP],
+      ...publicFiles.map((path): [string, string] => [path, NON_HTML_CSP]),
+    ];
+
+    it.each([...pages, ...assets])(
+      "%s gets exactly one of each security header",
+      (path, policy) => {
+        const { problems, csp } = securityHeaderProblems(rules, path);
+        expect(problems).toEqual([]);
+        expect(csp).toBe(policy);
+      }
+    );
+
+    it("covers every file in public/ with an asset rule", () => {
+      expect(publicFiles.length).toBeGreaterThan(0);
+      for (const path of publicFiles) {
+        expect(
+          STATIC_ASSET_PATHS.some((pattern) => patternMatches(pattern, path)),
+          path
+        ).toBe(true);
+      }
+    });
+
+    it("would have caught a /* policy detached on /, which production served twice", () => {
+      const detached = parseHeaders(
+        [
+          "/*",
+          `  Content-Security-Policy: ${NON_HTML_CSP}`,
+          "",
+          "/",
+          "  ! Content-Security-Policy",
+          `  Content-Security-Policy: ${PRERENDERED_PAGE_CSP}`,
+        ].join("\n")
+      );
+      expect(securityHeaderProblems(detached, "/").problems).toContain(
+        "/: 2 content-security-policy header(s) in lexicographic order"
+      );
+    });
   });
 });

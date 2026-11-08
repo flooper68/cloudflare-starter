@@ -1,7 +1,7 @@
 /**
  * Cache-Control of static assets, rendered into `public/_headers` with the security
  * rules (security-headers.ts `renderStaticHeaders`, one block per path). The Astro
- * Cloudflare adapter adds its own immutable rule for `/_astro/*` at build time.
+ * Cloudflare adapter adds an immutable rule for `/_astro/*` only when none is here; one is.
  * Every static HTML file also gets `no-transform` (cache-control.ts): the Cloudflare
  * edge then injects no Web Analytics beacon the page policy would block.
  * docs/guides/how-to-publish-docs-and-landing.md#caching
@@ -73,6 +73,11 @@ export const STATIC_CACHE_RULES: readonly StaticCacheRule[] = [
     path: "/_storybook/iframe",
     cacheControl: HTML_REVALIDATE,
     why: "Storybook's preview page (iframe.html, served without .html): the assets' default caching, HTML the edge must not rewrite",
+  },
+  {
+    path: "/_astro/*",
+    cacheControl: IMMUTABLE,
+    why: "content-hashed bundles. Set here, in the block that holds their policy, so the Cloudflare adapter does not add a second /_astro/* block (Workers Static Assets keeps only one block per path)",
   },
   {
     path: "/pagefind/*",
