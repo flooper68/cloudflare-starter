@@ -143,8 +143,8 @@
         },
         {
           "file": "docs/README.md",
-          "find": "you release to staging or production, run the production smoke suite or the automated QA suite, write a QA journey, set up the QA inbox (`setup:qa-inbox`), the QA workflow or the QA admin, or clean up QA accounts                                ",
-          "replace": "you release to staging or production, run the production smoke suite, or check a deployment by hand with the QA checklist                                                                                                                                         "
+          "find": "you release to staging or production, run the production smoke suite or the automated QA suite, write a QA journey, set up the QA inbox (`setup:qa-inbox`), the QA workflow or the QA admin, or clean up QA accounts",
+          "replace": "you release to staging or production, run the production smoke suite, or check a deployment by hand with the QA checklist"
         },
         {
           "file": "docs/architecture/overview.md",
@@ -183,13 +183,13 @@
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": " (catalog validity, keys, Better Auth rules, QA addresses, constant-time comparison); `packages/features/src/abuse/check-qa-bypass.test.ts`                                                                                                                                                     |",
-          "replace": " (catalog validity, keys, Better Auth rules, constant-time comparison)                                                                                                                                                                                                         |"
+          "find": " (catalog validity, keys, Better Auth rules, QA addresses, constant-time comparison); `packages/features/src/abuse/check-qa-bypass.test.ts`",
+          "replace": " (catalog validity, keys, Better Auth rules, constant-time comparison)"
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "; `apps/web/test/api/qa-bypass.test.ts` (the QA bypass: off, wrong token, wrong domain, accepted and audited, rate limited) |",
-          "replace": "                                                                                                                         |"
+          "find": "; `apps/web/test/api/qa-bypass.test.ts` (the QA bypass: off, wrong token, wrong domain, accepted and audited, rate limited)",
+          "replace": ""
         },
         {
           "file": "docs/guides/how-to-setup-web-app.md",
@@ -203,58 +203,84 @@
         },
         {
           "file": "docs/guides/how-to-setup-web-app.md",
-          "find": "| `QA_TOKEN`                                 | with `QA_BYPASS=on`               | 32+ characters; the QA suite's human-check bypass ([how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md#qa-bypass)) |\n",
-          "replace": ""
+          "find": "| `QA_TOKEN` | with `QA_BYPASS=on`",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-use-the-audit-log.md",
-          "find": "| `qa.bypass.used`                    | `hooks.before` letting the automated QA suite skip Turnstile on sign-up, sign-in or password reset (QA_BYPASS=on, server/qa-bypass.ts)      | `email`                | `form` (sign-up, sign-in, password-reset); never the token                                     |\n",
-          "replace": ""
+          "find": "| `qa.bypass.used` | `hooks.before` letting the automated QA suite skip Turnstile on sign-up, sign-in or password reset (QA_BYPASS=on, server/qa-bypass.ts)",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-use-the-audit-log.md",
-          "find": "| `qa.bypass.used`                                                   | by `metadata.form`: sign-in Authentication (3002), sign-up and password-reset Account Change (3001) | 99 Other, status Unknown (the human check was skipped; the attempt itself is the next event), `unmapped.qa_bypass: true` |\n",
-          "replace": ""
+          "find": "| `qa.bypass.used` | by `metadata.form`: sign-in Authentication (3002), sign-up and password-reset Account Change (3001)",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/architecture/overview.md",
-          "find": "| QA inbox        | [apps/qa-inbox](../../apps/qa-inbox/src/index.ts)                                         | A separate Worker for the automated QA suite: mail to `qa+<tag>@qa.flooper.me` (one literal Email Routing rule with subaddressing) lands in its own D1, read through a bearer-token API, kept 24 hours ([how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md#the-qa-inbox))                                                                                                                                                                                                                                                                                                                                                                                                                                 |\n",
-          "replace": ""
+          "find": "| QA inbox | [apps/qa-inbox](../../apps/qa-inbox/src/index.ts)",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/architecture/overview.md",
-          "find": "- **One bypass, for the QA suite.** With `QA_BYPASS=on`, a request to a human-checked endpoint with the `QA_TOKEN` secret in `X-QA-Token` (constant-time compare, limited by `qa.bypass`) for a `qa+<tag>@QA_EMAIL_DOMAIN` address skips the Turnstile check only, recorded as `qa.bypass.used`; anything else falls back to the check ([security model](../guides/how-to-configure-abuse-protection.md#qa-bypass)).\n",
-          "replace": ""
+          "find": "- **One bypass, for the QA suite.** With `QA_BYPASS=on`, a request to a human-checked endpoint with the `QA_TOKEN` secret in `X-QA-Token` (constant-time compare, limited by `qa.bypass`) for a `qa+<tag>@QA_EMAIL_DOMAIN` address skips the Turnstile check only, recorded as `qa.bypass.used`; anything else falls back to the check ([security model](../guides/how-to-configure-abuse-protection.md#qa-bypass)).",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| The same three endpoints with `X-QA-Token`, while `QA_BYPASS=on` (the automated QA suite)                        | `qa.bypass` (30 a minute per IP, counted before the token is compared); the Turnstile check is skipped only for the right token and an address `qa+…@QA_EMAIL_DOMAIN`        | `RL_QA_BYPASS`, in `hooks.before` before Turnstile ([QA bypass](#qa-bypass))                                                                                                                                                           |\n",
-          "replace": ""
+          "find": "| The same three endpoints with `X-QA-Token`, while `QA_BYPASS=on` (the automated QA suite) | `qa.bypass` (30 a minute per IP, counted before the token is compared); the Turnstile check is skipped only for the right token and an address `qa+…@QA_EMAIL_DOMAIN`",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_BYPASS`            | var                                 | `on` or `off`: the [QA bypass](#qa-bypass); `on` in production and develop, `off` in staging and locally |\n",
-          "replace": ""
+          "find": "| `QA_BYPASS` | var",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_EMAIL_DOMAIN`      | var                                 | the only mail domain the bypass covers (`qa.flooper.me`), a lowercase hostname; required with `on`       |\n",
-          "replace": ""
+          "find": "| `QA_EMAIL_DOMAIN` | var",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_TOKEN`             | secret (Worker secret)              | the token the QA suite sends in `X-QA-Token`, 32+ characters; required with `on`                         |\n",
-          "replace": ""
+          "find": "| `QA_TOKEN` | secret (Worker secret)",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| `QA_BYPASS=on needs the QA_TOKEN secret`, `… needs QA_EMAIL_DOMAIN`                          | `bun run setup:secrets --env <env>` (`QA_TOKEN`), or set `QA_BYPASS` to `off`.                                                                 |\n",
-          "replace": ""
+          "find": "| `QA_BYPASS=on needs the QA_TOKEN secret`, `… needs QA_EMAIL_DOMAIN` | `bun run setup:secrets --env <env>` (`QA_TOKEN`), or set `QA_BYPASS` to `off`.",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/guides/how-to-configure-abuse-protection.md",
-          "find": "| The QA suite fails sign-up with \"The human check did not pass\"                               | `qa.bypass.rejected` in Workers Logs says why: the GitHub `QA_TOKEN` differs from the Worker secret, or the address is not `@QA_EMAIL_DOMAIN`. |\n",
-          "replace": ""
+          "find": "| The QA suite fails sign-up with \"The human check did not pass\" | `qa.bypass.rejected` in Workers Logs says why: the GitHub `QA_TOKEN` differs from the Worker secret, or the address is not `@QA_EMAIL_DOMAIN`.",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "find": "[human-only check](#the-automated-suite)",
+          "replace": "check by hand"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "find": "As the QA admin (the account of the [nightly cleanup](#nightly-cleanup)); act only on the QA accounts and workspaces of the run.",
+          "replace": "As a platform admin; act only on the test accounts and workspaces of the run."
+        },
+        {
+          "file": "scripts/cloudflare-plan.test.ts",
+          "find": "\"= 9001–9013 kept\"",
+          "replace": "\"= 9001–9012 kept\""
         }
       ]
     },
@@ -429,6 +455,11 @@
           "file": "apps/web/test/e2e/docs.spec.ts",
           "find": "https://github.com/flooper68/cloudflare-starter",
           "replace": "{{repoUrl}}"
+        },
+        {
+          "file": "docs/processes/dependencies.md",
+          "find": "[README](../../README.md#starting-a-new-project-from-this-starter)",
+          "replace": "[start-a-project guide](../guides/how-to-start-a-project.md#1-create-the-repository-from-the-template)"
         }
       ],
       "docs": [
@@ -668,53 +699,61 @@
       "text": [
         {
           "file": "README.md",
-          "find": "- Cloudflare Container demo, deployed as its own Worker\n",
-          "replace": ""
+          "find": "- Cloudflare Container demo, deployed as its own Worker",
+          "replace": "",
+          "line": true
         },
         {
           "file": "README.md",
-          "find": "   | Containers                                     | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script                                                                                                                                                                                                                                                                                                                                                                                                                                   |\n",
-          "replace": ""
+          "find": "| Containers | `apps/container`, `docs/guides/how-to-setup-container.md`, `dev:container` script",
+          "replace": "",
+          "line": true
         },
         {
           "file": "README.md",
-          "find": "| [apps/container](apps/container/README.md) | Cloudflare Container demo (Dockerized pi), its own Worker                                                               |\n",
-          "replace": ""
+          "find": "| [apps/container](apps/container/README.md) | Cloudflare Container demo (Dockerized pi), its own Worker",
+          "replace": "",
+          "line": true
         },
         {
           "file": "README.md",
-          "find": "- Docker Desktop (or compatible) for the container demo only\n",
-          "replace": ""
+          "find": "- Docker Desktop (or compatible) for the container demo only",
+          "replace": "",
+          "line": true
         },
         {
           "file": "README.md",
-          "find": "| `bun run dev:container`                  | Starts the Container pi demo                                                                                                                                        |\n",
-          "replace": ""
+          "find": "| `bun run dev:container` | Starts the Container pi demo",
+          "replace": "",
+          "line": true
         },
         {
           "file": "README.md",
-          "find": "| `bun run dev`                            | Starts web + container in parallel ",
-          "replace": "| `bun run dev`                            | Starts the web Worker              "
+          "find": "Starts web + container in parallel",
+          "replace": "Starts the web Worker"
         },
         {
           "file": "docs/README.md",
-          "find": "| [how-to-setup-container.md](guides/how-to-setup-container.md)                         | you run or deploy the Container demo                                                                                                                                                                                                                                                                                                                |\n",
-          "replace": ""
+          "find": "| [how-to-setup-container.md](guides/how-to-setup-container.md) | you run or deploy the Container demo",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/architecture/overview.md",
-          "find": "| Container demo  | [apps/container](../../apps/container/README.md)                                          | A separate Worker with a Cloudflare Container, deployed on its own                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |\n",
-          "replace": ""
+          "find": "| Container demo | [apps/container](../../apps/container/README.md)",
+          "replace": "",
+          "line": true
         },
         {
           "file": "docs/processes/dependencies.md",
           "find": "`compatibility_date` in `apps/web/wrangler.jsonc` and `apps/container/wrangler.jsonc`",
-          "replace": "`compatibility_date` in `apps/web/wrangler.jsonc`                                     "
+          "replace": "`compatibility_date` in `apps/web/wrangler.jsonc`"
         },
         {
           "file": "docs/processes/dependencies.md",
-          "find": "| Container base image       | `FROM` in `apps/container/Dockerfile`                                                                                                                                    | Move to a current tag of the same image; rebuild and run the container demo ([how-to-setup-container.md](../guides/how-to-setup-container.md))                                                                                                                                                                                     |\n",
-          "replace": ""
+          "find": "| Container base image | `FROM` in `apps/container/Dockerfile`",
+          "replace": "",
+          "line": true
         },
         {
           "file": "test/architecture/qa-checklist.test.ts",

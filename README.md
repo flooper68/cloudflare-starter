@@ -136,36 +136,36 @@ Secrets for the web app come from `apps/web/.dev.vars` locally and Worker secret
 
 ## Scripts
 
-| Command                                  | What it does                                                                                                                                                        |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run dev`                            | Starts web + container in parallel                                                                                                                                  |
-| `bun run dev:web`                        | Starts the web Worker (Astro dev, with D1, R2, queue and cron simulated)                                                                                            |
-| `bun run dev:container`                  | Starts the Container pi demo                                                                                                                                        |
-| `bun run storybook`                      | Starts Storybook on port `6006`                                                                                                                                     |
-| `bun run build-storybook`                | Builds Storybook into `apps/web/public/_storybook`                                                                                                                  |
-| `bun run build`                          | Builds every deployable app workspace                                                                                                                               |
-| `bun run verify`                         | Typecheck + Biome lint + Vitest                                                                                                                                     |
-| `bun run test`                           | All tests: unit (Node) and integration/API on real local D1 in workerd                                                                                              |
-| `bun run test:unit` / `test:integration` | One layer only                                                                                                                                                      |
-| `bun run test:components`                | Every Storybook story in Chromium, dark and light theme: renders, passes axe, runs its `play` interaction test                                                      |
-| `bun run test:e2e`                       | Playwright journeys ([the list](docs/architecture/testing.md#layers)) against `astro dev`; needs `.dev.vars` and `db:migrate:local`                                 |
-| `bun run test:e2e:build`                 | The built app's security headers and CSP in Chromium against `astro preview`; run after `bun run build`                                                             |
-| `bun run test:smoke -- --base-url <url>` | Read-only production smoke suite against a deployed app (`--env production` reads the URL from `wrangler.jsonc`)                                                    |
-| `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                                                                   |
-| `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                                                                 |
-| `bun run starter:strip`                  | Dry run of removing the starter-only parts (`starter-only.json`) from a new project; `--apply` does it ([how-to-start-a-project.md](docs/guides/how-to-start-a-project.md))           |
-| `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                                                               |
-| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id, R2 jurisdiction and rate-limit namespace_ids into the config                                           |
-| `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                                                         |
-| `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                                                            |
-| `bun run setup:auth`                     | Asks for the sign-in switches, two-factor and passkey policy, workspace mode, sign-up policy, billing mode and `ADMIN_PORTAL` and writes them into `wrangler.jsonc` |
-| `bun run setup:admin --email <address>`  | Makes an account a platform admin (`--demote` reverses, `--remote --env <env>` for a deployed database), audited                                                    |
-| `bun run setup:analytics`                | Asks whether an environment collects product events and Web Analytics and writes the settings into `wrangler.jsonc`                                                 |
-| `bun run setup:storage`                  | Writes `STORAGE_RECONCILE` (off, report or delete) into `wrangler.jsonc` ([trash guide](docs/guides/how-to-use-trash.md#optional-storage-reconciliation))           |
-| `bun run setup:privacy-storage`          | Adds the R2 lifecycle rule that expires data-export archives ([privacy guide](docs/guides/how-to-handle-data-privacy.md#storage-expiry-setup))                      |
-| `bun run runner:up -- --workers <n>`     | Builds and starts n self-hosted CI runners in Docker ([how-to-setup-ci.md](docs/guides/how-to-setup-ci.md#self-hosted-runners))                                     |
-| `bun run runner:down` / `runner:logs`    | Stops the runners / follows their logs                                                                                                                              |
-| `bun run runner:remove -- --all`         | Unregisters the runners and deletes their containers and volumes                                                                                                    |
+| Command                                  | What it does                                                                                                                                                                |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`                            | Starts web + container in parallel                                                                                                                                          |
+| `bun run dev:web`                        | Starts the web Worker (Astro dev, with D1, R2, queue and cron simulated)                                                                                                    |
+| `bun run dev:container`                  | Starts the Container pi demo                                                                                                                                                |
+| `bun run storybook`                      | Starts Storybook on port `6006`                                                                                                                                             |
+| `bun run build-storybook`                | Builds Storybook into `apps/web/public/_storybook`                                                                                                                          |
+| `bun run build`                          | Builds every deployable app workspace                                                                                                                                       |
+| `bun run verify`                         | Typecheck + Biome lint + Vitest                                                                                                                                             |
+| `bun run test`                           | All tests: unit (Node) and integration/API on real local D1 in workerd                                                                                                      |
+| `bun run test:unit` / `test:integration` | One layer only                                                                                                                                                              |
+| `bun run test:components`                | Every Storybook story in Chromium, dark and light theme: renders, passes axe, runs its `play` interaction test                                                              |
+| `bun run test:e2e`                       | Playwright journeys ([the list](docs/architecture/testing.md#layers)) against `astro dev`; needs `.dev.vars` and `db:migrate:local`                                         |
+| `bun run test:e2e:build`                 | The built app's security headers and CSP in Chromium against `astro preview`; run after `bun run build`                                                                     |
+| `bun run test:smoke -- --base-url <url>` | Read-only production smoke suite against a deployed app (`--env production` reads the URL from `wrangler.jsonc`)                                                            |
+| `bun run db:generate`                    | Generates a SQL migration from the Drizzle schema                                                                                                                           |
+| `bun run db:migrate:local`               | Applies pending migrations to the local D1 database                                                                                                                         |
+| `bun run starter:strip`                  | Dry run of removing the starter-only parts (`starter-only.json`) from a new project; `--apply` does it ([how-to-start-a-project.md](docs/guides/how-to-start-a-project.md)) |
+| `bun run doctor`                         | Checks the local setup and each environment's config, changes nothing                                                                                                       |
+| `bun run setup:cloudflare`               | Creates D1, R2, queues for an environment, writes the D1 id, R2 jurisdiction and rate-limit namespace_ids into the config                                                   |
+| `bun run setup:secrets`                  | Asks for secrets; writes `.dev.vars` or sets Worker secrets                                                                                                                 |
+| `bun run setup:email`                    | Enables Email Sending for a domain and writes the sender into the config                                                                                                    |
+| `bun run setup:auth`                     | Asks for the sign-in switches, two-factor and passkey policy, workspace mode, sign-up policy, billing mode and `ADMIN_PORTAL` and writes them into `wrangler.jsonc`         |
+| `bun run setup:admin --email <address>`  | Makes an account a platform admin (`--demote` reverses, `--remote --env <env>` for a deployed database), audited                                                            |
+| `bun run setup:analytics`                | Asks whether an environment collects product events and Web Analytics and writes the settings into `wrangler.jsonc`                                                         |
+| `bun run setup:storage`                  | Writes `STORAGE_RECONCILE` (off, report or delete) into `wrangler.jsonc` ([trash guide](docs/guides/how-to-use-trash.md#optional-storage-reconciliation))                   |
+| `bun run setup:privacy-storage`          | Adds the R2 lifecycle rule that expires data-export archives ([privacy guide](docs/guides/how-to-handle-data-privacy.md#storage-expiry-setup))                              |
+| `bun run runner:up -- --workers <n>`     | Builds and starts n self-hosted CI runners in Docker ([how-to-setup-ci.md](docs/guides/how-to-setup-ci.md#self-hosted-runners))                                             |
+| `bun run runner:down` / `runner:logs`    | Stops the runners / follows their logs                                                                                                                                      |
+| `bun run runner:remove -- --all`         | Unregisters the runners and deletes their containers and volumes                                                                                                            |
 
 In `apps/web`: `deploy`, `deploy:staging`, `deploy:production`, `deploy:dry-run` (build + `wrangler deploy --dry-run`, also run per environment by CI), `db:migrate:remote`.
 

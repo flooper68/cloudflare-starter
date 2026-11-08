@@ -24,6 +24,7 @@ import {
   type Component,
   definedEnvironments,
   envJsonPath,
+  hasText,
   jobRange,
   patchState,
   readManifest,
@@ -68,8 +69,7 @@ function missing(component: Component): string[] {
       const path = envJsonPath(env, edit.path);
       // A removal names a setting that is there; a value may be new, its parent not.
       const target = edit.value === undefined ? path : path.slice(0, -1);
-      if (!has(file, target))
-        problems.push(`${file}: no ${target.join(".")}`);
+      if (!has(file, target)) problems.push(`${file}: no ${target.join(".")}`);
     }
   }
 
@@ -122,7 +122,7 @@ function missing(component: Component): string[] {
 
   for (const edit of component.text ?? []) {
     if (!exists(edit.file)) problems.push(`${edit.file} does not exist`);
-    else if (!read(edit.file).includes(edit.find))
+    else if (!hasText(read(edit.file), edit))
       problems.push(
         `${edit.file}: no longer contains ${JSON.stringify(edit.find.slice(0, 80))}`
       );
@@ -139,24 +139,26 @@ describe("starter-only.json", () => {
     expect(manifest.components.length).toBeGreaterThan(0);
   });
 
-  it.each(
-    active.map((component) => [component.id, component] as const)
-  )("%s names only what exists here", (_, component) => {
-    expect(missing(component)).toEqual([]);
-  });
+  it.each(active.map((component) => [component.id, component] as const))(
+    "%s names only what exists here",
+    (_, component) => {
+      expect(missing(component)).toEqual([]);
+    }
+  );
 
-  it.each(
-    pending.map((component) => [component.id, component] as const)
-  )("%s is still pending: none of its files are here yet", (_, component) => {
-    const landed = [
-      ...(component.delete ?? []),
-      ...(component.tests ?? []),
-    ].filter((path) => existsSync(join(ROOT, path)));
-    expect(
-      landed,
-      "its PR has landed: list its parts and set status to active"
-    ).toEqual([]);
-  });
+  it.each(pending.map((component) => [component.id, component] as const))(
+    "%s is still pending: none of its files are here yet",
+    (_, component) => {
+      const landed = [
+        ...(component.delete ?? []),
+        ...(component.tests ?? []),
+      ].filter((path) => existsSync(join(ROOT, path)));
+      expect(
+        landed,
+        "its PR has landed: list its parts and set status to active"
+      ).toEqual([]);
+    }
+  );
 
   it("every starter-only note in the docs names a component", () => {
     const ids = new Set(manifest.components.map((component) => component.id));

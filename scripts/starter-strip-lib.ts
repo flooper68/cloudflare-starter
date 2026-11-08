@@ -91,6 +91,30 @@ export interface TextEdit {
   readonly file: string;
   readonly find: string;
   readonly replace: string;
+  /**
+   * Remove every line that contains `find`, comparing with runs of spaces collapsed: a
+   * table row, whatever padding the formatter gives it. `replace` must be "".
+   */
+  readonly line?: boolean;
+}
+
+const collapse = (text: string) => text.replace(/ {2,}/g, " ");
+
+/** Whether `text` still has what a text edit changes. */
+export function hasText(text: string, edit: TextEdit): boolean {
+  return edit.line
+    ? text.split("\n").some((line) => collapse(line).includes(edit.find))
+    : text.includes(edit.find);
+}
+
+/** Applies a text edit; unchanged once it is applied. */
+export function applyText(text: string, edit: TextEdit): string {
+  return edit.line
+    ? text
+        .split("\n")
+        .filter((line) => !collapse(line).includes(edit.find))
+        .join("\n")
+    : text.split(edit.find).join(edit.replace);
 }
 
 /** A whole file written with `content` (a reset, such as the changelog's). */
@@ -723,7 +747,7 @@ export function planComponent(
   for (const raw of component.text ?? []) {
     const edit = substitute(raw, params);
     if (!edit) {
-      if (readText(root, raw.file)?.includes(raw.find))
+      if (hasText(readText(root, raw.file) ?? "", raw))
         skipped.push(
           `${raw.file}: replace "${raw.find}" by hand (needs --name or --repo-url)`
         );
@@ -735,7 +759,7 @@ export function planComponent(
         root,
         edit.file,
         `${edit.file}: ${edit.replace ? "replace" : "remove"} ${preview(edit.find)}`,
-        (t) => t.split(edit.find).join(edit.replace)
+        (t) => applyText(t, edit)
       )
     );
   }

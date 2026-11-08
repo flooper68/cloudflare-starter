@@ -17,8 +17,8 @@ import {
   editSection,
   inRunOrder,
   jobRange,
-  markStripped,
   type Manifest,
+  markStripped,
   nextSteps,
   planComponent,
   removeStarterNotes,
@@ -238,7 +238,8 @@ describe("planComponent", () => {
       "apps/web/wrangler.jsonc": WRANGLER,
       "package.json": '{\n  "scripts": { "keep": "a", "drop": "b" }\n}\n',
       ".github/workflows/ci.yml": WORKFLOW,
-      "docs/guide.md": "# Guide\n\n## Drop\n\nGone.\n\n## Keep\n\nKept.\n",
+      "docs/guide.md":
+        "# Guide\n\n| Name    | Use  |\n| ------- | ---- |\n| `extra` | demo |\n| `keep`  | app  |\n\n## Drop\n\nGone.\n\n## Keep\n\nKept.\n",
       "README.md":
         "# Old name\n\nText.\n\n> **Starter-only, removed by `starter:strip`** (`demo`): x.\n",
       "src/name.ts": 'export const NAME = "Old name";\n',
@@ -255,10 +256,22 @@ describe("planComponent", () => {
         { workflow: ".github/workflows/ci.yml", job: "lint", step: "Nope" },
       ],
       docs: [{ file: "docs/guide.md", action: "remove", heading: "Drop" }],
-      text: [{ file: "src/name.ts", find: "Old name", replace: "{{name}}" }],
+      text: [
+        { file: "src/name.ts", find: "Old name", replace: "{{name}}" },
+        // A table row, matched whatever its padding.
+        {
+          file: "docs/guide.md",
+          find: "| `extra` | demo",
+          replace: "",
+          line: true,
+        },
+      ],
       files: [{ file: "CHANGELOG.md", content: "# Changelog\n\n{{name}}\n" }],
     });
     strip(root, [part], { name: "Acme" });
+    expect(readFileSync(join(root, "docs/guide.md"), "utf8")).toContain(
+      "| ------- | ---- |\n| `keep`  | app  |\n"
+    );
 
     const read = (file: string) => readFileSync(join(root, file), "utf8");
     expect(existsSync(join(root, "src/extra.ts"))).toBe(false);
