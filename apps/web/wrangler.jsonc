@@ -354,8 +354,8 @@
         "EMAIL_FROM_NAME": "Cloudflare Starter",
         "RATE_LIMITING": "cloudflare",
         "TURNSTILE": "on",
-        // Test key: replace with the production widget's site key (bun run doctor warns).
-        "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+        // Production widget cloudflare-starter-production (managed, starter.flooper.me).
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAF4nZzkSjYIfXj5g",
         "EMAIL_FROM": "starter@flooper.me",
         "TWO_FACTOR": "optional",
         "TWO_FACTOR_EMAIL_OTP": "on",
