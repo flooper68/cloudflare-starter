@@ -11,6 +11,7 @@
  * docs/guides/how-to-configure-security-headers.md.
  */
 
+import { withNoTransform } from "./cache-control";
 import { STATIC_CACHE_RULES } from "./static-cache";
 
 /** Where browsers send violation reports (src/pages/api/csp-report.ts). */
@@ -296,13 +297,18 @@ export function pagePolicyHeaders(
 /** Paths that answer data, never an app page, whatever their content type. */
 const NON_PAGE_PREFIXES = ["/api/", "/mcp", "/.well-known/", "/health"];
 
+/** Whether a response is HTML, wherever it is served (gets `no-transform`). */
+export function isHtml(response: Response): boolean {
+  const type = response.headers.get("content-type") ?? "";
+  return type.toLowerCase().startsWith("text/html");
+}
+
 /** Whether a response is an HTML page of the app (gets the page policy). */
 export function isAppPage(pathname: string, response: Response): boolean {
   if (NON_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return false;
   }
-  const type = response.headers.get("content-type") ?? "";
-  return type.toLowerCase().startsWith("text/html");
+  return isHtml(response);
 }
 
 export interface SecurityHeaderSettings {
@@ -319,6 +325,9 @@ export interface SecurityHeaderSettings {
  * Adds the security headers to a response the Worker serves. Headers a route set itself
  * (a stricter Referrer-Policy, a Cache-Control) are kept; Astro's own
  * Content-Security-Policy on a page is replaced by the full page policy, keeping its hashes.
+ * Every HTML response, page or not and whatever WEB_ANALYTICS says, gets `no-transform`
+ * merged into its Cache-Control, so the Cloudflare edge injects no Web Analytics beacon
+ * (or any other script) the policy would block (cache-control.ts).
  */
 export function securityHeadersFor(
   request: Request,
@@ -332,6 +341,11 @@ export function securityHeadersFor(
   });
   const existingReferrer = response.headers.get("referrer-policy");
   if (existingReferrer) headers["Referrer-Policy"] = existingReferrer;
+  if (isHtml(response)) {
+    headers["Cache-Control"] = withNoTransform(
+      response.headers.get("cache-control")
+    );
+  }
 
   if (!isAppPage(url.pathname, response)) {
     headers["Content-Security-Policy"] =

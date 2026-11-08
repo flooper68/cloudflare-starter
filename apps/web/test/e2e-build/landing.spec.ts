@@ -13,7 +13,7 @@ test.describe("landing page", () => {
     const response = await request.get("/");
     expect(response.status()).toBe(200);
     expect(response.headers()["cache-control"]).toBe(
-      "public, max-age=0, must-revalidate"
+      "public, max-age=0, must-revalidate, no-transform"
     );
     expect(response.headers()["content-security-policy"]).toBe(
       PRERENDERED_PAGE_CSP

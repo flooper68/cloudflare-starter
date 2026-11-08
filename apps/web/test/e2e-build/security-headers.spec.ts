@@ -173,3 +173,42 @@ test("static assets, API and health answers carry the headers", async ({
     );
   }
 });
+
+// Cache-Control: no-transform on every HTML response, so a zone's Web Analytics
+// "automatic setup" injects no beacon at the edge
+// (docs/guides/how-to-configure-security-headers.md#edge-injected-web-analytics). The
+// edge itself is not here: this proves what the Worker and public/_headers send.
+test("every HTML response says no-transform; other responses keep their Cache-Control", async ({
+  request,
+}) => {
+  const revalidate = "public, max-age=0, must-revalidate";
+  const html: readonly (readonly [string, number, string])[] = [
+    // Prerendered pages and Storybook (public/_headers): the assets' caching, plus no-transform.
+    ["/", 200, `${revalidate}, no-transform`],
+    ["/docs/", 200, `${revalidate}, no-transform`],
+    ["/docs/changelog/", 200, `${revalidate}, no-transform`],
+    ["/no-such-page", 404, `${revalidate}, no-transform`],
+    ["/_storybook/", 200, `${revalidate}, no-transform`],
+    ["/_storybook/iframe", 200, `${revalidate}, no-transform`],
+    // Rendered per request (the middleware): no-transform alone, never public.
+    ["/sign-in", 200, "no-transform"],
+    ["/forgot-password", 200, "no-transform"],
+  ];
+  for (const [path, status, cacheControl] of html) {
+    const response = await request.get(path);
+    expect(response.status(), path).toBe(status);
+    expect(response.headers()["content-type"], path).toContain("text/html");
+    expect(response.headers()["cache-control"], path).toBe(cacheControl);
+  }
+  for (const [path, cacheControl] of [
+    ["/docs/changelog.xml", revalidate],
+    ["/favicon.svg", revalidate],
+    ["/health/live", "no-store"],
+  ] as const) {
+    const response = await request.get(path);
+    expect(response.headers()["cache-control"], path).toBe(cacheControl);
+  }
+  const redirect = await request.get("/app/dashboard", { maxRedirects: 0 });
+  expect(redirect.status()).toBe(302);
+  expect(redirect.headers()["cache-control"]).toBeUndefined();
+});
