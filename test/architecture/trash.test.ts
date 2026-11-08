@@ -20,6 +20,8 @@ const UNSCOPED_READS: Readonly<Record<string, string>> = {
     "system orphan reconciliation must preserve all file references including live, trashed and pending uploads",
   "packages/features/src/files/delete-workspace-files.ts":
     "account erasure deletes every file of a workspace being deleted, live or trashed, bypassing the trash",
+  "packages/features/src/notes/count-workspace-notes.ts":
+    "billing's notes metric counts live notes by workspace id for a caller that authorized it; it filters deleted_at itself (no actor to pass liveIn)",
   "packages/features/src/files/measure-workspace-storage.ts":
     "storage_bytes counts trashed files until they are purged (R2 still stores them)",
 };

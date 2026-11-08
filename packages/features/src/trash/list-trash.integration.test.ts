@@ -97,9 +97,9 @@ describe("listTrash", () => {
     await trashTestFile(actor, file.fileId);
 
     expect((await listTrash(deps(), other, {})).items).toEqual([]);
-    await expect(listTrash(deps(), actor, { type: "note" })).rejects.toThrow(
-      InvalidTrashInputError
-    );
+    await expect(
+      listTrash(deps(), actor, { type: "invoice" as "file" })
+    ).rejects.toThrow(InvalidTrashInputError);
     await expect(
       listTrash(deps(), actor, { cursor: "not-a-cursor" })
     ).rejects.toThrow(InvalidTrashInputError);

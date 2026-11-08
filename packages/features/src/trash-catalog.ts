@@ -4,6 +4,7 @@
 // `deleted_at` and `deleted_by`, and every read of it outside the trash goes through
 // liveIn or trashedIn (test/architecture/trash.test.ts; docs/guides/how-to-use-trash.md).
 import { fileTrash } from "./files";
+import { noteTrash } from "./notes";
 import type { TrashableEntity } from "./trash";
 
-export const TRASH_CATALOG: readonly TrashableEntity[] = [fileTrash];
+export const TRASH_CATALOG: readonly TrashableEntity[] = [fileTrash, noteTrash];

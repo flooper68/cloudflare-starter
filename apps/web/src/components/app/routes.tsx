@@ -6,6 +6,8 @@ import {
   settingsRoutes,
 } from "@/components/settings/routes";
 import { appLayoutRoute } from "./layout-route";
+import { NoteDetailPage } from "./notes/NoteDetailPage";
+import { NotesPage } from "./notes/NotesPage";
 import { BillingPage } from "./pages/BillingPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DemosPage } from "./pages/DemosPage";
@@ -18,6 +20,7 @@ import { QueueDemoPage } from "./pages/QueueDemoPage";
 import { TrashPage } from "./pages/TrashPage";
 import { UploadDemoPage } from "./pages/UploadDemoPage";
 import { rootRoute } from "./root-route";
+import { TasksPage } from "./tasks/TasksPage";
 
 const appIndexRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
@@ -57,6 +60,25 @@ const trashRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/app/trash",
   component: TrashPage,
+});
+
+// Placeholder apps: where a project's product goes (Notes is a real feature, Tasks sample data).
+const notesRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/app/notes",
+  component: NotesPage,
+});
+
+const noteRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/app/notes/$noteId",
+  component: NoteDetailPage,
+});
+
+const tasksRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/app/tasks",
+  component: TasksPage,
 });
 
 const demosRoute = createRoute({
@@ -104,6 +126,9 @@ const routeTree = rootRoute.addChildren([
     membersRoute,
     billingRoute,
     trashRoute,
+    notesRoute,
+    noteRoute,
+    tasksRoute,
     demosRoute,
     uploadDemoRoute,
     queueDemoRoute,

@@ -23,6 +23,7 @@ export const AUDIT_TARGET_TYPES = [
   "invitation",
   "feature_flag",
   "file",
+  "note",
   "storage",
   "data_request",
 ] as const;
@@ -34,6 +35,7 @@ export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
  */
 export const AUDIT_TRASH_TARGET_TYPES = [
   "file",
+  "note",
 ] as const satisfies readonly AuditTargetType[];
 export type AuditTrashTargetType = (typeof AUDIT_TRASH_TARGET_TYPES)[number];
 
@@ -459,6 +461,33 @@ export const auditEventSchema = z.discriminatedUnion("action", [
         ruleKinds: z.array(z.enum(["workspace", "plan", "percentage"])).max(50),
       })
       .strict(),
+  }),
+
+  // Notes, the placeholder app (recorded by its use cases; never the note's text).
+  z.object({
+    ...inWorkspace,
+    action: z.literal("note.created"),
+    target: target("note"),
+    metadata: noMetadata,
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("note.updated"),
+    target: target("note"),
+    metadata: z
+      .object({
+        fields: z
+          .array(z.enum(["title", "body"]))
+          .min(1)
+          .max(2),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("note.commented"),
+    target: target("note"),
+    metadata: z.object({ commentId: id }).strict(),
   }),
 
   // Trash (recorded by the entities' "move to trash" use cases and the trash use cases).

@@ -20,22 +20,28 @@ import { useAsync } from "@/lib/use-async";
 /** What the checklist reads: the user's security state and the workspace's members. */
 function useChecklist(workspaceId: string, shared: boolean) {
   return useAsync(async () => {
-    const [security, members] = await Promise.all([
+    const [security, members, notes] = await Promise.all([
       trpc.account.security.status.query(),
       shared
         ? trpc.workspace.members.list.query({ workspaceId })
         : Promise.resolve({ items: [] }),
+      trpc.notes.list.query({ workspaceId, limit: 1 }),
     ]);
     return {
       emailVerified: security.emailVerified,
       secondFactor: security.enrolled || security.passkeys.length > 0,
       members: members.items.length,
+      notes: notes.items.length,
     };
   }, `checklist:${workspaceId}:${shared}`);
 }
 
 function action(
-  to: "/app/members" | "/app/settings/security" | "/verify-email",
+  to:
+    | "/app/members"
+    | "/app/settings/security"
+    | "/app/notes"
+    | "/verify-email",
   label: string
 ) {
   return (
@@ -102,7 +108,7 @@ export function DashboardPage() {
         error={checklist.error}
         onRetry={checklist.refetch}
         isEmpty={() => false}
-        loading={<GettingStartedChecklistSkeleton rows={3} />}
+        loading={<GettingStartedChecklistSkeleton rows={4} />}
         empty={null}
       >
         {(state) => {
@@ -137,6 +143,14 @@ export function DashboardPage() {
                 "An authenticator app or a passkey protects your account.",
               done: state.secondFactor,
               action: action("/app/settings/security", "Set up"),
+            },
+            {
+              id: "note",
+              title: "Write your first note",
+              description:
+                "Notes is a placeholder app: a full feature with its API, MCP tools, audit, limits and trash.",
+              done: state.notes > 0,
+              action: action("/app/notes", "Open Notes"),
             },
           ];
           return (

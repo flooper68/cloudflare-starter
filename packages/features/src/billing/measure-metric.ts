@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { Database } from "../database";
 import { measureWorkspaceStorage } from "../files";
 import type { Clock } from "../kernel";
+import { countWorkspaceNotes } from "../notes";
 import { countWorkspaceSeats } from "../workspaces";
 import { usageCounter } from "./billing.schema";
 import { METRICS, type MetricKey, usagePeriod } from "./domain";
@@ -19,6 +20,7 @@ type Measure = (
 const CURRENT_SOURCES: Readonly<Record<string, Measure>> = {
   "files.measureWorkspaceStorage": measureWorkspaceStorage,
   "workspaces.countWorkspaceSeats": countWorkspaceSeats,
+  "notes.countWorkspaceNotes": countWorkspaceNotes,
 };
 
 /**

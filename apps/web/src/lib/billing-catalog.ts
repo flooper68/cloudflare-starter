@@ -53,6 +53,7 @@ export const BILLING_METRICS: Readonly<Record<string, ClientMetric>> = {
     unit: "count",
   },
   seats: { label: "Seats", subject: "seats", unit: "count" },
+  notes: { label: "Notes", subject: "notes", unit: "count" },
 };
 
 export const BILLING_FEATURES: Readonly<

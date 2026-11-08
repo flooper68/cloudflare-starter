@@ -8,6 +8,7 @@ import * as auditSchema from "./audit/audit.schema";
 import * as billingSchema from "./billing/billing.schema";
 import * as filesSchema from "./files/files.schema";
 import * as jobsSchema from "./jobs/jobs.schema";
+import * as notesSchema from "./notes/notes.schema";
 import * as notificationsSchema from "./notifications/notifications.schema";
 import { createDb, type Db } from "./platform";
 import * as privacySchema from "./privacy/privacy.schema";
@@ -21,6 +22,7 @@ export const schema = {
   ...billingSchema,
   ...filesSchema,
   ...jobsSchema,
+  ...notesSchema,
   ...notificationsSchema,
   ...workspacesSchema,
 };

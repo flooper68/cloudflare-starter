@@ -46,7 +46,13 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
 };
 
 /** Routers whose procedures act inside one workspace. */
-const WORKSPACE_ROUTERS = ["storage", "workspace", "flags", "trash"] as const;
+const WORKSPACE_ROUTERS = [
+  "storage",
+  "workspace",
+  "flags",
+  "trash",
+  "notes",
+] as const;
 
 /** Procedures of those routers that act for the signed-in user, not in one workspace. */
 const USER_LEVEL_PROCEDURES: Readonly<Record<string, string>> = {
@@ -62,6 +68,7 @@ const USER_LEVEL_PROCEDURES: Readonly<Record<string, string>> = {
 const WORKSPACE_SCOPED_FEATURES = [
   "billing",
   "files",
+  "notes",
   "trash",
   "workspaces",
 ] as const;
@@ -111,6 +118,10 @@ const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
     "platform admin, not a member of the workspace",
   "files/measure-workspace-storage.ts":
     "billing's storage_bytes metric, for a workspace its caller authorized",
+  "notes/count-workspace-notes.ts":
+    "billing's notes metric, for a workspace its caller authorized",
+  "notes/trash.ts":
+    "the notes entity of the trash catalog, not a use case; the trash use cases take the actor",
   "workspaces/count-workspace-seats.ts":
     "billing's seats metric, for a workspace its caller authorized",
   "files/r2-presign.ts": "S3 signing helper, not a use case",
