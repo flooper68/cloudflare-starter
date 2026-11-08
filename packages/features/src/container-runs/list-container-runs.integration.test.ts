@@ -24,9 +24,9 @@ describe("listContainerRuns", () => {
   it("says the demo is on with what is used today and this hour", async () => {
     const ada = await seedUser("Ada Status");
     const actor = await seedWorkspace(ada.id, { id: "ws-cr-status" });
-    await startRun(actor, 1000, "2026-11-02T11:30:00.000Z");
+    await startRun(actor, 1000, "2026-11-02T12:05:00.000Z");
     const { status } = await listContainerRuns(
-      containerDeps({ at: "2026-11-02T12:00:00.000Z" }),
+      containerDeps({ at: "2026-11-02T12:30:00.000Z" }),
       actor,
       {}
     );

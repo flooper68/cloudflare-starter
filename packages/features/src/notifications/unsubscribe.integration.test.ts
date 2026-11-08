@@ -89,6 +89,7 @@ describe("unsubscribe", () => {
     expect(result.types).toEqual([
       "workspaces.member-joined",
       "workspaces.role-changed",
+      "container-runs.finished",
     ]);
   });
 
