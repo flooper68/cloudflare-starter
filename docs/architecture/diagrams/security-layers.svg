@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 421.31399999999985 711.1999999999999" width="422" height="712" role="img" data-natural-width="">
+<title>Security layers of a request</title>
+<desc>From the outside in. Every response carries the security headers and, for HTML, a Content-Security-Policy; static assets get the same from public/_headers. Edge rate limits refuse over-limit requests on auth, MCP, uploads, health, webhooks, token pages and every tRPC mutation. Turnstile checks sign-up, sign-in and password reset. Better Auth resolves the session or the MCP token, and the security state checks that session and its second factor. The workspace membership resolves the actor, the role's permission is checked with can, then the plan's entitlements. The use case changes data and records an audit event.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="421.31399999999985" height="711.1999999999999" rx="12"/>
+<defs>
+<marker id="dg-security-layers-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-security-layers-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<polyline class="edge" data-from="Headers" data-to="Limits" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="210.65699999999993,76.9 210.65699999999993,124.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-security-layers-arrowhead)" />
+<polyline class="edge" data-from="Limits" data-to="Human" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="210.65699999999993,161.8 210.65699999999993,209.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-security-layers-arrowhead)" />
+<polyline class="edge" data-from="Human" data-to="Auth" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="210.65699999999993,246.70000000000002 210.65699999999993,294.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-security-layers-arrowhead)" />
+<polyline class="edge" data-from="Auth" data-to="Actor" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="210.65699999999993,331.6 210.65699999999993,379.6" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-security-layers-arrowhead)" />
+<polyline class="edge" data-from="Actor" data-to="Permission" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="210.65699999999993,416.5 210.65699999999993,464.5" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-security-layers-arrowhead)" />
+<polyline class="edge" data-from="Permission" data-to="Entitlement" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="210.65699999999993,501.4 210.65699999999993,549.4" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-security-layers-arrowhead)" />
+<polyline class="edge" data-from="Entitlement" data-to="Audit" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="210.65699999999993,586.3 210.65699999999993,634.3" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-security-layers-arrowhead)" />
+<g class="node" data-id="Headers" data-label="security headers and CSP: every response" data-shape="rectangle">
+<rect x="61.85949999999994" y="40" width="297.59499999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">security headers and CSP: every response</text>
+</g>
+<g class="node" data-id="Limits" data-label="edge rate limits: route policies, every mutation" data-shape="rectangle">
+<rect x="59.26599999999999" y="124.9" width="302.78199999999987" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="143.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">edge rate limits: route policies, every mutation</text>
+</g>
+<g class="node" data-id="Human" data-label="Turnstile: sign-up, sign-in, password reset" data-shape="rectangle">
+<rect x="67.41699999999992" y="209.8" width="286.48" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="228.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Turnstile: sign-up, sign-in, password reset</text>
+</g>
+<g class="node" data-id="Auth" data-label="session or MCP token, security state, second factor" data-shape="rectangle">
+<rect x="40" y="294.70000000000005" width="341.31399999999985" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="313.15000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">session or MCP token, security state, second factor</text>
+</g>
+<g class="node" data-id="Actor" data-label="workspace membership: resolveActor" data-shape="rectangle">
+<rect x="77.79099999999994" y="379.6" width="265.73199999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="398.05" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">workspace membership: resolveActor</text>
+</g>
+<g class="node" data-id="Permission" data-label="permission: requirePermission, can" data-shape="rectangle">
+<rect x="85.20099999999995" y="464.5" width="250.91199999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="482.95" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">permission: requirePermission, can</text>
+</g>
+<g class="node" data-id="Entitlement" data-label="plan: requireFeature, requireLimit" data-shape="rectangle">
+<rect x="90.38799999999996" y="549.4" width="240.53799999999993" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="567.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">plan: requireFeature, requireLimit</text>
+</g>
+<g class="node" data-id="Audit" data-label="use case and audit event" data-shape="rectangle">
+<rect x="117.80499999999994" y="634.3" width="185.70399999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210.65699999999993" y="652.75" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">use case and audit event</text>
+</g>
+</svg>

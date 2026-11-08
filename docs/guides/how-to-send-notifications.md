@@ -4,18 +4,7 @@ How a feature tells users that something happened: the in-app inbox (bell, inbox
 
 ## How it fits together
 
-```mermaid
-flowchart LR
-  U["use case (producer)"] -->|"deps.notify(definition, { recipients, data, context })"| N["notify: validate, drop actor"]
-  N -->|"enqueueJob notifications.dispatch (key = event id)"| Q[["APP_QUEUE"]]
-  Q --> D["dispatchNotification: preferences, inbox rows"]
-  D -->|"email due now"| E["notifications.send-email (key email-<row>)"]
-  D -->|"daily cadence"| P[("rows pending_digest")]
-  C["cron notifications.plan-digests (08:00 UTC)"] --> S["notifications.send-digest per user and day"]
-  P --> S
-  E --> M["Email port"]
-  S --> M
-```
+![How a notification is sent](diagrams/notifications.svg)
 
 | Piece                 | Where                                                                                                                   | What it does                                                                                                                                                                                  |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

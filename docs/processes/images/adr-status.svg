@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 464.4810000000001 499.3" width="465" height="500" role="img" data-natural-width="">
+<title>ADR statuses</title>
+<desc>A new ADR is Proposed. The owner accepts it, or it is rejected and deleted or kept as Rejected. An Accepted ADR becomes Superseded when a new ADR replaces it, or Deprecated when it is no longer relevant and nothing replaces it.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="464.4810000000001" height="499.3" rx="12"/>
+<defs>
+<marker id="dg-adr-status-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-adr-status-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<polyline class="edge" data-from="_start" data-to="Proposed" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="251.05300000000005,68 251.05300000000005,116" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-adr-status-arrowhead)" />
+<polyline class="edge" data-from="Proposed" data-to="Accepted" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="owner accepts" points="234.18133333333338,152.9 234.18133333333338,188.9 175.97900000000004,188.9 175.97900000000004,273.65000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-adr-status-arrowhead)" />
+<polyline class="edge" data-from="Proposed" data-to="_end" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="rejected (file deleted or kept as Rejected)" points="267.9246666666667,152.9 267.9246666666667,188.9 326.12700000000007,188.9 326.12700000000007,273.65000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-adr-status-arrowhead)" />
+<polyline class="edge" data-from="Accepted" data-to="Superseded" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="new ADR replaces it" points="159.60133333333334,310.55 159.60133333333334,342.1 98.025,342.1 98.025,422.40000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-adr-status-arrowhead)" />
+<polyline class="edge" data-from="Accepted" data-to="Deprecated" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="no longer relevant, nothing replaces it" points="192.35666666666668,310.55 192.35666666666668,342.1 253.93300000000005,342.1 253.93300000000005,422.40000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-adr-status-arrowhead)" />
+<g class="edge-label" data-from="Proposed" data-to="Accepted" data-label="owner accepts">
+<rect x="131.97900000000004" y="195.9" width="87.14800000000002" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="175.55300000000005" y="211.05" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">owner accepts</text>
+</g>
+<g class="edge-label" data-from="Proposed" data-to="_end" data-label="rejected (file deleted or kept as Rejected)">
+<rect x="223.12700000000007" y="195.9" width="205.35400000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="325.8040000000001" y="211.05" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">rejected (file deleted or kept as Rejected)</text>
+</g>
+<g class="edge-label" data-from="Accepted" data-to="Superseded" data-label="new ADR replaces it">
+<rect x="42.525" y="349.1" width="110.90800000000003" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="97.97900000000001" y="364.25" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">new ADR replaces it</text>
+</g>
+<g class="edge-label" data-from="Accepted" data-to="Deprecated" data-label="no longer relevant, nothing replaces it">
+<rect x="157.43300000000005" y="349.1" width="192.88" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="253.87300000000005" y="364.25" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">no longer relevant, nothing replaces it</text>
+</g>
+<g class="node" data-id="_start" data-label="" data-shape="state-start">
+<circle cx="251.05300000000005" cy="54" r="12" fill="var(--_text)" stroke="none" />
+</g>
+<g class="node" data-id="Proposed" data-label="Proposed" data-shape="rounded">
+<rect x="200.43800000000005" y="116" width="101.22999999999999" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="251.05300000000005" y="134.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Proposed</text>
+</g>
+<g class="node" data-id="Accepted" data-label="Accepted" data-shape="rounded">
+<rect x="126.84600000000002" y="273.65000000000003" width="98.266" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="175.979" y="292.1" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Accepted</text>
+</g>
+<g class="node" data-id="_end" data-label="" data-shape="state-end">
+<circle cx="326.12700000000007" cy="287.65000000000003" r="12" fill="none" stroke="var(--_text)" stroke-width="1.5" />
+<circle cx="326.12700000000007" cy="287.65000000000003" r="8" fill="var(--_text)" stroke="none" />
+</g>
+<g class="node" data-id="Superseded" data-label="Superseded" data-shape="rounded">
+<rect x="40" y="422.40000000000003" width="116.05" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="98.025" y="440.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Superseded</text>
+</g>
+<g class="node" data-id="Deprecated" data-label="Deprecated" data-shape="rounded">
+<rect x="198.13100000000003" y="422.40000000000003" width="111.604" height="36.900000000000006" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="253.93300000000002" y="440.85" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Deprecated</text>
+</g>
+</svg>

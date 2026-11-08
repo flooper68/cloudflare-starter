@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 1237.728 285.2425" width="1238" height="286" role="img" data-natural-width="">
+<title>How a job moves through the queue</title>
+<desc>A use case or cron entry calls enqueueJob, which sends the job to APP_QUEUE. The queue consumer in apps/web/src/server/queue.ts runs it with runJob, claiming its idempotency key, then the handler, a use case. A failure goes back to the queue with a delay; a failed final attempt is reported to the ErrorReporter, and after max_retries the queue moves the message to the dead-letter queue, which has no consumer and keeps it 14 days.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="1237.728" height="285.2425" rx="12"/>
+<defs>
+<marker id="dg-job-queue-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-job-queue-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<polyline class="edge" data-from="P" data-to="Q" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="enqueueJob(definition, payload)" points="362.3839999999999,58.44999999999999 601.8040000000001,58.44999999999999 601.8040000000001,147.425 616.06,147.425" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-job-queue-arrowhead)" />
+<polyline class="edge" data-from="Q" data-to="C" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="616.06,156.65000000000003 589.8040000000001,156.65000000000003 589.8040000000001,165.9925 589.8040000000001,165.9925 589.8040000000001,166.91500000000002 370.93999999999994,166.91500000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-job-queue-arrowhead)" />
+<polyline class="edge" data-from="C" data-to="H" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="runJob: idempotency claim, handler" points="370.93999999999994,159.53500000000003 382.93999999999994,159.53500000000003 382.93999999999994,102.01500000000001 589.8040000000001,102.01500000000001 589.8040000000001,91.75000000000001 616.06,91.75000000000001" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-job-queue-arrowhead)" />
+<polyline class="edge" data-from="C" data-to="Q" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="failed: retry({ delaySeconds })" points="370.93999999999994,174.29500000000002 406.93999999999994,174.29500000000002 406.93999999999994,192.79250000000002 601.8040000000001,192.79250000000002 601.8040000000001,165.87500000000003 616.06,165.87500000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-job-queue-arrowhead)" />
+<polyline class="edge" data-from="C" data-to="R" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="final attempt failed: report" points="370.93999999999994,181.675 394.93999999999994,181.675 394.93999999999994,226.09250000000003 616.06,226.09250000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-job-queue-arrowhead)" />
+<polyline class="edge" data-from="Q" data-to="D" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="after max_retries" points="736.5559999999999,156.65000000000003 920.1400000000001,156.65000000000003" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-job-queue-arrowhead)" />
+<g class="edge-label" data-from="P" data-to="Q" data-label="enqueueJob(definition, payload)">
+<rect x="406.3839999999999" y="42.44999999999999" width="167.93200000000002" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="490.3499999999999" y="57.59999999999999" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">enqueueJob(definition, payload)</text>
+</g>
+<g class="edge-label" data-from="C" data-to="H" data-label="runJob: idempotency claim, handler">
+<rect x="390.93999999999994" y="86.01500000000001" width="183.376" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="482.62799999999993" y="101.16500000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">runJob: idempotency claim, handler</text>
+</g>
+<g class="edge-label" data-from="C" data-to="Q" data-label="failed: retry({ delaySeconds })">
+<rect x="414.93999999999994" y="176.79250000000002" width="154.864" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="492.37199999999996" y="191.94250000000002" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">failed: retry({ delaySeconds })</text>
+</g>
+<g class="edge-label" data-from="C" data-to="R" data-label="final attempt failed: report">
+<rect x="438.69999999999993" y="210.0925" width="131.10400000000004" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="504.25199999999995" y="225.2425" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">final attempt failed: report</text>
+</g>
+<g class="edge-label" data-from="Q" data-to="D" data-label="after max_retries">
+<rect x="778.3" y="140.65000000000003" width="97.84000000000003" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+<text x="827.22" y="155.80000000000004" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">after max_retries</text>
+</g>
+<g class="node" data-id="P" data-label="use case / cron entry" data-shape="rectangle">
+<rect x="196.6869999999999" y="40" width="165.697" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="279.5354999999999" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">use case / cron entry</text>
+</g>
+<g class="node" data-id="Q" data-label="APP_QUEUE" data-shape="subroutine">
+<rect x="616.06" y="138.20000000000002" width="120.49599999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="624.06" y1="138.20000000000002" x2="624.06" y2="175.10000000000002" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="728.5559999999999" y1="138.20000000000002" x2="728.5559999999999" y2="175.10000000000002" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="676.308" y="156.65000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">APP_QUEUE</text>
+</g>
+<g class="node" data-id="C" data-label="queue consumer (apps/web/src/server/queue.ts)" data-shape="rectangle">
+<rect x="40" y="152.15500000000003" width="330.93999999999994" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="205.46999999999997" y="170.60500000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">queue consumer (apps/web/src/server/queue.ts)</text>
+</g>
+<g class="node" data-id="H" data-label="job handler (a use case)" data-shape="rectangle">
+<rect x="616.06" y="73.30000000000001" width="181.258" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="706.689" y="91.75000000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">job handler (a use case)</text>
+</g>
+<g class="node" data-id="R" data-label="ErrorReporter" data-shape="rectangle">
+<rect x="616.06" y="207.6425" width="129.38800000000003" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="680.7539999999999" y="226.09250000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">ErrorReporter</text>
+</g>
+<g class="node" data-id="D" data-label="dead-letter queue (no consumer, 14 days)" data-shape="subroutine">
+<rect x="920.1400000000001" y="138.20000000000002" width="277.58799999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="928.1400000000001" y1="138.20000000000002" x2="928.1400000000001" y2="175.10000000000002" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="1189.728" y1="138.20000000000002" x2="1189.728" y2="175.10000000000002" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1058.9340000000002" y="156.65000000000003" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">dead-letter queue (no consumer, 14 days)</text>
+</g>
+</svg>

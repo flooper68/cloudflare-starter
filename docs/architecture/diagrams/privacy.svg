@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 1785.3059999999996 366.70000000000005" width="1786" height="367" role="img" data-natural-width="">
+<title>Data export and account erasure</title>
+<desc>Export. privacy.requestExport checks the limits and authorization, writes a data_requests row and enqueues privacy.build-export. The job reads D1 in pages and the user's R2 objects, streams them through the Zip port into a multipart upload in R2, checks authorization again, and notifies the user. The download route needs a signed, expiring link and the signed-in user. The hourly privacy.purge-exports removes expired archives. Erasure. Self-deletion through Better Auth and admin erasure share one pipeline: preflight refuses the last owner or last admin and takes the erasure lock, the owning features erase workspace and user artifacts in R2 and redact the audit subject, Better Auth deletes the user, whose rows cascade, and the after hook writes an erasure record, schedules delayed storage sweeps, records the audit event and sends a confirmation.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="1785.3059999999996" height="366.70000000000005" rx="12"/>
+<defs>
+<marker id="dg-privacy-arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+<marker id="dg-privacy-arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+<polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+</marker>
+</defs>
+<g class="subgraph" data-id="Export" data-label="export">
+<rect x="40" y="40" width="1150.7489999999998" height="161.8" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="40" y="40" width="1150.7489999999998" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="52" y="54" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">export</text>
+</g>
+<g class="subgraph" data-id="Erasure" data-label="erasure">
+<rect x="40" y="229.8" width="1705.3059999999996" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<rect x="40" y="229.8" width="1705.3059999999996" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="52" y="243.8" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">erasure</text>
+</g>
+<polyline class="edge" data-from="Request" data-to="Build" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="232.81199999999998,167.35000000000002 280.812,167.35000000000002" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<polyline class="edge" data-from="Build" data-to="Archive" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="609.529,167.35000000000002 633.529,167.35000000000002 633.529,134.9 657.5289999999999,134.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<polyline class="edge" data-from="Archive" data-to="Download" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="807.6649999999998,134.9 855.6649999999998,134.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<polyline class="edge" data-from="Purge" data-to="Archive" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="609.529,102.45 633.529,102.45 633.529,134.9 657.5289999999999,134.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<polyline class="edge" data-from="Delete" data-to="Preflight" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="286.164,292.25 334.164,292.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<polyline class="edge" data-from="Preflight" data-to="Artifacts" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="661.3989999999999,292.25 709.3989999999999,292.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<polyline class="edge" data-from="Artifacts" data-to="Cascade" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="992.1739999999998,292.25 1040.1739999999998,292.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<polyline class="edge" data-from="Cascade" data-to="Complete" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="1331.0999999999997,292.25 1379.0999999999997,292.25" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-privacy-arrowhead)" />
+<g class="node" data-id="Request" data-label="privacy.requestExport" data-shape="rectangle">
+<rect x="56" y="148.9" width="176.81199999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="144.406" y="167.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">privacy.requestExport</text>
+</g>
+<g class="node" data-id="Build" data-label="job privacy.build-export: D1 pages, R2 objects, Zip" data-shape="rectangle">
+<rect x="280.812" y="148.9" width="328.7169999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="445.17049999999995" y="167.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">job privacy.build-export: D1 pages, R2 objects, Zip</text>
+</g>
+<g class="node" data-id="Archive" data-label="R2: export archive" data-shape="cylinder">
+<rect x="657.5289999999999" y="116.45" width="150.136" height="36.900000000000006" fill="var(--_node-fill)" stroke="none" />
+<line x1="657.5289999999999" y1="116.45" x2="657.5289999999999" y2="153.35000000000002" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<line x1="807.6649999999998" y1="116.45" x2="807.6649999999998" y2="153.35000000000002" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="732.5969999999999" cy="153.35000000000002" rx="75.068" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<ellipse cx="732.5969999999999" cy="116.45" rx="75.068" ry="7" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="732.5969999999999" y="134.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">R2: export archive</text>
+</g>
+<g class="node" data-id="Download" data-label="/api/privacy/exports/id: signed link and session" data-shape="rectangle">
+<rect x="855.6649999999998" y="116.45" width="319.08399999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1015.2069999999999" y="134.9" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">/api/privacy/exports/id: signed link and session</text>
+</g>
+<g class="node" data-id="Purge" data-label="cron privacy.purge-exports" data-shape="rectangle">
+<rect x="403.077" y="84" width="206.45199999999994" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="506.303" y="102.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">cron privacy.purge-exports</text>
+</g>
+<g class="node" data-id="Delete" data-label="delete account or admin erasure" data-shape="rectangle">
+<rect x="56" y="273.8" width="230.164" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="171.082" y="292.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">delete account or admin erasure</text>
+</g>
+<g class="node" data-id="Preflight" data-label="prepareUserErasure: last owner and admin, lock" data-shape="rectangle">
+<rect x="334.164" y="273.8" width="327.2349999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="497.78149999999994" y="292.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">prepareUserErasure: last owner and admin, lock</text>
+</g>
+<g class="node" data-id="Artifacts" data-label="erasure-catalog: R2 objects, audit subject" data-shape="rectangle">
+<rect x="709.3989999999999" y="273.8" width="282.77499999999986" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="850.7864999999998" y="292.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">erasure-catalog: R2 objects, audit subject</text>
+</g>
+<g class="node" data-id="Cascade" data-label="Better Auth deletes the user, rows cascade" data-shape="rectangle">
+<rect x="1040.1739999999998" y="273.8" width="290.926" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1185.6369999999997" y="292.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Better Auth deletes the user, rows cascade</text>
+</g>
+<g class="node" data-id="Complete" data-label="completeUserErasure: erasure record, sweeps, mail" data-shape="rectangle">
+<rect x="1379.0999999999997" y="273.8" width="350.206" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="1554.2029999999997" y="292.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">completeUserErasure: erasure record, sweeps, mail</text>
+</g>
+</svg>
