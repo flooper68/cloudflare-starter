@@ -30,7 +30,7 @@ export class ContainerDemoDailyCapError extends DomainError {
   }
 }
 
-/** The user started CONTAINER_RUN_USER_HOURLY_LIMIT runs in the last hour. */
+/** The user started CONTAINER_RUN_USER_HOURLY_LIMIT runs this UTC hour. */
 export class ContainerRunHourlyLimitError extends DomainError {
   constructor(limit: number) {
     super(

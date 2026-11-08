@@ -29,6 +29,11 @@ export function utcDay(now: Date): string {
   return now.toISOString().slice(0, 10);
 }
 
+/** The UTC hour of `now` (YYYY-MM-DDTHH): the per-user hourly limit's counter. */
+export function utcHour(now: Date): string {
+  return now.toISOString().slice(0, 13);
+}
+
 /** When a run accepted at `now` expires. */
 export function containerRunExpiry(now: Date): Date {
   return new Date(now.getTime() + CONTAINER_RUN_RETENTION_DAYS * DAY_MS);

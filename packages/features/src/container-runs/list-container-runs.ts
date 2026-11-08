@@ -1,10 +1,14 @@
-import { and, count, desc, eq, getTableColumns, gt } from "drizzle-orm";
+import { and, desc, eq, getTableColumns } from "drizzle-orm";
 
 import { user } from "../accounts";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
 import { type Actor, requirePermission } from "../workspaces";
-import { containerRunQuota, containerRuns } from "./container-runs.schema";
+import {
+  containerRunQuota,
+  containerRuns,
+  containerRunUserQuota,
+} from "./container-runs.schema";
 import {
   CONTAINER_RUN_PRESETS,
   CONTAINER_RUN_RETENTION_DAYS,
@@ -17,9 +21,8 @@ import {
   listContainerRunsInputSchema,
   toContainerRunSummary,
   utcDay,
+  utcHour,
 } from "./domain";
-
-const HOUR_MS = 60 * 60 * 1000;
 
 /**
  * The actor's workspace's runs, newest first (`containers.read`), with whether the demo
@@ -54,17 +57,17 @@ export async function listContainerRuns(
       .from(containerRunQuota)
       .where(eq(containerRunQuota.day, utcDay(now))),
     deps.db
-      .select({ value: count() })
-      .from(containerRuns)
+      .select({ count: containerRunUserQuota.count })
+      .from(containerRunUserQuota)
       .where(
         and(
-          eq(containerRuns.createdBy, actor.userId),
-          gt(containerRuns.createdAt, new Date(now.getTime() - HOUR_MS))
+          eq(containerRunUserQuota.userId, actor.userId),
+          eq(containerRunUserQuota.hour, utcHour(now))
         )
       ),
   ]);
   const usedToday = quota?.count ?? 0;
-  const usedThisHour = recent?.value ?? 0;
+  const usedThisHour = recent?.count ?? 0;
   const availability: ContainerDemoAvailability =
     deps.settings.mode === "off"
       ? { state: "off" }

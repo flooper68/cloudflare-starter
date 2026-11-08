@@ -43,6 +43,8 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
     "a user's own settings across workspaces; rows cascade with the user",
   container_run_quota:
     "the container demo's daily cap for the whole deployment: one counter per UTC day, no tenant data; deleting a workspace must not give its runs back",
+  container_run_user_quota:
+    "the container demo's per-person hourly limit across workspaces; must survive deleting a workspace, cascades with the user",
   job_idempotency_keys:
     "platform table of the job queue: keys are per job type and payload, the workspace travels in the job envelope",
 };

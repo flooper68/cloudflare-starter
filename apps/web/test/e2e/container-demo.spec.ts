@@ -44,6 +44,7 @@ test("containers: start a run, watch every step, see the result and the past run
     "3.14159265358979323846"
   );
   await expect(page.getByTestId("run-duration")).toHaveText(/\d/);
+  await expect(run).not.toContainText("[object Object]");
   const download = page.getByRole("link", {
     name: "Download all 1,000 digits",
   });
@@ -55,7 +56,7 @@ test("containers: start a run, watch every step, see the result and the past run
   expect(href).not.toBeNull();
   const file = await page.request.get(href ?? "");
   expect(file.status()).toBe(200);
-  expect((await file.text()).trim()).toMatch(/^3\.14159\d{994}$/);
+  expect((await file.text()).trim()).toMatch(/^3\.14159\d{995}$/);
 
   // The run is listed under past runs.
   const past = page.getByRole("list", { name: "Past runs" });

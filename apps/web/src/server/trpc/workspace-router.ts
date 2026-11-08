@@ -7,6 +7,7 @@ import {
   createPortalUrl,
   createWorkspace,
   deleteOwnWorkspace,
+  deleteWorkspaceContainerRuns,
   deleteWorkspaceFiles,
   getBillingSummary,
   getWorkspaceSettings,
@@ -65,6 +66,8 @@ export const workspaceRouter = router({
           purgeWorkspaceFiles: async (workspaceIds) => {
             await deleteWorkspaceFiles(ctx, { workspaceIds });
             await purgeWorkspaceLogos(ctx, { workspaceIds });
+            // The container demo's results in R2 (the rows cascade with the workspace).
+            await deleteWorkspaceContainerRuns(ctx, { workspaceIds });
           },
         },
         ctx.actor,

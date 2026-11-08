@@ -1,7 +1,11 @@
 // The container workflow demo (Developer demos): digits of pi computed in a Cloudflare
 // Container, orchestrated by a Workflow (docs/guides/how-to-run-container-workflows.md).
 export { beginContainerRunStep } from "./begin-container-run-step";
-export { containerRunQuota, containerRuns } from "./container-runs.schema";
+export {
+  containerRunQuota,
+  containerRuns,
+  containerRunUserQuota,
+} from "./container-runs.schema";
 export { deleteWorkspaceContainerRuns } from "./delete-workspace-container-runs";
 export {
   beginRunStep,

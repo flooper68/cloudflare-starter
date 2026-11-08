@@ -3,6 +3,14 @@ CREATE TABLE `container_run_quota` (
 	`count` integer NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE `container_run_user_quota` (
+	`user_id` text NOT NULL,
+	`hour` text NOT NULL,
+	`count` integer NOT NULL,
+	PRIMARY KEY(`user_id`, `hour`),
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
 CREATE TABLE `container_runs` (
 	`id` text PRIMARY KEY NOT NULL,
 	`workspace_id` text NOT NULL,
@@ -24,5 +32,4 @@ CREATE TABLE `container_runs` (
 );
 --> statement-breakpoint
 CREATE INDEX `container_runs_workspace_id_created_at_idx` ON `container_runs` (`workspace_id`,`created_at`);--> statement-breakpoint
-CREATE INDEX `container_runs_created_by_created_at_idx` ON `container_runs` (`created_by`,`created_at`);--> statement-breakpoint
 CREATE INDEX `container_runs_expires_at_idx` ON `container_runs` (`expires_at`);

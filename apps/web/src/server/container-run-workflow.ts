@@ -43,15 +43,19 @@ export interface ContainerRunParams {
   readonly runId: string;
 }
 
-/** Waking a container can fail right after a deploy or while it provisions: retry. */
+/**
+ * Waking a container can fail right after a deploy or while it provisions: retry. The
+ * timeouts bound a run's billed container time (at most about 7 minutes with every retry;
+ * docs/guides/how-to-run-container-workflows.md#what-it-costs).
+ */
 const START_CONFIG = {
   retries: { limit: 3, delay: "5 seconds", backoff: "exponential" },
-  timeout: "2 minutes",
+  timeout: "1 minute",
 } as const;
 /** 50,000 digits take about 5 s on a lite instance; one retry for a lost instance. */
 const COMPUTE_CONFIG = {
   retries: { limit: 1, delay: "5 seconds", backoff: "constant" },
-  timeout: "2 minutes",
+  timeout: "1 minute",
 } as const;
 const STEP_CONFIG = {
   retries: { limit: 3, delay: "2 seconds", backoff: "exponential" },
@@ -187,12 +191,26 @@ export class ContainerRunWorkflow extends WorkflowEntrypoint<
     } catch (error) {
       const errorCode = ERROR_OF_STEP[current] ?? "internal";
       const requestContext = context();
-      loggerFor(platform, requestContext).warn("container_run.failed", {
+      const fields = {
         "app.container_run.id": runId,
         "app.container_run.step": current,
         "app.container_run.error_code": errorCode,
-        error,
-      });
+      };
+      // A container that would not start or refused the task is expected now and then and
+      // only logged; anything else (a bug, a missing binding, storage) is reported once.
+      const expected =
+        error instanceof PiComputerError ||
+        (error instanceof Error &&
+          ["PiComputeFailed", "ContainerRunNotFound"].includes(error.name)) ||
+        current === "starting";
+      if (expected) {
+        loggerFor(platform, requestContext).warn("container_run.failed", {
+          ...fields,
+          error,
+        });
+      } else {
+        platform.errors.capture(error, requestContext, fields);
+      }
       await step.do("record failure", STEP_CONFIG, async () => {
         try {
           const finished = await finishContainerRun(deps(context()), {

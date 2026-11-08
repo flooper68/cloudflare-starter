@@ -80,33 +80,50 @@ function toView(run: Run): ContainerRunView {
 const isActive = (run: Run | undefined) =>
   run?.status === "queued" || run?.status === "running";
 
-/** Reads one run and keeps reading it every second while it is queued or running. */
+/** After a failed read, the next try waits this long (a blip, a deploy). */
+const RETRY_MS = 3000;
+
+/**
+ * Reads one run and keeps reading it every second while it is queued or running. A failed
+ * read keeps the last answer on screen, says so, and tries again; `reload` starts over.
+ */
 function useRun(workspaceId: string, runId: string | null) {
   const [run, setRun] = useState<Run | undefined>(undefined);
   const [error, setError] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` restarts the polling
   useEffect(() => {
-    setRun(undefined);
     setError(null);
-    if (!runId) return;
+    if (!runId) {
+      setRun(undefined);
+      return;
+    }
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let last: Run | undefined;
     const load = async () => {
       try {
         const next = await trpc.containerRuns.get.query({ workspaceId, runId });
         if (stopped) return;
+        last = next;
         setRun(next);
+        setError(null);
         if (isActive(next)) timer = setTimeout(load, POLL_MS);
       } catch (cause) {
-        if (!stopped) setError(cause);
+        if (stopped) return;
+        setError(cause);
+        // Keep following a run that was still going; a first read that fails waits for Try again.
+        if (isActive(last)) timer = setTimeout(load, RETRY_MS);
       }
     };
+    setRun((current) => (current?.id === runId ? current : undefined));
     void load();
     return () => {
       stopped = true;
       if (timer) clearTimeout(timer);
     };
-  }, [workspaceId, runId]);
-  return { run, error };
+  }, [workspaceId, runId, attempt]);
+  return { run, error, reload: () => setAttempt((value) => value + 1) };
 }
 
 function RunDetail({
@@ -136,7 +153,7 @@ function RunDetail({
           <CardTitle>{digits} digits of pi</CardTitle>
           <CardDescription>
             Run <code className="font-mono text-xs">{run.id.slice(0, 8)}</code>
-            {run.startedBy ? ` · started by ${run.startedBy}` : ""}
+            {run.startedBy ? ` · started by ${run.startedBy.name}` : ""}
           </CardDescription>
         </div>
         <ContainerRunStatusBadge status={run.status} />
@@ -202,9 +219,10 @@ function RunDetail({
               {run.result.preview}…
             </p>
           </div>
-          <Button asChild size="sm" variant="secondary" icon={<Download />}>
+          <Button asChild size="sm" variant="secondary">
             {/* A file from R2 through the Worker: a document load, not an SPA page. */}
             <a href={run.result.downloadHref} download>
+              <Download aria-hidden />
               Download all {digits} digits
             </a>
           </Button>
@@ -235,7 +253,11 @@ export function ContainerDemoPage() {
     `container-runs:${workspaceId}`
   );
   const selectedId = requested ?? runs.data?.items[0]?.id ?? null;
-  const { run, error: runError } = useRun(workspaceId, selectedId);
+  const {
+    run,
+    error: runError,
+    reload: reloadRun,
+  } = useRun(workspaceId, selectedId);
   const availability = runs.data?.status.availability.state;
   const canStart = availability === "on";
 
@@ -342,6 +364,18 @@ export function ContainerDemoPage() {
         ) : null}
       </Card>
 
+      {selectedId && runError ? (
+        <ErrorState
+          variant="inline"
+          error={runError}
+          description={
+            run
+              ? "Lost track of this run for a moment; trying again."
+              : undefined
+          }
+          onRetry={reloadRun}
+        />
+      ) : null}
       {selectedId ? (
         run ? (
           <RunDetail
@@ -349,9 +383,7 @@ export function ContainerDemoPage() {
             onRetry={(id) => void start({ retryOf: id })}
             retryDisabled={!canStart || starting}
           />
-        ) : runError ? (
-          <ErrorState variant="inline" error={runError} />
-        ) : (
+        ) : runError ? null : (
           <Card className="space-y-3" aria-hidden>
             <Skeleton className="h-5 w-48" />
             <Skeleton className="h-32 w-full" />

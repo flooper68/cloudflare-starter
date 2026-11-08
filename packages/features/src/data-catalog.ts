@@ -196,6 +196,15 @@ export const DATA_CATALOG: readonly DataEntity[] = [
       "Container workflow demo runs the person started and every run of their personal workspace: digits of pi and timings, no personal content. Expire 7 days after they start; deleting a workspace deletes its runs and their R2 results, erasure keeps shared runs with attribution nulled.",
   },
   {
+    table: "container_run_user_quota",
+    scope: "user",
+    columns: ["hour", "count"],
+    userColumn: "user_id",
+    erase: "user-cascade",
+    reason:
+      "How many container demo runs the person started per UTC hour (the hourly limit); kept a day, deleted with the account.",
+  },
+  {
     table: "container_run_quota",
     scope: "platform",
     columns: [],

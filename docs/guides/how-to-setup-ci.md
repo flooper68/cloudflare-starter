@@ -36,9 +36,9 @@ The `migrations` job copies `apps/web/.dev.vars.example` to `apps/web/.dev.vars`
 gh workflow run deploy.yml -f environment=staging
 ```
 
-It runs `bun run verify`, applies the D1 migrations to that environment's remote database (`wrangler d1 migrations apply DB --remote [--env <env>]`), then runs `bun run deploy`, `deploy:staging` or `deploy:production` in `apps/web`, which deploy the pi container Worker (`apps/container`, its image built with Docker and pushed to Cloudflare's registry) and then the web Worker ([how-to-run-container-workflows.md](how-to-run-container-workflows.md#deploy)). Building the image needs a Docker engine on the runner: GitHub's `ubuntu-latest` has one; the self-hosted runners below have no Docker socket, so run the Deploy workflow on `ubuntu-latest`. Only one deploy per environment runs at a time; a second one waits. After the deploy, the `smoke` job runs the read-only production smoke suite (`bun run test:smoke -- --env <env>`) against the environment's route in `wrangler.jsonc` (or the optional repository variable `APP_URL`), and uploads its report as `smoke-report-<env>`; an environment without a hostname route (develop on workers.dev) is skipped with a warning. The job uses no secrets and no GitHub environment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
+It runs `bun run verify`, applies the D1 migrations to that environment's remote database (`wrangler d1 migrations apply DB --remote [--env <env>]`), then runs `bun run deploy`, `deploy:staging` or `deploy:production` in `apps/web`, which deploy the pi container Worker (`apps/container`, its image built with Docker and pushed to Cloudflare's registry) and then the web Worker ([how-to-run-container-workflows.md](how-to-run-container-workflows.md#deploy)). Building the image needs a Docker engine on the runner, so the deploy job always runs on GitHub's `ubuntu-latest`, even when `CI_RUNS_ON` points the CI jobs at the self-hosted runners below (they have no Docker socket). Only one deploy per environment runs at a time; a second one waits. After the deploy, the `smoke` job runs the read-only production smoke suite (`bun run test:smoke -- --env <env>`) against the environment's route in `wrangler.jsonc` (or the optional repository variable `APP_URL`), and uploads its report as `smoke-report-<env>`; an environment without a hostname route (develop on workers.dev) is skipped with a warning. The job uses no secrets and no GitHub environment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
 
-It does not deploy the container app (Storybook ships inside the web app at `/_storybook/`), and it does not set Worker secrets. Set those once with `bun run setup:secrets --env <env>` (see [how-to-setup-auth.md](how-to-setup-auth.md)). The workspace and sign-up vars are not shipped either, nor the analytics settings: commit the output of `bun run setup:auth --env <env>` and `bun run setup:analytics --env <env>` (with `ANALYTICS=analytics-engine` also set the `ANALYTICS_ID_SECRET` secret) before the first deploy, or the deployed Worker refuses to start. The CI deploy dry-run does not run the Worker, so it passes without them.
+Storybook ships inside the web app at `/_storybook/`. The deploy does not set Worker secrets. Set those once with `bun run setup:secrets --env <env>` (see [how-to-setup-auth.md](how-to-setup-auth.md)). The workspace and sign-up vars are not shipped either, nor the analytics settings: commit the output of `bun run setup:auth --env <env>` and `bun run setup:analytics --env <env>` (with `ANALYTICS=analytics-engine` also set the `ANALYTICS_ID_SECRET` secret) before the first deploy, or the deployed Worker refuses to start. The CI deploy dry-run does not run the Worker, so it passes without them.
 
 ### 1. Create the GitHub environments
 
@@ -65,6 +65,7 @@ In the Cloudflare dashboard: **My Profile → API Tokens → Create Token → Cr
 | Account · D1 · Edit                 | apply remote migrations                      |
 | Account · Workers R2 Storage · Edit | the Worker's R2 binding (`FILES`)            |
 | Account · Account Settings · Read   | Wrangler reads account details during deploy |
+| Account · Containers · Edit         | push the pi container's image and update its application (`apps/container`; Wrangler's `containers:write` scope). The Workflow of the web Worker deploys with Workers Scripts |
 
 Add **Zone · Workers Routes · Edit** for the zone if you deploy to a route or custom domain. Some dashboards show `Write` instead of `Edit`; they are the same thing. One token per environment is safer than one shared token, but one token works.
 
@@ -225,6 +226,6 @@ This stops each worker, deletes it in GitHub (`gh api -X DELETE repos/<owner>/<r
 
 **A job runs out of memory or Chromium crashes.** Give Docker Desktop more memory (about 3 GB per worker) or run fewer workers.
 
-**Deploy fails with "Authentication error [code: 10000]".** The token lacks a permission for that step (D1 for migrations, Workers Scripts or R2 for deploy) or is scoped to a different account than `CLOUDFLARE_ACCOUNT_ID`.
+**Deploy fails with "Authentication error [code: 10000]".** The token lacks a permission for that step (D1 for migrations, Workers Scripts or R2 for deploy, Containers for the container Worker's image) or is scoped to a different account than `CLOUDFLARE_ACCOUNT_ID`.
 
 **Deploy waits for approval.** The environment has required reviewers. Approve it on the run page.

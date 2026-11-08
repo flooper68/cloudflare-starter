@@ -1,4 +1,4 @@
-import { and, count, eq, gt, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { recordAuditEvent } from "../audit";
 import type { Database } from "../database";
@@ -6,7 +6,11 @@ import type { Clock, Ids, RequestContext } from "../kernel";
 import type { ProductAnalytics } from "../platform";
 import { trackEvent } from "../product-analytics";
 import { type Actor, requirePermission } from "../workspaces";
-import { containerRunQuota, containerRuns } from "./container-runs.schema";
+import {
+  containerRunQuota,
+  containerRuns,
+  containerRunUserQuota,
+} from "./container-runs.schema";
 import {
   CONTAINER_RUN_USER_HOURLY_LIMIT,
   ContainerDemoDailyCapError,
@@ -23,23 +27,19 @@ import {
   type StartContainerRunInput,
   startContainerRunInputSchema,
   utcDay,
+  utcHour,
 } from "./domain";
-
-const HOUR_MS = 60 * 60 * 1000;
 
 /**
  * Starts a container run in the actor's workspace: digits of pi computed by the pi
  * container, orchestrated by the run's Workflow (docs/guides/how-to-run-container-workflows.md).
  * Checks, in order: the permission (`containers.run`), CONTAINER_DEMO=on, the retried run
- * (same workspace, failed), the user's hourly limit (CONTAINER_RUN_USER_HOURLY_LIMIT, across
- * workspaces), then takes one of today's CONTAINER_DEMO_DAILY_CAP runs with an atomic
- * upsert. Then writes the run (queued), starts its workflow, and records
+ * (same workspace, failed), then takes one of the person's CONTAINER_RUN_USER_HOURLY_LIMIT
+ * runs of this UTC hour (across workspaces) and one of today's CONTAINER_DEMO_DAILY_CAP
+ * runs, each with an atomic upsert (a full day gives the hour's slot back). Then writes the run (queued), starts its workflow, and records
  * `container_run.started` and the `container_runs.started` product event. A workflow that
  * cannot start fails the run (`workflow_unavailable`) and the error is rethrown.
- *
- * The hourly check and the insert are two statements, so two starts in the same instant
- * can pass it together; the edge policy `container.run` (a few per minute per user) bounds
- * that, and the daily cap is exact.
+ * Both counters are kept apart from the runs, so deleting a workspace gives nothing back.
  */
 export async function startContainerRun(
   deps: {
@@ -76,20 +76,24 @@ export async function startContainerRun(
   if (digits === undefined) throw new ContainerRunNotFoundError();
 
   const now = deps.clock.now();
-  const [recent] = await deps.db
-    .select({ value: count() })
-    .from(containerRuns)
-    .where(
-      and(
-        eq(containerRuns.createdBy, actor.userId),
-        gt(containerRuns.createdAt, new Date(now.getTime() - HOUR_MS))
-      )
-    );
-  if ((recent?.value ?? 0) >= CONTAINER_RUN_USER_HOURLY_LIMIT) {
+  const user = and(
+    eq(containerRunUserQuota.userId, actor.userId),
+    eq(containerRunUserQuota.hour, utcHour(now))
+  );
+  // One statement each: a counter only grows while it is under its limit.
+  const mine = await deps.db
+    .insert(containerRunUserQuota)
+    .values({ userId: actor.userId, hour: utcHour(now), count: 1 })
+    .onConflictDoUpdate({
+      target: [containerRunUserQuota.userId, containerRunUserQuota.hour],
+      set: { count: sql`${containerRunUserQuota.count} + 1` },
+      setWhere: sql`${containerRunUserQuota.count} < ${CONTAINER_RUN_USER_HOURLY_LIMIT}`,
+    })
+    .returning({ count: containerRunUserQuota.count });
+  if (mine.length === 0) {
     throw new ContainerRunHourlyLimitError(CONTAINER_RUN_USER_HOURLY_LIMIT);
   }
 
-  // One statement: a day's counter only grows while it is under the cap.
   const taken = await deps.db
     .insert(containerRunQuota)
     .values({ day: utcDay(now), count: 1 })
@@ -99,7 +103,12 @@ export async function startContainerRun(
       setWhere: sql`${containerRunQuota.count} < ${deps.settings.dailyCap}`,
     })
     .returning({ count: containerRunQuota.count });
-  if (taken.length === 0 || (taken[0]?.count ?? 0) > deps.settings.dailyCap) {
+  if (taken.length === 0) {
+    // The day is full: the person's slot for this hour was not used.
+    await deps.db
+      .update(containerRunUserQuota)
+      .set({ count: sql`${containerRunUserQuota.count} - 1` })
+      .where(user);
     throw new ContainerDemoDailyCapError(deps.settings.dailyCap);
   }
 

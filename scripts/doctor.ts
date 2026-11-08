@@ -409,6 +409,7 @@ for (const env of ENVIRONMENTS) {
   namespaceIds.push(...ids);
   namespaceIdsByEnv.set(env, ids);
   checkStorageVar(env, vars.STORAGE_RECONCILE);
+  checkContainerDemo(env, vars, block);
   if (vars.TWO_FACTOR) checkSecurity(env, vars);
   else
     warn(
@@ -500,6 +501,50 @@ function checkQaBypass(
   else if ((secret("QA_TOKEN") ?? "").length < 32)
     error(
       `${label}: QA_BYPASS=on needs QA_TOKEN (32+ characters) in .dev.vars, or set QA_BYPASS=off there`
+    );
+}
+
+/**
+ * The container workflow demo's required settings (docs/guides/how-to-run-container-workflows.md#settings)
+ * and, with it on, its Workflow binding and (for the real container) the service binding.
+ */
+function checkContainerDemo(
+  label: string,
+  vars: Record<string, string | undefined>,
+  block: Record<string, unknown>
+) {
+  const mode = vars.CONTAINER_DEMO;
+  const cap = vars.CONTAINER_DEMO_DAILY_CAP ?? "";
+  const runner = vars.CONTAINER_DEMO_RUNNER;
+  if (mode !== "on" && mode !== "off")
+    error(`${label}: CONTAINER_DEMO must be on or off (required, no default)`);
+  if (!/^[1-9]\d*$/.test(cap) || Number(cap) > 10_000)
+    error(
+      `${label}: CONTAINER_DEMO_DAILY_CAP must be a whole number of runs per day, 1 to 10000`
+    );
+  if (runner !== "container" && runner !== "fake")
+    error(`${label}: CONTAINER_DEMO_RUNNER must be container or fake`);
+  if (mode !== "on") {
+    if (mode === "off") ok(`${label}: CONTAINER_DEMO=off`);
+    return;
+  }
+  const workflows =
+    (block.workflows as { binding?: string }[] | undefined) ?? [];
+  if (!workflows.some((entry) => entry.binding === "CONTAINER_RUN_WORKFLOW"))
+    error(
+      `${label}: CONTAINER_DEMO=on needs the CONTAINER_RUN_WORKFLOW workflows binding`
+    );
+  const services = (block.services as { binding?: string }[] | undefined) ?? [];
+  if (
+    runner === "container" &&
+    !services.some((entry) => entry.binding === "PI_CONTAINER_SERVICE")
+  )
+    error(
+      `${label}: CONTAINER_DEMO_RUNNER=container needs the PI_CONTAINER_SERVICE service binding`
+    );
+  else
+    ok(
+      `${label}: CONTAINER_DEMO=on, ${runner} runner, at most ${cap} runs a day`
     );
 }
 

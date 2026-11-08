@@ -71,7 +71,51 @@ describe("startContainerRun", () => {
     expect(deps.workflows.started).toEqual([]);
   });
 
-  it("limits a user to 5 runs an hour across workspaces; an hour later they may run again", async () => {
+  it("keeps the hourly limit when the workspace with the runs is deleted", async () => {
+    const ada = await seedUser("Ada Hourly Delete");
+    const kept = await seedWorkspace(ada.id, { id: "ws-cr-hourly-kept" });
+    const gone = await seedWorkspace(ada.id, { id: "ws-cr-hourly-gone" });
+    for (let index = 0; index < 5; index += 1) {
+      await startRun(gone, 1000, "2026-10-28T15:05:00.000Z");
+    }
+    await rows("DELETE FROM workspaces WHERE id = ?", "ws-cr-hourly-gone");
+    await expect(
+      startContainerRun(
+        containerDeps({ at: "2026-10-28T15:10:00.000Z" }),
+        kept,
+        { digits: 1000 }
+      )
+    ).rejects.toMatchObject({ code: "CONTAINER_RUN_HOURLY_LIMIT" });
+  });
+
+  it("gives the hour's slot back when the daily cap refuses the run", async () => {
+    const ada = await seedUser("Ada Slot Back");
+    const actor = await seedWorkspace(ada.id, { id: "ws-cr-slot-back" });
+    const at = "2026-10-31T09:00:00.000Z";
+    await startContainerRun(
+      containerDeps({ at, settings: { dailyCap: 1 } }),
+      actor,
+      { digits: 1000 }
+    );
+    await expect(
+      startContainerRun(
+        containerDeps({ at, settings: { dailyCap: 1 } }),
+        actor,
+        {
+          digits: 1000,
+        }
+      )
+    ).rejects.toMatchObject({ code: "CONTAINER_DEMO_DAILY_CAP" });
+    expect(
+      await rows(
+        "SELECT count FROM container_run_user_quota WHERE user_id = ? AND hour = ?",
+        ada.id,
+        "2026-10-31T09"
+      )
+    ).toEqual([{ count: 1 }]);
+  });
+
+  it("limits a user to 5 runs an hour across workspaces; the next UTC hour they may run again", async () => {
     const ada = await seedUser("Ada Hourly");
     const first = await seedWorkspace(ada.id, { id: "ws-cr-hourly-1" });
     const second = await seedWorkspace(ada.id, { id: "ws-cr-hourly-2" });

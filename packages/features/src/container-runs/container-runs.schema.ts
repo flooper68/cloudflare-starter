@@ -1,4 +1,10 @@
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
 
 import { user } from "../accounts";
 import { workspaces } from "../workspaces";
@@ -18,7 +24,7 @@ export const containerRuns = sqliteTable(
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    /** Who started it; attribution, the per-user hourly limit and who is notified. */
+    /** Who started it: attribution and who is notified. */
     createdBy: text("created_by").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -47,11 +53,6 @@ export const containerRuns = sqliteTable(
       table.workspaceId,
       table.createdAt
     ),
-    // The per-user hourly limit.
-    index("container_runs_created_by_created_at_idx").on(
-      table.createdBy,
-      table.createdAt
-    ),
     // The daily purge of expired runs.
     index("container_runs_expires_at_idx").on(table.expiresAt),
   ]
@@ -67,3 +68,22 @@ export const containerRunQuota = sqliteTable("container_run_quota", {
   day: text("day").primaryKey(),
   count: integer("count").notNull(),
 });
+
+/**
+ * The per-user hourly limit (CONTAINER_RUN_USER_HOURLY_LIMIT): runs a person started per
+ * UTC hour, across workspaces, counted with one atomic upsert per start. Keyed by the
+ * person, not the workspace, so deleting a workspace (and its runs) does not give the
+ * hour's runs back; it goes with the account. Rows older than a day are purged daily.
+ */
+export const containerRunUserQuota = sqliteTable(
+  "container_run_user_quota",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** The UTC hour, YYYY-MM-DDTHH. */
+    hour: text("hour").notNull(),
+    count: integer("count").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.hour] })]
+);

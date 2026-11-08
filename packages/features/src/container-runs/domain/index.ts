@@ -57,6 +57,7 @@ export {
   resultPreview,
   toContainerRunSummary,
   utcDay,
+  utcHour,
 } from "./run-summary";
 export {
   CONTAINER_DEMO_DAILY_CAP_MAX,

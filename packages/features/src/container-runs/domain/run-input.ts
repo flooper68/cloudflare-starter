@@ -8,7 +8,7 @@ import { z } from "zod";
 export const CONTAINER_RUN_PRESETS = [1000, 10_000, 50_000] as const;
 export type ContainerRunPreset = (typeof CONTAINER_RUN_PRESETS)[number];
 
-/** Runs one user may start per rolling hour, across workspaces. */
+/** Runs one person may start per UTC hour (a fixed window), across workspaces. */
 export const CONTAINER_RUN_USER_HOURLY_LIMIT = 5;
 
 /** Days a run and its result stay before the daily purge deletes them. */

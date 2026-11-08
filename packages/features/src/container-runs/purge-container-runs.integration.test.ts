@@ -41,5 +41,12 @@ describe("purgeContainerRuns", () => {
         asOf: "2026-10-27T12:00:00.000Z",
       })
     ).toEqual({ deleted: 0 });
+    // Hourly counters older than a day go too; today's stay.
+    expect(
+      await rows(
+        "SELECT hour FROM container_run_user_quota WHERE user_id = ? ORDER BY hour",
+        ada.id
+      )
+    ).toEqual([{ hour: "2026-10-26T12" }]);
   });
 });

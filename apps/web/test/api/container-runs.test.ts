@@ -7,7 +7,6 @@
  */
 
 import { introspectWorkflow } from "cloudflare:test";
-import { failRunSteps, newRunSteps } from "@cloudflare-starter/features";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import type { APIContext } from "astro";
 import { describe, expect, it, vi } from "vitest";
@@ -101,22 +100,13 @@ async function workspaceOf(user: TestUser): Promise<string> {
   return (await callerFor(user).workspace.list()).activeWorkspaceId as string;
 }
 
-/** Five runs of the last hour for `user`, written straight to D1. */
-async function seedRecentRuns(user: TestUser, workspaceId: string) {
-  for (let index = 0; index < 5; index += 1) {
-    await env.DB.prepare(
-      "INSERT INTO container_runs (id, workspace_id, created_by, digits, status, steps, created_at, expires_at) VALUES (?, ?, ?, 1000, 'failed', ?, ?, ?)"
-    )
-      .bind(
-        crypto.randomUUID(),
-        workspaceId,
-        user.id,
-        JSON.stringify(failRunSteps(newRunSteps(new Date()), new Date())),
-        Date.now() - 60_000,
-        Date.now() + 86_400_000
-      )
-      .run();
-  }
+/** Five runs this UTC hour for `user` (the hourly counter), written straight to D1. */
+async function seedRecentRuns(user: TestUser) {
+  await env.DB.prepare(
+    "INSERT INTO container_run_user_quota (user_id, hour, count) VALUES (?, ?, 5)"
+  )
+    .bind(user.id, new Date().toISOString().slice(0, 13))
+    .run();
 }
 
 describe("container runs", () => {
@@ -283,6 +273,35 @@ describe("container runs", () => {
     });
   }, 60_000);
 
+  it("deleting the workspace deletes its results in R2, and keeps its runs counted", async () => {
+    await using introspector = await introspectWorkflow(
+      env.CONTAINER_RUN_WORKFLOW as Workflow
+    );
+    const user = await signUp("Doomed Container", "doomed@containers.test");
+    const caller = callerFor(user);
+    const team = await caller.workspace.create({ name: "Doomed lab" });
+    const started = await caller.containerRuns.start({
+      workspaceId: team.id,
+      digits: 1000,
+    });
+    const [instance] = await introspector.get();
+    await instance?.waitForStatus("complete");
+    const key = `workspaces/${team.id}/container-runs/${started.runId}.txt`;
+    expect(await env.FILES.head(key)).not.toBeNull();
+
+    await caller.workspace.delete({
+      workspaceId: team.id,
+      confirmName: "Doomed lab",
+    });
+    expect(await env.FILES.head(key)).toBeNull();
+    // The hour's run still counts for the person.
+    const personal = await workspaceOf(user);
+    expect(
+      (await caller.containerRuns.list({ workspaceId: personal })).status
+        .usedThisHour
+    ).toBe(1);
+  }, 60_000);
+
   it("refuses with the demo off and says so in the list", async () => {
     const user = await signUp("Off Container", "off@containers.test");
     const off = containerEnv({ CONTAINER_DEMO: "off" });
@@ -331,7 +350,7 @@ describe("container runs", () => {
   it("refuses a user's sixth run in an hour", async () => {
     const user = await signUp("Hourly Container", "hourly@containers.test");
     const workspaceId = await workspaceOf(user);
-    await seedRecentRuns(user, workspaceId);
+    await seedRecentRuns(user);
     const caller = callerFor(user);
     await expect(
       caller.containerRuns.start({ workspaceId, digits: 1000 })
