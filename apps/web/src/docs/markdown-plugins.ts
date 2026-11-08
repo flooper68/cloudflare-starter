@@ -8,6 +8,9 @@
  * - `docsTablesPlugin` wraps each table in a named, keyboard-scrollable region
  *   (`<section aria-label tabindex=0>`), the markup `Prose` (packages/ui) styles as a
  *   scroll box.
+ * - `docsTaskListsPlugin` hides the disabled checkboxes of `- [ ]` checklists from
+ *   assistive technology: they are decoration that cannot be ticked, the item's text says
+ *   it all, and an unlabelled form control fails axe's `label` rule.
  */
 import { readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -89,4 +92,18 @@ export function docsTablesPlugin(): HastPluginEntry {
       },
     };
   };
+}
+
+export function docsTaskListsPlugin(): HastPluginEntry {
+  return () => ({
+    name: "docs-task-lists",
+    element: {
+      filter: ["input"],
+      visit(node, ctx) {
+        if (node.properties?.type !== "checkbox" || !node.properties.disabled)
+          return;
+        ctx.setProperty(node, "ariaHidden", "true");
+      },
+    },
+  });
 }

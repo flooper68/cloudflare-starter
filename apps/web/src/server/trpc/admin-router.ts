@@ -12,6 +12,7 @@ import {
   flagRulesSchema,
   flagUpdateSchema,
   getAdminOverview,
+  getDemoStats,
   getUserDetail,
   getWorkspaceDetail,
   listAdminDataRequests,
@@ -110,9 +111,17 @@ export const adminRouter = router({
     ),
   }),
   overview: router({
-    get: adminProcedure.query(({ ctx }) =>
-      getAdminOverview({ ...ctx, billing: ctx.config.billing }, ctx.admin)
-    ),
+    get: adminProcedure.query(async ({ ctx }) => ({
+      ...(await getAdminOverview(
+        { ...ctx, billing: ctx.config.billing },
+        ctx.admin
+      )),
+      // DEMO_MODE=on: active demo accounts, deletions due today, erased in 7 days.
+      demo:
+        ctx.demo.mode === "on"
+          ? await getDemoStats(ctx, ctx.admin, ctx.demo.policy)
+          : null,
+    })),
   }),
 
   health: router({
@@ -143,6 +152,16 @@ export const adminRouter = router({
         bootstrapAdminEmail: ctx.config.workspaces.bootstrapAdminEmail,
         emailEnabled: ctx.email.enabled,
         adminPortal: ctx.config.ADMIN_PORTAL,
+        demo:
+          ctx.demo.mode === "on"
+            ? {
+                mode: "on",
+                retentionDays: ctx.demo.policy.retentionDays,
+                sampleData: ctx.demo.sampleData,
+                protectedEmails: ctx.demo.policy.protectedEmails,
+                qaEmailDomain: ctx.demo.policy.qaEmailDomain,
+              }
+            : { mode: "off" },
         methods: authMethodsOf(ctx.config),
       })
     ),

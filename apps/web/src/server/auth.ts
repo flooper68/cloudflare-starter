@@ -17,6 +17,7 @@ import {
   randomIds,
   recordAccountDeletion,
   SignUpNotAllowedError,
+  scheduleDemoSeed,
   schema,
   systemClock,
   verifyHuman,
@@ -58,6 +59,7 @@ import {
 } from "@/server/auth-security";
 import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
+import { demoRuntimeFor } from "@/server/demo";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
 import {
@@ -264,8 +266,9 @@ async function provisionNewUser(
   ctx: { readonly request?: Request } | null
 ): Promise<void> {
   const requestContext = { ...contextFor(env, ctx), userId: user.id };
+  let workspaceId: string | null = null;
   try {
-    await provisionUser(
+    ({ workspaceId } = await provisionUser(
       {
         db: getDb(env),
         clock: systemClock,
@@ -279,10 +282,30 @@ async function provisionNewUser(
         settings: buildRequiredConfig(env).workspaces,
         sharedWorkspaceName: APP_NAME,
       }
+    ));
+  } catch (error) {
+    buildPlatform(env).errors.capture(error, requestContext, {
+      "app.auth.hook": "user.create.after",
+    });
+    return;
+  }
+  // Demo mode (DEMO_MODE=on, DEMO_SAMPLE_DATA=on): sample notes for the new workspace,
+  // written by a queued job. Fails open like provisioning: sign-up never fails for it.
+  try {
+    const platform = buildPlatform(env);
+    await scheduleDemoSeed(
+      {
+        jobQueue: platform.jobQueue,
+        clock: systemClock,
+        ids: randomIds,
+        demo: demoRuntimeFor(env),
+      },
+      { userId: user.id, workspaceId, context: requestContext }
     );
   } catch (error) {
     buildPlatform(env).errors.capture(error, requestContext, {
       "app.auth.hook": "user.create.after",
+      "app.demo.operation": "schedule_seed",
     });
   }
 }
@@ -739,7 +762,8 @@ export function createAuthOptions(env: AppEnv) {
         refuseQaAddressWithoutToken(env, ctx);
         // No OAuth (MCP) grants from an admin's impersonation session.
         await refuseOAuthWhileImpersonating(env, ctx);
-        await enforceAuthSecurity(env, ctx);
+        const signedOut = await enforceAuthSecurity(env, ctx);
+        if (signedOut) return signedOut;
         // Deployed without email, refuse link-sending endpoints up front, for every address:
         // failing only inside sendResetPassword would answer differently for registered
         // emails (account enumeration).

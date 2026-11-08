@@ -25,7 +25,7 @@ Write links as you always do: relative paths between files (`[testing.md](../arc
 - any other file becomes its GitHub page (`…/blob/main/apps/web/wrangler.jsonc`), a folder (`../.claude/skills/`) its GitHub tree;
 - absolute URLs, site paths (`/app`) and `#fragments` stay as they are.
 
-Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks are shown as code; for a diagram on the site, use an SVG ([Diagrams](#diagrams)).
+Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). A ` ```mermaid ` block is shown as code on the site; for a diagram, use an SVG, hand-drawn or generated from a Mermaid source ([Diagrams](#diagrams)).
 
 ### Diagrams
 
@@ -36,6 +36,10 @@ A paragraph that is only an image of an SVG in the repository is a diagram: `![T
 - prefix class names and marker ids (`dg-`, `dg-<diagram>-arrow`): every inlined SVG shares the page's styles and ids.
 
 The build fails when an inlined SVG has no `<title>` or alt text, or contains script. The docs pages allow inline styles (`style-src 'unsafe-inline'`), so the inlined `<style>` passes their Content-Security-Policy. Examples: `docs/processes/images/`.
+
+#### From a Mermaid source
+
+For boxes and arrows or a sequence, write the diagram in Mermaid instead of drawing it: a `<name>.mmd` file under `docs/` with an `accTitle:` and an `accDescr:` line (Mermaid's accessibility syntax: a short name, then what the diagram shows in sentences). `bun run docs:diagrams` writes `<name>.svg` beside it (`apps/web/scripts/render-diagrams.ts`, `apps/web/src/docs/mermaid-svg.ts`, with [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid), which needs no browser), following the rules above: token colours with fallbacks for both schemes, `<title>` and `<desc>` from the two lines, marker ids prefixed with the file name, which is therefore unique. Commit both files and link the `.svg` like any diagram. A generated diagram keeps its own size on the site (`data-natural-width`) and scrolls sideways when wider than the column. `apps/web/src/docs/mermaid-svg.test.ts` fails when an `.svg` differs from what its source renders to, or a source lacks either line. Flowcharts, sequence, state, class and ER diagrams work; keep to plain syntax (no `classDef`, `style` or `click`) and quote labels with punctuation (`A["/api/trpc"]`). Examples: `docs/architecture/diagrams/`.
 
 ## Add, move or remove a doc
 

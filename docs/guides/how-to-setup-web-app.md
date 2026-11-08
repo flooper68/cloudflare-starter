@@ -39,6 +39,8 @@ Secrets, validated in [apps/web/src/lib/config.ts](../../apps/web/src/lib/config
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no                                | Enables Google sign-in                                                                                                                     |
 | `R2_*`                                     | no                                | Presigned R2 URLs                                                                                                                          |
 
+Demo mode (starter-only, for the starter's own public instance): `DEMO_MODE` (`off` | `on`, required, no default; projects keep `off`) and, with `on`, `DEMO_RETENTION_DAYS` (2 to 365), `DEMO_SAMPLE_DATA` (`on` | `off`) and the optional `DEMO_PROTECTED_EMAILS`, all vars in `wrangler.jsonc` ([how-to-run-a-public-demo.md](how-to-run-a-public-demo.md#settings)).
+
 `bun run doctor` checks the local setup and points out what is missing for each environment.
 
 ## Run Locally
@@ -151,6 +153,10 @@ Background jobs, the queue consumer, retries, the dead-letter queue and the cron
 ### Every page returns 500 with a zod error
 
 A required setting is missing or wrong; the error names it. Check `APP_URL` and `BETTER_AUTH_SECRET` (32+ characters) in `.dev.vars` or the Worker secrets, `RATE_LIMITING` and `TURNSTILE` in the vars, and `TURNSTILE_SECRET_KEY` when `TURNSTILE=on` ([how-to-configure-abuse-protection.md](./how-to-configure-abuse-protection.md#troubleshooting)).
+
+### Every request returns 500 "DEMO_MODE is not set" (or DEMO_RETENTION_DAYS, DEMO_SAMPLE_DATA, DEMO_PROTECTED_EMAILS)
+
+`DEMO_MODE` is missing from this environment's `vars` (or `.dev.vars`): set it to `off`, as a project normally does. With `on`, `DEMO_RETENTION_DAYS` must be a whole number from 2 to 365, `DEMO_SAMPLE_DATA` `on` or `off`, and `DEMO_PROTECTED_EMAILS` comma-separated addresses ([how-to-run-a-public-demo.md](how-to-run-a-public-demo.md#settings)). An existing `apps/web/.dev.vars` needs a `DEMO_MODE=off` line.
 
 ### Every request returns 500 "LOG_SINK is not set" (or ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, CSP_MODE, APP_ENV)
 

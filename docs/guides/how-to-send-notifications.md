@@ -4,18 +4,7 @@ How a feature tells users that something happened: the in-app inbox (bell, inbox
 
 ## How it fits together
 
-```mermaid
-flowchart LR
-  U["use case (producer)"] -->|"deps.notify(definition, { recipients, data, context })"| N["notify: validate, drop actor"]
-  N -->|"enqueueJob notifications.dispatch (key = event id)"| Q[["APP_QUEUE"]]
-  Q --> D["dispatchNotification: preferences, inbox rows"]
-  D -->|"email due now"| E["notifications.send-email (key email-<row>)"]
-  D -->|"daily cadence"| P[("rows pending_digest")]
-  C["cron notifications.plan-digests (08:00 UTC)"] --> S["notifications.send-digest per user and day"]
-  P --> S
-  E --> M["Email port"]
-  S --> M
-```
+![How a notification is sent](diagrams/notifications.svg)
 
 | Piece                 | Where                                                                                                                   | What it does                                                                                                                                                                                  |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -75,21 +64,22 @@ The review checklist asks for it: a user-facing event (someone joined, a role ch
 
 - **Defaults** come from `defaultChannels`. A user's choice is stored in `notification_preferences` only where it differs from the default (`storedOverride`); turning a switch back removes the row.
 - **Email cadence** (`notification_settings.email_cadence`): `instant` (default for a user without a row) sends each mail at once; `daily` marks rows `pending_digest` for the digest.
-- **Security notices** (`securityCritical: true`, today `auth.password-changed`, `auth.new-sign-in`, `auth.factor-changed` and `privacy.export-ready`): always in-app and email, always at once (never in a digest), no unsubscribe link or header, locked in the preferences (an update that names them is refused with `NOTIFICATION_PREFERENCE_LOCKED`), and the actor is not dropped (they are who to warn).
+- **Security notices** (`securityCritical: true`, today `auth.password-changed`, `auth.new-sign-in`, `auth.factor-changed`, `privacy.export-ready` and, in demo mode, `demo.deletion-warning`): always in-app and email, always at once (never in a digest), no unsubscribe link or header, locked in the preferences (an update that names them is refused with `NOTIFICATION_PREFERENCE_LOCKED`), and the actor is not dropped (they are who to warn).
 - **Email off for the deployment** (no `EMAIL` binding or no `EMAIL_FROM`: the Email port's noop adapter): rows are still written for the inbox; their email state is `skipped` and the dispatcher logs `notifications.email_skipped` (warn). The preferences screen says email is not set up.
 
 Email states of a row: `none` (channel off), `pending` (a `notifications.send-email` job is due), `pending_digest`, `sent`, `skipped`.
 
 ## Producers today
 
-| Type                       | Sent by                                                                                                                                                                      | To                                                                                                                                                                                         |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `workspaces.member-joined` | `acceptInvitation`                                                                                                                                                           | the workspace's members who can `members.manage`, not the joiner                                                                                                                           |
-| `workspaces.role-changed`  | `changeMemberRole` (when the role changes), `transferOwnership` (the new owner)                                                                                              | the member whose role changed, unless they made the change                                                                                                                                 |
-| `auth.password-changed`    | Better Auth hooks in `apps/web/src/server/auth-audit.ts`: `/change-password` success, `onPasswordReset`                                                                      | the user                                                                                                                                                                                   |
-| `auth.factor-changed`      | the two-factor and passkey hooks in `apps/web/src/server/auth-security.ts` (a factor enrolled or removed, recovery codes regenerated), and `resetSecondFactor` (admin reset) | the user                                                                                                                                                                                   |
-| `privacy.export-ready`     | `buildDataExport` (job `privacy.build-export`), with the signed download link                                                                                                | the person the export is for                                                                                                                                                               |
-| `auth.new-sign-in`         | the session hook after a password or social sign-in (not sign-up, not email verification), through `notifyNewSignIn`                                                         | the user, when no other live session has the same user agent and the account is older than a minute (`isNewSignIn`: a Google sign-up opens its first session through the sign-in callback) |
+| Type                       | Sent by                                                                                                                                                                                  | To                                                                                                                                                                                         |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `workspaces.member-joined` | `acceptInvitation`                                                                                                                                                                       | the workspace's members who can `members.manage`, not the joiner                                                                                                                           |
+| `workspaces.role-changed`  | `changeMemberRole` (when the role changes), `transferOwnership` (the new owner)                                                                                                          | the member whose role changed, unless they made the change                                                                                                                                 |
+| `auth.password-changed`    | Better Auth hooks in `apps/web/src/server/auth-audit.ts`: `/change-password` success, `onPasswordReset`                                                                                  | the user                                                                                                                                                                                   |
+| `auth.factor-changed`      | the two-factor and passkey hooks in `apps/web/src/server/auth-security.ts` (a factor enrolled or removed, recovery codes regenerated), and `resetSecondFactor` (admin reset)             | the user                                                                                                                                                                                   |
+| `privacy.export-ready`     | `buildDataExport` (job `privacy.build-export`), with the signed download link                                                                                                            | the person the export is for                                                                                                                                                               |
+| `demo.deletion-warning`    | `warnDemoAccount` (job `demo.warn-account`, DEMO_MODE=on only), a day before the account is erased, with the privacy export and GitHub links ([demo guide](how-to-run-a-public-demo.md)) | the demo account                                                                                                                                                                           |
+| `auth.new-sign-in`         | the session hook after a password or social sign-in (not sign-up, not email verification), through `notifyNewSignIn`                                                                     | the user, when no other live session has the same user agent and the account is older than a minute (`isNewSignIn`: a Google sign-up opens its first session through the sign-in callback) |
 
 A failure to notify from the Better Auth hooks is reported and never fails the sign-in or password change.
 

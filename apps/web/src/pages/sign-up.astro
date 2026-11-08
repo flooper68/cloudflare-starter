@@ -1,9 +1,12 @@
 ---
 import { env } from "cloudflare:workers";
+import { DemoBanner } from "@cloudflare-starter/ui";
 
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import Layout from "@/layouts/Layout.astro";
 import { nextPath } from "@/lib/auth-links";
+import { STARTER_REPOSITORY_URL } from "@/lib/demo-banner";
+import { buildRequiredConfig } from "@/lib/env";
 import { getAuthMethods } from "@/server/auth";
 import { buildPlatform } from "@/server/platform";
 
@@ -15,10 +18,22 @@ if (Astro.locals.user && !Astro.url.searchParams.has("sig")) {
 
 const methods = getAuthMethods(env);
 const { turnstile } = buildPlatform(env);
+// DEMO_MODE=on: the demo notice above the form, before anyone signs up (rendered on the
+// server only; docs/guides/how-to-run-a-public-demo.md).
+const { demo } = buildRequiredConfig(env);
 ---
 
 <Layout title="Sign up">
-  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+  <main class="mx-auto flex min-h-[80vh] max-w-5xl flex-col items-center justify-center gap-6 px-6 py-10">
+    {
+      demo.mode === "on" && (
+        <DemoBanner
+          retentionDays={demo.retentionDays}
+          repositoryUrl={STARTER_REPOSITORY_URL}
+          className="max-w-md rounded-lg border"
+        />
+      )
+    }
     <SignUpForm
       client:load
       emailPassword={methods.emailPassword}

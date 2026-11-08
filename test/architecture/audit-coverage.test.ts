@@ -22,10 +22,19 @@ const AUDITED_FEATURES = [
   "storage-reconciliation",
   "privacy",
   "notes",
+  "demo",
 ] as const;
 
 /** Use cases that change state without an audit event: path → reason. */
 const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
+  "packages/features/src/privacy/erase-account.ts":
+    "Shared erasure core: its callers record the event (eraseUserData user.deleted, eraseDemoAccount demo.account_erased); workspace.deleted and privacy.user_erased come from the erasure itself.",
+  "packages/features/src/demo/enforce-demo-retention.ts":
+    "Orchestrates the retention: each erasure is audited by eraseDemoAccount (demo.account_erased) and each warning by warnDemoAccount (demo.deletion_warned).",
+  "packages/features/src/demo/schedule-demo-seed.ts":
+    "Only enqueues the seed job; the notes it writes are audited by createNote and addNoteComment.",
+  "packages/features/src/demo/seed-demo-workspace.ts":
+    "Writes through createNote and addNoteComment, which record note.created and note.commented.",
   "packages/features/src/privacy/erase-user-exports.ts":
     "Cleanup inside account/workspace erasure; privacy.user_erased or workspace.deleted is recorded by its owner.",
   "packages/features/src/privacy/erase-identity-references.ts":

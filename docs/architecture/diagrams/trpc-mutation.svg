@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="dg-mm" viewBox="0 0 1044.8039999999999 700" width="1045" height="700" role="img" data-natural-width="">
+<title>A tRPC mutation, notes.create</title>
+<desc>The SPA posts notes.create to /api/trpc with the x-trpc-source header, after the middleware resolved the session. The procedure chain opens a span, counts the mutation against its rate limit (mutation.user), requires a user, checks the session's security state, and resolves the actor (user, workspace, role) from the workspace membership. The createNote use case checks the notes.write permission and the plan's notes limit, inserts the note, records the note.created audit event and tracks the notes.created product event without waiting. The response carries RateLimit-Policy; the request's metrics are flushed when it ends.</desc>
+<style>.dg-mm{--_text:var(--ui-fg, #1f2328);--_text-sec:var(--ui-fg-muted, #59636e);--_text-muted:var(--ui-fg-muted, #59636e);--_text-faint:var(--ui-fg-subtle, #59636e);--_line:var(--ui-fg-subtle, #818b98);--_arrow:var(--ui-fg-muted, #59636e);--_node-fill:var(--ui-surface, #f6f8fa);--_node-stroke:var(--ui-line-strong, #d0d7de);--_group-fill:var(--ui-surface-raised, #ffffff);--_group-hdr:var(--ui-hover, #eff2f5);--_inner-stroke:var(--ui-line, #d8dee4);--_key-badge:var(--ui-active, #e6eaef);--bg:var(--ui-surface-raised, #ffffff);--fg:var(--ui-fg, #1f2328)}.dg-mm .dg-mm-bg{fill:var(--bg)}.dg-mm text{font-family:var(--brand-font-sans, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif)}@media (prefers-color-scheme:dark){.dg-mm{--_text:var(--ui-fg, #f0f6fc);--_text-sec:var(--ui-fg-muted, #9198a1);--_text-muted:var(--ui-fg-muted, #9198a1);--_text-faint:var(--ui-fg-subtle, #9198a1);--_line:var(--ui-fg-subtle, #8b949e);--_arrow:var(--ui-fg-muted, #9198a1);--_node-fill:var(--ui-surface, #161b22);--_node-stroke:var(--ui-line-strong, #3d444d);--_group-fill:var(--ui-surface-raised, #0d1117);--_group-hdr:var(--ui-hover, #1c2128);--_inner-stroke:var(--ui-line, #30363d);--_key-badge:var(--ui-active, #262c36);--bg:var(--ui-surface-raised, #0d1117);--fg:var(--ui-fg, #f0f6fc)}}</style>
+<rect class="dg-mm-bg" x="0" y="0" width="1044.8039999999999" height="700" rx="12"/>
+<defs>
+<marker id="dg-trpc-mutation-seq-arrow" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" />
+</marker>
+<marker id="dg-trpc-mutation-seq-arrow-open" markerWidth="8" markerHeight="5" refX="8" refY="2.5" orient="auto-start-reverse">
+<polyline points="0 0, 8 2.5, 0 5" fill="none" stroke="var(--_arrow)" stroke-width="1" />
+</marker>
+</defs>
+<line class="lifeline" data-actor="B" x1="70" y1="70" x2="70" y2="670" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="T" x1="210" y1="70" x2="210" y2="670" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="R" x1="358.4205" y1="70" x2="358.4205" y2="670" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="L" x1="519.0675" y1="70" x2="519.0675" y2="670" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="U" x1="662.3009999999999" y1="70" x2="662.3009999999999" y2="670" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="D" x1="802.3009999999999" y1="70" x2="802.3009999999999" y2="670" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<line class="lifeline" data-actor="E" x1="948.5524999999999" y1="70" x2="948.5524999999999" y2="670" stroke="var(--_line)" stroke-width="0.75" stroke-dasharray="6 4" />
+<g class="message" data-from="B" data-to="T" data-label="POST notes.create, x-trpc-source app" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="70" y1="90" x2="210" y2="90" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="140" y="80" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">POST notes.create, x-trpc-source app</text>
+</g>
+<g class="message" data-from="T" data-to="R" data-label="createAppContext(user, request context)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="210" y1="145" x2="358.4205" y2="145" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="284.21025" y="135" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">createAppContext(user, request context)</text>
+</g>
+<g class="message" data-from="R" data-to="L" data-label="limitMutations: mutation.user" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="358.4205" y1="200" x2="519.0675" y2="200" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="438.744" y="190" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">limitMutations: mutation.user</text>
+</g>
+<g class="message" data-from="R" data-to="D" data-label="protectedProcedure: getSecurityState" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="358.4205" y1="240" x2="802.3009999999999" y2="240" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="580.3607499999999" y="230" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">protectedProcedure: getSecurityState</text>
+</g>
+<g class="message" data-from="R" data-to="D" data-label="workspaceProcedure: resolveActor" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="358.4205" y1="280" x2="802.3009999999999" y2="280" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="580.3607499999999" y="270" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">workspaceProcedure: resolveActor</text>
+</g>
+<g class="message" data-from="R" data-to="U" data-label="createNote(ctx, actor, input)" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="358.4205" y1="320" x2="662.3009999999999" y2="320" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="510.36074999999994" y="310" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">createNote(ctx, actor, input)</text>
+</g>
+<g class="message" data-from="U" data-to="D" data-label="billing.requireLimit notes" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="662.3009999999999" y1="375" x2="802.3009999999999" y2="375" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="732.3009999999999" y="365" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">billing.requireLimit notes</text>
+</g>
+<g class="message" data-from="U" data-to="D" data-label="insert into notes" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="662.3009999999999" y1="415" x2="802.3009999999999" y2="415" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="732.3009999999999" y="405" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">insert into notes</text>
+</g>
+<g class="message" data-from="U" data-to="D" data-label="recordAuditEvent note.created" data-line-style="solid" data-arrow-head="filled" data-self="false">
+<line x1="662.3009999999999" y1="455" x2="802.3009999999999" y2="455" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="732.3009999999999" y="445" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">recordAuditEvent note.created</text>
+</g>
+<g class="message" data-from="U" data-to="E" data-label="trackEvent notes.created" data-line-style="solid" data-arrow-head="open" data-self="false">
+<line x1="662.3009999999999" y1="495" x2="948.5524999999999" y2="495" stroke="var(--_line)" stroke-width="1" marker-end="url(#dg-trpc-mutation-seq-arrow-open)" />
+<text x="805.4267499999999" y="485" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">trackEvent notes.created</text>
+</g>
+<g class="message" data-from="U" data-to="R" data-label="id, createdAt" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="662.3009999999999" y1="535" x2="358.4205" y2="535" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="510.36074999999994" y="525" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">id, createdAt</text>
+</g>
+<g class="message" data-from="R" data-to="T" data-label="result" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="358.4205" y1="590" x2="210" y2="590" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="284.21025" y="580" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">result</text>
+</g>
+<g class="message" data-from="T" data-to="B" data-label="200, RateLimit-Policy" data-line-style="dashed" data-arrow-head="filled" data-self="false">
+<line x1="210" y1="630" x2="70" y2="630" stroke="var(--_line)" stroke-width="1" stroke-dasharray="6 4" marker-end="url(#dg-trpc-mutation-seq-arrow)" />
+<text x="140" y="620" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">200, RateLimit-Policy</text>
+</g>
+<g class="note" data-position="over" data-actors="T">
+<polygon points="145.2,98 268.8,98 274.8,104 274.8,121 145.2,121" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="268.8,98 274.8,104 268.8,104" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="210" y="109.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">403 without the header</text>
+</g>
+<g class="note" data-position="over" data-actors="R">
+<polygon points="266.5935,153 444.24749999999995,153 450.24749999999995,159 450.24749999999995,176 266.5935,176" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="444.24749999999995,153 450.24749999999995,159 444.24749999999995,159" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="358.4205" y="164.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">span and rpc.server.call.duration</text>
+</g>
+<g class="note" data-position="over" data-actors="U">
+<polygon points="578.4929999999999,328 740.1089999999999,328 746.1089999999999,334 746.1089999999999,351 578.4929999999999,351" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="740.1089999999999,328 746.1089999999999,334 740.1089999999999,334" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="662.3009999999999" y="339.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">requirePermission notes.write</text>
+</g>
+<g class="note" data-position="over" data-actors="R">
+<polygon points="259.7625,543 451.0785,543 457.0785,549 457.0785,566 259.7625,566" fill="var(--bg)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="451.0785,543 457.0785,549 451.0785,549" fill="var(--_inner-stroke)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="358.4205" y="554.5" font-size="11" text-anchor="middle" font-weight="400" fill="var(--_text-muted)" dy="3.8499999999999996">DomainError mapped to a tRPC error</text>
+</g>
+<g class="actor" data-id="B" data-label="SPA" data-type="participant">
+<rect x="30" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="70" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">SPA</text>
+</g>
+<g class="actor" data-id="T" data-label="/api/trpc" data-type="participant">
+<rect x="168.572" y="30" width="82.856" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="210" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">/api/trpc</text>
+</g>
+<g class="actor" data-id="R" data-label="Procedure chain" data-type="participant">
+<rect x="291.428" y="30" width="133.985" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="358.4205" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Procedure chain</text>
+</g>
+<g class="actor" data-id="L" data-label="Rate Limiting" data-type="participant">
+<rect x="465.413" y="30" width="107.30900000000001" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="519.0675" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Rate Limiting</text>
+</g>
+<g class="actor" data-id="U" data-label="createNote" data-type="participant">
+<rect x="612.722" y="30" width="99.158" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="662.3009999999999" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">createNote</text>
+</g>
+<g class="actor" data-id="D" data-label="D1" data-type="participant">
+<rect x="762.3009999999999" y="30" width="80" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="802.3009999999999" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">D1</text>
+</g>
+<g class="actor" data-id="E" data-label="Analytics Engine" data-type="participant">
+<rect x="882.3009999999999" y="30" width="132.503" height="40" rx="4" ry="4" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+<text x="948.5524999999999" y="50" font-size="13" text-anchor="middle" font-weight="500" fill="var(--_text)" dy="4.55">Analytics Engine</text>
+</g>
+</svg>

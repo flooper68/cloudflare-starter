@@ -1,0 +1,12 @@
+flowchart TB
+  accTitle: Security layers of a request
+  accDescr: From the outside in. Every response carries the security headers and, for HTML, a Content-Security-Policy; static assets get the same from public/_headers. Edge rate limits refuse over-limit requests on auth, MCP, uploads, health, webhooks, token pages and every tRPC mutation. Turnstile checks sign-up, sign-in and password reset. Better Auth resolves the session or the MCP token, and the security state checks that session and its second factor. The workspace membership resolves the actor, the role's permission is checked with can, then the plan's entitlements. The use case changes data and records an audit event.
+  Headers["security headers and CSP: every response"]
+  Limits["edge rate limits: route policies, every mutation"]
+  Human["Turnstile: sign-up, sign-in, password reset"]
+  Auth["session or MCP token, security state, second factor"]
+  Actor["workspace membership: resolveActor"]
+  Permission["permission: requirePermission, can"]
+  Entitlement["plan: requireFeature, requireLimit"]
+  Audit["use case and audit event"]
+  Headers --> Limits --> Human --> Auth --> Actor --> Permission --> Entitlement --> Audit

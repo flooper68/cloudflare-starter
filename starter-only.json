@@ -574,10 +574,26 @@
     {
       "id": "demo-mode",
       "title": "Demo mode",
-      "why": "In flight: DEMO_MODE and its settings, so the public starter instance can be tried without an account. A product does not run as a public demo; strip it, or set it off.",
-      "status": "pending",
-      "pending": "the demo mode PR (not opened yet); when it merges, list DEMO_MODE and its files here and set status to active",
-      "default": true
+      "why": "Demo mode (#63) runs the starter's staging and production as a public demo: a notice and banner, sample notes, and accounts erased after DEMO_RETENTION_DAYS. A product is not a public demo, so the strip sets DEMO_MODE off in every environment; the code stays, inert with off.",
+      "status": "active",
+      "default": true,
+      "wrangler": [
+        {
+          "env": "staging",
+          "path": ["vars", "DEMO_MODE"],
+          "value": "off",
+          "comment": "Demo mode (required, no default: on | off; docs/guides/how-to-run-a-public-demo.md).\noff: this project is not a public demo; the other DEMO_* vars are ignored."
+        },
+        {
+          "env": "production",
+          "path": ["vars", "DEMO_MODE"],
+          "value": "off",
+          "comment": "Demo mode (required, no default: on | off; docs/guides/how-to-run-a-public-demo.md).\noff: this project is not a public demo; the other DEMO_* vars are ignored."
+        }
+      ],
+      "manual": [
+        "Demo mode's code stays, inert with DEMO_MODE=off. To delete it, follow Removing demo mode in docs/guides/how-to-run-a-public-demo.md."
+      ]
     },
     {
       "id": "containers",

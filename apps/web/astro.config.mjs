@@ -8,8 +8,10 @@ import {
   docsDiagramsPlugin,
   docsLinksPlugin,
   docsTablesPlugin,
+  docsTaskListsPlugin,
 } from "./src/docs/markdown-plugins.ts";
 import { siteIntegrations } from "./src/docs/site-integrations.ts";
+import { demoAdapterOptions, localDemoPlugins } from "./test/e2e/demo-vite.mjs";
 import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
 
 const REPO_ROOT = new URL("../../", import.meta.url);
@@ -23,7 +25,11 @@ export default defineConfig({
   devToolbar: { enabled: false },
   // No Cloudflare Images binding: images are served as they are. Switch to the
   // adapter's default to resize with Cloudflare Images (a paid feature).
-  adapter: cloudflare({ imageService: "passthrough" }),
+  adapter: cloudflare({
+    imageService: "passthrough",
+    // The demo-mode E2E server only (test/e2e/demo-vite.mjs): its own local state.
+    ...demoAdapterOptions(process.env.E2E_DEMO_PORT),
+  }),
   // Better Auth owns sessions; an in-memory driver keeps Astro from
   // provisioning its default SESSION KV namespace.
   session: { driver: sessionDrivers.lruCache() },
@@ -37,7 +43,11 @@ export default defineConfig({
   markdown: {
     processor: satteri({
       mdastPlugins: [docsDiagramsPlugin(REPO_ROOT)],
-      hastPlugins: [docsLinksPlugin(REPO_ROOT), docsTablesPlugin()],
+      hastPlugins: [
+        docsLinksPlugin(REPO_ROOT),
+        docsTablesPlugin(),
+        docsTaskListsPlugin(),
+      ],
       // Off so text and heading ids match GitHub's ("--" stays "--"): links written
       // for GitHub then work on the site, and test/architecture/docs.test.ts models both.
       features: { smartPunctuation: false },
@@ -87,6 +97,7 @@ export default defineConfig({
     plugins: [
       tailwindcss(),
       ...localTurnstilePlugins(process.env.E2E_LOCAL_TURNSTILE === "1"),
+      ...localDemoPlugins(process.env.E2E_DEMO_PORT),
     ],
     resolve: {
       alias: {
