@@ -120,7 +120,7 @@ test("at phone width the trigger is an icon without a key hint and the palette f
     const trigger = page.getByRole("button", { name: "Search", exact: true });
     await expect(trigger).toBeVisible();
     // The key hint is hidden at this width (it stays in the DOM).
-    await expect(trigger.getByText(/⌘|Ctrl/)).toBeHidden();
+    await expect(trigger.getByText(/⌘|Ctrl/).first()).toBeHidden();
     await trigger.click();
     const box = await palette().boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(380);

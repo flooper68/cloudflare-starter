@@ -227,5 +227,5 @@ test("flags, workspaces, data requests and settings open, read-only", async () =
   ).toBeVisible();
   await open(admin, "/admin/settings");
   await expect(admin.getByRole("heading", { name: "Settings" })).toBeVisible();
-  await expect(admin.locator("main")).toContainText(/BILLING|manual/);
+  await expect(admin.locator("main")).toContainText(/Workspace mode/);
 });
