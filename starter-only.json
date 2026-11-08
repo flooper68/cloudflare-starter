@@ -825,6 +825,11 @@
           "file": "apps/web/package.json",
           "find": "bun run --filter @cloudflare-starter/container deploy:production && ",
           "replace": ""
+        },
+        {
+          "file": "apps/web/wrangler.jsonc",
+          "find": "\"CONTAINER_DEMO_RUNNER\": \"container\"",
+          "replace": "\"CONTAINER_DEMO_RUNNER\": \"fake\""
         }
       ],
       "wrangler": [
@@ -832,18 +837,6 @@
           "env": "all",
           "path": ["services"],
           "comment": null
-        },
-        {
-          "env": "staging",
-          "path": ["vars", "CONTAINER_DEMO_RUNNER"],
-          "value": "fake",
-          "comment": "The pi computer of the container workflow demo: fake (computed in the Worker); this\nproject has no container Worker (docs/guides/how-to-run-container-workflows.md#settings)."
-        },
-        {
-          "env": "production",
-          "path": ["vars", "CONTAINER_DEMO_RUNNER"],
-          "value": "fake",
-          "comment": "The pi computer of the container workflow demo: fake (computed in the Worker); this\nproject has no container Worker (docs/guides/how-to-run-container-workflows.md#settings)."
         }
       ]
     },
