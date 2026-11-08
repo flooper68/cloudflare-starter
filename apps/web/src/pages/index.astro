@@ -1,182 +1,491 @@
 ---
 /**
- * The landing page, prerendered: the same HTML for everyone, no session read. Signed-in
- * visitors reach the app with "Open app" (/app/dashboard; signed out it leads to
- * sign-in). Copy and links: src/landing/content.ts. A project replaces this page with
- * its own: docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page.
+ * The home page, prerendered: the same HTML for everyone, no session read. Hero (the
+ * isometric scene), the four pillars, the feature map, what it costs, start in minutes,
+ * what's new and a closing call to action. What the starter does is data
+ * (src/content/features.ts); the page's own words are in src/landing/content.ts. Motion is
+ * CSS first; the scripts are the hero's tilt, the feature map and the header menu. A
+ * project replaces this page with its own:
+ * docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page.
  */
+import { getCollection } from "astro:content";
+import { buttonVariants, cn } from "@cloudflare-starter/ui";
 import {
-  Badge,
-  brand,
-  buttonVariants,
-  FeatureGrid,
-  Hero,
-  LogoMark,
-} from "@cloudflare-starter/ui";
-import {
-  Activity,
-  Bell,
-  BookOpen,
+  ArrowRight,
   Bot,
-  CreditCard,
-  Files,
-  Flag,
+  Boxes,
+  Check,
   GitBranch,
   Layers,
-  Palette,
-  ScrollText,
+  Play,
+  Rss,
   ShieldCheck,
-  Timer,
-  UserCog,
-  Users,
+  Sparkles,
 } from "lucide-react";
 
-import { createElement } from "react";
-
-import DocsSearch from "@/components/site/DocsSearch.astro";
-import LandingPreview from "@/components/site/LandingPreview.astro";
+import FeatureMap from "@/components/site/FeatureMap.astro";
+import HeroScene from "@/components/site/HeroScene.astro";
+import SiteFooter from "@/components/site/SiteFooter.astro";
 import SiteHeader from "@/components/site/SiteHeader.astro";
+import { PILLARS, type PillarId } from "@/content/features";
+import { CHANGELOG_PATH, parseChangelog } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import {
-  BUILT_ON,
-  FEATURES,
-  type FeatureIcon,
+  COSTS,
   HERO,
   LINKS,
+  PRODUCTION_CHECKS,
+  RECEIPT,
+  SECTIONS,
   STEPS,
 } from "@/landing/content";
+import { whatsNew } from "@/landing/whats-new";
 import PublicLayout from "@/layouts/PublicLayout.astro";
 
 export const prerender = true;
 
-const ICONS: Record<FeatureIcon, typeof Activity> = {
-  shield: ShieldCheck,
-  users: Users,
-  card: CreditCard,
-  admin: UserCog,
-  bot: Bot,
-  bell: Bell,
-  files: Files,
-  clock: Timer,
-  activity: Activity,
-  scroll: ScrollText,
-  flag: Flag,
-  palette: Palette,
+const PILLAR_ICONS: Record<PillarId, typeof Bot> = {
+  agents: Bot,
+  scaffold: Layers,
+  platform: Boxes,
+  infra: ShieldCheck,
 };
-// FeatureGrid is a React component: its icons are React elements, not Astro markup.
-const features = FEATURES.map(({ icon, title, description }) => ({
-  title,
-  description,
-  icon: createElement(ICONS[icon]),
-}));
-const footerLink =
-  "rounded-sm text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
+const CLIPS: Record<PillarId, string> = {
+  agents: "An agent adds a note",
+  scaffold: "Invite a teammate",
+  platform: "A job runs, the mail arrives",
+  infra: "A health check goes green",
+};
+
+const entries = await getCollection("docs");
+const changelog = parseChangelog(
+  entries.find((entry) => entry.id === CHANGELOG_PATH)?.body ?? ""
+);
+const news = whatsNew(changelog);
+
+const primary = cn(
+  buttonVariants({ variant: "primary", size: "lg" }),
+  "h-11 px-4.5 text-sm"
+);
+const secondary = cn(
+  buttonVariants({ variant: "secondary", size: "lg" }),
+  "h-11 px-4.5 text-sm"
+);
+const kicker =
+  "text-xs font-semibold tracking-[0.08em] text-accent-text uppercase";
+const h2 =
+  "text-2xl font-semibold tracking-tight text-fg sm:text-[32px] sm:leading-[38px]";
+const lead = "text-base leading-7 text-fg-muted sm:text-[17px]";
+const inlineLink =
+  "rounded-sm text-accent-text underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
 ---
 
-<PublicLayout
-  title={`${DOCS.siteName}: ${HERO.title}`}
-  description={HERO.description}
->
-  <SiteHeader slot="header">
-    <DocsSearch slot="search" />
-    <Fragment slot="actions">
-      <a class={buttonVariants({ variant: "ghost", size: "sm" })} href={LINKS.signIn}>
-        Sign in
-      </a>
-      <a class={buttonVariants({ variant: "primary", size: "sm" })} href={LINKS.app}>
-        Open app
-      </a>
-    </Fragment>
-  </SiteHeader>
-  <main id="main" class="flex-1">
-    <Hero title={HERO.title} description={HERO.description}>
-      <Fragment slot="eyebrow">
+<PublicLayout title={`${DOCS.siteName}: ${HERO.title}`} description={HERO.description}>
+  <SiteHeader slot="header" />
+  <main id="main" class="home flex-1">
+    <section
+      data-hero=""
+      aria-labelledby="hero-title"
+      class="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-6 px-4 pt-10 pb-6 sm:px-6 sm:pt-14"
+    >
+      <div class="flex min-w-0 flex-[1_1_420px] flex-col gap-5">
+        <span
+          class="inline-flex h-7 w-fit items-center gap-2 rounded-full border border-line bg-surface py-0 pr-3 pl-1 text-xs text-fg-muted"
+        >
+          <b class="rounded-full bg-accent-subtle px-2 py-0.5 font-semibold text-accent-text"
+            >{HERO.eyebrow.tag}</b
+          >
+          {HERO.eyebrow.text}
+        </span>
+        <h1
+          id="hero-title"
+          class="text-4xl leading-[1.05] font-semibold tracking-[-0.035em] text-fg sm:text-6xl"
+        >
+          {HERO.title}
+        </h1>
+        <p class={lead}>{HERO.description}</p>
+        <div class="flex flex-wrap gap-2.5">
+          <a class={primary} href={LINKS.demo}>
+            Try the demo app<ArrowRight aria-hidden="true" />
+          </a>
+          <a class={secondary} href={LINKS.github}>
+            <GitBranch aria-hidden="true" />View on GitHub
+          </a>
+        </div>
+        <p class="text-xs text-fg-subtle">
+          {HERO.demoLine}{" "}
+          <a class={inlineLink} href={LINKS.signIn}>Sign in</a>
+        </p>
+      </div>
+      <div class="min-w-0 flex-[1_1_480px]">
+        <HeroScene label={HERO.sceneLabel} />
+      </div>
+    </section>
+
+    <section
+      aria-labelledby="pillars-title"
+      class="mx-auto flex w-full max-w-6xl flex-col gap-7 px-4 pt-10 pb-6 sm:px-6"
+    >
+      <div class="flex max-w-2xl flex-col gap-2">
+        <span class={kicker}>{SECTIONS.pillars.kicker}</span>
+        <h2 id="pillars-title" class={h2}>{SECTIONS.pillars.title}</h2>
+        <p class={lead}>{SECTIONS.pillars.lead}</p>
+      </div>
+      <ul class="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
         {
-          HERO.badges.map((badge, index) => (
-            <Badge tone={index === 0 ? "accent" : "neutral"}>{badge}</Badge>
+          PILLARS.map((pillar) => {
+            const Icon = PILLAR_ICONS[pillar.id];
+            return (
+              <li class="pillar flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-surface-raised p-5">
+                <div class="flex items-center justify-between">
+                  <span class="inline-flex size-9 items-center justify-center rounded-[9px] bg-accent-subtle text-accent-text">
+                    <Icon className="size-4.5" aria-hidden="true" />
+                  </span>
+                  <span class="font-mono text-xs text-accent-text">{pillar.n}</span>
+                </div>
+                <h3 class="text-lg font-semibold text-fg">{pillar.title}</h3>
+                <p class="text-sm text-fg-muted">{pillar.benefit}</p>
+                <ul class="flex flex-col gap-1.5 text-xs leading-5 text-fg-muted">
+                  {pillar.points.map((point) => (
+                    <li class="flex items-start gap-2">
+                      <Check
+                        className="mt-0.5 size-3.5 shrink-0 text-accent-text"
+                        aria-hidden="true"
+                      />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div class="poster mt-auto">
+                  <span class="poster-title">{CLIPS[pillar.id]}</span>
+                  <span class="poster-bars" aria-hidden="true">
+                    <i class="on" style="width:88%" />
+                    <i style="width:60%" />
+                  </span>
+                  <span class="poster-chip">
+                    <Play className="size-3" aria-hidden="true" />
+                    Clip coming soon
+                  </span>
+                </div>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </section>
+
+    <section
+      id="feature-map"
+      aria-labelledby="map-title"
+      class="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pt-16 sm:px-6"
+    >
+      <div class="flex max-w-2xl flex-col gap-2">
+        <span class={kicker}>{SECTIONS.map.kicker}</span>
+        <h2 id="map-title" class={h2}>{SECTIONS.map.title}</h2>
+        <p class="text-sm text-fg-muted">{SECTIONS.map.lead}</p>
+      </div>
+      <FeatureMap />
+    </section>
+
+    <section
+      aria-labelledby="costs-title"
+      class="mx-auto flex w-full max-w-6xl flex-wrap items-start gap-10 px-4 pt-20 pb-6 sm:px-6"
+    >
+      <div class="flex min-w-0 flex-[1_1_340px] flex-col gap-3.5">
+        <span class={kicker}>{SECTIONS.costs.kicker}</span>
+        <p class="flex items-end gap-1.5">
+          <span
+            class="text-[84px] leading-[80px] font-semibold tracking-[-0.05em] text-fg sm:text-[120px] sm:leading-[110px]"
+            aria-hidden="true">$5</span
+          >
+          <span class={cn(lead, "pb-3")} aria-hidden="true">/month</span>
+          <span class="sr-only">$5 a month</span>
+        </p>
+        <h2 id="costs-title" class="text-[26px] leading-8 font-semibold text-fg">
+          {SECTIONS.costs.title}
+        </h2>
+        <p class="text-sm leading-6 text-fg-muted">{SECTIONS.costs.lead}</p>
+        <figure class="receipt">
+          <figcaption class="receipt-head">Workers Paid plan · monthly</figcaption>
+          <ul>
+            {
+              RECEIPT.map((line) => (
+                <li>
+                  <span>{line}</span>
+                  <span class="receipt-dots" aria-hidden="true" />
+                  <span>incl.</span>
+                </li>
+              ))
+            }
+          </ul>
+          <p class="receipt-total"><span>Total</span><span>$5.00 / month</span></p>
+          <p class="receipt-note">+ usage above the included allowances</p>
+        </figure>
+        <p class="text-xs text-fg-subtle">
+          {SECTIONS.costs.note}
+          <a class={inlineLink} href={LINKS.costs}>Cloudflare's pricing</a>
+        </p>
+      </div>
+      <div
+        class="min-w-0 flex-[1_1_520px] overflow-hidden rounded-xl border border-line bg-surface-raised"
+      >
+        <table class="w-full border-collapse text-sm">
+          <caption class="sr-only">Included each month on the Workers Paid plan</caption>
+          <thead>
+            <tr class="bg-surface text-left text-xs text-fg-subtle">
+              <th scope="col" class="px-3.5 py-2.5 font-medium">What</th>
+              <th scope="col" class="px-3.5 py-2.5 font-medium">Included every month</th>
+              <th scope="col" class="px-3.5 py-2.5 font-medium max-sm:hidden">Then</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              COSTS.map((row) => (
+                <tr class="border-t border-line align-baseline">
+                  <th scope="row" class="px-3.5 py-2.5 text-left font-medium text-fg">
+                    {row.what}
+                  </th>
+                  <td class="px-3.5 py-2.5 font-mono text-xs text-fg">{row.included}</td>
+                  <td class="px-3.5 py-2.5 text-xs text-fg-muted max-sm:hidden">
+                    {row.after}
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section
+      aria-labelledby="start-title"
+      class="mx-auto flex w-full max-w-6xl flex-wrap gap-10 px-4 pt-20 pb-6 sm:px-6"
+    >
+      <div class="flex min-w-0 flex-[1_1_320px] flex-col gap-2.5">
+        <span class={kicker}>{SECTIONS.start.kicker}</span>
+        <h2 id="start-title" class={h2}>{SECTIONS.start.title}</h2>
+        <p class="text-sm leading-6 text-fg-muted">{SECTIONS.start.lead}</p>
+        <p class="text-xs text-fg-subtle">{SECTIONS.start.measured}</p>
+        <div
+          class="mt-2 flex items-start gap-2.5 rounded-lg bg-accent-subtle px-3.5 py-3 text-sm text-fg"
+        >
+          <Sparkles className="mt-0.5 size-4 shrink-0 text-accent-text" aria-hidden="true" />
+          <p><b>Or hand it to your coding agent.</b> {SECTIONS.start.agent}</p>
+        </div>
+      </div>
+      <ol class="flex min-w-0 flex-[1_1_520px] flex-col gap-3.5">
+        {
+          STEPS.map((step, index) => (
+            <li class="flex items-start gap-3.5">
+              <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-accent font-semibold text-accent-text">
+                {index + 1}
+              </span>
+              <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+                <span class="text-sm font-semibold text-fg">{step.title}</span>
+                <pre
+                  tabindex="0"
+                  class="overflow-x-auto rounded-lg border border-line bg-surface px-3.5 py-3 font-mono text-xs leading-5 text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><code>{step.command}</code></pre>
+              </div>
+            </li>
           ))
         }
-      </Fragment>
-      <Fragment slot="actions">
-        <a
-          class={buttonVariants({ variant: "primary", size: "lg" })}
-          href={LINKS.docs}
-        >
-          <BookOpen aria-hidden="true" />Read the docs
-        </a>
-        <a
-          class={buttonVariants({ variant: "secondary", size: "lg" })}
-          href={LINKS.github}
-        >
-          <GitBranch aria-hidden="true" />View on GitHub
-        </a>
-        <a
-          class={buttonVariants({ variant: "ghost", size: "lg" })}
-          href={LINKS.storybook}
-        >
-          <Layers aria-hidden="true" />Open Storybook
-        </a>
-      </Fragment>
-      <section
-        slot="footer"
-        tabindex="0"
-        aria-label="Commands to start a project"
-        class="overflow-x-auto rounded-lg border border-line bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      >
-        <pre class="p-3.5 font-mono text-xs leading-5 text-fg">{HERO.commands.join("\n")}</pre>
-      </section>
-      <LandingPreview slot="aside" />
-    </Hero>
-    <FeatureGrid
-      title="What's in the box"
-      description="Every feature is a demo of a pattern, with tests at every layer and a guide in the docs."
-      features={features}
-    />
+      </ol>
+    </section>
+
     <section
-      aria-labelledby="built-on"
-      class="mx-auto flex w-full max-w-6xl flex-col gap-3.5 px-4 py-8 sm:px-6"
+      aria-labelledby="ready-title"
+      class="mx-auto flex w-full max-w-6xl flex-wrap gap-8 px-4 pt-14 pb-6 sm:px-6"
     >
-      <h2 id="built-on" class="text-lg font-semibold text-fg">Built on</h2>
-      <ul class="flex flex-wrap gap-2">
+      <h2 id="ready-title" class="flex-[1_1_280px] text-xl font-semibold text-fg">
+        Production-ready from day one, so you don't have to think about it
+      </h2>
+      <ul class="grid flex-[2_1_560px] grid-cols-1 gap-x-6 gap-y-2.5 sm:grid-cols-2">
         {
-          BUILT_ON.map((name) => (
-            <li>
-              <Badge size="md" className="h-7 px-3">
-                {name}
-              </Badge>
+          PRODUCTION_CHECKS.map((check) => (
+            <li class="flex items-start gap-2 text-sm text-fg-muted">
+              <Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
+              {check}
             </li>
           ))
         }
       </ul>
     </section>
-    <FeatureGrid
-      className="pb-16"
-      title="Start a project in three steps"
-      features={[...STEPS]}
-      numbered
+
+    <section
+      aria-labelledby="news-title"
+      class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-14 pb-6 sm:px-6"
     >
-      <Fragment slot="description">
-        The full checklist, with what to remove for each feature, is in <a
-          class="text-accent-text underline underline-offset-2"
-          href={LINKS.start}>Start a project</a
-        >.
-      </Fragment>
-    </FeatureGrid>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="news-title" class="text-xl font-semibold text-fg">What's new</h2>
+        <span class="flex gap-3.5 text-sm">
+          <a class={inlineLink} href={LINKS.changelog}>All release notes</a>
+          <a class={cn(inlineLink, "inline-flex items-center gap-1")} href={LINKS.feed}>
+            <Rss className="size-3.5" aria-hidden="true" />Feed
+          </a>
+        </span>
+      </div>
+      <ul class="grid grid-cols-1 gap-3.5 md:grid-cols-3">
+        {
+          news.map((card) => (
+            <li class="min-w-0">
+              <a
+                href={card.href}
+                class="flex h-full flex-col gap-2 rounded-xl border border-line bg-surface-raised p-4.5 text-fg hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <span class="font-mono text-xs text-fg-subtle">
+                  {card.date ? `${card.version} · ${card.date}` : card.version}
+                </span>
+                <span class="text-sm font-semibold">{card.title}</span>
+                <span class="text-xs leading-5 text-fg-muted">{card.text}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section aria-labelledby="closing-title" class="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+      <div
+        class="flex flex-col items-center gap-4 rounded-2xl border border-line bg-surface px-6 py-12 text-center"
+      >
+        <h2 id="closing-title" class={h2}>{SECTIONS.closing.title}</h2>
+        <p class={cn(lead, "max-w-lg")}>{SECTIONS.closing.lead}</p>
+        <div class="flex flex-wrap justify-center gap-2.5">
+          <a class={primary} href={LINKS.demo}>
+            Try the demo app<ArrowRight aria-hidden="true" />
+          </a>
+          <a class={secondary} href={LINKS.github}>
+            <GitBranch aria-hidden="true" />View on GitHub
+          </a>
+        </div>
+        <p class="text-xs text-fg-subtle">
+          {HERO.demoLine}{" "}
+          <a class={inlineLink} href={LINKS.signIn}>Sign in</a>
+        </p>
+      </div>
+    </section>
   </main>
-  <footer class="border-t border-line">
-    <div
-      class="mx-auto flex max-w-6xl flex-wrap items-center gap-5 px-4 py-6 text-sm sm:px-6"
-    >
-      <span class="inline-flex items-center gap-2 text-fg-muted">
-        <LogoMark className="size-4.5" />
-        <span class="font-medium text-fg">{DOCS.siteName}</span>
-        <span class="max-sm:hidden">{brand.tagline}</span>
-      </span>
-      <span class="flex-1"></span>
-      <a class={footerLink} href={LINKS.docs}>Docs</a>
-      <a class={footerLink} href={LINKS.changelog}>Changelog</a>
-      <a class={footerLink} href={LINKS.storybook}>Storybook</a>
-      <a class={footerLink} href={LINKS.github}>GitHub</a>
-    </div>
-  </footer>
+  <SiteFooter />
 </PublicLayout>
+
+<style>
+  .poster {
+    position: relative;
+    height: 96px;
+    overflow: hidden;
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    background: var(--ui-canvas);
+  }
+  .poster-title {
+    display: block;
+    overflow: hidden;
+    padding: 10px 12px 0;
+    color: var(--ui-fg-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .poster-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 12px;
+  }
+  .poster-bars i {
+    display: block;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--ui-active);
+  }
+  .poster-bars i.on {
+    background: color-mix(in oklab, var(--ui-accent) 75%, transparent);
+  }
+  .poster-chip {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: inline-flex;
+    max-width: calc(100% - 16px);
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background: var(--ui-overlay);
+    color: var(--ui-fg);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: var(--ui-shadow-raised);
+  }
+
+  .receipt {
+    margin-top: 6px;
+    padding: 16px 18px;
+    border: 1px dashed var(--ui-line-strong);
+    border-radius: 10px;
+    background: var(--ui-surface);
+    font-family: var(--brand-font-mono);
+    font-size: 12px;
+    line-height: 20px;
+    color: var(--ui-fg);
+  }
+  .receipt ul {
+    margin: 8px 0;
+    padding: 0;
+    list-style: none;
+  }
+  .receipt li,
+  .receipt-total {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .receipt-dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--ui-line-strong);
+  }
+  .receipt li > span:last-child {
+    color: var(--ui-fg-muted);
+  }
+  .receipt-head,
+  .receipt-note {
+    margin: 0;
+    color: var(--ui-fg-muted);
+  }
+  .receipt-total {
+    justify-content: space-between;
+    margin: 0;
+    padding-top: 8px;
+    border-top: 1px dashed var(--ui-line-strong);
+    font-weight: 600;
+  }
+
+  /* Pillar cards rise in as they scroll into view; static where unsupported. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .pillar {
+        animation: pillar-rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 80%;
+      }
+      .pillar:nth-child(2) {
+        animation-range: entry 8% entry 88%;
+      }
+      .pillar:nth-child(3) {
+        animation-range: entry 16% entry 96%;
+      }
+      .pillar:nth-child(4) {
+        animation-range: entry 24% entry 100%;
+      }
+    }
+  }
+  @keyframes pillar-rise {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+  }
+</style>

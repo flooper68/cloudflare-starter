@@ -1,0 +1,52 @@
+---
+/**
+ * The public footer: the brand line, Product, Docs and Project links, and the one place
+ * the page names the technology, a collapsed "Under the hood". Copy: src/landing/content.ts.
+ */
+import { brand, LogoMark } from "@cloudflare-starter/ui";
+
+import { DOCS } from "@/docs/docs.config";
+import { FOOTER, UNDER_THE_HOOD } from "@/landing/content";
+
+const link =
+  "rounded-sm text-sm text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
+---
+
+<footer class="mt-6 border-t border-line">
+  <div class="mx-auto flex max-w-6xl flex-col gap-7 px-4 py-10 sm:px-6">
+    <div class="flex flex-wrap gap-10">
+      <div class="flex flex-[1_1_240px] flex-col gap-2">
+        <span class="inline-flex items-center gap-2 font-semibold text-fg">
+          <LogoMark className="size-5" />
+          {DOCS.siteName}
+        </span>
+        <span class="text-sm text-fg-muted">{brand.tagline}</span>
+      </div>
+      <div class="grid flex-[2_1_480px] grid-cols-1 gap-6 min-[420px]:grid-cols-3">
+        {
+          FOOTER.map((column) => (
+            <nav aria-label={column.title} class="flex flex-col gap-2">
+              <h2 class="text-xs font-semibold text-fg-subtle">{column.title}</h2>
+              {column.links.map(({ label, href }) => (
+                <a class={link} href={href}>
+                  {label}
+                </a>
+              ))}
+            </nav>
+          ))
+        }
+      </div>
+    </div>
+    <details class="group">
+      <summary
+        class="w-fit cursor-pointer rounded-sm text-sm font-medium text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+      >
+        Under the hood
+      </summary>
+      <p class="mt-2 max-w-2xl text-sm text-fg-muted">{UNDER_THE_HOOD}</p>
+    </details>
+    <p class="text-xs text-fg-subtle">
+      Open source. Prices on this page from Cloudflare's docs, November 2026.
+    </p>
+  </div>
+</footer>

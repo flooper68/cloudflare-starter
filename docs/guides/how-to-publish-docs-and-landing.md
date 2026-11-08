@@ -55,25 +55,79 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 - **404:** `apps/web/src/pages/404.astro`, prerendered, for every unknown path outside the SPA, with links home and to the docs, and the search in its header. It is `noindex`.
 - **Landing page:** see [below](#the-landing-page).
 - **Layout:** `apps/web/src/layouts/PublicLayout.astro` is the document shell of these pages. It reads no session, so the HTML can be built once.
-- **Account pages** (sign-in, sign-up, password reset, verification, invitations, consent, two-factor) are rendered per request on `apps/web/src/layouts/Layout.astro`, with the same `SiteHeader` (Docs, Changelog, Storybook, GitHub) plus **Sign in** and **Sign up**, or **Open app** when signed in. They have no theme switch (`themeToggle={false}`): their per-request policy runs scripts only from `/_astro/`, not `/site-theme.js`, so the OS setting applies. Demo endpoints such as `/api/hello` are not in the public header; they are on the app's **Developer demos** page.
+- **Header:** `apps/web/src/components/site/SiteHeader.astro`, on every public and account page: the logo and name, Docs, Changelog and GitHub, the theme switch, a small **Sign in** link and one **Try the demo** button (to `/sign-up`, which sends a signed-in visitor on to the app). Pages rendered per request pass `signedIn` and show **Open app** instead of both. Below 768 px the header is the logo, the button and a menu (`SiteMenu.astro`, a native `<details>`: the links, the theme as Dark, Light or System, and both calls to action). Storybook is linked from the footer and the docs.
+- **Account pages** (sign-in, sign-up, password reset, verification, invitations, consent, two-factor) are rendered per request on `apps/web/src/layouts/Layout.astro` with the same header and theme switch: their per-request policy allows `/site-theme.js` by its full URL, one file and nothing else beside `/_astro/` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#page-policy)). Demo endpoints such as `/api/hello` are not in the public header; they are on the app's **Developer demos** page.
 
 ## The landing page
 
-`apps/web/src/pages/index.astro`, prerendered on `PublicLayout`: the starter's own page, built from `packages/ui` components (`Hero`, `FeatureGrid`, `Badge`, button styles) and the header with search, Storybook, GitHub, **Sign in** and **Open app**. All copy and links are in `apps/web/src/landing/content.ts`; the feature cards summarise the README's Highlights, so change both together. The hero's app picture is `apps/web/src/components/site/LandingPreview.astro` (decorative, `aria-hidden`).
+`apps/web/src/pages/index.astro`, prerendered on `PublicLayout`. Its sections, top to bottom:
 
-The page reads no session, so it is the same for everyone: a signed-in visitor sees "Open app" (`/app/dashboard`), and a signed-out one who clicks it lands on `/sign-in`. It ships no React; its only scripts are the theme and search ones.
+| Section          | What it is                                                                                                                                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hero             | The hook, the lead, **Try the demo app** and **View on GitHub**, and `HeroScene.astro`: the app in CSS 3D with requests flowing to the database, files, jobs and email, plain labels, one `role="img"` with a text label |
+| Pillars          | The four pillars from the feature data, each with a clip slot: a designed poster ("Clip coming soon"), no player until the videos exist                                                                                  |
+| Feature map      | `FeatureMap.astro`, [below](#the-feature-map)                                                                                                                                                                            |
+| What it costs    | "$5/month, plus usage above the included allowances", a receipt of what the plan covers and the allowances that matter first, with the date the prices were checked                                                      |
+| Start in minutes | The four commands of [how-to-setup-web-app.md](how-to-setup-web-app.md#run-locally) and the time they took from a fresh clone                                                                                            |
+| What's new       | The three newest titled entries of `CHANGELOG.md` (`src/landing/whats-new.ts`, read at build time), with the release notes and the feed                                                                                  |
+| Closing, footer  | Both calls to action again; `SiteFooter.astro` with Product, Docs and Project links and the one place the page names its technology, a collapsed "Under the hood"                                                        |
+
+What the starter does is data ([feature data](#feature-data)); the page's own words and links are in `apps/web/src/landing/content.ts`. Keep the copy honest: the hook says "today" because a local app was measured (about 45 s from a fresh clone with Bun's cache warm, 80 s cold) and a deploy was not; the costs come from Cloudflare's pricing pages with the date checked; Containers is a demo, never "built".
+
+The page reads no session, so it is the same for everyone. It ships no React. Its scripts are the theme file, the header menu (`site-menu.ts`), the hero (`hero-scene.ts`) and the feature map (`feature-map.ts`), about 3 KB gzip together ([bundle budget](#bundle-budget)).
+
+### Motion
+
+CSS first, and the base style is always the finished state, so the first frame is complete and nothing waits for a script:
+
+- **Hero, idle:** requests flow, the services pulse, the app bobs (keyframes).
+- **Hero, scroll:** over the first 45% of a viewport of scrolling, the app's layers lift apart, the services rise and connect, then the requests brighten; scrolling up plays it back (`animation-timeline: scroll(root)`). Browsers without scroll timelines get the same states from an IntersectionObserver and a transition once the hero leaves the view.
+- **Hero, pointer:** under a fine pointer the scene tilts a few degrees toward it, eased by one `requestAnimationFrame` loop that stops when it settles; services lift on hover. Not on touch screens.
+- **Pillar cards** rise in as they scroll into view (`animation-timeline: view()`), static where unsupported.
+- **Feature map:** one pulse along the main flow.
+- **`prefers-reduced-motion: reduce`:** none of it. The scene and the map are static and no script moves anything; `test/e2e-build/landing.spec.ts` checks that no animation runs.
+
+No WebGL: a particle layer behind a CSS 3D scene would add a chunk and GPU work for decoration the scene already gives.
 
 ### Replace the landing page
 
 A product built from the starter replaces this page with its own:
 
-1. Rewrite `apps/web/src/landing/content.ts` (or delete it) and the sections of `index.astro`. Keep `export const prerender = true` and `PublicLayout` unless the page must know who is signed in; a page that reads the session is rendered per request, and its `Cache-Control` must then not be `public` (remove `/` from `PRERENDERED_PAGE_PATHS` in `apps/web/src/server/security-headers.ts` and from `STATIC_CACHE_RULES` in `static-cache.ts`, then regenerate `_headers`).
+1. Rewrite `apps/web/src/landing/content.ts` (or delete it), `src/content/features.ts` (or keep it for the docs) and the sections of `index.astro`. Keep `export const prerender = true` and `PublicLayout` unless the page must know who is signed in; a page that reads the session is rendered per request, and its `Cache-Control` must then not be `public` (remove `/` from `PRERENDERED_PAGE_PATHS` in `apps/web/src/server/security-headers.ts` and from `STATIC_CACHE_RULES` in `static-cache.ts`, then regenerate `_headers`).
 2. Set `DOCS.siteName` (`apps/web/src/docs/docs.config.ts`) to the product's name; it is the header and the page titles.
 3. Decide whether the product publishes the repository's docs. To publish product docs instead, point `DOCS.sources`, `navSource` and `start` at them. To drop the docs site:
    - delete `src/pages/docs/`, `src/content.config.ts`, `components/site/DocsSearch.astro` and its uses, and in `src/docs/` the docs-only modules (`links.ts`, `nav.ts`, `meta.ts`, `markdown-plugins.ts`, `search*.ts` and their tests); keep `docs.config.ts` (`siteName` and `repoUrl` are used by the header, the layout, the landing and the 404; drop its other fields), `robots.ts` and `site-integrations.ts` without `docsSearch()` (the sitemap);
    - remove `markdown` and the Pagefind import from `apps/web/astro.config.mjs`, the `/pagefind/*` and `/docs/*` entries of `PRERENDERED_PAGE_PATHS`, `PAGEFIND_CSP` and `STATIC_CACHE_RULES` (then regenerate `_headers`), and the Pagefind budget from `scripts/check-bundle-budget.ts`;
    - remove the Docs links (header, landing, 404), `test/architecture/docs.test.ts`, `test/e2e/docs.spec.ts`, `test/e2e-build/search.spec.ts` and `docs.spec.ts`, the `/docs/` paths in `test/e2e-build/a11y.spec.ts` and `landing.spec.ts`, and the docs rows of the smoke suite.
 4. Run `bun run build`, `bun run budget` and `bun run test:e2e:build` (landing, its policy, axe in both themes, phone width).
+
+## Feature data
+
+`apps/web/src/content/features.ts` is the one source of what the starter does, for the home page and the docs: plain data and pure helpers, no Astro or DOM, so pages, components, tests and scripts import it. It lives in the web app because both of its consumers do and its docs slugs are checked against the docs this app publishes; `packages/ui` stays free of product data.
+
+| Export                                                                              | What it is                                                                                                                                                          |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PILLARS`                                                                           | The four pillars, in order: `id`, `n` ("01"), `title`, `benefit`, five `points` for the pillar cards                                                                |
+| `GROUPS`                                                                            | The seven capability groups: `id`, `pillar`, `title`, `short` (the map's label), `benefit`, `docs`, `highlights` (3 to 6 feature ids the map's card lists)          |
+| `FEATURES`                                                                          | Every feature: `id`, `name`, a one-line `benefit`, `pillar`, `group`, `docs`, `status` (`built`; `demo`: runnable but not wired into the app; `planned`: not built) |
+| `EDGES`                                                                             | Features that work together, `{ a, b, why }`: the docs' "Works with"                                                                                                |
+| `FLOWS`                                                                             | The feature map's edges, `{ from, to, why, main? }` between groups and `app`; `main` is the path of the map's pulse                                                 |
+| `pillar`, `group`, `feature`, `groupsOf`, `featuresOf`, `highlightsOf`, `worksWith` | Lookups and lists                                                                                                                                                   |
+| `docsHref(slug)`                                                                    | `guides/how-to-setup-mcp` → `/docs/guides/how-to-setup-mcp/`                                                                                                        |
+
+`docs` is a route under `/docs/` without slashes at the ends (`start`, `guides/how-to-setup-r2`). Ids are stable once published: add, don't rename. `apps/web/src/content/features.test.ts` fails on a duplicate id, a feature outside its group's pillar, a `docs` slug that is not a published page, a group card with fewer than 3 or more than 6 features, or a map that grows past 12 nodes and 12 edges.
+
+### The feature map
+
+`apps/web/src/components/site/FeatureMap.astro`, generated from the data and shared (`<FeatureMap />` on any page; pass `id` when a page has two). It draws the app, the four pillars as areas and the seven groups as nodes, with the `FLOWS` between them; individual features are in the cards, not on the map.
+
+- Hover, focus or tap a node: its flows and neighbours light up, the rest dims, and the card beside the map (`aria-live="polite"`) lists the group's highlights with **Read the docs**.
+- The pillar chips, or a pillar's label, filter the map; **List** shows the same content as rows.
+- Keyboard: the map is one tab stop; arrow keys, Home and End move between nodes, Escape goes back to the app and clears the filter, Tab moves on to the card's link.
+- Below 768 px: four pillar rows (`<details>`), each expanding to its groups and every feature with a docs link.
+- Without JavaScript the map and the list both show.
+
+Its script is `feature-map.ts`, the `<feature-map>` custom element. Positions are set in the component (a 1000 × 560 box); a new group needs a position there.
 
 ## Changelog
 
@@ -85,7 +139,7 @@ What goes into the changelog and how a release is cut: [development.md](../proce
 
 ## Theme
 
-The public pages follow the OS setting until the visitor picks a theme with the switch in the header; the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head. It is an external file, not inline code, so the pages' Content-Security-Policy allows it without `'unsafe-inline'`, a hash or a nonce. The docs pages are static assets; their policy is a `_headers` rule plus Astro's `<meta>` policy ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)). The `/app` theme is a user setting and separate.
+The public and account pages follow the OS setting until the visitor picks a theme with the switch in the header (or Dark, Light or System in the phone menu); the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head of `PublicLayout.astro` and `Layout.astro`. It is an external file, not inline code, so no policy needs `'unsafe-inline'`, a hash or a nonce for it: the prerendered pages' policy allows `'self'` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)) and the per-request policy allows this one file by its full URL ([page policy](how-to-configure-security-headers.md#page-policy)). It stays a separate file rather than part of a bundle because bundles are deferred modules, which would apply the saved theme after the first paint. The `/app` theme is a user setting and separate.
 
 ## Search
 
@@ -129,7 +183,7 @@ bun run dev:web                     # /docs renders on request in dev
 cd apps/web && bun run build:app    # prerenders every page into dist/client/docs/
 ```
 
-`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the landing page (static, its links, the cache header), the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes, and no sideways scrolling at 375 px. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
+`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the landing page (static, its calls to action, the cache header, the feature map by mouse and keyboard, its filter and list, no running animation under reduced motion, the phone menu and the stacked map), the theme switch on the account pages, the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes, and no sideways scrolling at 375 px. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
 
 ## Common problems
 

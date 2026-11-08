@@ -1,12 +1,18 @@
 /**
- * The landing page as built: prerendered (the same HTML signed in or out), its links,
- * and the public pages at phone width without sideways scrolling.
+ * The home page as built: prerendered (the same HTML signed in or out) under one policy,
+ * its calls to action, the feature map from src/content/features.ts (mouse, keyboard,
+ * filter, list), the calm page under reduced motion, the phone menu, and the public pages
+ * at phone width without sideways scrolling. Every test fails on a CSP violation
+ * (fixtures.ts).
  */
+import { GROUPS, PILLARS } from "../../src/content/features";
 import { PRERENDERED_PAGE_CSP } from "../../src/server/security-headers";
 import { expect, test } from "../e2e/fixtures";
 
-test.describe("landing page", () => {
-  test("is static HTML with the starter's links and no React", async ({
+const GITHUB = "https://github.com/flooper68/cloudflare-starter";
+
+test.describe("home page", () => {
+  test("is static HTML under one policy, with the calls to action", async ({
     page,
     request,
   }) => {
@@ -20,46 +26,171 @@ test.describe("landing page", () => {
     );
     const html = await response.text();
     expect(html).not.toContain("astro-island");
+    // Technology is named once, in the footer's "Under the hood".
+    expect(html.match(/Better Auth/g)).toHaveLength(1);
 
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "The Cloudflare-first SaaS starter"
+      "Ship an agent-native app today."
     );
     const header = page.getByRole("banner");
     await expect(
-      header.getByRole("link", { name: "Open app" })
-    ).toHaveAttribute("href", "/app/dashboard");
+      header.getByRole("link", { name: "Try the demo" })
+    ).toHaveAttribute("href", "/sign-up");
     await expect(header.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
       "/sign-in"
     );
+    await expect(
+      header.getByRole("button", { name: /Switch to the (light|dark) theme/ })
+    ).toBeVisible();
+    for (const name of ["Docs", "Changelog", "GitHub"])
+      await expect(
+        header
+          .getByRole("navigation", { name: "Site" })
+          .getByRole("link", { name })
+      ).toBeVisible();
+
     const main = page.getByRole("main");
     await expect(
-      main.getByRole("link", { name: "Read the docs" })
-    ).toHaveAttribute("href", "/docs/");
+      main.getByRole("link", { name: "Try the demo app" })
+    ).toHaveCount(2);
     await expect(
-      main.getByRole("link", { name: "View on GitHub" })
-    ).toHaveAttribute(
-      "href",
-      "https://github.com/flooper68/cloudflare-starter"
-    );
+      main.getByRole("link", { name: "View on GitHub" }).first()
+    ).toHaveAttribute("href", GITHUB);
     await expect(
-      main.getByRole("link", { name: "Open Storybook" })
-    ).toHaveAttribute("href", "/_storybook/");
+      main.getByRole("img", { name: /One app in the middle/ })
+    ).toBeVisible();
     await expect(
       page
-        .getByRole("region", { name: "What's in the box" })
-        .getByRole("listitem")
-    ).toHaveCount(12);
+        .getByRole("region", { name: "Four things you don't have to build" })
+        .getByRole("heading", { level: 3 })
+    ).toHaveText(PILLARS.map((pillar) => pillar.title));
+    await expect(
+      page.getByRole("region", { name: "What's new" }).getByRole("link")
+    ).toHaveCount(5);
   });
 
-  test("Read the docs leads into the docs", async ({ page }) => {
+  test("Try the demo app leads to sign-up", async ({ page }) => {
     await page.goto("/");
     await page
       .getByRole("main")
-      .getByRole("link", { name: "Read the docs" })
+      .getByRole("link", { name: "Try the demo app" })
+      .first()
       .click();
-    await expect(page).toHaveURL(/\/docs\/$/);
+    await expect(page).toHaveURL(/\/sign-up$/);
+  });
+});
+
+test.describe("feature map", () => {
+  test("shows a group's card on hover and its features", async ({ page }) => {
+    await page.goto("/");
+    const map = page.getByRole("group", { name: "Feature map" });
+    await expect(map.getByRole("button")).toHaveCount(
+      1 + PILLARS.length + GROUPS.length
+    );
+    await map.getByRole("button", { name: "Workspaces & billing" }).hover();
+    const card = page.getByRole("complementary", { name: "Details" });
+    await expect(
+      card.getByRole("heading", { name: "Workspaces, billing & admin" })
+    ).toBeVisible();
+    await expect(
+      card.getByRole("listitem").filter({ visible: true })
+    ).toHaveCount(5);
+    await expect(
+      card
+        .getByRole("link", { name: "Read the docs" })
+        .filter({ visible: true })
+    ).toHaveAttribute("href", "/docs/guides/how-to-configure-workspaces/");
+  });
+
+  test("is one tab stop, and arrow keys move between the nodes", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const map = page.getByRole("group", { name: "Feature map" });
+    const app = map.getByRole("button", { name: "Your app" });
+    await app.focus();
+    await expect(app).toHaveAttribute("tabindex", "0");
+    await page.keyboard.press("ArrowRight");
+    const first = map.getByRole("button", { name: /Agent-native/ });
+    await expect(first).toBeFocused();
+    await expect(first).toHaveAttribute("aria-current", "true");
+    await expect(app).toHaveAttribute("tabindex", "-1");
+    await page.keyboard.press("ArrowRight");
+    await expect(
+      map.getByRole("button", { name: "Agents", exact: true })
+    ).toBeFocused();
+    const card = page.getByRole("complementary", { name: "Details" });
+    await expect(
+      card.getByRole("heading", { name: "Agents & MCP" })
+    ).toBeVisible();
+    // Tab leaves the map for the card's link.
+    await page.keyboard.press("Tab");
+    await expect(
+      card
+        .getByRole("link", { name: "Read the docs" })
+        .filter({ visible: true })
+    ).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("End");
+    await expect(
+      map.getByRole("button", { name: "Observability" })
+    ).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(app).toBeFocused();
+  });
+
+  test("filters by pillar and switches to the list", async ({ page }) => {
+    await page.goto("/");
+    const filters = page.getByRole("group", { name: "Filter by pillar" });
+    await filters.getByRole("button", { name: "Infra solved" }).click();
+    await expect(
+      filters.getByRole("button", { name: "Infra solved" })
+    ).toHaveAttribute("aria-pressed", "true");
+    const map = page.getByRole("group", { name: "Feature map" });
+    await expect(
+      map.getByRole("button", { name: "Agents", exact: true })
+    ).toHaveClass(/is-filtered/);
+    await expect(
+      map.getByRole("button", { name: "Observability" })
+    ).not.toHaveClass(/is-filtered/);
+
+    await page.getByRole("button", { name: "List" }).click();
+    await expect(map).toBeHidden();
+    await page.locator(".fm-summary", { hasText: "Infra solved" }).click();
+    await expect(
+      page.getByRole("link", { name: "Health checks" })
+    ).toBeVisible();
+  });
+});
+
+test.describe("reduced motion", () => {
+  test.use({ reducedMotion: "reduce" });
+
+  test("the page is static and the hero complete", async ({ page }, info) => {
+    await page.goto("/");
+    const running = await page.evaluate(
+      () =>
+        document
+          .getAnimations()
+          .filter((animation) => animation.playState === "running").length
+    );
+    expect(running).toBe(0);
+    const scene = page.getByRole("img", { name: /One app in the middle/ });
+    await expect(scene).toBeVisible();
+    // Every service tile of the scene is drawn, at full opacity.
+    const opacities = await scene
+      .locator(".hs-tile")
+      .evaluateAll((tiles) =>
+        tiles.map((tile) => getComputedStyle(tile).opacity)
+      );
+    expect(opacities).toEqual(["1", "1", "1", "1", "1", "1"]);
+    await expect(page.locator(".fm-pulse")).toBeHidden();
+    await info.attach("reduced-motion.png", {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: "image/png",
+    });
   });
 });
 
@@ -74,4 +205,37 @@ test.describe("phone width", () => {
       );
       expect(overflow).toBeLessThanOrEqual(0);
     });
+
+  test("the header has the logo, the button and a menu", async ({ page }) => {
+    await page.goto("/");
+    const header = page.getByRole("banner");
+    await expect(
+      header.getByRole("link", { name: "Try the demo" })
+    ).toBeVisible();
+    await expect(header.getByRole("link", { name: "Sign in" })).toBeHidden();
+    await header.locator("summary").click();
+    const menu = header.getByRole("navigation", { name: "Menu" });
+    await expect(menu.getByRole("link", { name: "Sign in" })).toBeVisible();
+    const theme = header.getByRole("group", { name: "Theme" });
+    await theme.getByRole("button", { name: "Light" }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(theme.getByRole("button", { name: "Light" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeHidden();
+  });
+
+  test("the feature map is a list of four pillars", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("group", { name: "Feature map" })).toBeHidden();
+    const section = page.getByRole("region", {
+      name: "Everything in the box, and how it connects",
+    });
+    for (const pillar of PILLARS)
+      await expect(
+        section.locator(".fm-summary", { hasText: pillar.title })
+      ).toBeVisible();
+  });
 });
