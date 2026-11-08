@@ -20,7 +20,10 @@ export { jobCatalog } from "./job-catalog";
 export * from "./jobs";
 export * from "./kernel";
 export * from "./notes";
-export { notificationCatalog } from "./notification-catalog";
+export {
+  notificationCatalog,
+  preferenceCatalogFor,
+} from "./notification-catalog";
 export * from "./notifications";
 export * from "./platform";
 export * from "./privacy";
