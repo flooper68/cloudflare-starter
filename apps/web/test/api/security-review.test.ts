@@ -3,20 +3,13 @@ import { createOTP } from "@better-auth/utils/otp";
 import { describe, expect, it } from "vitest";
 import { getAuth } from "@/server/auth";
 import type { AppEnv } from "@/server/env";
-import { handleMcp } from "@/server/mcp/handler";
 import {
   GOOGLE_TEST_CLIENT_ID,
   GOOGLE_TEST_CLIENT_SECRET,
   googleIdToken,
 } from "../google-fixture";
-import {
-  APP_URL,
-  env,
-  humanHeaders,
-  signUp,
-  type TestUser,
-  testRequestContext,
-} from "./helpers";
+import { APP_URL, env, humanHeaders, signUp, type TestUser } from "./helpers";
+import { connectAgent, mcpRequest, tokenRequest } from "./oauth";
 
 let ip = 20;
 function cookies(response: Response, previous = "") {
@@ -47,17 +40,6 @@ const post = (runtime: AppEnv, path: string, body: unknown, cookie = "") =>
         ...humanHeaders(`198.51.100.${++ip}`),
       },
       body: JSON.stringify(body),
-    })
-  );
-const tokenPost = (runtime: AppEnv, body: Record<string, string>) =>
-  getAuth(runtime).handler(
-    new Request(`${APP_URL}/api/auth/oauth2/token`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-        ...humanHeaders(`198.51.100.${++ip}`),
-      },
-      body: new URLSearchParams(body),
     })
   );
 async function totp(uri: string) {
@@ -94,103 +76,6 @@ async function oldSession(user: TestUser, runtime = env) {
     })
   );
 }
-async function mcp(runtime: AppEnv, token: string) {
-  return handleMcp(
-    new Request(`${APP_URL}/mcp`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-        accept: "application/json, text/event-stream",
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "initialize",
-        params: {
-          protocolVersion: "2025-03-26",
-          capabilities: {},
-          clientInfo: { name: "security-review", version: "1" },
-        },
-      }),
-    }),
-    runtime,
-    testRequestContext()
-  );
-}
-
-async function authorize(runtime: AppEnv, user: TestUser) {
-  const redirect = "https://client.example.test/callback";
-  const registered = await post(runtime, "/oauth2/register", {
-    client_name: "Security review client",
-    redirect_uris: [redirect],
-    token_endpoint_auth_method: "none",
-    grant_types: ["authorization_code", "refresh_token"],
-    response_types: ["code"],
-    scope: "openid profile email offline_access",
-    resources: [`${APP_URL}/mcp`],
-  });
-  expect(registered.status).toBe(201);
-  const { client_id: clientId } = (await registered.json()) as {
-    client_id: string;
-  };
-  const verifier =
-    "security-review-verifier-0123456789abcdefghijklmnopqrstuvwxyz-0123456789";
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(verifier)
-  );
-  const challenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replaceAll("=", "");
-  const query = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirect,
-    response_type: "code",
-    code_challenge: challenge,
-    code_challenge_method: "S256",
-    scope: "openid profile email offline_access",
-    resource: `${APP_URL}/mcp`,
-    state: "security-review-state",
-    prompt: "consent",
-  });
-  const request = await getAuth(runtime).handler(
-    new Request(`${APP_URL}/api/auth/oauth2/authorize?${query}`, {
-      headers: { cookie: user.cookie },
-    })
-  );
-  expect(request.status).toBe(302);
-  const consentUrl = new URL(request.headers.get("location") ?? "", APP_URL);
-  expect(consentUrl.pathname).toBe("/consent");
-  const consent = await post(
-    runtime,
-    "/oauth2/consent",
-    { accept: true, oauth_query: consentUrl.search.slice(1) },
-    cookies(request, user.cookie)
-  );
-  expect(consent.status).toBe(200);
-  const { url } = (await consent.json()) as { url: string };
-  const code = new URL(url).searchParams.get("code");
-  expect(code).toBeTruthy();
-  const token = await tokenPost(runtime, {
-    grant_type: "authorization_code",
-    client_id: clientId,
-    code: code ?? "",
-    code_verifier: verifier,
-    redirect_uri: redirect,
-    resource: `${APP_URL}/mcp`,
-  });
-  expect(token.status).toBe(200);
-  const tokens = (await token.json()) as {
-    access_token: string;
-    refresh_token: string;
-  };
-  expect(tokens.refresh_token).toBeTruthy();
-  expect((await mcp(runtime, tokens.access_token)).status).toBe(200);
-  return { clientId, ...tokens };
-}
-
 describe("independent security review regressions", () => {
   it("never reveals an enrolled social account's TOTP seed to an older unverified cookie", async () => {
     const user = await signUp("Social seed", "social-seed@example.test");
@@ -309,9 +194,9 @@ describe("independent security review regressions", () => {
         `offline-${mode}@example.test`,
         runtime
       );
-      const grant = await authorize(runtime, user);
+      const grant = await connectAgent(runtime, user);
       await post(runtime, "/sign-out", {}, user.cookie);
-      const refresh = await tokenPost(runtime, {
+      const refresh = await tokenRequest(runtime, {
         grant_type: "refresh_token",
         client_id: grant.clientId,
         refresh_token: grant.refresh_token,
@@ -324,8 +209,8 @@ describe("independent security review regressions", () => {
       expect.soft(refresh.status).toBe(400);
       expect.soft(body.error).toBe("invalid_grant");
       if (body.access_token)
-        expect((await mcp(runtime, body.access_token)).status).toBe(401);
-      expect((await mcp(runtime, grant.access_token)).status).toBe(401);
+        expect((await mcpRequest(runtime, body.access_token)).status).toBe(401);
+      expect((await mcpRequest(runtime, grant.access_token)).status).toBe(401);
     }
   );
 });

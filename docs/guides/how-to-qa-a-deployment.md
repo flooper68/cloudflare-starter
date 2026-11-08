@@ -189,9 +189,10 @@ Guide: [how-to-setup-mcp.md](how-to-setup-mcp.md).
 1. In Claude (claude.ai → Settings → Connectors) add a custom connector `https://starter.flooper.me/mcp`.
 2. Sign in as A (not the owner's account). The consent page names Claude, A's address and `claude.ai`, lists what it may do in plain words (use the tools as you, see your name and email, stay connected) and says where to revoke it; click Allow.
 3. Ask Claude to call `whoami`, then `list_workspaces` and `list_files` for `QA <run> shared`.
-4. Settings → Security → Active sessions: sign out the session that allowed Claude; the next tool call fails until Claude reconnects. Remove the connector from Claude.
+4. Ask Claude to call `list_connected_agents`: Claude is listed with `thisConnection: true`.
+5. Settings → Connected agents: Claude is listed with the date it was connected, its permissions in plain words and the browser that approved it. Click **Disconnect**, confirm; the next tool call fails and Claude asks to connect again. Remove the connector from Claude.
 
-Expected: the tools answer as A with A's workspaces only; A's audit log shows the tool calls' changes, none for reads.
+Expected: the tools answer as A with A's workspaces only; A's audit log shows the tool calls' changes, none for reads, plus `mcp.client.authorized` and `mcp.client.revoked`.
 Mail: possibly **New sign-in to your account** for the consent sign-in.
 
 ## Placeholder apps: Notes and Tasks

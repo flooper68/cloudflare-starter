@@ -25,4 +25,4 @@ export function describeScopes(scope: string): string[] {
 
 /** Where the consent page tells the user they can take the access back. */
 export const REVOKE_HINT =
-  "Revoke it any time: sign out the browser session you allow it from in Settings › Security › Active sessions.";
+  "Disconnect it any time in Settings › Connected agents.";

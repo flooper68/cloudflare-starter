@@ -111,6 +111,7 @@ describe("the app's navigation source", () => {
       "settings-account",
       "settings-appearance",
       "settings-security",
+      "settings-connected-agents",
       "settings-privacy",
       "settings-workspace",
       "demos",

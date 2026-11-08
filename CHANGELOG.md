@@ -6,6 +6,7 @@ What changed in each release of the starter, for people evaluating it or buildin
 
 ### Added
 
+- **Settings › Connected agents.** People see every AI agent (MCP client) they allowed, with what it may do and the browser that approved it, and disconnect one with a confirmation: its tokens and consent are deleted, its access token stops working at once and it must ask again. Agents get `list_connected_agents` and `disconnect_agent`, admins see a user's agents read-only, and the audit log records `mcp.client.authorized` and `mcp.client.revoked`. The consent page now points there to revoke access.
 - **Command palette in the app.** ⌘K (Ctrl+K), or **Search** in the top bar, opens a search-and-jump palette (full screen on phones): every page you may open, your workspace's notes by title or body, workspace switching in multi mode, and actions (new note, invite member, theme, docs, changelog, sign out). The sidebar, top bar titles and palette now share one navigation list, and a feature adds its own search group with a provider ([how-to-add-a-feature.md](docs/guides/how-to-add-a-feature.md#navigation-and-the-command-palette)).
 
 ### Changed

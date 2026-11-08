@@ -58,9 +58,7 @@ test("the MCP consent page names the client's access in plain words", async ({
   );
   await expect(permissions).toContainText("See your email address");
   await expect(permissions).toContainText("Stay connected until you revoke it");
-  await expect(
-    page.getByText(/Settings › Security › Active sessions/)
-  ).toBeVisible();
+  await expect(page.getByText(/Settings › Connected agents/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Allow" })).toBeEnabled();
 });
 

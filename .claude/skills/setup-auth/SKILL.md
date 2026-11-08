@@ -40,7 +40,7 @@ Admin portal: `ADMIN_PORTAL` (on | off) is required too, no default, asked and w
 
 ## MCP (Claude as a client)
 
-On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with that URL; Claude registers itself, the user signs in and approves on `/consent`. Tools live in `apps/web/src/server/mcp/tools.ts`. Rule: every tRPC procedure gets a tool or a reasoned exemption; `parity.test.ts` enforces it.
+On by default: `<APP_URL>/mcp`. In Claude, the user adds a custom connector with that URL; Claude registers itself, the user signs in and approves on `/consent`. They see and disconnect connected agents in Settings › Connected agents (`/app/settings/connected-agents`; tools `list_connected_agents`, `disconnect_agent`): that deletes the client's tokens and consent and `/mcp` refuses its token at once. Tools live in `apps/web/src/server/mcp/tools.ts`. Rule: every tRPC procedure gets a tool or a reasoned exemption; `parity.test.ts` enforces it.
 
 ## After upgrading Better Auth or adding a plugin
 

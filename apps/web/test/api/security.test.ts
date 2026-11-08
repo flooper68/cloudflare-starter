@@ -10,6 +10,7 @@ import {
   callerFor,
   env,
   humanHeaders,
+  mcpAccessToken,
   signUp,
   type TestUser,
   testRequestContext,
@@ -295,16 +296,9 @@ describe("security boundaries", () => {
       headers: new Headers({ cookie: setup.cookie }),
     });
     const request = async (sessionId?: string) => {
-      const { token } = await getAuth(env).api.signJWT({
-        body: {
-          payload: {
-            sub: user.id,
-            azp: "security-test",
-            iss: `${APP_URL}/api/auth`,
-            aud: `${APP_URL}/mcp`,
-            ...(sessionId ? { starter_session_id: sessionId } : {}),
-          },
-        },
+      const token = await mcpAccessToken(user, {
+        clientId: "security-test",
+        sessionId,
       });
       return handleMcp(
         new Request(`${APP_URL}/mcp`, {

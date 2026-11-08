@@ -1,7 +1,9 @@
 import {
   accountSettingsSchema,
+  disconnectAgent,
   getAccountSettings,
   listAccountSessions,
+  listConnectedAgents,
   removeAccountAvatar,
   revokeAccountSession,
   updateAccountSettings,
@@ -37,6 +39,34 @@ export const accountRouter = router({
           { ...ctx, gateway: ctx.accountAuth },
           { userId: ctx.user.id, sessionId: input.sessionId }
         )
+      ),
+  }),
+  /** OAuth (MCP) clients the person allowed: Settings › Connected agents. */
+  agents: router({
+    list: protectedProcedure.query(async ({ ctx }) => ({
+      items: await listConnectedAgents(ctx, {
+        userId: ctx.user.id,
+        // Only a browser has a session of its own to mark; MCP calls mark their client.
+        currentSessionId: ctx.session?.id ?? null,
+        currentClientId: ctx.agentClientId ?? null,
+      }),
+    })),
+    disconnect: protectedProcedure
+      .input(
+        z.object({
+          clientId: z
+            .string()
+            .min(1)
+            .max(200)
+            .describe("The agent's clientId from list_connected_agents."),
+        })
+      )
+      .mutation(({ ctx, input }) =>
+        disconnectAgent(ctx, {
+          userId: ctx.user.id,
+          clientId: input.clientId,
+          currentClientId: ctx.agentClientId ?? null,
+        })
       ),
   }),
   removeAvatar: protectedProcedure.mutation(({ ctx }) =>

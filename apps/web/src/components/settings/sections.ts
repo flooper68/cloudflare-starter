@@ -53,6 +53,15 @@ export const settingsSections: readonly SettingsSection[] = [
     visible: () => true,
   },
   {
+    id: "connected-agents",
+    label: "Connected agents",
+    title: "Connected agents",
+    to: "/app/settings/connected-agents",
+    group: "account",
+    keywords: ["MCP", "agents", "Claude", "OAuth", "apps", "disconnect"],
+    visible: () => true,
+  },
+  {
     id: "privacy",
     label: "Privacy",
     title: "Privacy",

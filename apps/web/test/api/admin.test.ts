@@ -2,11 +2,7 @@ import { env as workerEnv } from "cloudflare:workers";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import {
-  getAuth,
-  IMPERSONATION_OAUTH_REFUSED,
-  mcpResource,
-} from "@/server/auth";
+import { getAuth, IMPERSONATION_OAUTH_REFUSED } from "@/server/auth";
 import type { AppEnv } from "@/server/env";
 import { handleMcp } from "@/server/mcp/handler";
 import { buildMcpServer } from "@/server/mcp/server";
@@ -21,6 +17,7 @@ import {
   envWith,
   humanHeaders,
   mailEnv,
+  mcpAccessToken,
   outbox,
   signUp,
   signUpRequest,
@@ -613,20 +610,13 @@ describe("BOOTSTRAP_ADMIN_EMAIL", () => {
 describe("suspension and MCP access tokens", () => {
   it("a suspended user's access token stops working at /mcp", async () => {
     const bea = await signUp("Bea Banned", "bea@acme.test");
-    const { token } = await getAuth(env).api.signJWT({
-      body: {
-        payload: {
-          sub: bea.id,
-          starter_session_id: (
-            await getAuth(env).api.getSession({
-              headers: new Headers({ cookie: bea.cookie }),
-            })
-          )?.session.id,
-          azp: "test-client",
-          aud: mcpResource(APP_URL),
-          iss: `${APP_URL}/api/auth`,
-        },
-      },
+    const token = await mcpAccessToken(bea, {
+      clientId: "test-client",
+      sessionId: (
+        await getAuth(env).api.getSession({
+          headers: new Headers({ cookie: bea.cookie }),
+        })
+      )?.session.id,
     });
     const call = () =>
       handleMcp(

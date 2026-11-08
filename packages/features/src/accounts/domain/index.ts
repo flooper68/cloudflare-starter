@@ -1,6 +1,16 @@
-// Accounts domain: the security notifications and the new-sign-in rule.
+// Accounts domain: the security notifications, the new-sign-in rule and connected agents.
 
+export { AgentNotFoundError } from "./agent-errors";
 export { SIGN_UP_METHODS, signedUpEvent } from "./analytics-events";
+export {
+  type AgentGrantRow,
+  type AgentRefreshTokenRow,
+  type AgentSessionRow,
+  agentHost,
+  type ConnectedAgent,
+  consentCoversToken,
+  summarizeConnectedAgents,
+} from "./connected-agents";
 export {
   isNewSignIn,
   NEW_ACCOUNT_GRACE_MS,

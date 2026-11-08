@@ -154,6 +154,60 @@ export async function signUp(
   return { id: body.user.id, email, name, cookie };
 }
 
+/**
+ * An MCP access token like the ones Better Auth's OAuth server issues for `clientId`, with
+ * the user's consent on record (as the consent page leaves it), so `/mcp` accepts it while
+ * `sessionId` is live. For the real OAuth flow, see `connectAgent` in oauth.ts.
+ */
+export async function mcpAccessToken(
+  user: { readonly id: string },
+  options: {
+    readonly clientId: string;
+    readonly sessionId?: string | null;
+    readonly runtimeEnv?: AppEnv;
+  }
+): Promise<string> {
+  const runtime = options.runtimeEnv ?? env;
+  const now = Date.now();
+  await runtime.DB.prepare(
+    "INSERT OR IGNORE INTO oauth_client (id, client_id, name, redirect_uris, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+  )
+    .bind(
+      `row-${options.clientId}`,
+      options.clientId,
+      options.clientId,
+      JSON.stringify(["https://client.example.test/callback"]),
+      now,
+      now
+    )
+    .run();
+  await runtime.DB.prepare(
+    "INSERT INTO oauth_consent (id, client_id, user_id, scopes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+  )
+    .bind(
+      crypto.randomUUID(),
+      options.clientId,
+      user.id,
+      JSON.stringify(["openid", "offline_access"]),
+      now - 60_000,
+      now - 60_000
+    )
+    .run();
+  const { token } = await getAuth(runtime).api.signJWT({
+    body: {
+      payload: {
+        sub: user.id,
+        azp: options.clientId,
+        iss: `${APP_URL}/api/auth`,
+        aud: `${APP_URL}/mcp`,
+        iat: Math.floor(now / 1000),
+        ...(options.sessionId ? { starter_session_id: options.sessionId } : {}),
+      },
+    },
+  });
+  return token;
+}
+
 /** A fresh HTTP request context, as middleware.ts builds it. */
 export function testRequestContext(): RequestContext {
   return createRequestContext(

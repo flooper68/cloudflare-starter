@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 import { NOW, seedAccount, seedSession } from "../../test/admin-fixtures";
+import { seedAgentGrant } from "../../test/agent-fixtures";
 import { fixedClock, seedWorkspace, testDb } from "../../test/fixtures";
 import { AdminUserNotFoundError } from "./domain";
 import { getUserDetail } from "./get-user-detail";
@@ -36,6 +37,12 @@ describe("getUserDetail", () => {
       impersonatedBy: "user-admin",
     });
     await seedSession(grace.id, { expired: true });
+    await seedAgentGrant({
+      userId: grace.id,
+      clientId: "graces-claude",
+      name: "Claude",
+      sessionId: recent,
+    });
 
     const detail = await getUserDetail(deps(), admin, { userId: grace.id });
     expect(detail).toMatchObject({
@@ -54,7 +61,15 @@ describe("getUserDetail", () => {
       [recent, null],
       [expect.any(String), "user-admin"],
     ]);
+    expect(detail.connectedAgents).toMatchObject([
+      {
+        clientId: "graces-claude",
+        name: "Claude",
+        session: { id: recent, current: false },
+      },
+    ]);
     expect(JSON.stringify(detail)).not.toContain("token-");
+    expect(JSON.stringify(detail)).not.toContain("secret");
   });
 
   it("not found for an unknown user", async () => {

@@ -30,6 +30,7 @@ import {
   callerFor,
   env,
   humanHeaders,
+  mcpAccessToken,
   signUp,
   type TestUser,
   testRequestContext,
@@ -329,20 +330,13 @@ describe("rate limits", () => {
 
   it("answers /mcp over mcp.user for one token user, whatever the IP", async () => {
     // An access token like the ones Better Auth's MCP OAuth server issues.
-    const { token } = await getAuth(env).api.signJWT({
-      body: {
-        payload: {
-          sub: user.id,
-          starter_session_id: (
-            await getAuth(env).api.getSession({
-              headers: new Headers({ cookie: user.cookie }),
-            })
-          )?.session.id,
-          azp: "abuse-test-client",
-          aud: `${APP_URL}/mcp`,
-          iss: `${APP_URL}/api/auth`,
-        },
-      },
+    const token = await mcpAccessToken(user, {
+      clientId: "abuse-test-client",
+      sessionId: (
+        await getAuth(env).api.getSession({
+          headers: new Headers({ cookie: user.cookie }),
+        })
+      )?.session.id,
     });
     let request = 0;
     const send = () => {
@@ -373,7 +367,9 @@ describe("rate limits", () => {
     expect(await response.json()).toMatchObject({
       error: { data: { code: "RATE_LIMITED", retryAfterSeconds: 60 } },
     });
-  });
+    // 120 authorized /mcp requests, each reading the user, the session and the agent
+    // grant from D1; with the other API files running in parallel that can pass 5 s.
+  }, 15_000);
 });
 
 /** Failed human checks recorded for an email, newest first. */

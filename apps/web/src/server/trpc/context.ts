@@ -48,6 +48,8 @@ export function createAppContext(
   options: {
     readonly billingProvider?: BillingProvider;
     readonly authSessionId?: string | null;
+    /** The MCP access token's client (`azp`), so tools know which agent is calling. */
+    readonly agentClientId?: string | null;
     readonly browser?: BrowserContext;
   } = {}
 ): Context {
@@ -95,6 +97,7 @@ export function createAppContext(
     user,
     session: browser.session,
     authSessionId: options.authSessionId ?? browser.session?.id,
+    agentClientId: options.agentClientId ?? null,
     browser: browser.exchange,
     adminAuth: createAdminAuthGateway(() => getAuth(env), browser.exchange),
     accountAuth: createAccountAuthGateway(() => getAuth(env), browser.exchange),

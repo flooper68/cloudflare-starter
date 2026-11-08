@@ -1,6 +1,7 @@
 /**
  * Audit events for Better Auth's own endpoints, which are not our use cases: sign-in,
- * failed sign-in, sign-up, password reset requests and password changes (docs/guides/how-to-use-the-audit-log.md).
+ * failed sign-in, sign-up, password reset requests, password changes and OAuth (MCP) client
+ * authorizations on the consent page (docs/guides/how-to-use-the-audit-log.md).
  * Sign-ups are also tracked as the product event `auth.signed_up`.
  * Next to each record(), the security notifications of the same events: `auth.new-sign-in`
  * (password and social sign-ins from a browser with no other live session; not sign-up or
@@ -232,6 +233,11 @@ export async function auditAuthEndpoint(
     return;
   }
 
+  if (ctx.path === "/oauth2/consent") {
+    await auditAgentAuthorized(env, ctx, returned);
+    return;
+  }
+
   const email = emailOf(ctx);
   if (!email) return;
 
@@ -252,6 +258,54 @@ export async function auditAuthEndpoint(
       target: { type: "email", id: email },
     });
   }
+}
+
+/**
+ * `/oauth2/consent` answered: records `mcp.client.authorized` when the person allowed the
+ * client and Better Auth issued an authorization code (its redirect carries `code`). A
+ * denial, an error, or a detour to sign in again records nothing. The client and scopes come
+ * from the signed authorization request (`oauth_query`), which Better Auth verified before
+ * answering; no code, token or state is recorded.
+ */
+async function auditAgentAuthorized(
+  env: AppEnv,
+  ctx: GenericEndpointContext,
+  returned: unknown
+): Promise<void> {
+  const userId = ctx.context.session?.user.id;
+  const body = ctx.body as
+    | { accept?: unknown; scope?: unknown; oauth_query?: unknown }
+    | undefined;
+  if (!userId || body?.accept !== true || isAPIError(returned)) return;
+  const redirect = (returned as { url?: unknown } | null)?.url;
+  let granted = false;
+  try {
+    granted =
+      typeof redirect === "string" &&
+      new URL(redirect, "https://redirect.invalid").searchParams.has("code");
+  } catch {
+    granted = false;
+  }
+  if (!granted) return;
+  const query = new URLSearchParams(
+    typeof body.oauth_query === "string" ? body.oauth_query : ""
+  );
+  const clientId = query.get("client_id");
+  if (!clientId) return;
+  const scope =
+    typeof body.scope === "string" ? body.scope : (query.get("scope") ?? "");
+  const scopes = [...new Set(scope.split(/\s+/).filter(Boolean))]
+    .slice(0, 20)
+    .map((item) => item.slice(0, 200));
+  await record(env, ctx, {
+    action: "mcp.client.authorized",
+    actor: { kind: "user", userId },
+    target: { type: "user", id: userId },
+    metadata: {
+      clientId: clientId.slice(0, 200),
+      ...(scopes.length ? { scopes } : {}),
+    },
+  });
 }
 
 /**

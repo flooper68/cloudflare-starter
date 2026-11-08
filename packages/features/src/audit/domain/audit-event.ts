@@ -276,6 +276,31 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     metadata: noMetadata,
   }),
 
+  // Connected agents (OAuth/MCP clients). Never a token: the client id and name only.
+  z.object({
+    ...common,
+    /** The user allowed an OAuth (MCP) client on the consent page (server/auth-audit.ts). */
+    action: z.literal("mcp.client.authorized"),
+    target: target("user"),
+    metadata: z
+      .object({ clientId: text, scopes: z.array(text).max(20).optional() })
+      .strict(),
+  }),
+  z.object({
+    ...common,
+    /** The user disconnected a client: its tokens and consent are gone (disconnectAgent). */
+    action: z.literal("mcp.client.revoked"),
+    target: target("user"),
+    metadata: z
+      .object({
+        clientId: text,
+        clientName: text.optional(),
+        /** The MCP client disconnected itself. */
+        thisConnection: z.boolean(),
+      })
+      .strict(),
+  }),
+
   // User administration (recorded by the admin portal).
   z.object({
     ...common,

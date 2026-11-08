@@ -39,6 +39,20 @@ Because tools call the same procedures with the same context, validation, auth c
 
 Tokens are bound to `/mcp` and to the browser session that approved them (`starter_session_id`); the user and that session are reloaded from D1 on every request, so deleting the user, or signing out or revoking that session, cuts access at once and the client must reconnect ([how-to-configure-account-security.md](how-to-configure-account-security.md#assurance-and-mcp)).
 
+## Connected agents and disconnecting
+
+Connecting an agent means: it registers itself, the person signs in and clicks Allow on the consent page, and from then on it can call the app's tools as that person, in their workspaces, until it is disconnected. **Settings › Connected agents** (`/app/settings/connected-agents`) lists every agent the person allowed and disconnects one with a confirmation; agents do the same with `list_connected_agents` and `disconnect_agent` (procedures `account.agents.list` and `account.agents.disconnect`, the default `mutation.user` rate limit).
+
+How disconnecting works:
+
+- A connection is the person's consent for that client in Better Auth's `oauth_consent`. `disconnectAgent` (`packages/features/src/accounts/`) deletes, in one D1 batch and only for that user and client, its refresh tokens (`oauth_refresh_token`), stored access tokens (`oauth_access_token`) and consents. The registered client (`oauth_client`) stays: other people may use the same client id. Better Auth has no endpoint that revokes a client's tokens for a user without holding the token itself (`/oauth2/revoke` takes the token; `/oauth2/delete-consent` removes the consent only and needs a browser cookie), so the use case writes those tables directly; recheck it when upgrading `@better-auth/oauth-provider`.
+- JWT access tokens are not stored, so deleting rows alone would leave them valid until they expire (an hour). `/mcp` therefore also checks, on every request, that a consent of the token's user for its client (`azp`) exists and is not newer than the token (`iat`, `hasAgentGrant`): a disconnected agent's token is refused from its next request, and a token from before a disconnect stays refused after the person allows the agent again. Consent times are whole seconds, so a token issued in the same second as a new consent counts.
+- The next authorization shows the consent page again. Refreshing fails with `invalid_grant`.
+- An agent may disconnect itself (`thisConnection: true` in `list_connected_agents`): the request in flight was authorized before the change and completes with its result; the next one is `401 invalid_token`. Refusing would only push the person to the browser for the same outcome, and a self-disconnect removes access rather than granting any.
+- Recorded as `mcp.client.revoked` (and the Allow as `mcp.client.authorized`) in the audit log, with the client id and name, never a token or code. No email: like signing out a session, a disconnect removes access; security notices go out when access or credentials are gained or changed (a new sign-in, a password or factor change).
+- Every connection needs a consent row. A first-party client a project creates with `skip_consent` gets none, so `/mcp` would refuse it: record a consent for it (or extend `hasAgentGrant`) when adding one.
+- Signing out the browser session that approved an agent (the session shown on its row) also ends its access, as before.
+
 ## Adding A Tool
 
 1. Write the tRPC procedure first (logic, input schema, auth).

@@ -1,6 +1,7 @@
 import {
   findUserById,
   getSecurityState,
+  hasAgentGrant,
   type RateLimitedError,
   type RequestContext,
   systemClock,
@@ -145,22 +146,41 @@ export async function handleMcp(
     typeof claims.starter_session_id === "string"
       ? claims.starter_session_id
       : null;
-  const security = await getSecurityState(
-    { db: getDb(env), clock: systemClock },
-    {
-      userId: user.id,
-      sessionId: authSessionId,
-      settings: buildRequiredConfig(env).security,
-    }
-  );
+  // The person must also still allow this client: Settings › Connected agents deletes the
+  // consent, so a disconnected agent's unexpired token is refused from its next request
+  // (a request in flight, such as the disconnect itself, completes). Both reads run at once.
+  const agentClientId = String(claims.azp);
+  const [security, granted] = await Promise.all([
+    getSecurityState(
+      { db: getDb(env), clock: systemClock },
+      {
+        userId: user.id,
+        sessionId: authSessionId,
+        settings: buildRequiredConfig(env).security,
+      }
+    ),
+    typeof claims.iat === "number"
+      ? hasAgentGrant(
+          { db: getDb(env) },
+          {
+            userId: user.id,
+            clientId: agentClientId,
+            issuedAtSeconds: claims.iat,
+          }
+        )
+      : Promise.resolve(false),
+  ]);
   if (
     !authSessionId ||
     !security.sessionValid ||
-    security.decision !== "allowed"
+    security.decision !== "allowed" ||
+    !granted
   )
     return unauthorized(appUrl, "invalid_token");
+
   const context = createAppContext(user, requestContext, env, {
     authSessionId,
+    agentClientId,
   });
   const handler = createMcpHandler(
     () => buildMcpServer(callerInSpan(context), context),
@@ -173,7 +193,7 @@ export async function handleMcp(
   const response = await handler.fetch(request, {
     authInfo: {
       token,
-      clientId: String(claims.azp),
+      clientId: agentClientId,
       scopes: typeof claims.scope === "string" ? claims.scope.split(" ") : [],
       ...(typeof claims.exp === "number" ? { expiresAt: claims.exp } : {}),
       resource: new URL(mcpResource(appUrl)),

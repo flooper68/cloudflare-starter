@@ -7,6 +7,7 @@ Use when changing personal preferences, managing sessions or adding a settings s
 - **Account** (`/app/settings/account`): display name, custom avatar and verified email changes.
 - **Appearance & language** (`/app/settings/appearance`): system/light/dark theme, IANA time zone and supported locale. Defaults are system, UTC and en. Values are validated with Intl; server-rendered `data-theme` avoids a flash of the wrong theme. `useFormatters` uses the saved locale/time zone for dates and numbers.
 - **Security** (`/app/settings/security`): change password (revokes other sessions), link/unlink Google when configured, list/sign out sessions, and the authenticator, recovery codes and passkeys ([account security](how-to-configure-account-security.md)). Linked accounts must use the same email and the last sign-in method cannot be unlinked.
+- **Connected agents** (`/app/settings/connected-agents`): the AI agents (MCP clients such as Claude) the person allowed on the consent page, each with the name it registered, the host it returns to, when it was connected, what it may do (the consent page's words, `describeScopes` in `lib/oauth-scopes.ts`) and the browser session that approved it when known. **Disconnect** asks first, then ends that agent's access at once ([MCP guide](how-to-setup-mcp.md#connected-agents-and-disconnecting)). No logos: the logo URL a client registers is untrusted and would need a third-party `img-src`. No "last used": `/mcp` requests write nothing and JWT access tokens are not stored, so the only timestamps are consent and refresh times, which say when the agent last renewed its token, not when it last acted.
 - **Workspace** (`/app/settings/workspace`): `workspace.manage` allows owners to change the name and logo; a member gets the 403 view (`NoAccess` in `apps/web/src/components/shared/spa/`, `NoAccessState` in `packages/ui`) naming the workspace's owners. `workspace.delete` allows owners to delete a shared workspace only in multi mode, after typing its exact current name. Personal and single-mode workspaces cannot be deleted this way.
 - **Privacy** (`/app/settings/privacy`): personal and (for owners) workspace data exports ([privacy](how-to-handle-data-privacy.md)), and self-delete with explicit email confirmation in the UI and Better Auth's password or fresh-session check (15 minutes). Last-owner checks run before deleting anything; transfer ownership first when others still use a shared workspace.
 
@@ -32,10 +33,11 @@ Routes: `POST /api/account/avatar`, `GET /api/account/avatar/<version>`, `POST /
 | --------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `account.settings.get/update`                 | `get_account_settings`, `update_account_settings`                                         |
 | `account.sessions.list/revoke`                | `list_sessions`, `revoke_session`                                                         |
+| `account.agents.list/disconnect`              | `list_connected_agents`, `disconnect_agent`                                               |
 | `account.removeAvatar`                        | `remove_avatar`                                                                           |
 | `workspace.settings/update/delete/removeLogo` | `get_workspace_settings`, `update_workspace`, `delete_workspace`, `remove_workspace_logo` |
 
-Binary image transfer and Better Auth credential flows stay on their authenticated HTTP routes and have reasoned MCP parity entries. Session revocation and workspace deletion are destructive tools: ask the person before calling. Settings, image and workspace mutations record audit events without credential or image contents.
+Binary image transfer and Better Auth credential flows stay on their authenticated HTTP routes and have reasoned MCP parity entries. Session revocation, agent disconnection and workspace deletion are destructive tools: ask the person before calling. Settings, image and workspace mutations record audit events without credential or image contents.
 
 ## Verification
 

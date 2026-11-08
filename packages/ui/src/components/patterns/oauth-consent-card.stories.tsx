@@ -20,8 +20,7 @@ const meta = {
       "See your name and email address",
       "Stay connected until you revoke it",
     ],
-    revokeHint:
-      "Revoke it any time: sign out the browser session you allowed it from in Settings › Security › Active sessions.",
+    revokeHint: "Disconnect it any time in Settings › Connected agents.",
     onDecide: fn(async () => {}),
   },
 } satisfies Meta<typeof OAuthConsentCard>;
