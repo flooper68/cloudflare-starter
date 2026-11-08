@@ -157,10 +157,13 @@ const DAY = 86_400_000;
 /** How long before its end a trial is announced, and after it the end is. */
 export const TRIAL_NOTICE_DAYS = 7;
 
-/** Whole days until `trialEndsAt` (0: less than a day, or past). */
+/**
+ * Days until `trialEndsAt`, counting a started day as a day: a 14-day trial shows 14 on
+ * the day it starts and 1 on its last day; 0 once it has ended.
+ */
 export function trialDaysLeft(trialEndsAt: string, now: Date): number {
   const left = new Date(trialEndsAt).getTime() - now.getTime();
-  return Math.max(0, Math.floor(left / DAY));
+  return Math.max(0, Math.ceil(left / DAY));
 }
 
 /** When the counters of a usage period (`YYYY-MM`) start over: "1 December". */
@@ -175,8 +178,8 @@ export function periodResetLabel(period: string): string {
 }
 
 /**
- * The trial banner of the app shell, or null: a trial ending within 7 days (whole days
- * left, 0 is today), or a trial that ended within the last 7 days and left the workspace
+ * The trial banner of the app shell, or null: a trial ending within 7 days (days left,
+ * a started day counting as one), or a trial that ended within the last 7 days and left the workspace
  * on a known trial fallback plan. A retained trial date on any other paid or internal
  * plan is not evidence that its features lapsed.
  */

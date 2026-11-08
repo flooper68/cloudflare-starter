@@ -142,8 +142,8 @@ export function SignUpForm({
         <CardTitle level={1}>Create an account</CardTitle>
         <p className="text-sm text-fg-muted">
           {emailPassword
-            ? "Email and password accounts, stored in D1 by Better Auth."
-            : "Use your Google account; the first sign-in creates it."}
+            ? "Sign up with your name, email and a password to get started."
+            : "Sign up with your Google account to get started."}
         </p>
       </CardHeader>
 

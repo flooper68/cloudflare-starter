@@ -41,6 +41,7 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 - **404:** `apps/web/src/pages/404.astro`, prerendered, for every unknown path outside the SPA, with links home and to the docs, and the search in its header. It is `noindex`.
 - **Landing page:** see [below](#the-landing-page).
 - **Layout:** `apps/web/src/layouts/PublicLayout.astro` is the document shell of these pages. It reads no session, so the HTML can be built once.
+- **Account pages** (sign-in, sign-up, password reset, verification, invitations, consent, two-factor) are rendered per request on `apps/web/src/layouts/Layout.astro`, with the same `SiteHeader` (Docs, Changelog, Storybook, GitHub) plus **Sign in** and **Sign up**, or **Open app** when signed in. They have no theme switch (`themeToggle={false}`): their per-request policy runs scripts only from `/_astro/`, not `/site-theme.js`, so the OS setting applies. Demo endpoints such as `/api/hello` are not in the public header; they are on the app's **Developer demos** page.
 
 ## The landing page
 

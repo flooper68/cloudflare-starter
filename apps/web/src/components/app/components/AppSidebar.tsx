@@ -1,19 +1,19 @@
 import {
-  Avatar,
+  ProfileMenu,
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarItem,
   SidebarMenuItem,
-  SidebarMenuLabel,
   SidebarMenuSeparator,
   SidebarSection,
   toast,
   WorkspaceSwitcher,
 } from "@cloudflare-starter/ui";
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookOpen, LogOut, UserRound } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { LogOut, UserRoundX } from "lucide-react";
+import { Fragment, type ReactNode } from "react";
 
 import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
@@ -21,24 +21,60 @@ import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { navIcons } from "../nav-icons";
 import {
   isActiveDestination,
+  type MenuEntry,
+  profileMenuEntries,
   type SidebarGroup,
   sidebarDestinations,
+  workspaceMenuEntries,
 } from "../navigation";
-import { signOut, useNavContext } from "../use-nav-context";
+import { signOut, stopImpersonating, useNavContext } from "../use-nav-context";
 
 /**
- * The app's navigation: workspace menu (switch and create in multi mode), pages, demos,
- * and the signed-in user. The entries come from navigation.ts (the source the command
- * palette and the top bar read too): "Members" shows in modes with shared workspaces,
- * "Admin" for platform admins, "Trash" is the active workspace's deleted files and notes.
+ * One menu link: a router Link for app pages (client-side routing), a plain anchor for
+ * another document (the docs, the component library in a new tab, the admin portal, which
+ * the server checks before serving it).
+ */
+function MenuLink({ entry }: { readonly entry: MenuEntry }): ReactNode {
+  return (
+    <SidebarMenuItem asChild icon={navIcons[entry.icon]}>
+      {entry.document ? (
+        <a
+          href={entry.to}
+          target={entry.newTab ? "_blank" : undefined}
+          rel={entry.newTab ? "noreferrer" : undefined}
+        >
+          {entry.label}
+        </a>
+      ) : (
+        <Link to={entry.to}>{entry.label}</Link>
+      )}
+    </SidebarMenuItem>
+  );
+}
+
+/** The sections of the profile menu: own pages, help, the admin portal. */
+function profileSections(entries: readonly MenuEntry[]): MenuEntry[][] {
+  const help = new Set(["component-library", "docs"]);
+  return [
+    entries.filter((entry) => !help.has(entry.id) && entry.id !== "admin"),
+    entries.filter((entry) => help.has(entry.id)),
+    entries.filter((entry) => entry.id === "admin"),
+  ].filter((section) => section.length > 0);
+}
+
+/**
+ * The app's navigation: the workspace menu at the top (switch, create, the workspace's
+ * settings and members), pages, demos, and the profile menu in the footer (the person's
+ * own pages, help, admin portal, sign out). Every entry comes from navigation.ts, the
+ * source the command palette and the top bar read too.
  */
 export function AppSidebar() {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, impersonatedBy } = useAuth();
   const { mode, list, active, switchTo, create } = useWorkspace();
   const navContext = useNavContext();
   const multi = mode === "multi";
+  const workspaceEntries = workspaceMenuEntries(navContext);
 
   /** One sidebar section's entries, from the app's navigation source (navigation.ts). */
   const items = (section: SidebarGroup) =>
@@ -79,23 +115,11 @@ export function AppSidebar() {
           onSwitch={multi ? (id) => void onSwitch(id) : undefined}
           onCreate={multi ? create : undefined}
         >
-          <SidebarMenuLabel>{user?.email}</SidebarMenuLabel>
-          <SidebarMenuItem
-            icon={<UserRound />}
-            onSelect={() => void navigate({ to: "/app/settings/account" })}
-          >
-            Settings
-          </SidebarMenuItem>
-          <SidebarMenuItem
-            icon={<BookOpen />}
-            onSelect={() => window.open("/_storybook/", "_blank")}
-          >
-            Component library
-          </SidebarMenuItem>
-          <SidebarMenuSeparator />
-          <SidebarMenuItem icon={<LogOut />} onSelect={() => void signOut()}>
-            Sign out
-          </SidebarMenuItem>
+          {workspaceEntries.length > 0
+            ? workspaceEntries.map((entry) => (
+                <MenuLink key={entry.id} entry={entry} />
+              ))
+            : undefined}
         </WorkspaceSwitcher>
       </SidebarHeader>
       <SidebarContent>
@@ -113,14 +137,34 @@ export function AppSidebar() {
       </SidebarContent>
       {user ? (
         <SidebarFooter>
-          <div className="flex min-w-0 items-center gap-2 px-1.5 py-1">
-            <Avatar
-              name={user.name || user.email}
-              src={user.image ?? undefined}
-              size="sm"
-            />
-            <span className="truncate text-sm text-fg-muted">{user.name}</span>
-          </div>
+          <ProfileMenu
+            name={user.name}
+            email={user.email}
+            image={user.image ?? undefined}
+          >
+            {profileSections(profileMenuEntries(navContext)).map(
+              (section, index) => (
+                <Fragment key={section[0]?.id ?? index}>
+                  {index > 0 ? <SidebarMenuSeparator /> : null}
+                  {section.map((entry) => (
+                    <MenuLink key={entry.id} entry={entry} />
+                  ))}
+                </Fragment>
+              )
+            )}
+            <SidebarMenuSeparator />
+            {impersonatedBy ? (
+              <SidebarMenuItem
+                icon={<UserRoundX />}
+                onSelect={() => void stopImpersonating(user.id)}
+              >
+                Stop impersonating
+              </SidebarMenuItem>
+            ) : null}
+            <SidebarMenuItem icon={<LogOut />} onSelect={() => void signOut()}>
+              Sign out
+            </SidebarMenuItem>
+          </ProfileMenu>
         </SidebarFooter>
       ) : null}
     </Sidebar>

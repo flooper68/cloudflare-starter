@@ -104,6 +104,7 @@ export function NotesPage() {
         <Card>
           <NoteEditor
             submitLabel="Create note"
+            autoFocus
             onSave={create}
             onCancel={() => setCreating(false)}
           />

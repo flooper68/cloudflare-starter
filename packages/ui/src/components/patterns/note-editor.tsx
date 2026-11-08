@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 
 import { Button } from "../button";
 import { errorMessage } from "../error-state";
@@ -20,6 +20,8 @@ export interface NoteEditorProps {
   readonly submitLabel?: string;
   readonly titleMax?: number;
   readonly bodyMax?: number;
+  /** Moves focus to the Title field when the form appears (a form the user just opened). */
+  readonly autoFocus?: boolean;
 }
 
 /**
@@ -33,7 +35,15 @@ export function NoteEditor({
   submitLabel = "Save",
   titleMax = 200,
   bodyMax = 20_000,
+  autoFocus = false,
 }: NoteEditorProps) {
+  const titleRef = useRef<HTMLInputElement>(null);
+  // After paint: a menu or palette that opened the form may still be returning focus.
+  useEffect(() => {
+    if (!autoFocus) return;
+    const frame = requestAnimationFrame(() => titleRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [autoFocus]);
   const [title, setTitle] = useState(defaultValue.title);
   const [body, setBody] = useState(defaultValue.body);
   const [titleError, setTitleError] = useState<string | null>(null);
@@ -61,6 +71,7 @@ export function NoteEditor({
     <form className="space-y-4" onSubmit={(event) => void submit(event)}>
       <Field label="Title" error={titleError}>
         <Input
+          ref={titleRef}
           value={title}
           maxLength={titleMax}
           onChange={(event) => {

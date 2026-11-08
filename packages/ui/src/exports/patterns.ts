@@ -269,6 +269,10 @@ export {
   type PlanStatus,
 } from "../components/patterns/plan-card";
 export {
+  ProfileMenu,
+  type ProfileMenuProps,
+} from "../components/patterns/profile-menu";
+export {
   SettingsHeader,
   SettingsLayout,
   type SettingsLayoutProps,

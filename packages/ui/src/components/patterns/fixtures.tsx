@@ -46,6 +46,7 @@ import {
   PriorityIcon,
   StatusIcon,
 } from "./issue-glyphs";
+import { ProfileMenu } from "./profile-menu";
 
 export const people = {
   ada: { id: "u-ada", name: "Ada Novak" },
@@ -235,7 +236,6 @@ export function DemoSidebar({
             </>
           }
         >
-          <SidebarMenuLabel>{people.ada.name}</SidebarMenuLabel>
           <SidebarMenuItem
             icon={<Settings />}
             shortcut={<Shortcut keys={["G", "S"]} />}
@@ -251,8 +251,6 @@ export function DemoSidebar({
           <SidebarMenuItem icon={<TeamIcon name="Northwind" tone="success" />}>
             Northwind
           </SidebarMenuItem>
-          <SidebarMenuSeparator />
-          <SidebarMenuItem icon={<LogOut />}>Log out</SidebarMenuItem>
         </SidebarWorkspaceSwitcher>
       </SidebarHeader>
       <SidebarContent>
@@ -301,6 +299,15 @@ export function DemoSidebar({
         </SidebarSection>
       </SidebarContent>
       <SidebarFooter>
+        <div className="min-w-0 flex-1">
+          <ProfileMenu name={people.ada.name} email="ada@northwind.test">
+            <SidebarMenuItem icon={<CircleUserRound />}>
+              Account settings
+            </SidebarMenuItem>
+            <SidebarMenuSeparator />
+            <SidebarMenuItem icon={<LogOut />}>Log out</SidebarMenuItem>
+          </ProfileMenu>
+        </div>
         <Tooltip content="Help and feedback">
           <IconButton label="Help and feedback" size="sm">
             <CircleHelp />

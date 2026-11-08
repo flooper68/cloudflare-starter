@@ -1,12 +1,18 @@
 import { expect, test } from "./fixtures";
 
-import { open, readAdminAccounts, signIn } from "./helpers";
+import { open, openProfileMenu, readAdminAccounts, signIn } from "./helpers";
 
 // An admin impersonates a member: the app shows the member's view with a banner, and
 // "Stop impersonating" returns to the admin's own session in the portal.
 test("an admin impersonates a member and stops", async ({ page }) => {
   const { admin, member } = readAdminAccounts();
   await signIn(page, admin);
+  // The admin's own profile menu links the admin portal (ADMIN_PORTAL is on locally).
+  await openProfileMenu(page);
+  await expect(
+    page.getByRole("menuitem", { name: "Admin portal" })
+  ).toHaveAttribute("href", "/admin/overview");
+  await page.keyboard.press("Escape");
   await open(page, "/admin/users");
   await page
     .getByRole("searchbox", { name: "Search users" })
@@ -28,7 +34,17 @@ test("an admin impersonates a member and stops", async ({ page }) => {
     page.getByRole("link", { name: "Admin", exact: true })
   ).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Stop impersonating" }).click();
+  // The profile menu is the member's, and Stop impersonating is reachable from it too.
+  await expect(
+    page.getByRole("button", { name: "Stop impersonating" })
+  ).toBeVisible();
+  const menu = await openProfileMenu(page);
+  await expect(menu).toContainText(member.name);
+  await expect(menu).toContainText(member.email);
+  await expect(
+    page.getByRole("menuitem", { name: "Admin portal" })
+  ).toHaveCount(0);
+  await page.getByRole("menuitem", { name: "Stop impersonating" }).click();
   await expect(page).toHaveURL(/\/admin\/users\//);
   await expect(page.getByRole("heading", { name: member.name })).toBeVisible();
   await expect(page.getByText(/You are signed in as/)).toHaveCount(0);

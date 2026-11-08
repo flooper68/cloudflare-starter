@@ -84,8 +84,14 @@ export async function signIn(
   await expect(page).toHaveURL(/\/app\/dashboard$/);
 }
 
+/** Opens the profile menu (the avatar and name in the sidebar footer). */
+export async function openProfileMenu(page: Page) {
+  await page.getByRole("button", { name: /profile menu$/ }).click();
+  return page.getByRole("menu");
+}
+
 export async function signOut(page: Page) {
-  await page.getByRole("button", { name: /workspace menu/ }).click();
+  await openProfileMenu(page);
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/$/);
 }

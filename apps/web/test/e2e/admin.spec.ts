@@ -38,7 +38,7 @@ test("an admin suspends a member; the member cannot sign in; the audit log shows
 
   await page.getByRole("link", { name: "Audit log" }).click();
   await expect(page.getByText("user.banned").first()).toBeVisible();
-  // Sign out from the app shell (its workspace menu).
+  // Sign out from the app shell (its profile menu).
   await open(page, "/app/dashboard");
   await signOut(page);
 

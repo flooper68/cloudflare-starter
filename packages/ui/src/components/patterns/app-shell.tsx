@@ -366,22 +366,45 @@ export function SidebarWorkspaceSwitcher({
   );
 }
 
+/**
+ * One row of a sidebar menu. With `asChild` the child (a router `<Link>` or an `<a>`)
+ * becomes the menu item, its own children the label: a link the menu follows on click and
+ * on Enter, which the router can route client-side.
+ */
 export function SidebarMenuItem({
   icon,
   shortcut,
   children,
   onSelect,
+  asChild = false,
 }: {
   readonly icon?: ReactNode;
   readonly shortcut?: ReactNode;
   readonly children: ReactNode;
   readonly onSelect?: () => void;
+  readonly asChild?: boolean;
 }) {
+  const row = (label: ReactNode) => (
+    <>
+      {icon}
+      <span className="flex-1 truncate">{label}</span>
+      {shortcut}
+    </>
+  );
+  if (asChild && isValidElement<{ children?: ReactNode }>(children)) {
+    return (
+      <DropdownMenuPrimitive.Item
+        asChild
+        className={menuItem}
+        onSelect={onSelect}
+      >
+        {cloneElement(children, undefined, row(children.props.children))}
+      </DropdownMenuPrimitive.Item>
+    );
+  }
   return (
     <DropdownMenuPrimitive.Item className={menuItem} onSelect={onSelect}>
-      {icon}
-      <span className="flex-1 truncate">{children}</span>
-      {shortcut}
+      {row(children)}
     </DropdownMenuPrimitive.Item>
   );
 }
