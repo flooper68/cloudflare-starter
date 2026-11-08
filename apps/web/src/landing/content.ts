@@ -77,7 +77,7 @@ export const FEATURES: readonly {
     icon: "bot",
     title: "MCP server with OAuth",
     description:
-      "Claude signs in as the user at /mcp. A test fails the build if any API lacks an MCP tool or a reasoned exemption.",
+      "Claude signs in as the user at /mcp; people disconnect agents in Settings. A test fails the build if any API lacks an MCP tool or a reasoned exemption.",
   },
   {
     icon: "bell",

@@ -2,6 +2,7 @@ import { createRoute, redirect } from "@tanstack/react-router";
 import { appLayoutRoute } from "@/components/app/layout-route";
 import { AccountSettingsPage } from "./pages/AccountSettingsPage";
 import { AppearanceSettingsPage } from "./pages/AppearanceSettingsPage";
+import { ConnectedAgentsSettingsPage } from "./pages/ConnectedAgentsSettingsPage";
 import { PrivacySettingsPage } from "./pages/PrivacySettingsPage";
 import { SecuritySettingsPage } from "./pages/SecuritySettingsPage";
 import { WorkspaceSettingsPage } from "./pages/WorkspaceSettingsPage";
@@ -34,6 +35,11 @@ const security = createRoute({
   path: "security",
   component: SecuritySettingsPage,
 });
+const connectedAgents = createRoute({
+  getParentRoute: () => settingsLayoutRoute,
+  path: "connected-agents",
+  component: ConnectedAgentsSettingsPage,
+});
 const workspace = createRoute({
   getParentRoute: () => settingsLayoutRoute,
   path: "workspace",
@@ -49,6 +55,7 @@ export const settingsRoutes = [
   account,
   appearance,
   security,
+  connectedAgents,
   workspace,
   privacy,
 ];

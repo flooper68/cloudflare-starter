@@ -4,6 +4,10 @@ What changed in each release of the starter, for people evaluating it or buildin
 
 ## [Unreleased]
 
+### Added
+
+- **Settings › Connected agents.** People see every AI agent (MCP client) they allowed, with what it may do and the browser that approved it, and disconnect one with a confirmation: its tokens and consent are deleted, its access token stops working at once and it must ask again. Agents get `list_connected_agents` and `disconnect_agent`, admins see a user's agents read-only, and the audit log records `mcp.client.authorized` and `mcp.client.revoked`. The consent page now points there to revoke access.
+
 ### Changed
 
 - **The starter has its own brand.** The mock brand Acme is replaced by Starter ("Everything a new app needs on day one."): a deep teal accent that passes WCAG AA as text and on buttons in both themes, a stacked-layers logo mark and favicon, Instrument Sans with JetBrains Mono (self-hosted), and 8px corners. Notification emails show the app's name as a header. A new project still replaces it in `packages/ui/src/brand/` ([how-to-define-branding.md](docs/guides/how-to-define-branding.md)).

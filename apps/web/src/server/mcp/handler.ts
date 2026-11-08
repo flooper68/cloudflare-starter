@@ -1,6 +1,7 @@
 import {
   findUserById,
   getSecurityState,
+  hasAgentGrant,
   type RateLimitedError,
   type RequestContext,
   systemClock,
@@ -159,8 +160,26 @@ export async function handleMcp(
     security.decision !== "allowed"
   )
     return unauthorized(appUrl, "invalid_token");
+
+  // The person must still allow this client: Settings › Connected agents deletes the
+  // consent, so a disconnected agent's unexpired token is refused from its next request
+  // (a request in flight, such as the disconnect itself, completes).
+  const agentClientId = String(claims.azp);
+  const granted =
+    typeof claims.iat === "number" &&
+    (await hasAgentGrant(
+      { db: getDb(env) },
+      {
+        userId: user.id,
+        clientId: agentClientId,
+        issuedAtSeconds: claims.iat,
+      }
+    ));
+  if (!granted) return unauthorized(appUrl, "invalid_token");
+
   const context = createAppContext(user, requestContext, env, {
     authSessionId,
+    agentClientId,
   });
   const handler = createMcpHandler(
     () => buildMcpServer(callerInSpan(context), context),
@@ -173,7 +192,7 @@ export async function handleMcp(
   const response = await handler.fetch(request, {
     authInfo: {
       token,
-      clientId: String(claims.azp),
+      clientId: agentClientId,
       scopes: typeof claims.scope === "string" ? claims.scope.split(" ") : [],
       ...(typeof claims.exp === "number" ? { expiresAt: claims.exp } : {}),
       resource: new URL(mcpResource(appUrl)),

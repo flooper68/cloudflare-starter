@@ -1,7 +1,10 @@
 export { account, session, user } from "./accounts.schema";
+export { disconnectAgent } from "./disconnect-agent";
 export {
   type AccountSettingsInput,
+  AgentNotFoundError,
   accountSettingsSchema,
+  type ConnectedAgent,
   isNewSignIn,
   newSignInNotification,
   type OtherSession,
@@ -20,7 +23,9 @@ export { findReferencedAvatarKeys } from "./find-referenced-avatar-keys";
 export { type AccountUser, findUserById } from "./find-user-by-id";
 export { getAccountSettings } from "./get-account-settings";
 export { getSecurityState } from "./get-security-state";
+export { hasAgentGrant } from "./has-agent-grant";
 export { listAccountSessions } from "./list-account-sessions";
+export { listConnectedAgents } from "./list-connected-agents";
 export { notifyNewSignIn } from "./notify-new-sign-in";
 export type { AccountAuthGateway } from "./ports";
 export { purgeAccountImages } from "./purge-account-images";

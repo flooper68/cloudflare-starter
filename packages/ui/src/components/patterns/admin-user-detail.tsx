@@ -48,6 +48,15 @@ export interface AdminSessionRow {
   readonly impersonatedBy: string | null;
 }
 
+/** An agent (OAuth/MCP client) the user allowed; read-only in the admin portal. */
+export interface AdminConnectedAgentRow {
+  readonly clientId: string;
+  readonly name: string | null;
+  readonly host: string | null;
+  readonly connectedAt: Date | string;
+  readonly session: { readonly userAgent: string | null } | null;
+}
+
 export interface AdminUserDetailData {
   readonly id: string;
   readonly name: string;
@@ -70,6 +79,8 @@ export interface AdminUserDetailData {
     readonly role: string;
   }[];
   readonly sessions: readonly AdminSessionRow[];
+  /** Agents the user connected; the user disconnects them in their own settings. */
+  readonly connectedAgents?: readonly AdminConnectedAgentRow[];
 }
 
 /** What a suspension asks for: a reason for other admins and when it ends (null: never). */
@@ -429,6 +440,54 @@ export function AdminUserDetail({
           </Table>
         )}
       </Card>
+
+      {user.connectedAgents ? (
+        <Card className="flex flex-col p-0">
+          <div className="border-b border-line px-4 py-3">
+            <h3 className="text-sm font-medium text-fg">
+              Connected agents ({user.connectedAgents.length})
+            </h3>
+          </div>
+          {user.connectedAgents.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-fg-muted">
+              No connected agents.
+            </p>
+          ) : (
+            <Table aria-label="Connected agents">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Agent</TableHead>
+                  <TableHead>Returns to</TableHead>
+                  <TableHead>Connected</TableHead>
+                  <TableHead>Approved from</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {user.connectedAgents.map((agent) => (
+                  <TableRow key={agent.clientId}>
+                    <TableCell>{agent.name ?? "Unnamed agent"}</TableCell>
+                    <TableCell className="text-fg-muted">
+                      {agent.host ?? "Unknown"}
+                    </TableCell>
+                    <TableCell>
+                      <RelativeTime date={agent.connectedAt} />
+                    </TableCell>
+                    <TableCell className="max-w-64 truncate text-fg-muted">
+                      {agent.session
+                        ? agent.session.userAgent || "Unknown browser"
+                        : "Unknown"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          <p className="border-t border-line px-4 py-3 text-xs text-fg-muted">
+            Read-only: the user disconnects agents in Settings › Connected
+            agents. Signing them out everywhere also ends their agents' access.
+          </p>
+        </Card>
+      ) : null}
 
       {isSelf ? null : (
         <Card className="flex flex-col gap-3 p-4">

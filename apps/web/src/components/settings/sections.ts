@@ -35,6 +35,13 @@ export const settingsSections: readonly SettingsSection[] = [
     visible: () => true,
   },
   {
+    id: "connected-agents",
+    label: "Connected agents",
+    to: "/app/settings/connected-agents",
+    group: "account",
+    visible: () => true,
+  },
+  {
     id: "privacy",
     label: "Privacy",
     to: "/app/settings/privacy",

@@ -71,15 +71,15 @@ Destructive procedures are `adminDestructiveProcedure`s: they need a sign-in fro
 
 `/admin/*` is served by `apps/web/src/pages/admin/[...path].astro`, which answers a plain 404 unless the signed-in user may use the portal (`spaBootstrap` in `apps/web/src/server/spa-bootstrap.ts`), and renders the same SPA as `/app/*`. Admins see an **Admin** entry in the app's sidebar. Pages (`apps/web/src/components/admin/`), built from the `packages/ui` patterns `admin-*.tsx`:
 
-| Page                  | What it shows                                                                                                                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Overview              | Health (live readiness, Check again); users, sign-ups, active users (30 days), admins, suspended, workspace counts and sizes                                                    |
-| Users, User           | Search and Role/Status filters, server pages; profile, sign-in methods, workspaces, sessions, and suspend, impersonate, sign out, password and second-factor reset, role, erase |
-| Workspaces, Workspace | Hidden in personal mode. Flags workspaces without an owner; members, owner rescue, deletion; billing panel (plan, add-ons, overrides, usage)                                    |
-| Audit log             | Action and target filters, server pages; the impersonating admin on each event                                                                                                  |
-| Feature flags         | Every catalog flag: its switch and targeting rules (workspace, plan, percentage)                                                                                                |
-| Data requests         | Export and erasure request metadata (`/admin/data-requests`); request a user's export                                                                                           |
-| Settings              | The deployment's settings, read-only; storage maintenance (Run storage report, Delete orphaned objects in delete mode); a link to Cloudflare Queues                             |
+| Page                  | What it shows                                                                                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview              | Health (live readiness, Check again); users, sign-ups, active users (30 days), admins, suspended, workspace counts and sizes                                                                                  |
+| Users, User           | Search and Role/Status filters, server pages; profile, sign-in methods, workspaces, sessions, connected agents (read-only), and suspend, impersonate, sign out, password and second-factor reset, role, erase |
+| Workspaces, Workspace | Hidden in personal mode. Flags workspaces without an owner; members, owner rescue, deletion; billing panel (plan, add-ons, overrides, usage)                                                                  |
+| Audit log             | Action and target filters, server pages; the impersonating admin on each event                                                                                                                                |
+| Feature flags         | Every catalog flag: its switch and targeting rules (workspace, plan, percentage)                                                                                                                              |
+| Data requests         | Export and erasure request metadata (`/admin/data-requests`); request a user's export                                                                                                                         |
+| Settings              | The deployment's settings, read-only; storage maintenance (Run storage report, Delete orphaned objects in delete mode); a link to Cloudflare Queues                                                           |
 
 When a destructive action answers `REAUTH_REQUIRED`, the page offers to sign in again and comes back; `STEP_UP_REQUIRED` opens the second-factor challenge and returns to the page. While impersonating, the app shows a banner with **Stop impersonating**.
 

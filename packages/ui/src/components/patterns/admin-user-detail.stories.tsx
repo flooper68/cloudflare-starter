@@ -46,6 +46,18 @@ const grace: AdminUserDetailData = {
       impersonatedBy: null,
     },
   ],
+  connectedAgents: [
+    {
+      clientId: "claude-desktop",
+      name: "Claude",
+      host: "claude.ai",
+      connectedAt: ago(60 * 24 * 5),
+      session: {
+        userAgent:
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) Safari/605.1.15",
+      },
+    },
+  ],
 };
 
 const actions = {
@@ -95,6 +107,16 @@ export const SuspendedAdmin: Story = {
       },
       sessions: [],
     },
+  },
+};
+
+/** A user without connected agents. */
+export const NoConnectedAgents: Story = {
+  args: { user: { ...grace, connectedAgents: [] } },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByText("No connected agents.")
+    ).toBeVisible();
   },
 };
 

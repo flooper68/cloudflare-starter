@@ -174,6 +174,21 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     { destructive: true }
   ),
   direct(
+    "list_connected_agents",
+    "read",
+    "account.agents.list",
+    "List connected agents",
+    "The AI agents (OAuth/MCP clients) the current person allowed to act as them: clientId, the name the agent registered with, the host it returns to, when it was connected, its scopes and the browser session that approved it. `thisConnection` marks you. Never returns tokens."
+  ),
+  direct(
+    "disconnect_agent",
+    "write",
+    "account.agents.disconnect",
+    "Disconnect an agent",
+    "Disconnect one agent by clientId from list_connected_agents: its tokens and consent are deleted and it must ask the person again. Disconnecting yourself (thisConnection) ends your own access after this call returns. Confirm with the person first.",
+    { destructive: true }
+  ),
+  direct(
     "remove_avatar",
     "write",
     "account.removeAvatar",
@@ -627,7 +642,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "admin.users.get",
     "Admin: user detail",
-    "Platform admins only. One user by id: profile, verification, suspension, sign-in methods, workspaces with roles, and open sessions (no tokens)."
+    "Platform admins only. One user by id: profile, verification, suspension, sign-in methods, workspaces with roles, open sessions and connected agents (no tokens)."
   ),
   direct(
     "admin_ban_user",

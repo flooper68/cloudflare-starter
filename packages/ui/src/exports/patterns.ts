@@ -56,6 +56,7 @@ export {
 } from "../components/patterns/admin-settings";
 export {
   type AdminBanInput,
+  type AdminConnectedAgentRow,
   type AdminSessionRow,
   type AdminUserActions,
   AdminUserDetail,
@@ -122,6 +123,12 @@ export {
   CommentThread,
   type CommentThreadProps,
 } from "../components/patterns/comment-thread";
+export {
+  type ConnectedAgentItem,
+  ConnectedAgents,
+  type ConnectedAgentsProps,
+  ConnectedAgentsSkeleton,
+} from "../components/patterns/connected-agents";
 export {
   type DataExportItem,
   DataExportList,

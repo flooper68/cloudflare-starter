@@ -160,6 +160,20 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: user,
     metadata: { type: "workspaces.member-joined", channel: "email" },
   },
+  "mcp.client.authorized": {
+    action: "mcp.client.authorized",
+    target: user,
+    metadata: { clientId: "claude-desktop", scopes: ["openid", "profile"] },
+  },
+  "mcp.client.revoked": {
+    action: "mcp.client.revoked",
+    target: user,
+    metadata: {
+      clientId: "claude-desktop",
+      clientName: "Claude",
+      thisConnection: false,
+    },
+  },
   "impersonation.oauth_refused": {
     action: "impersonation.oauth_refused",
     actor: { kind: "admin", userId: "user-grace" },

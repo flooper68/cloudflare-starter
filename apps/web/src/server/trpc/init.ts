@@ -83,6 +83,8 @@ export interface Context {
   /** The cookie session of a web request; null for MCP calls and anonymous requests. */
   readonly session: SessionInfo | null;
   readonly authSessionId?: string | null;
+  /** The OAuth client (`azp`) of an MCP call's access token; absent for web requests. */
+  readonly agentClientId?: string | null;
   /** The web request's headers in and response headers out; null for MCP calls. */
   readonly browser: BrowserExchange | null;
   /** The admin portal's way into Better Auth (server/admin-auth-gateway.ts). */

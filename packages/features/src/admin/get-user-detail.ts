@@ -1,6 +1,12 @@
 import { and, desc, eq, gt } from "drizzle-orm";
 
-import { account, session, user } from "../accounts";
+import {
+  account,
+  type ConnectedAgent,
+  listConnectedAgents,
+  session,
+  user,
+} from "../accounts";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
 import { workspaceMembers, workspaces } from "../workspaces";
@@ -49,11 +55,14 @@ export interface AdminUserDetail {
   }[];
   /** Sessions that have not expired, most recently active first. */
   readonly sessions: readonly AdminSessionRow[];
+  /** OAuth (MCP) clients the user allowed, newest first (read-only here; never tokens). */
+  readonly connectedAgents: readonly ConnectedAgent[];
 }
 
 /**
  * Everything the admin portal shows about one user: profile, verification, sign-in
- * methods, suspension, workspaces with roles, and open sessions (never their tokens).
+ * methods, suspension, workspaces with roles, open sessions and connected agents (never
+ * their tokens).
  */
 export async function getUserDetail(
   deps: { readonly db: Database; readonly clock: Clock },
@@ -68,7 +77,7 @@ export async function getUserDetail(
     .limit(1);
   if (!row) throw new AdminUserNotFoundError();
 
-  const [accounts, memberships, sessions] = await Promise.all([
+  const [accounts, memberships, sessions, connectedAgents] = await Promise.all([
     deps.db
       .select({ providerId: account.providerId })
       .from(account)
@@ -98,6 +107,7 @@ export async function getUserDetail(
       .from(session)
       .where(and(eq(session.userId, row.id), gt(session.expiresAt, now)))
       .orderBy(desc(session.updatedAt)),
+    listConnectedAgents(deps, { userId: row.id }),
   ]);
 
   const banExpires = row.banExpires ?? null;
@@ -120,5 +130,6 @@ export async function getUserDetail(
     lastSeenAt: sessions[0]?.lastActiveAt ?? null,
     workspaces: memberships,
     sessions,
+    connectedAgents,
   };
 }
