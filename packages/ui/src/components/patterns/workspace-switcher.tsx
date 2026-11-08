@@ -72,48 +72,53 @@ export function WorkspaceSwitcher({
           keepFocus.current = false;
         }}
       >
-        {onSwitch ? (
+        {/* Nothing to show (no list, no items): no menu at all, never an empty one. */}
+        {onSwitch || children ? (
           <>
-            <SidebarMenuLabel>Workspaces</SidebarMenuLabel>
-            {workspaces.map((workspace) => (
-              <SidebarMenuItem
-                key={workspace.id}
-                icon={
-                  workspace.id === activeId ? (
-                    <Check aria-hidden />
-                  ) : (
-                    <span aria-hidden className="size-4" />
-                  )
-                }
-                shortcut={
-                  <span className="text-xs text-fg-muted">
-                    {workspace.kind === "personal"
-                      ? "Personal"
-                      : workspace.role}
-                  </span>
-                }
-                onSelect={() => {
-                  if (workspace.id !== activeId) onSwitch(workspace.id);
-                }}
-              >
-                {workspace.name}
-              </SidebarMenuItem>
-            ))}
-            {onCreate ? (
-              <SidebarMenuItem
-                icon={<Plus aria-hidden />}
-                onSelect={() => {
-                  keepFocus.current = true;
-                  setCreating(true);
-                }}
-              >
-                Create workspace
-              </SidebarMenuItem>
+            {onSwitch ? (
+              <>
+                <SidebarMenuLabel>Workspaces</SidebarMenuLabel>
+                {workspaces.map((workspace) => (
+                  <SidebarMenuItem
+                    key={workspace.id}
+                    icon={
+                      workspace.id === activeId ? (
+                        <Check aria-hidden />
+                      ) : (
+                        <span aria-hidden className="size-4" />
+                      )
+                    }
+                    shortcut={
+                      <span className="text-xs text-fg-muted">
+                        {workspace.kind === "personal"
+                          ? "Personal"
+                          : workspace.role}
+                      </span>
+                    }
+                    onSelect={() => {
+                      if (workspace.id !== activeId) onSwitch(workspace.id);
+                    }}
+                  >
+                    {workspace.name}
+                  </SidebarMenuItem>
+                ))}
+                {onCreate ? (
+                  <SidebarMenuItem
+                    icon={<Plus aria-hidden />}
+                    onSelect={() => {
+                      keepFocus.current = true;
+                      setCreating(true);
+                    }}
+                  >
+                    Create workspace
+                  </SidebarMenuItem>
+                ) : null}
+                {children ? <SidebarMenuSeparator /> : null}
+              </>
             ) : null}
-            {children ? <SidebarMenuSeparator /> : null}
+            {children}
           </>
-        ) : null}
-        {children}
+        ) : undefined}
       </SidebarWorkspaceSwitcher>
       {onCreate ? (
         <CreateWorkspaceDialog

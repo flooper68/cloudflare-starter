@@ -69,6 +69,39 @@ export const SingleWorkspace: Story = {
   },
 };
 
+/** Nothing to switch to and no workspace items (a member in single mode): no empty menu. */
+export const NothingToShow: Story = {
+  args: {
+    workspaces: [
+      { id: "ws-acme", name: "Acme Robotics", kind: "shared", role: "member" },
+    ],
+    activeId: "ws-acme",
+    onSwitch: undefined,
+    onCreate: undefined,
+  },
+  render: (args) => (
+    <AppShell
+      sidebar={
+        <Sidebar>
+          <SidebarHeader>
+            <WorkspaceSwitcher {...args} />
+          </SidebarHeader>
+        </Sidebar>
+      }
+    >
+      <div className="p-6 text-sm text-fg-muted">Workspace content</div>
+    </AppShell>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      canvas.getByRole("button", { name: /Acme Robotics workspace menu/ })
+    );
+    await expect(page.queryByRole("menu")).toBeNull();
+  },
+};
+
 /** Opening the menu and picking another workspace reports its id. */
 export const SwitchWorkspace: Story = {
   // An open Radix DropdownMenu hides the page with aria-hidden but leaves the trigger
