@@ -50,6 +50,7 @@ How disconnecting works:
 - The next authorization shows the consent page again. Refreshing fails with `invalid_grant`.
 - An agent may disconnect itself (`thisConnection: true` in `list_connected_agents`): the request in flight was authorized before the change and completes with its result; the next one is `401 invalid_token`. Refusing would only push the person to the browser for the same outcome, and a self-disconnect removes access rather than granting any.
 - Recorded as `mcp.client.revoked` (and the Allow as `mcp.client.authorized`) in the audit log, with the client id and name, never a token or code. No email: like signing out a session, a disconnect removes access; security notices go out when access or credentials are gained or changed (a new sign-in, a password or factor change).
+- Every connection needs a consent row. A first-party client a project creates with `skip_consent` gets none, so `/mcp` would refuse it: record a consent for it (or extend `hasAgentGrant`) when adding one.
 - Signing out the browser session that approved an agent (the session shown on its row) also ends its access, as before.
 
 ## Adding A Tool

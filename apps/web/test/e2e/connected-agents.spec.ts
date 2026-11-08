@@ -18,7 +18,10 @@ test("connect an MCP client, see it in Settings › Connected agents, disconnect
   const mcp = `${baseURL}/mcp`;
 
   // The client registers itself (RFC 7591), as Claude does.
+  // Better Auth checks the Origin of every POST that carries the session cookie.
+  const origin = { origin: baseURL as string };
   const registered = await page.request.post("/api/auth/oauth2/register", {
+    headers: origin,
     data: {
       client_name: clientName,
       redirect_uris: [CALLBACK],
@@ -61,6 +64,7 @@ test("connect an MCP client, see it in Settings › Connected agents, disconnect
   await expect.poll(() => code).not.toBeNull();
 
   const token = await page.request.post("/api/auth/oauth2/token", {
+    headers: origin,
     form: {
       grant_type: "authorization_code",
       client_id: clientId,

@@ -131,17 +131,26 @@ describe("connected agents", () => {
     expect(all).not.toContain(agent.refresh_token);
   });
 
-  it("an old token stays refused after the person allows the agent again", async () => {
+  it("a disconnected agent can be allowed again through the consent page", async () => {
     const ada = await signUp("Ada Again", "ada-again@example.test");
     const first = await connectAgent(env, ada);
     await callerFor(ada).account.agents.disconnect({
       clientId: first.clientId,
     });
-    // Better Auth stores consent times in whole seconds: reconnect in a later second.
-    await new Promise((resolve) => setTimeout(resolve, 1100));
+    // A token from before a later re-approval stays refused: has-agent-grant's D1 test
+    // proves that rule with fixed times (consent times are whole seconds).
     const again = await connectAgent(env, ada, { clientId: first.clientId });
     expect((await mcpRequest(env, again.access_token)).status).toBe(200);
-    expect((await mcpRequest(env, first.access_token)).status).toBe(401);
+    expect((await callerFor(ada).account.agents.list()).items).toHaveLength(1);
+  });
+
+  it("refuses anonymous callers", async () => {
+    await expect(callerFor(null).account.agents.list()).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    await expect(
+      callerFor(null).account.agents.disconnect({ clientId: "x" })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
   it("one user cannot see or disconnect another user's agents", async () => {

@@ -28,6 +28,7 @@ const titles: Record<string, string> = {
   "/app/settings/account": "Account settings",
   "/app/settings/appearance": "Appearance & language",
   "/app/settings/security": "Security",
+  "/app/settings/connected-agents": "Connected agents",
   "/app/settings/workspace": "Workspace settings",
   "/app/settings/privacy": "Privacy",
   "/app/members": "Members",
