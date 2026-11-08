@@ -93,10 +93,14 @@ export function AppCommandMenu() {
     active?.id ?? null
   );
 
-  /** Every pick: the product event (kind only), close, then run it. */
-  function pick(kind: PaletteItemKind, run: () => unknown) {
+  /**
+   * Every pick: the product event (kind only), close, then run it. A pick that leaves the
+   * page (`movesOn`) lets the next page take focus; one that stays (theme, workspace
+   * switch, the current page) returns focus to the trigger like a dismissal.
+   */
+  function pick(kind: PaletteItemKind, run: () => unknown, movesOn = true) {
     trackClientEvent("app.command_palette_item_selected", { kind });
-    closedBySelection.current = true;
+    closedBySelection.current = movesOn;
     setOpen(false);
     void run();
   }
@@ -131,10 +135,13 @@ export function AppCommandMenu() {
         keywords: destination.keywords,
         hint: destination.to === pathname ? "Current" : undefined,
         onSelect: () =>
-          pick("navigate", () =>
-            destination.document
-              ? window.location.assign(destination.to)
-              : navigate({ to: destination.to })
+          pick(
+            "navigate",
+            () =>
+              destination.document
+                ? window.location.assign(destination.to)
+                : navigate({ to: destination.to }),
+            destination.to !== pathname
           ),
       })
     ),
@@ -171,15 +178,19 @@ export function AppCommandMenu() {
           icon: <Building2 />,
           keywords: ["workspace"],
           onSelect: () =>
-            pick("workspace", async () => {
-              try {
-                await switchTo(workspace.id);
-              } catch (error) {
-                toast.error(
-                  error instanceof Error ? error.message : "Switch failed"
-                );
-              }
-            }),
+            pick(
+              "workspace",
+              async () => {
+                try {
+                  await switchTo(workspace.id);
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error ? error.message : "Switch failed"
+                  );
+                }
+              },
+              false
+            ),
         })),
     });
   }
@@ -220,7 +231,7 @@ export function AppCommandMenu() {
       label: `Switch to the ${theme === "dark" ? "light" : "dark"} theme`,
       icon: <SunMoon />,
       keywords: ["theme", "dark", "light", "appearance", "toggle"],
-      onSelect: () => pick("action", toggleTheme),
+      onSelect: () => pick("action", toggleTheme, false),
     },
     {
       id: "docs",

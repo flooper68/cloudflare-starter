@@ -129,6 +129,28 @@ test("the Search trigger opens it, Escape closes it and focus returns to the tri
   await expect(palette(page)).toBeHidden();
   await expect(trigger).toBeFocused();
 
+  // The theme action switches at once, keeps focus on the trigger and is remembered.
+  const html = page.locator("html");
+  const before = await page.evaluate(
+    () =>
+      document.documentElement.dataset.theme ??
+      (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+  );
+  const after = before === "dark" ? "light" : "dark";
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.keyboard.type(`switch to the ${after} theme`);
+  await page.keyboard.press("Enter");
+  await expect(html).toHaveAttribute("data-theme", after);
+  await expect(trigger).toBeFocused();
+  await expect(async () => {
+    await open(page, "/app/dashboard");
+    await expect(html).toHaveAttribute("data-theme", after, { timeout: 1000 });
+  }).toPass();
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.keyboard.type(`switch to the ${before} theme`);
+  await page.keyboard.press("Enter");
+  await expect(html).toHaveAttribute("data-theme", before);
+
   // Phone width: an icon trigger, a full-screen palette with Cancel.
   await page.setViewportSize({ width: 390, height: 844 });
   await trigger.click();

@@ -353,7 +353,7 @@ export function CommandPalette({
 }
 
 /**
- * Keeps the input's `aria-activedescendant` pointing at the selected option. cmdk 1.1
+ * Keeps `aria-activedescendant` (on the input and the listbox) pointing at the selected option. cmdk 1.1
  * computes it before the new selection renders, so when typing replaces the selected
  * option it can name the previous option, or one that no longer exists (axe
  * aria-valid-attr-value; screen readers announce the wrong option or nothing). Watches
@@ -367,13 +367,18 @@ function repairActiveDescendant(input: HTMLInputElement): () => void {
     const selected = root.querySelector<HTMLElement>(
       '[cmdk-item][aria-selected="true"]'
     );
-    const current = input.getAttribute("aria-activedescendant");
-    if (selected?.id) {
-      if (current !== selected.id) {
-        input.setAttribute("aria-activedescendant", selected.id);
+    // cmdk sets it on the input (the combobox) and the listbox.
+    const owners = [input, root.querySelector<HTMLElement>("[cmdk-list]")];
+    for (const owner of owners) {
+      if (!owner) continue;
+      const current = owner.getAttribute("aria-activedescendant");
+      if (selected?.id) {
+        if (current !== selected.id) {
+          owner.setAttribute("aria-activedescendant", selected.id);
+        }
+      } else if (current !== null) {
+        owner.removeAttribute("aria-activedescendant");
       }
-    } else if (current !== null) {
-      input.removeAttribute("aria-activedescendant");
     }
   };
   const observer = new MutationObserver(repair);

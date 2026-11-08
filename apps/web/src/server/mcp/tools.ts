@@ -487,7 +487,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "notes.search",
     "Search notes",
-    "Finds notes of the workspace whose title or body contains the query (case-insensitive, 1-200 characters): id, title, an excerpt and whether the title or the body matched; title matches first, then the most recently changed. limit up to 20 (default 8). Notes in the trash are never returned. Use list_notes for the full list."
+    "Finds notes of the workspace whose title or body contains the query (1-200 characters; case-insensitive for ASCII letters only): id, title, an excerpt and whether the title or the body matched; title matches first, then the most recently changed. limit up to 20 (default 8). Notes in the trash are never returned. Use list_notes for the full list."
   ),
   direct(
     "get_note",

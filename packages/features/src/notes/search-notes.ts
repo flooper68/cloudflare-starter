@@ -18,8 +18,8 @@ function likePattern(query: string): string {
 
 /**
  * The live notes of the actor's workspace (never those in its trash) whose title or body
- * contains `query`, case-insensitively: title matches first, then the most recently
- * changed. One query, capped at `limit`. A `LIKE '%…%'` cannot use an index, so this
+ * contains `query`, ignoring case for ASCII letters only (SQLite's LIKE): title matches
+ * first, then the most recently changed. One query, capped at `limit`. A `LIKE '%…%'` cannot use an index, so this
  * scans the workspace's notes (the workspace index narrows it to them); a project with
  * large workspaces moves it to an FTS5 table (docs/guides/how-to-add-a-feature.md).
  */

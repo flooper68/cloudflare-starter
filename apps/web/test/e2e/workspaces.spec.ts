@@ -114,6 +114,12 @@ test("the invitee signs up from the link, joins and opens the shared file", asyn
   await expect(
     palette.getByRole("option", { name: "Settings: Workspace" })
   ).toHaveCount(0);
+  if (process.env.COMMAND_PALETTE_EVIDENCE_DIR) {
+    await page.screenshot({
+      animations: "disabled",
+      path: `${process.env.COMMAND_PALETTE_EVIDENCE_DIR}/member-settings.png`,
+    });
+  }
   await search.fill("admin");
   await expect(palette.getByText(/No results for/)).toBeVisible();
   await expect(palette.getByRole("option", { name: "Admin" })).toHaveCount(0);
