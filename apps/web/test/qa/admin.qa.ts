@@ -195,7 +195,7 @@ test("billing: a plan, an add-on and a 1 MB storage override show on T's billing
   // The owner's page shows the overridden limit. (The checklist also expects it marked
   // "Override"; the billing page has no such marker yet, so that is not asserted.)
   await open(target, "/app/billing");
-  await expect(target.locator("main")).toContainText(/\b1 MB\b/);
+  await expect(target.locator("main")).toContainText(/Storage\s*1 MB/);
 
   await override.getByLabel("Reason").fill(`${reason} done`);
   await override.getByRole("button", { name: "Remove override" }).click();
