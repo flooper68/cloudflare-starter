@@ -291,6 +291,8 @@ export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
   "api/files/[id].ts":
     "authenticated read of the user's own file; reads are not limited",
   ".well-known/[...path].ts": "static OAuth discovery documents",
+  "docs/changelog.xml.ts":
+    "prerendered at build time and served as a static asset; the Worker never runs for it",
   "robots.txt.ts":
     "prerendered at build time and served as a static asset; the Worker never runs for it",
   "reset-password.astro":

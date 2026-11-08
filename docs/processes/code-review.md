@@ -121,6 +121,7 @@ A new person or agent must be able to set up, run and deploy from the repository
 - [ ] Renamed or removed names no longer appear in docs (the author's docs-audit search covers them).
 - [ ] Decisions that need an ADR have one ([adrs.md](adrs.md)); the architecture doc states the current rule.
 - [ ] No knowledge lives only in chat or PR comments.
+- [ ] A change a user or adopter notices has a line under `## [Unreleased]` in `CHANGELOG.md`, in the right group and in plain words ([development.md](development.md#changelog)).
 - [ ] Evidence (screenshots, walkthroughs, tool output) is attached and matches the claimed behaviour; missing evidence for a user-visible change is a High finding.
 
 ### 6. UI states and the component library

@@ -22,6 +22,8 @@ export const DOCS = {
     "apps/*/README.md",
     "packages/*/README.md",
     "packages/ui/CONVENTIONS.md",
+    // Rendered as release notes by src/pages/docs/changelog.astro, not as Markdown.
+    "CHANGELOG.md",
   ],
   /**
    * URL segments (after /docs/) for files the default rule would map badly. The default:
@@ -39,6 +41,7 @@ export const DOCS = {
     items: [
       { path: "docs/README.md", label: "Overview" },
       { path: "README.md", label: "Start a project" },
+      { path: "CHANGELOG.md", label: "Changelog" },
     ],
   },
   /**

@@ -14,6 +14,13 @@ export {
 export { Hero, type HeroProps } from "../components/hero";
 export { Prose, type ProseProps } from "../components/prose";
 export {
+  changeTypeTone,
+  type ReleaseEntry,
+  type ReleaseGroup,
+  ReleaseNotes,
+  type ReleaseNotesProps,
+} from "../components/release-notes";
+export {
   TableOfContents,
   type TableOfContentsProps,
   type TocHeading,

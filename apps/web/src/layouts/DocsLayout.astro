@@ -1,0 +1,140 @@
+---
+/**
+ * The shell of every docs page (src/pages/docs/): header with search, the navigation
+ * (sidebar, or a "Docs menu" disclosure on narrow screens), breadcrumb, the page's own
+ * content in the default slot, previous/next, the edit link and "On this page".
+ * docs/guides/how-to-publish-docs-and-landing.md
+ */
+import {
+  Breadcrumbs,
+  DocsNav,
+  type DocsNavSection,
+  TableOfContents,
+  type TocHeading,
+} from "@cloudflare-starter/ui";
+import { ArrowLeft, ArrowRight, Menu, SquarePen } from "lucide-react";
+
+import DocsSearch from "@/components/site/DocsSearch.astro";
+import SiteHeader from "@/components/site/SiteHeader.astro";
+import { DOCS } from "@/docs/docs.config";
+import { editUrl, routeFor } from "@/docs/links";
+import { locate, type NavSection } from "@/docs/nav";
+import PublicLayout from "@/layouts/PublicLayout.astro";
+
+interface Props {
+  /** Repository path of the page's source, e.g. `docs/guides/how-to-setup-d1.md`. */
+  path: string;
+  title: string;
+  description?: string | null;
+  nav: readonly NavSection[];
+  headings: readonly TocHeading[];
+  /** An Atom feed of the page, linked from <head>. */
+  feed?: { href: string; title: string };
+}
+
+const { path, title, description, nav, headings, feed } = Astro.props;
+const href = routeFor(path);
+const { section, previous, next } = locate(nav, path);
+// The index is the root of the trail; other pages show their section.
+const crumbs =
+  href === "/docs/"
+    ? []
+    : [
+        { label: "Docs", href: "/docs/" },
+        ...(section ? [{ label: section.title }] : []),
+        { label: title },
+      ];
+const sections: readonly DocsNavSection[] = nav;
+---
+
+<PublicLayout
+  title={`${title} · ${DOCS.siteName} docs`}
+  description={description}
+  type={href === "/docs/" ? "website" : "article"}
+  feed={feed}
+>
+  <SiteHeader slot="header" variant="docs">
+    <DocsSearch slot="search" />
+  </SiteHeader>
+  <div class="mx-auto flex w-full max-w-[1360px] flex-1">
+    <aside
+      class="hidden w-62 shrink-0 border-r border-line px-4 py-6 lg:block"
+      aria-label="Docs sections"
+    >
+      <DocsNav sections={sections} currentHref={href} />
+    </aside>
+    <main id="main" class="min-w-0 flex-1 px-4 pt-6 pb-16 sm:px-8 lg:px-12">
+      <div class="mx-auto flex max-w-[52rem] flex-col gap-6">
+        <details class="group rounded-lg border border-line lg:hidden">
+          <summary
+            class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden"
+          >
+            <Menu className="size-4 text-fg-muted" aria-hidden="true" />
+            Docs menu
+          </summary>
+          <div class="border-t border-line px-2 py-3">
+            <DocsNav sections={sections} currentHref={href} label="Docs menu" />
+          </div>
+        </details>
+        {crumbs.length > 0 && <Breadcrumbs items={crumbs} />}
+        <div
+          class="min-w-0"
+          data-pagefind-body=""
+          data-pagefind-meta={`section:${section?.title ?? "Docs"}`}
+        >
+          <slot />
+        </div>
+        <footer
+          class="mt-6 flex flex-wrap items-stretch justify-between gap-3 border-t border-line pt-5"
+        >
+          {
+            previous ? (
+              <a
+                href={previous.href}
+                rel="prev"
+                class="flex min-w-48 flex-col rounded-lg border border-line bg-surface-raised px-4 py-3 shadow-raised transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <span class="inline-flex items-center gap-1 text-xs text-fg-muted">
+                  <ArrowLeft className="size-3.5" aria-hidden="true" />
+                  Previous
+                </span>
+                <span class="text-sm text-fg">{previous.label}</span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+          <a
+            href={editUrl(path)}
+            class="inline-flex items-center gap-1.5 self-center rounded-sm text-xs text-accent-text hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <SquarePen className="size-3.5" aria-hidden="true" />
+            Edit this page on GitHub
+          </a>
+          {
+            next ? (
+              <a
+                href={next.href}
+                rel="next"
+                class="flex min-w-48 flex-col items-end rounded-lg border border-line bg-surface-raised px-4 py-3 shadow-raised transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <span class="inline-flex items-center gap-1 text-xs text-fg-muted">
+                  Next
+                  <ArrowRight className="size-3.5" aria-hidden="true" />
+                </span>
+                <span class="text-sm text-fg">{next.label}</span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+        </footer>
+      </div>
+    </main>
+    <aside class="hidden w-52 shrink-0 px-4 py-8 xl:block" aria-label="Page outline">
+      <div class="sticky top-6">
+        <TableOfContents headings={headings} />
+      </div>
+    </aside>
+  </div>
+</PublicLayout>
