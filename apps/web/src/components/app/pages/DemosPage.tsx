@@ -28,7 +28,6 @@ const demos = [
   {
     to: "/app/container-demo",
     title: "Containers",
-    cta: "Run a workflow",
     description:
       "Run a Cloudflare Workflow that computes digits of pi in a Cloudflare Container, stores the result in R2 and notifies you, and watch each step.",
   },
@@ -73,11 +72,7 @@ export function DemosPage() {
             </CardDescription>
             <div>
               <Button asChild size="sm">
-                <Link to={demo.to}>
-                  {"cta" in demo
-                    ? demo.cta
-                    : `Open ${demo.title.toLowerCase()} demo`}
-                </Link>
+                <Link to={demo.to}>Open {demo.title.toLowerCase()} demo</Link>
               </Button>
             </div>
           </Card>

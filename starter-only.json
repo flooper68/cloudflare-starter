@@ -937,7 +937,7 @@
         },
         {
           "file": "apps/web/src/components/app/pages/DemosPage.tsx",
-          "find": "  {\n    to: \"/app/container-demo\",\n    title: \"Containers\",\n    cta: \"Run a workflow\",\n    description:\n      \"Run a Cloudflare Workflow that computes digits of pi in a Cloudflare Container, stores the result in R2 and notifies you, and watch each step.\",\n  },\n",
+          "find": "  {\n    to: \"/app/container-demo\",\n    title: \"Containers\",\n    description:\n      \"Run a Cloudflare Workflow that computes digits of pi in a Cloudflare Container, stores the result in R2 and notifies you, and watch each step.\",\n  },\n",
           "replace": ""
         },
         {
