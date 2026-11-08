@@ -1,5 +1,5 @@
 import { createVerifiedAccount } from "./support";
-import { QA_ADMIN_SKIP, signInQaAdmin } from "./support/admin";
+import { signInQaAdmin } from "./support/admin";
 import {
   expect,
   newUserPage,
@@ -16,10 +16,9 @@ import {
   submitSignIn,
 } from "./support/session";
 
-// Checklist: Admin portal, and Billing's admin override. As the persistent QA admin
-// (support/admin.ts), acting only on this run's own account T and T's workspace. Skips
-// with the reason while the QA admin is not a platform admin (the owner's one-time step,
-// README.md). Read-only on everything else: no flag, setting or other account changes.
+// Checklist: Admin portal, and Billing's admin override. As the self-provisioned QA admin
+// (support/admin.ts), acting only on this run's own account T and T's workspace.
+// Read-only on everything else: no flag, setting or other account changes.
 skipWithoutQaEnv();
 test.describe.configure({ mode: "serial" });
 
@@ -27,22 +26,16 @@ let admin: Page;
 let target: Page;
 let account: Account;
 let targetName: string;
-let isAdmin = false;
 const reason = `QA ${process.env.QA_RUN_ID ?? "run"}`;
 
 test.beforeAll(async ({ browser }) => {
   admin = await newUserPage(browser);
   target = await newUserPage(browser);
-  isAdmin = await signInQaAdmin(admin);
-  if (!isAdmin) return;
+  await signInQaAdmin(admin);
   account = {
     ...(await createVerifiedAccount(target, { role: "admintarget" })),
   };
   targetName = await displayName(target);
-});
-
-test.beforeEach(() => {
-  test.skip(!isAdmin, QA_ADMIN_SKIP);
 });
 
 test.afterAll(async () => {

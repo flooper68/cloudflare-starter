@@ -104,13 +104,13 @@ The workflow **QA** ([.github/workflows/qa.yml](../../.github/workflows/qa.yml))
 
 Secrets, in the GitHub environment `qa` (Settings › Environments › New environment `qa`; deployment branches: `main` only; no required reviewers, so it runs unattended):
 
-| Secret              | Value                                                                                              |
-| ------------------- | -------------------------------------------------------------------------------------------------- |
-| `QA_TOKEN`          | The same value as the production Worker secret `QA_TOKEN` (`openssl rand -hex 32`)                 |
-| `QA_INBOX_URL`      | The inbox Worker's URL, e.g. `https://cloudflare-starter-qa-inbox.<account>.workers.dev`           |
-| `QA_INBOX_TOKEN`    | The same value as the inbox Worker secret `QA_INBOX_TOKEN`                                         |
-| `QA_ADMIN_EMAIL`    | The QA admin's address (the nightly cleanup and the admin journeys), e.g. `qa+admin@qa.flooper.me` |
-| `QA_ADMIN_PASSWORD` | The QA admin's password (the same)                                                                 |
+| Secret              | Value                                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `QA_TOKEN`          | The same value as the production Worker secret `QA_TOKEN` (`openssl rand -hex 32`)       |
+| `QA_INBOX_URL`      | The inbox Worker's URL, e.g. `https://cloudflare-starter-qa-inbox.<account>.workers.dev` |
+| `QA_INBOX_TOKEN`    | The same value as the inbox Worker secret `QA_INBOX_TOKEN`                               |
+| `QA_ADMIN_EMAIL`    | The QA admin's address (cleanup only), e.g. `qa+admin@qa.flooper.me`                     |
+| `QA_ADMIN_PASSWORD` | The QA admin's password (cleanup only)                                                   |
 
 ### Nightly cleanup
 
@@ -145,7 +145,7 @@ Mail: **Verify your email** (to each account, once more after Resend).
 
 ### Sign-in and sign-out
 
-1. Sign out (workspace menu → Sign out); you land on `/`.
+1. Sign out (profile menu, the avatar at the bottom of the sidebar → Sign out); you land on `/`.
 2. Sign in as A at `/sign-in` with a wrong password: refused, no hint whether the email exists.
 3. Sign in with the right password.
 

@@ -1,5 +1,5 @@
 import { createVerifiedAccount } from "./support";
-import { QA_ADMIN_SKIP, signInQaAdmin } from "./support/admin";
+import { signInQaAdmin } from "./support/admin";
 import {
   expect,
   newUserPage,
@@ -15,7 +15,7 @@ import { open } from "./support/session";
 // screens the checklist names for it (landing, sign-in, dashboard, members, settings,
 // admin overview). Each capture is in the HTML report as
 // `<section>-<screen>-<viewport>-<theme>.png`, and fails if the page scrolls sideways.
-// One account (plus the QA admin for the admin overview, skipped without it).
+// One account (plus the QA admin for the admin overview).
 skipWithoutQaEnv();
 test.describe.configure({ mode: "serial" });
 
@@ -138,8 +138,7 @@ test("the open command palette", async ({}, testInfo) => {
 test("admin overview", async ({ browser }, testInfo) => {
   const adminPage = await newUserPage(browser);
   try {
-    const isAdmin = await signInQaAdmin(adminPage);
-    test.skip(!isAdmin, QA_ADMIN_SKIP);
+    await signInQaAdmin(adminPage);
     await pass(
       adminPage,
       [

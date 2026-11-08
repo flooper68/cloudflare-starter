@@ -1,36 +1,62 @@
 /**
- * The QA admin: the account of the nightly cleanup (QA_ADMIN_EMAIL, QA_ADMIN_PASSWORD;
- * docs/guides/how-to-qa-a-deployment.md#nightly-cleanup), an address in the QA domain
- * with the platform admin role and no second factor, set up once by the owner. The admin
- * journeys sign in as it and act only on the run's own accounts and workspaces. Without
- * the two variables, or while the account is not an admin, they skip with the reason.
+ * The QA admin: `qa+admin@<emailDomain>`, self-provisioned like every QA account (its
+ * password is derived from the QA token, support/password.ts), and promoted by the app
+ * while the QA bypass is on. The admin journeys sign in as it and act only on the run's
+ * own accounts and workspaces; there is no owner step and no skip.
+ *
+ * Interim: the QA infrastructure PR that introduces the self-provisioned admin provides
+ * the canonical `signInQaAdmin(page)`; once it is on main this file re-exports it.
  */
 import type { Page } from "@playwright/test";
 
-import { qaEnv } from "./index";
+import { expect, inbox, linkTo, open, qaEnv } from "./index";
+import { qaPassword } from "./password";
 import { type Account, AUTH_WAIT, submitSignIn } from "./session";
 
-export function qaAdminAccount(): Account | null {
-  const email = process.env.QA_ADMIN_EMAIL?.trim().toLowerCase() ?? "";
-  const password = process.env.QA_ADMIN_PASSWORD ?? "";
-  return email && password ? { email, password } : null;
+export function qaAdminAccount(): Account {
+  const { emailDomain, token } = qaEnv();
+  const email = `qa+admin@${emailDomain}`;
+  return { email, password: qaPassword(email, token) };
 }
 
-export const QA_ADMIN_SKIP =
-  "the QA admin is not set up: set QA_ADMIN_EMAIL and QA_ADMIN_PASSWORD, and make that account a platform admin once (docs/guides/how-to-qa-a-deployment.md#nightly-cleanup)";
-
-/** Signs the QA admin in on `page`; false when it is not set up or not an admin. */
-export async function signInQaAdmin(page: Page): Promise<boolean> {
-  const account = qaAdminAccount();
-  if (!account?.email.endsWith(`@${qaEnv().emailDomain}`)) {
-    return false;
-  }
-  await submitSignIn(page, account.email, account.password);
-  const landed = await page
+async function landed(page: Page): Promise<boolean> {
+  return page
     .waitForURL(/\/app\/dashboard$/, { timeout: AUTH_WAIT })
     .then(() => true)
     .catch(() => false);
-  if (!landed) return false;
+}
+
+/**
+ * Signs the QA admin in on `page`, signing it up first if it does not exist yet, and
+ * checks it may open the admin portal. Throws when it cannot: a missing admin is a
+ * failure of the environment, not a reason to skip.
+ */
+export async function signInQaAdmin(page: Page): Promise<Account> {
+  const account = qaAdminAccount();
+  await submitSignIn(page, account.email, account.password);
+  if (!(await landed(page))) {
+    const since = new Date(Date.now() - 30_000);
+    await open(page, "/sign-up");
+    await page.getByLabel("Name").fill("QA admin");
+    await page.getByLabel("Email").fill(account.email);
+    await page.getByLabel("Password").fill(account.password);
+    await page.getByRole("button", { name: "Create account" }).click();
+    const mail = await inbox.waitFor({
+      to: account.email,
+      subject: "Verify your email",
+      since,
+      timeoutMs: 120_000,
+    });
+    await page.goto(
+      linkTo(mail.links, qaEnv().baseURL, "/api/auth/verify-email")
+    );
+    await submitSignIn(page, account.email, account.password);
+    expect(await landed(page), "the QA admin signs in").toBe(true);
+  }
   const portal = await page.goto("/admin/overview");
-  return portal?.status() === 200;
+  expect(
+    portal?.status(),
+    "the QA admin may open the admin portal (the app promotes it while QA_BYPASS is on)"
+  ).toBe(200);
+  return account;
 }

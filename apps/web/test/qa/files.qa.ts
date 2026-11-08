@@ -1,5 +1,5 @@
 import { createVerifiedAccount } from "./support";
-import { QA_ADMIN_SKIP, signInQaAdmin } from "./support/admin";
+import { signInQaAdmin } from "./support/admin";
 import { tinyPng } from "./support/files";
 import {
   expect,
@@ -12,7 +12,7 @@ import { createWorkspace, open } from "./support/session";
 
 // Checklist: Files (both upload paths and limits). One account, in a workspace of its
 // own. Small generated files only (a few dozen bytes). The limit step needs the QA admin
-// (a storage override is an admin action) and skips with the reason without it.
+// (a storage override is an admin action).
 skipWithoutQaEnv();
 test.describe.configure({ mode: "serial" });
 
@@ -97,8 +97,7 @@ test("over the storage limit an upload is refused before storing, with an upgrad
 }) => {
   const adminPage = await newUserPage(browser);
   try {
-    const isAdmin = await signInQaAdmin(adminPage);
-    test.skip(!isAdmin, QA_ADMIN_SKIP);
+    await signInQaAdmin(adminPage);
     // The admin gives this workspace a storage limit of 0 MB (an override, with a reason).
     await open(adminPage, "/admin/workspaces");
     await adminPage
