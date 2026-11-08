@@ -66,6 +66,7 @@ function errorCodeOf(error: {
 }
 
 /** The email an anonymous request was about, normalized, or null when it named none. */
+/** The email a Better Auth request names in its body (lowercased, at most 320 characters), or null. */
 function emailOf(ctx: { readonly body?: unknown }): string | null {
   const email = (ctx.body as { email?: unknown } | undefined)?.email;
   return typeof email === "string" && email.trim()
@@ -325,6 +326,25 @@ export async function auditHumanCheckFailed(
     actor: { kind: "user", userId: null },
     target: { type: "email", id: email },
     metadata: { form, reason },
+  });
+}
+
+/**
+ * The automated QA suite skipped the human check on a QA address (QA_BYPASS=on,
+ * server/qa-bypass.ts). Never carries the token. Fails open like the other auth events.
+ */
+export async function auditQaBypassUsed(
+  env: AppEnv,
+  ctx: { readonly body?: unknown; readonly request?: Request },
+  form: "sign-up" | "sign-in" | "password-reset"
+): Promise<void> {
+  const email = emailOf(ctx);
+  if (!email) return;
+  await record(env, ctx, {
+    action: "qa.bypass.used",
+    actor: { kind: "user", userId: null },
+    target: { type: "email", id: email },
+    metadata: { form },
   });
 }
 

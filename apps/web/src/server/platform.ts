@@ -1,6 +1,6 @@
 /**
  * Composition root of the platform ports: picks one adapter per port from explicit settings
- * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, RATE_LIMITING, TURNSTILE, ANALYTICS; CSP_MODE) and builds it once per isolate. JobQueue has one
+ * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, RATE_LIMITING, TURNSTILE, QA_BYPASS, ANALYTICS; CSP_MODE) and builds it once per isolate. JobQueue has one
  * adapter, the APP_QUEUE binding, and no setting: it has no "off" (dropping jobs silently is
  * unsafe). Adding a vendor means a new
  * adapter in packages/features/src/platform/adapters/<vendor>/, a new allowed value in
@@ -35,6 +35,7 @@ import {
   noopRateLimiter,
   noopTracer,
   type ProductAnalytics,
+  type QaBypassSettings,
   RATE_LIMIT_POLICIES,
   type RateLimiter,
   type RateLimitPolicy,
@@ -93,6 +94,11 @@ export interface Platform {
   readonly humanVerifier: HumanVerifier;
   /** What the auth pages need to render the widget; null with TURNSTILE=off. */
   readonly turnstile: { readonly siteKey: string } | null;
+  /**
+   * The automated QA suite's bypass of the human check (QA_BYPASS=on): its token and mail
+   * domain, or null with QA_BYPASS=off (server/qa-bypass.ts).
+   */
+  readonly qaBypass: QaBypassSettings | null;
   /**
    * A ProductAnalytics for one unit of work (ANALYTICS): call it once per request, job or
    * hook. Each instance counts its own data points (Analytics Engine takes 250 per
@@ -268,6 +274,7 @@ export function buildPlatform(env: AppEnv): Platform {
       abuse.TURNSTILE === "on" && abuse.TURNSTILE_SITE_KEY
         ? { siteKey: abuse.TURNSTILE_SITE_KEY }
         : null,
+    qaBypass: abuse.qaBypass,
     productAnalytics: buildProductAnalytics(env, analytics, logger),
     webAnalytics:
       analytics.WEB_ANALYTICS === "cloudflare" && analytics.WEB_ANALYTICS_TOKEN
