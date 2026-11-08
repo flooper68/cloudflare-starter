@@ -202,3 +202,34 @@ It names the page and its files. A new dependency in a page script, or a compone
 ### `docs.test.ts` fails with "no heading #… in …"
 
 The heading the link points at was renamed or removed. Point the link at the current heading; ids are the heading text in lower case, spaces as `-`, punctuation dropped.
+
+## Docs components
+
+Docs are visual first: a screenshot, a flow and short sections, not walls of text. Write them with generic Markdown directives, which read as plain text on GitHub and render to static HTML on the site at build time (`apps/web/src/docs/kit/`: `render.ts` builds the HTML, `plugin.ts` is the Markdown plugin, `docs-kit.ts` the only script, for tabs and the copy button; styles in `apps/web/src/styles/docs-kit.css`). An unknown directive, a bad attribute or a missing screenshot fails the build. Feature pages under `docs/features/` follow one template: what it does, the video slot and a screenshot, how it works (one flow), turn it on (settings cards and the one prompt), use it (tabs: app, API, agent), decisions and gotchas, limits, related pages, and a "Last reviewed" date.
+
+| Component            | Write                                                                              | Shows                                                                                                                                                                                                 |
+| -------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Annotated screenshot | `:::screenshot{shot="members" alt="…"}` then a list, one item per numbered callout | The shot in the reader's theme (and at phone size, if captured), with numbered markers placed from the capture's element locators; `(74%, 36%) Label` places one by hand; `src="path"` uses any image |
+| Screenshot           | `::shot{id="members" alt="…"}`                                                     | The shot without markers, e.g. inside a step                                                                                                                                                          |
+| Steps                | `:::steps` around one numbered list; start each item with `**Title**`              | A stepper; put a `::shot` in an item for its image                                                                                                                                                    |
+| Flow                 | `::flow[Agent -> Consent -> Token]{title="…"}`                                     | A diagram of 2 to 7 steps through the diagram pipeline ([Diagrams](#diagrams)): a row on wide screens, a column on phones                                                                             |
+| Before and after     | `:::compare` around `::before[…]` and `::after[…]`                                 | Two cards                                                                                                                                                                                             |
+| Settings             | `:::settings` around a list of `NAME = default (a \| b) What it does`              | One card per setting with its values, the default marked                                                                                                                                              |
+| Decision, gotcha     | `:::decision{title="…"}`, `:::gotcha{title="…"}`                                   | Callouts                                                                                                                                                                                              |
+| Tabs                 | `:::tabs` around code blocks with `title="bun"` (or a language)                    | ARIA tabs with arrow keys; without script every block shows under its label                                                                                                                           |
+| The one prompt       | `:::prompt{title="…"}` around a code block                                         | The prompt to paste into a coding agent, with a copy button                                                                                                                                           |
+| Doing it by hand     | `:::byhand{title="…"}`                                                             | A collapsed section for the manual steps                                                                                                                                                              |
+| Video                | `::video{id="agents" poster="<shot id>" title="…"}`                                | The walkthrough when `docs/media/media-manifest.json` lists `id` (`src`, `poster`, `captions`, `chapters`, `title`, `duration`); until then the poster shot with "Video coming soon"                  |
+| Last reviewed        | `::reviewed{date="2026-11-08"}`                                                    | The date under the title                                                                                                                                                                              |
+
+Prose like `10:30` or `a:b` stays text: only the names above are components.
+
+## Screenshots
+
+`bun run docs:screenshots` captures every screen the docs show, so screenshots never go stale by hand. It runs Playwright (`apps/web/playwright.screens.config.ts`) against `astro dev` with local bindings, after building a fixed demo world through the app itself (`apps/web/test/seed/demo.ts`: the "Acme (sample)" workspace, Ada, Grace and a pending invitation, notes, a trashed note, a file, a connected agent). Each shot in `apps/web/test/screens/shots.ts` names its path, what to wait for and its callout elements as locators; the run writes `docs/images/screens/<id>.<dark|light|phone-dark|phone-light>.webp` (1440 × 900, phone 390 × 844 at 2×, WebP under 150 KB, encoded by Chromium) and `manifest.json` with each image's size and callout positions.
+
+1. Add or change the shot in `shots.ts`, and use its id in the doc.
+2. `bun run docs:screenshots` (needs `apps/web/.dev.vars` and a migrated local database, like the E2E journeys). `SHOTS=members,billing` captures only those; `SKIP_SEED=1` reuses the last run's sign-in.
+3. Commit the images and the manifest.
+
+Or run the **Docs screenshots** workflow by hand on GitHub: it captures everything on a fresh database and opens a pull request with the result. `test/architecture/docs-images.test.ts` fails when a doc names a shot or an image that is not in the repository, or the manifest names a missing file.

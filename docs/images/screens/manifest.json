@@ -1,0 +1,847 @@
+{
+  "version": 1,
+  "shots": {
+    "admin-audit": {
+      "path": "/admin/audit",
+      "alt": "The audit log in the admin portal",
+      "variants": {
+        "dark": {
+          "file": "admin-audit.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 89544,
+          "callouts": []
+        },
+        "light": {
+          "file": "admin-audit.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 93530,
+          "callouts": []
+        }
+      }
+    },
+    "admin-flags": {
+      "path": "/admin/flags",
+      "alt": "Feature flags in the admin portal",
+      "variants": {
+        "dark": {
+          "file": "admin-flags.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 26128,
+          "callouts": []
+        },
+        "light": {
+          "file": "admin-flags.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 27422,
+          "callouts": []
+        }
+      }
+    },
+    "admin-overview": {
+      "path": "/admin/overview",
+      "alt": "The admin overview: counts, health and the database",
+      "variants": {
+        "dark": {
+          "file": "admin-overview.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 28092,
+          "callouts": []
+        },
+        "light": {
+          "file": "admin-overview.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 29264,
+          "callouts": []
+        }
+      }
+    },
+    "admin-users": {
+      "path": "/admin/users",
+      "alt": "The admin portal's user list",
+      "variants": {
+        "dark": {
+          "file": "admin-users.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 16976,
+          "callouts": []
+        },
+        "light": {
+          "file": "admin-users.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 18292,
+          "callouts": []
+        }
+      }
+    },
+    "billing": {
+      "path": "/app/billing",
+      "alt": "Billing: the plan, trial and usage meters",
+      "variants": {
+        "dark": {
+          "file": "billing.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 25204,
+          "callouts": []
+        },
+        "light": {
+          "file": "billing.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 26544,
+          "callouts": []
+        },
+        "phone-dark": {
+          "file": "billing.phone-dark.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 38334,
+          "callouts": []
+        },
+        "phone-light": {
+          "file": "billing.phone-light.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 39654,
+          "callouts": []
+        }
+      }
+    },
+    "command-palette": {
+      "path": "/app/dashboard",
+      "alt": "The command palette, searching for settings",
+      "variants": {
+        "dark": {
+          "file": "command-palette.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 29538,
+          "callouts": [
+            {
+              "x": 72.2,
+              "y": 14.1
+            },
+            {
+              "x": 71.7,
+              "y": 23.6
+            }
+          ]
+        },
+        "light": {
+          "file": "command-palette.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 34224,
+          "callouts": [
+            {
+              "x": 72.2,
+              "y": 14.1
+            },
+            {
+              "x": 71.7,
+              "y": 23.6
+            }
+          ]
+        }
+      }
+    },
+    "connected-agents": {
+      "path": "/app/settings/connected-agents",
+      "alt": "Settings › Connected agents, listing the demo MCP client",
+      "variants": {
+        "dark": {
+          "file": "connected-agents.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 23138,
+          "callouts": [
+            {
+              "x": 82.4,
+              "y": 34.7
+            },
+            {
+              "x": 90.8,
+              "y": 29.8
+            }
+          ]
+        },
+        "light": {
+          "file": "connected-agents.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 24112,
+          "callouts": [
+            {
+              "x": 82.4,
+              "y": 34.7
+            },
+            {
+              "x": 90.8,
+              "y": 29.8
+            }
+          ]
+        },
+        "phone-dark": {
+          "file": "connected-agents.phone-dark.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 37782,
+          "callouts": [
+            {
+              "x": 89.5,
+              "y": 51.1
+            },
+            {
+              "x": 38.2,
+              "y": 60.8
+            }
+          ]
+        },
+        "phone-light": {
+          "file": "connected-agents.phone-light.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 39004,
+          "callouts": [
+            {
+              "x": 89.5,
+              "y": 51.1
+            },
+            {
+              "x": 38.2,
+              "y": 60.8
+            }
+          ]
+        }
+      }
+    },
+    "consent": {
+      "path": "/consent",
+      "alt": "The consent page an agent shows before it gets access",
+      "variants": {
+        "dark": {
+          "file": "consent.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 17530,
+          "callouts": [
+            {
+              "x": 38.7,
+              "y": 32.6
+            },
+            {
+              "x": 39.6,
+              "y": 63.2
+            }
+          ]
+        },
+        "light": {
+          "file": "consent.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 17954,
+          "callouts": [
+            {
+              "x": 38.7,
+              "y": 32.6
+            },
+            {
+              "x": 39.6,
+              "y": 63.2
+            }
+          ]
+        },
+        "phone-dark": {
+          "file": "consent.phone-dark.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 38266,
+          "callouts": [
+            {
+              "x": 21.8,
+              "y": 32.8
+            },
+            {
+              "x": 25.3,
+              "y": 67.8
+            }
+          ]
+        },
+        "phone-light": {
+          "file": "consent.phone-light.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 39498,
+          "callouts": [
+            {
+              "x": 21.8,
+              "y": 32.8
+            },
+            {
+              "x": 25.3,
+              "y": 67.8
+            }
+          ]
+        }
+      }
+    },
+    "dashboard": {
+      "path": "/app/dashboard",
+      "alt": "The dashboard of the sample workspace, with the getting-started checklist",
+      "variants": {
+        "dark": {
+          "file": "dashboard.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 38110,
+          "callouts": [
+            {
+              "x": 16.1,
+              "y": 3
+            },
+            {
+              "x": 16.1,
+              "y": 25.8
+            }
+          ]
+        },
+        "light": {
+          "file": "dashboard.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 40228,
+          "callouts": [
+            {
+              "x": 16.1,
+              "y": 3
+            },
+            {
+              "x": 16.1,
+              "y": 25.8
+            }
+          ]
+        },
+        "phone-dark": {
+          "file": "dashboard.phone-dark.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 53132,
+          "callouts": [null, null]
+        },
+        "phone-light": {
+          "file": "dashboard.phone-light.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 55730,
+          "callouts": [null, null]
+        }
+      }
+    },
+    "email-demo": {
+      "path": "/app/email-demo",
+      "alt": "The email demo",
+      "variants": {
+        "dark": {
+          "file": "email-demo.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 20982,
+          "callouts": []
+        },
+        "light": {
+          "file": "email-demo.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 22224,
+          "callouts": []
+        }
+      }
+    },
+    "invite": {
+      "path": "/app/members",
+      "alt": "The Invite people dialog",
+      "variants": {
+        "dark": {
+          "file": "invite.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 20276,
+          "callouts": []
+        },
+        "light": {
+          "file": "invite.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 24236,
+          "callouts": []
+        }
+      }
+    },
+    "members": {
+      "path": "/app/members",
+      "alt": "Members of the sample workspace, with a pending invitation",
+      "variants": {
+        "dark": {
+          "file": "members.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 21154,
+          "callouts": [
+            {
+              "x": 91.9,
+              "y": 16.1
+            },
+            {
+              "x": 74.1,
+              "y": 34
+            }
+          ]
+        },
+        "light": {
+          "file": "members.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 22324,
+          "callouts": [
+            {
+              "x": 91.9,
+              "y": 16.1
+            },
+            {
+              "x": 74.1,
+              "y": 34
+            }
+          ]
+        },
+        "phone-dark": {
+          "file": "members.phone-dark.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 27538,
+          "callouts": [
+            {
+              "x": 37.8,
+              "y": 24.6
+            },
+            {
+              "x": 83.8,
+              "y": 43.7
+            }
+          ]
+        },
+        "phone-light": {
+          "file": "members.phone-light.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 28304,
+          "callouts": [
+            {
+              "x": 37.8,
+              "y": 24.6
+            },
+            {
+              "x": 83.8,
+              "y": 43.7
+            }
+          ]
+        }
+      }
+    },
+    "note-detail": {
+      "path": "/app/notes",
+      "alt": "A note with its comment",
+      "variants": {
+        "dark": {
+          "file": "note-detail.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 18844,
+          "callouts": [
+            {
+              "x": 82,
+              "y": 17.1
+            },
+            {
+              "x": 90.8,
+              "y": 17.1
+            },
+            {
+              "x": 90.7,
+              "y": 51.1
+            }
+          ]
+        },
+        "light": {
+          "file": "note-detail.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 20044,
+          "callouts": [
+            {
+              "x": 82,
+              "y": 17.1
+            },
+            {
+              "x": 90.8,
+              "y": 17.1
+            },
+            {
+              "x": 90.7,
+              "y": 51.1
+            }
+          ]
+        }
+      }
+    },
+    "notes": {
+      "path": "/app/notes",
+      "alt": "Notes: the list of the workspace's notes",
+      "variants": {
+        "dark": {
+          "file": "notes.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 33062,
+          "callouts": [
+            {
+              "x": 91.9,
+              "y": 9.4
+            },
+            {
+              "x": 50.8,
+              "y": 28.8
+            }
+          ]
+        },
+        "light": {
+          "file": "notes.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 34634,
+          "callouts": [
+            {
+              "x": 91.9,
+              "y": 9.4
+            },
+            {
+              "x": 50.8,
+              "y": 28.8
+            }
+          ]
+        },
+        "phone-dark": {
+          "file": "notes.phone-dark.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 46078,
+          "callouts": [
+            {
+              "x": 32.6,
+              "y": 16.6
+            },
+            {
+              "x": 93.8,
+              "y": 41.9
+            }
+          ]
+        },
+        "phone-light": {
+          "file": "notes.phone-light.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 48172,
+          "callouts": [
+            {
+              "x": 32.6,
+              "y": 16.6
+            },
+            {
+              "x": 93.8,
+              "y": 41.9
+            }
+          ]
+        }
+      }
+    },
+    "notification-preferences": {
+      "path": "/app/notifications/preferences",
+      "alt": "Notification preferences per type and channel",
+      "variants": {
+        "dark": {
+          "file": "notification-preferences.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 32022,
+          "callouts": []
+        },
+        "light": {
+          "file": "notification-preferences.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 33200,
+          "callouts": []
+        }
+      }
+    },
+    "notifications": {
+      "path": "/app/notifications",
+      "alt": "The notifications inbox",
+      "variants": {
+        "dark": {
+          "file": "notifications.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 20244,
+          "callouts": []
+        },
+        "light": {
+          "file": "notifications.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 21296,
+          "callouts": []
+        }
+      }
+    },
+    "queue-demo": {
+      "path": "/app/queue-demo",
+      "alt": "The background jobs demo",
+      "variants": {
+        "dark": {
+          "file": "queue-demo.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 21914,
+          "callouts": []
+        },
+        "light": {
+          "file": "queue-demo.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 23020,
+          "callouts": []
+        }
+      }
+    },
+    "settings-account": {
+      "path": "/app/settings/account",
+      "alt": "Settings › Account: profile, avatar and email",
+      "variants": {
+        "dark": {
+          "file": "settings-account.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 21362,
+          "callouts": []
+        },
+        "light": {
+          "file": "settings-account.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 22378,
+          "callouts": []
+        }
+      }
+    },
+    "settings-privacy": {
+      "path": "/app/settings/privacy",
+      "alt": "Settings › Privacy: export your data or delete your account",
+      "variants": {
+        "dark": {
+          "file": "settings-privacy.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 32872,
+          "callouts": []
+        },
+        "light": {
+          "file": "settings-privacy.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 34662,
+          "callouts": []
+        }
+      }
+    },
+    "settings-security": {
+      "path": "/app/settings/security",
+      "alt": "Settings › Security: two-factor, passkeys and sessions",
+      "variants": {
+        "dark": {
+          "file": "settings-security.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 25256,
+          "callouts": [
+            {
+              "x": 90.8,
+              "y": 23.3
+            },
+            {
+              "x": 90.8,
+              "y": 48.4
+            }
+          ]
+        },
+        "light": {
+          "file": "settings-security.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 26548,
+          "callouts": [
+            {
+              "x": 90.8,
+              "y": 23.3
+            },
+            {
+              "x": 90.8,
+              "y": 48.4
+            }
+          ]
+        }
+      }
+    },
+    "settings-workspace": {
+      "path": "/app/settings/workspace",
+      "alt": "Settings › Workspace: name, logo and deletion",
+      "variants": {
+        "dark": {
+          "file": "settings-workspace.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 24144,
+          "callouts": []
+        },
+        "light": {
+          "file": "settings-workspace.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 25200,
+          "callouts": []
+        }
+      }
+    },
+    "sign-in": {
+      "path": "/sign-in",
+      "alt": "The sign-in page with email, password and a passkey",
+      "variants": {
+        "dark": {
+          "file": "sign-in.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 12434,
+          "callouts": []
+        },
+        "light": {
+          "file": "sign-in.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 12932,
+          "callouts": []
+        },
+        "phone-dark": {
+          "file": "sign-in.phone-dark.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 23034,
+          "callouts": []
+        },
+        "phone-light": {
+          "file": "sign-in.phone-light.webp",
+          "width": 780,
+          "height": 1688,
+          "bytes": 23824,
+          "callouts": []
+        }
+      }
+    },
+    "trash": {
+      "path": "/app/trash",
+      "alt": "The Trash, with a deleted note to restore",
+      "variants": {
+        "dark": {
+          "file": "trash.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 21442,
+          "callouts": [
+            {
+              "x": 79.4,
+              "y": 35.7
+            }
+          ]
+        },
+        "light": {
+          "file": "trash.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 22606,
+          "callouts": [
+            {
+              "x": 79.4,
+              "y": 35.7
+            }
+          ]
+        }
+      }
+    },
+    "upload-demo": {
+      "path": "/app/upload-demo",
+      "alt": "The file upload demo: through the app or straight to storage",
+      "variants": {
+        "dark": {
+          "file": "upload-demo.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 38104,
+          "callouts": []
+        },
+        "light": {
+          "file": "upload-demo.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 40418,
+          "callouts": []
+        }
+      }
+    },
+    "workspace-menu": {
+      "path": "/app/dashboard",
+      "alt": "The workspace switcher, with Create workspace",
+      "variants": {
+        "dark": {
+          "file": "workspace-menu.dark.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 39228,
+          "callouts": [
+            {
+              "x": 15.8,
+              "y": 15.9
+            }
+          ]
+        },
+        "light": {
+          "file": "workspace-menu.light.webp",
+          "width": 1440,
+          "height": 900,
+          "bytes": 41496,
+          "callouts": [
+            {
+              "x": 15.8,
+              "y": 15.9
+            }
+          ]
+        }
+      }
+    }
+  }
+}

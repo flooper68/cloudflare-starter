@@ -74,6 +74,16 @@ describe("feature data", () => {
     );
   });
 
+  it("gives every built feature a published page, and each capability group a feature page", () => {
+    const built = FEATURES.filter((entry) => entry.status === "built");
+    expect(built.filter((entry) => !PUBLISHED_SLUGS.has(entry.docs))).toEqual(
+      []
+    );
+    // The developer-experience group's page is the repository's own start page.
+    for (const entry of GROUPS.filter((g) => g.id !== "developer-experience"))
+      expect(entry.docs, entry.id).toMatch(/^features\//);
+  });
+
   it("lists 3 to 6 features of the group itself on each group card", () => {
     for (const entry of GROUPS) {
       const highlights = highlightsOf(entry.id);

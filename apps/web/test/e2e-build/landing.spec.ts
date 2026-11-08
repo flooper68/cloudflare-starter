@@ -101,7 +101,7 @@ test.describe("feature map", () => {
       card
         .getByRole("link", { name: "Read the docs" })
         .filter({ visible: true })
-    ).toHaveAttribute("href", "/docs/guides/how-to-configure-workspaces/");
+    ).toHaveAttribute("href", "/docs/features/workspaces/");
   });
 
   test("is one tab stop, and arrow keys move between the nodes", async ({

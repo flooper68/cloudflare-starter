@@ -1,8 +1,38 @@
 # How to configure plans and billing
 
-Plans, add-ons, gated features and usage limits per workspace, and how a project sells them: the catalog in code, the `BILLING` setting, trials, admin overrides, the daily expiry cron, the billing page and upgrade prompts in the app, the admin portal's billing panel, and how to plug in a payment provider (a Stripe adapter is sketched below; the starter ships none). Use when you define or change plans, gate a feature or limit something, choose a billing mode for an environment, change or add an upgrade prompt, write a provider adapter, or debug a `limit_reached` error.
+::reviewed{date="2026-11-08"}
 
-The rules (permission, entitlement, flag) are in [overview.md](../architecture/overview.md#plans-features-and-limits). Everything is reachable through tRPC and MCP, and in the browser ([In the app](#in-the-app-billing-page-upgrade-prompts-trial-banner), [Admin](#admin-plans-add-ons-and-overrides)).
+Sell plans, run trials and limit usage per workspace, without writing billing code. Plans live in a catalog in code; features ask a billing gate before they act; people who hit a limit see what to upgrade to. Start with billing off or manual and plug in a payment provider later. What it looks like in the app: [Plans, trials and usage limits](../features/billing.md).
+
+::flow[Define plans -> Choose the mode -> Gate a feature -> Upgrade prompt]{title="Billing set-up: define the plans, choose the billing mode, gate features in use cases, people see upgrade prompts at a limit"}
+
+## Set it up in one prompt
+
+:::settings
+- BILLING = manual (off | manual | provider) Everything unlimited; plans an admin assigns; or a payment provider adapter
+
+:::
+
+:::prompt{title="Paste this into your coding agent"}
+```text
+Set BILLING=manual for every environment with the setup-auth skill (dry run first).
+Then replace the example plans in packages/features/src/billing/domain/catalog.ts with
+<my plans and limits>, mirror the names in apps/web/src/lib/billing-catalog.ts, and run
+the tests.
+```
+:::
+
+:::steps
+1. **Choose the mode** per environment: `bun run setup:auth --env <env>` asks for `BILLING`.
+2. **Write your plans** in the catalog ([below](#the-catalog)); `bun run test` checks it.
+3. **Gate a feature** in its use case ([below](#gate-a-feature-or-limit-a-metric)); the app shows the prompt for you.
+   ::shot{id="billing" alt="Billing: the plan, trial and usage meters"}
+
+:::
+
+:::decision{title="Why the catalog is code, not a dashboard"}
+Plans gate features in code, so a plan change is reviewed and tested with the features it affects. The rules (permission, entitlement, flag) are in [overview.md](../architecture/overview.md#plans-features-and-limits). Everything is reachable through the API, agent tools and the browser ([In the app](#in-the-app-billing-page-upgrade-prompts-trial-banner), [Admin](#admin-plans-add-ons-and-overrides)).
+:::
 
 ## The catalog
 
@@ -133,7 +163,11 @@ Platform admins (`adminProcedure`: role admin with `ADMIN_PORTAL=on`, else `NOT_
 | `admin.billing.setAddons`   | `admin_set_addons`            | Replaces the add-ons                                                                                                   |
 | `admin.billing.setOverride` | `admin_set_override`          | Grants or revokes a feature, or sets a limit (`null` = unlimited), with a required reason; `override: null` removes it |
 
-Overrides win over plan and add-ons; use them for exceptions (a pilot customer, a paused feature). Every change records a `billing.*` audit event ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)).
+:::decision{title="Overrides are for exceptions"}
+Overrides win over plan and add-ons: use them for a pilot customer or a paused feature, always with a reason.
+:::
+
+Every change records a `billing.*` audit event ([how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)).
 
 In the portal, a workspace's page (`/admin/workspaces/<id>`) has a **Billing** panel (`AdminBillingPanel` in `packages/ui/src/components/patterns/admin-billing-panel.tsx`, loaded by `apps/web/src/components/admin/WorkspaceBilling.tsx`): the plan and its state, usage against every limit (overridden limits marked **Override**), and forms to assign a plan (active, or a trial until a day), set add-on quantities, and set or remove an override with its reason (byte limits are entered in MB). Hidden with `BILLING=off`; in provider mode it warns that the provider's next event replaces an assigned plan.
 
@@ -152,7 +186,11 @@ interface BillingProvider {
 }
 ```
 
-Without a registered adapter, `BILLING=provider` fails every request with a ConfigError that names the fix. To add one:
+:::gotcha{title="The starter ships no payment provider"}
+Without a registered adapter, `BILLING=provider` fails every request with a ConfigError that names the fix.
+:::
+
+To add one:
 
 1. Write `packages/features/src/platform/adapters/<vendor>/<vendor>-billing-provider.ts`, exported from its folder barrel and `adapters/index.ts`. Vendor SDKs are allowed only there ([overview.md principle 13](../architecture/overview.md#principles)); justify the dependency per [dependencies.md](../processes/dependencies.md).
 2. Add `<vendor>-billing-provider.contract.test.ts` calling `describeBillingProviderContract` with a harness that builds signed, forged and ignored webhook requests (see `memory-billing-provider.contract.test.ts`).

@@ -21,6 +21,8 @@ import { DOCS } from "@/docs/docs.config";
 import { editUrl, routeFor } from "@/docs/links";
 import { locate, type NavSection } from "@/docs/nav";
 import PublicLayout from "@/layouts/PublicLayout.astro";
+// The docs components kit (src/docs/kit/): screenshots, steps, flows, callouts, tabs.
+import "@/styles/docs-kit.css";
 
 interface Props {
   /** Repository path of the page's source, e.g. `docs/guides/how-to-setup-d1.md`. */
@@ -139,3 +141,8 @@ const sections: readonly DocsNavSection[] = nav;
     </aside>
   </div>
 </PublicLayout>
+
+<script>
+  // Tabs and the copy button of the docs components kit (src/docs/kit/).
+  import "@/docs/kit/docs-kit";
+</script>

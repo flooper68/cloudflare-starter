@@ -12,6 +12,7 @@ import {
 } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import { isPublished } from "@/docs/links";
+import { buildNav, navPaths } from "@/docs/nav";
 
 import { read } from "./repo";
 
@@ -33,6 +34,8 @@ describe("CHANGELOG.md", () => {
 
   it("is published on the docs site and in its navigation", () => {
     expect(isPublished(CHANGELOG_PATH)).toBe(true);
-    expect(DOCS.start.items.map((item) => item.path)).toContain(CHANGELOG_PATH);
+    // Its own section of the docs navigation (docs/README.md, "## Changelog").
+    const nav = buildNav(read(DOCS.navSource), new Map());
+    expect(navPaths(nav)).toContain(CHANGELOG_PATH);
   });
 });

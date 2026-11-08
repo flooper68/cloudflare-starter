@@ -4,6 +4,7 @@ import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, sessionDrivers } from "astro/config";
 import { devPort } from "./dev-port.mjs";
+import { docsKitPlugins } from "./src/docs/kit/plugin.ts";
 import {
   docsDiagramsPlugin,
   docsLinksPlugin,
@@ -36,11 +37,16 @@ export default defineConfig({
   // variables, switched with data-theme (packages/ui/src/styles/prose.css).
   markdown: {
     processor: satteri({
-      mdastPlugins: [docsDiagramsPlugin(REPO_ROOT)],
+      // The docs components kit (src/docs/kit/): `::flow`, `:::screenshot`, `:::steps`, …
+      // as Markdown directives, rendered to static HTML.
+      mdastPlugins: [
+        docsDiagramsPlugin(REPO_ROOT),
+        ...docsKitPlugins(REPO_ROOT),
+      ],
       hastPlugins: [docsLinksPlugin(REPO_ROOT), docsTablesPlugin()],
       // Off so text and heading ids match GitHub's ("--" stays "--"): links written
       // for GitHub then work on the site, and test/architecture/docs.test.ts models both.
-      features: { smartPunctuation: false },
+      features: { smartPunctuation: false, directive: true },
     }),
     shikiConfig: {
       themes: { light: "github-light-default", dark: "github-dark-default" },
