@@ -8,7 +8,7 @@ import {
   NoteListSkeleton,
   SearchInput,
 } from "@cloudflare-starter/ui";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { NotebookPen, Plus, SearchX } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -44,6 +44,14 @@ export function NotesPage() {
   const query = useDebounced(search.trim());
   const [creating, setCreating] = useState(false);
   const [refusal, setRefusal] = useState<LimitRefusal | null>(null);
+  // `?new=true` (the command palette's "New note"): open the form, then drop the flag.
+  const { new: requestedNew } = useSearch({ strict: false });
+  useEffect(() => {
+    if (!requestedNew) return;
+    setRefusal(null);
+    setCreating(true);
+    void navigate({ to: "/app/notes", search: {}, replace: true });
+  }, [requestedNew, navigate]);
   const notes = useAsync(
     () => trpc.notes.list.query({ workspaceId, query: query || undefined }),
     `notes:${workspaceId}:${query}`

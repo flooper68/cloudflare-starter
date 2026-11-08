@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { defineEvent } from "../../kernel";
-import { pageViewedEvent } from "./analytics-events";
+import {
+  commandPaletteItemSelectedEvent,
+  commandPaletteOpenedEvent,
+  pageViewedEvent,
+} from "./analytics-events";
 import { createEventCatalog } from "./event-catalog";
 
 describe("createEventCatalog", () => {
@@ -42,5 +46,34 @@ describe("app.page_viewed", () => {
       schema.safeParse({ route: "https://example.test/app" }).success
     ).toBe(false);
     expect(schema.safeParse({ route: "/app", extra: 1 }).success).toBe(false);
+  });
+});
+
+describe("app.command_palette_*", () => {
+  it("records how the palette opened and the kind of item picked, never the query", () => {
+    const opened = commandPaletteOpenedEvent.properties;
+    expect(opened.safeParse({ source: "shortcut" }).success).toBe(true);
+    expect(opened.safeParse({ source: "trigger" }).success).toBe(true);
+    expect(opened.safeParse({ source: "mouse" }).success).toBe(false);
+
+    const selected = commandPaletteItemSelectedEvent.properties;
+    for (const kind of ["navigate", "note", "workspace", "action"]) {
+      expect(selected.safeParse({ kind }).success).toBe(true);
+    }
+    expect(selected.safeParse({ kind: "Launch checklist" }).success).toBe(
+      false
+    );
+    expect(selected.safeParse({ kind: "note", query: "launch" }).success).toBe(
+      false
+    );
+  });
+
+  it("are valid client events of the catalog", () => {
+    const catalog = createEventCatalog([
+      commandPaletteOpenedEvent,
+      commandPaletteItemSelectedEvent,
+    ]);
+    expect(catalog.get("app.command_palette_opened")?.client).toBe(true);
+    expect(catalog.get("app.command_palette_item_selected")?.client).toBe(true);
   });
 });

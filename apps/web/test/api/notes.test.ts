@@ -200,6 +200,88 @@ describe("notes procedures", () => {
     );
   });
 
+  it("search finds live notes of the caller's workspace only, by title or body, never trashed ones", async () => {
+    const owner = await signUp("Katherine Johnson", "katherine@notes.test");
+    const member = await signUp("Dorothy Vaughan", "dorothy@notes.test");
+    const outsider = await signUp("Mary Jackson", "mary@notes.test");
+    const team = await callerFor(owner).workspace.create({ name: "Langley" });
+    const workspaceId = team.id;
+    const token = await inviteByMail(owner, workspaceId, member.email);
+    await callerFor(member).workspace.invitations.accept({ token });
+    const asOwner = callerFor(owner);
+    const asMember = callerFor(member);
+    const asOutsider = callerFor(outsider);
+    const outsiderWorkspace = (await asOutsider.workspace.list())
+      .activeWorkspaceId as string;
+
+    const titled = await asOwner.notes.create({
+      workspaceId,
+      title: "Orbit trajectory review",
+    });
+    const bodied = await asOwner.notes.create({
+      workspaceId,
+      title: "Monday sync",
+      body: "Agenda: the orbit numbers",
+    });
+    const trashed = await asOwner.notes.create({
+      workspaceId,
+      title: "Orbit draft",
+    });
+    await asOwner.notes.delete({ workspaceId, noteId: trashed.id });
+    await asOutsider.notes.create({
+      workspaceId: outsiderWorkspace,
+      title: "Orbit elsewhere",
+    });
+
+    const found = await asMember.notes.search({ workspaceId, query: "orbit" });
+    expect(found.items).toEqual([
+      expect.objectContaining({ id: titled.id, matched: "title" }),
+      expect.objectContaining({
+        id: bodied.id,
+        matched: "body",
+        excerpt: "Agenda: the orbit numbers",
+      }),
+    ]);
+    // Another workspace's caller sees only their own note, and cannot ask for this one's.
+    expect(
+      (
+        await asOutsider.notes.search({
+          workspaceId: outsiderWorkspace,
+          query: "orbit",
+        })
+      ).items.map((hit) => hit.title)
+    ).toEqual(["Orbit elsewhere"]);
+    await expect(
+      asOutsider.notes.search({ workspaceId, query: "orbit" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    // Restored from the trash, it is found again.
+    await asOwner.trash.restore({
+      workspaceId,
+      items: [{ type: "note", id: trashed.id }],
+    });
+    expect(
+      (await asMember.notes.search({ workspaceId, query: "draft" })).items
+    ).toEqual([expect.objectContaining({ id: trashed.id })]);
+
+    await expect(
+      asMember.notes.search({ workspaceId, query: " " })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      asMember.notes.search({ workspaceId, query: "orbit", limit: 21 })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      callerFor(null).notes.search({ query: "orbit" })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+
+    // The same through MCP, in the caller's current workspace.
+    const tool = await mcpCall(asOutsider, "search_notes", { query: "orbit" });
+    expect(tool.isError).toBeFalsy();
+    expect(tool.structuredContent).toEqual({
+      items: [expect.objectContaining({ title: "Orbit elsewhere" })],
+    });
+  });
+
   it("refuses anonymous callers and invalid input", async () => {
     const anonymous = callerFor(null);
     await expect(anonymous.notes.list({})).rejects.toMatchObject({
@@ -227,6 +309,7 @@ describe("notes procedures", () => {
 
   it("notes procedures refuse other workspaces", async () => {
     await expectCrossWorkspaceDenied("notes.list", {});
+    await expectCrossWorkspaceDenied("notes.search", { query: "Sneaky" });
     await expectCrossWorkspaceDenied("notes.get", { noteId });
     await expectCrossWorkspaceDenied("notes.create", { title: "Sneaky" });
     await expectCrossWorkspaceDenied("notes.update", {

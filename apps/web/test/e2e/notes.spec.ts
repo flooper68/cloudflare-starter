@@ -21,7 +21,9 @@ test("notes: create, edit, comment, move to trash, restore from the trash", asyn
   // Create: the new note opens.
   await page.getByRole("button", { name: "New note" }).first().click();
   await page.getByLabel("Title").fill(title);
-  await page.getByLabel(/^Note/).fill("Freeze the pricing page");
+  await page
+    .getByRole("textbox", { name: /^Note/ })
+    .fill("Freeze the pricing page");
   await page.getByRole("button", { name: "Create note" }).click();
   await expect(page).toHaveURL(/\/app\/notes\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
@@ -29,7 +31,7 @@ test("notes: create, edit, comment, move to trash, restore from the trash", asyn
   // Edit the body.
   await page.getByRole("button", { name: "Edit" }).click();
   await page
-    .getByLabel(/^Note/)
+    .getByRole("textbox", { name: /^Note/ })
     .fill("Freeze the pricing page\nRun the restore drill");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Note saved")).toBeVisible();

@@ -30,6 +30,16 @@ export interface NoteSummary {
   readonly commentCount: number;
 }
 
+/** What a note search returns per hit: enough to show it and open it. */
+export interface NoteSearchHit {
+  readonly id: string;
+  readonly title: string;
+  /** The first line of the body, as in the list. */
+  readonly excerpt: string;
+  /** Where the query matched; the title wins when both do. */
+  readonly matched: "title" | "body";
+}
+
 const EXCERPT_MAX = 140;
 
 /** The first non-empty line of a body, cut at EXCERPT_MAX with an ellipsis. */

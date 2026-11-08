@@ -14,13 +14,17 @@ export {
   listNotesInputSchema,
   NOTE_BODY_MAX,
   NOTE_COMMENT_MAX,
+  NOTE_SEARCH_LIMIT_MAX,
   NOTE_TITLE_MAX,
+  type SearchNotesInput,
+  searchNotesInputSchema,
   type UpdateNoteInput,
   updateNoteInputSchema,
 } from "./note-input";
 export {
   type NotePerson,
   type NoteRow,
+  type NoteSearchHit,
   type NoteSummary,
   noteExcerpt,
   toNoteSummary,

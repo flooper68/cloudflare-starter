@@ -1,4 +1,10 @@
-export { pageViewedEvent } from "./analytics-events";
+export {
+  COMMAND_PALETTE_ITEM_KINDS,
+  COMMAND_PALETTE_SOURCES,
+  commandPaletteItemSelectedEvent,
+  commandPaletteOpenedEvent,
+  pageViewedEvent,
+} from "./analytics-events";
 export {
   type ClientBatch,
   type ClientEvent,

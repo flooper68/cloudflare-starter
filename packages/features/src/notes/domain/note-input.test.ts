@@ -6,7 +6,9 @@ import {
   listNotesInputSchema,
   NOTE_BODY_MAX,
   NOTE_COMMENT_MAX,
+  NOTE_SEARCH_LIMIT_MAX,
   NOTE_TITLE_MAX,
+  searchNotesInputSchema,
   updateNoteInputSchema,
 } from "./note-input";
 
@@ -65,5 +67,26 @@ describe("note input", () => {
   it("lists 50 by default and at most 100", () => {
     expect(listNotesInputSchema.parse({})).toEqual({ limit: 50 });
     expect(listNotesInputSchema.safeParse({ limit: 101 }).success).toBe(false);
+  });
+
+  it("searches with a trimmed, non-empty query, 8 hits by default and at most 20", () => {
+    expect(searchNotesInputSchema.parse({ query: "  launch " })).toEqual({
+      query: "launch",
+      limit: 8,
+    });
+    expect(searchNotesInputSchema.safeParse({ query: "   " }).success).toBe(
+      false
+    );
+    expect(
+      searchNotesInputSchema.safeParse({
+        query: "x".repeat(NOTE_TITLE_MAX + 1),
+      }).success
+    ).toBe(false);
+    expect(
+      searchNotesInputSchema.safeParse({
+        query: "launch",
+        limit: NOTE_SEARCH_LIMIT_MAX + 1,
+      }).success
+    ).toBe(false);
   });
 });
