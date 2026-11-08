@@ -114,10 +114,30 @@ export function demoRetentionDecision(
   return { action: "keep" };
 }
 
-/** Whether a warning sent at `warnedAt` lets the run at `now` erase the account. */
+/**
+ * How long a warning stays current. An older one (the account was protected or an admin
+ * meanwhile, and is not any more) no longer counts: the account is warned again first.
+ * Long enough for a backlog or a blocked account to be erased on a later day without a
+ * new warning every day.
+ */
+export const DEMO_WARNING_VALID_MS = 7 * DAY_MS;
+
+/** Whether a warning sent at `warnedAt` is still current at `now`. */
+export function isCurrentWarning(warnedAt: Date | null, now: Date): boolean {
+  return (
+    warnedAt !== null &&
+    warnedAt.getTime() > now.getTime() - DEMO_WARNING_VALID_MS
+  );
+}
+
+/**
+ * Whether a warning sent at `warnedAt` lets the run at `now` erase the account: current,
+ * and at least DEMO_WARNING_LEAD_MS old.
+ */
 export function warnedLongEnoughAgo(warnedAt: Date | null, now: Date): boolean {
   return (
     warnedAt !== null &&
+    isCurrentWarning(warnedAt, now) &&
     warnedAt.getTime() <= now.getTime() - DEMO_WARNING_LEAD_MS
   );
 }

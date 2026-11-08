@@ -227,6 +227,38 @@ describe("enforceDemoRetention", () => {
     );
   });
 
+  it("does not count a stale warning: an account warned long ago (then protected) is warned again first", async () => {
+    const stale = await seedDemoUser("stale@example.test", daysBefore(60));
+    await markWarned(stale.id, daysBefore(40));
+    const deps = retentionDeps();
+    expect(await enforceDemoRetention(deps, { asOf, batch: 0 })).toMatchObject({
+      warned: 1,
+      erased: 0,
+    });
+    expect(await userExists(stale.id)).toBe(true);
+    expect(enqueued(deps, "demo.warn-account")).toEqual([
+      { userId: stale.id, asOf: DEMO_NOW },
+    ]);
+  });
+
+  it("warns no more accounts than the next run can erase", async () => {
+    // 98 warned and due accounts already wait for erasure: room for 2 more warnings.
+    for (let i = 0; i < 98; i++) {
+      const account = await seedDemoUser(
+        `backlog-${String(i).padStart(3, "0")}@example.test`,
+        new Date(daysBefore(9).getTime() + i * 1000)
+      );
+      await markWarned(account.id, daysBefore(1));
+    }
+    for (let i = 0; i < 5; i++)
+      await seedDemoUser(`fresh-${i}@example.test`, daysBefore(6.5));
+    const deps = retentionDeps();
+    expect(await enforceDemoRetention(deps, { asOf, batch: 0 })).toMatchObject({
+      warned: 2,
+      erased: DEMO_ERASE_BATCH,
+    });
+  });
+
   it("deletes a shared workspace the account was the only member of", async () => {
     const solo = await seedDemoUser("solo@example.test", daysBefore(20));
     await markWarned(solo.id, daysBefore(1));

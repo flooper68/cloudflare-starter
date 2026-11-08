@@ -511,7 +511,6 @@ function checkQaBypass(
     );
 }
 
-/** Explicit orphan-maintenance setting, required in every runtime environment. */
 /**
  * DEMO_MODE (off | on, required; docs/guides/how-to-run-a-public-demo.md) and, with on,
  * DEMO_RETENTION_DAYS, DEMO_SAMPLE_DATA and DEMO_PROTECTED_EMAILS, as parseDemoConfig
@@ -566,6 +565,7 @@ function checkDemoVars(
     );
 }
 
+/** Explicit orphan-maintenance setting, required in every runtime environment. */
 function checkStorageVar(label: string, value: string | undefined) {
   if (!value || !["off", "report", "delete"].includes(value))
     error(

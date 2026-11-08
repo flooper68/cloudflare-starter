@@ -1,8 +1,11 @@
+import { and, eq } from "drizzle-orm";
+
 import type { AdminAuthGateway } from "../admin";
 import type { AuditActor } from "../audit";
 import type { Database } from "../database";
 import type { Clock, Ids, RequestContext } from "../kernel";
 import { prepareUserErasure } from "./prepare-user-erasure";
+import { erasureLock } from "./privacy.schema";
 
 /**
  * The erasure every server-initiated deletion shares (the admin portal's `eraseUserData`,
@@ -36,6 +39,20 @@ export async function eraseAccount(
     operationId,
     actor: input.actor,
   });
-  await deps.gateway.deleteUser(input.userId, operationId);
+  try {
+    await deps.gateway.deleteUser(input.userId, operationId);
+  } catch (error) {
+    // The hooks never completed: release this operation's lock (as prepareUserErasure does
+    // on its own failure), so the next erasure is not refused for the lease's 20 minutes.
+    await deps.db
+      .delete(erasureLock)
+      .where(
+        and(
+          eq(erasureLock.userId, input.userId),
+          eq(erasureLock.operationId, operationId)
+        )
+      );
+    throw error;
+  }
   return plan;
 }

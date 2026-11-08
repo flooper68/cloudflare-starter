@@ -5,7 +5,11 @@
  * simply shown again. Starter-only, removed with demo mode.
  */
 
-/** The starter's repository, the demo banner's "Get the starter on GitHub". */
+/**
+ * The starter's repository, the demo banner's "Get the starter on GitHub". The same as
+ * the features' STARTER_REPOSITORY_URL of the warning mail (demo-banner.test.ts); kept
+ * here so the browser bundle does not import the features package.
+ */
 export const STARTER_REPOSITORY_URL =
   "https://github.com/flooper68/cloudflare-starter";
 

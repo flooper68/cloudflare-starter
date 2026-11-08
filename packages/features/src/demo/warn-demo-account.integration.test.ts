@@ -4,6 +4,7 @@ import {
   DEMO_NOW,
   daysBefore,
   demoOn,
+  markWarned,
   resetDemoState,
   seedDemoUser,
 } from "../../test/demo-fixtures";
@@ -52,6 +53,29 @@ describe("warnDemoAccount", () => {
       { status: "skipped", reason: "already_warned" }
     );
     expect(notificationsSent(second.jobQueue)).toEqual([]);
+  });
+
+  it("warns again when the earlier warning is no longer current", async () => {
+    const visitor = await seedDemoUser("again@example.test", daysBefore(50));
+    await markWarned(visitor.id, daysBefore(30));
+    expect(
+      (await warnDemoAccount(deps(), { userId: visitor.id, asOf })).status
+    ).toBe("sent");
+  });
+
+  it("dispatches a retried warning under the same event id", async () => {
+    const visitor = await seedDemoUser("stable@example.test", daysBefore(6.5));
+    const d = deps();
+    const keys: string[] = [];
+    const recording = {
+      ...d,
+      notify: (async (definition, input) => {
+        keys.push(input.eventId ?? "random");
+        return d.notify(definition, input);
+      }) as typeof d.notify,
+    };
+    await warnDemoAccount(recording, { userId: visitor.id, asOf });
+    expect(keys).toEqual([`demo-warning-${visitor.id}-${DEMO_NOW}`]);
   });
 
   it("names a deletion at least a day away for an account already past the retention", async () => {

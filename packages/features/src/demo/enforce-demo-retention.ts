@@ -22,6 +22,7 @@ import {
   demoRetentionDecision,
   demoWarnCutoff,
   enforceDemoRetentionJob,
+  isCurrentWarning,
   warnDemoAccountJob,
   warnedLongEnoughAgo,
 } from "./domain";
@@ -50,10 +51,11 @@ export type EnforceDemoRetentionResult =
  * 1. Looks at the accounts the retention applies to (`retentionSubjects`, then
  *    `demoRetentionDecision` for each) that are at least DEMO_RETENTION_DAYS − 1 days old,
  *    oldest first, at most DEMO_SCAN_MAX.
- * 2. First batch only: enqueues `demo.warn-account` (keyed by user) for each one not yet
- *    warned (no `demo.deletion_warned` event), at most DEMO_WARN_CAP.
- * 3. Erases, through `eraseDemoAccount`, the ones past DEMO_RETENTION_DAYS that were
- *    warned at least DEMO_WARNING_LEAD_MS before `asOf`: after skipping `skip` accounts
+ * 2. First batch only: enqueues `demo.warn-account` (keyed by user) for each one without
+ *    a current warning (a `demo.deletion_warned` event within DEMO_WARNING_VALID_MS), at
+ *    most DEMO_WARN_CAP and no more than the next run can erase.
+ * 3. Erases, through `eraseDemoAccount`, the ones past DEMO_RETENTION_DAYS whose current
+ *    warning is at least DEMO_WARNING_LEAD_MS old: after skipping `skip` accounts
  *    earlier batches could not erase, up to DEMO_ERASE_BATCH attempts. An account the
  *    preflight refuses (last owner of a workspace others use) is counted as blocked and
  *    tried again on the next day's run; another failure is reported and counted.
@@ -147,10 +149,24 @@ export async function enforceDemoRetention(
   });
 
   let warned = 0;
+  const erasableAll = due.filter(
+    (account) =>
+      account.erase &&
+      warnedLongEnoughAgo(warnedAt.get(account.id) ?? null, now)
+  );
   if (input.batch === 0) {
+    // No more warnings than the next run can erase, so "tomorrow" stays true when a
+    // backlog (demo mode just turned on) is larger than a day's cap.
+    const warnCap = Math.min(
+      DEMO_WARN_CAP,
+      Math.max(
+        0,
+        DEMO_ERASE_BATCH * DEMO_MAX_BATCHES_PER_RUN - erasableAll.length
+      )
+    );
     for (const account of due) {
-      if (warned >= DEMO_WARN_CAP) break;
-      if (warnedAt.has(account.id)) continue;
+      if (warned >= warnCap) break;
+      if (isCurrentWarning(warnedAt.get(account.id) ?? null, now)) continue;
       await enqueueJob(
         deps,
         warnDemoAccountJob,
@@ -161,13 +177,7 @@ export async function enforceDemoRetention(
     }
   }
 
-  const erasable = due
-    .filter(
-      (account) =>
-        account.erase &&
-        warnedLongEnoughAgo(warnedAt.get(account.id) ?? null, now)
-    )
-    .slice(input.skip ?? 0);
+  const erasable = erasableAll.slice(input.skip ?? 0);
   const attempt = erasable.slice(0, DEMO_ERASE_BATCH);
   let erased = 0;
   let blocked = 0;

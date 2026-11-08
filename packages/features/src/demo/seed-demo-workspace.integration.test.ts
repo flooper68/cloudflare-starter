@@ -58,7 +58,7 @@ describe("seedDemoWorkspace", () => {
     ).toHaveLength(3);
   });
 
-  it("is idempotent: a workspace with notes (even only trashed ones) is left alone", async () => {
+  it("is idempotent: a seeded workspace (even with its samples trashed) gets nothing more", async () => {
     const visitor = await seedDemoUser(
       "twice@example.test",
       new Date(DEMO_NOW)
@@ -67,7 +67,7 @@ describe("seedDemoWorkspace", () => {
     await seedDemoWorkspace(deps(), input);
     expect(await seedDemoWorkspace(deps(), input)).toEqual({
       seeded: false,
-      reason: "already_has_notes",
+      reason: "already_seeded",
     });
     await rows(
       "UPDATE notes SET deleted_at = ?, deleted_by = ? WHERE workspace_id = ?",
@@ -82,6 +82,69 @@ describe("seedDemoWorkspace", () => {
         visitor.workspaceId
       )
     ).toEqual([{ n: DEMO_SAMPLE_NOTES.length }]);
+    expect(
+      await rows(
+        "SELECT count(*) AS n FROM note_comments WHERE workspace_id = ?",
+        visitor.workspaceId
+      )
+    ).toEqual([{ n: 1 }]);
+  });
+
+  it("completes a partly written seed on retry", async () => {
+    const visitor = await seedDemoUser(
+      "partial@example.test",
+      new Date(DEMO_NOW)
+    );
+    const input = { userId: visitor.id, workspaceId: visitor.workspaceId };
+    let calls = 0;
+    const failing = {
+      ...deps(),
+      billing: {
+        ...testBilling(),
+        requireLimit: async () => {
+          calls += 1;
+          if (calls > 1) throw new Error("D1 hiccup");
+        },
+      },
+    };
+    await expect(seedDemoWorkspace(failing, input)).rejects.toThrow(
+      "D1 hiccup"
+    );
+    expect(
+      await rows(
+        "SELECT count(*) AS n FROM notes WHERE workspace_id = ?",
+        visitor.workspaceId
+      )
+    ).toEqual([{ n: 1 }]);
+    expect(await seedDemoWorkspace(deps(), input)).toEqual({
+      seeded: true,
+      notes: DEMO_SAMPLE_NOTES.length - 1,
+      comments: 1,
+    });
+    expect(
+      await rows(
+        "SELECT count(*) AS n FROM notes WHERE workspace_id = ?",
+        visitor.workspaceId
+      )
+    ).toEqual([{ n: DEMO_SAMPLE_NOTES.length }]);
+  });
+
+  it("leaves a workspace with a note of the person's own alone", async () => {
+    const visitor = await seedDemoUser("own@example.test", new Date(DEMO_NOW));
+    await rows(
+      "INSERT INTO notes (id, workspace_id, title, body, created_by, updated_by, created_at, updated_at) VALUES ('note-own', ?, 'My plan', 'Mine', ?, ?, ?, ?)",
+      visitor.workspaceId,
+      visitor.id,
+      visitor.id,
+      Date.parse(DEMO_NOW),
+      Date.parse(DEMO_NOW)
+    );
+    expect(
+      await seedDemoWorkspace(deps(), {
+        userId: visitor.id,
+        workspaceId: visitor.workspaceId,
+      })
+    ).toEqual({ seeded: false, reason: "already_has_notes" });
   });
 
   it("seeds nothing with demo mode or sample data off, or in another workspace", async () => {

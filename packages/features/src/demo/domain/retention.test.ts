@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   DAY_MS,
   DEMO_WARNING_LEAD_MS,
+  DEMO_WARNING_VALID_MS,
   demoDeletionTime,
   demoExemption,
   demoRetentionDecision,
   emailDomain,
+  isCurrentWarning,
   isPlatformAdminRole,
   warnedLongEnoughAgo,
 } from "./retention";
@@ -154,6 +156,19 @@ describe("demo retention: exemptions, whatever the age", () => {
   it("reads the domain of an address", () => {
     expect(emailDomain("A@B.Example")).toBe("b.example");
     expect(emailDomain("no-at-sign")).toBe("");
+  });
+});
+
+describe("demo retention: a warning stays current for DEMO_WARNING_VALID_MS", () => {
+  it("counts a recent warning and not an old one", () => {
+    expect(isCurrentWarning(null, NOW)).toBe(false);
+    expect(isCurrentWarning(new Date(NOW.getTime() - DAY_MS), NOW)).toBe(true);
+    expect(
+      isCurrentWarning(new Date(NOW.getTime() - DEMO_WARNING_VALID_MS), NOW)
+    ).toBe(false);
+    expect(
+      warnedLongEnoughAgo(new Date(NOW.getTime() - 30 * DAY_MS), NOW)
+    ).toBe(false);
   });
 });
 

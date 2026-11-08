@@ -15,6 +15,7 @@ export {
   DEMO_STATS_ERASED_DAYS,
   DEMO_WARN_CAP,
   DEMO_WARNING_LEAD_MS,
+  DEMO_WARNING_VALID_MS,
   type DemoAccount,
   type DemoExemption,
   type DemoRetentionDecision,
@@ -23,6 +24,7 @@ export {
   demoRetentionDecision,
   demoWarnCutoff,
   emailDomain,
+  isCurrentWarning,
   isPlatformAdminRole,
   warnedLongEnoughAgo,
 } from "./retention";

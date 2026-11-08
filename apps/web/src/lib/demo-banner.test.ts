@@ -1,9 +1,11 @@
+import { STARTER_REPOSITORY_URL as MAIL_URL } from "@cloudflare-starter/features";
 import { describe, expect, it } from "vitest";
 
 import {
   DEMO_BANNER_DISMISSED_KEY,
   demoBannerDismissed,
   dismissDemoBanner,
+  STARTER_REPOSITORY_URL,
 } from "./demo-banner";
 
 function memoryStore() {
@@ -40,5 +42,11 @@ describe("demo banner dismissal", () => {
     };
     expect(() => dismissDemoBanner(broken)).not.toThrow();
     expect(demoBannerDismissed(broken)).toBe(false);
+  });
+});
+
+describe("demo banner link", () => {
+  it("points where the deletion warning mail points", () => {
+    expect(STARTER_REPOSITORY_URL).toBe(MAIL_URL);
   });
 });

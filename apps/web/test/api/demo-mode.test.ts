@@ -106,7 +106,10 @@ describe("demo mode in the Worker", () => {
     ).toHaveLength(1);
   });
 
-  it("warns, then erases through Better Auth's delete and the privacy erasure, sparing exempt accounts", async () => {
+  // Four real sign-ups (password hashing) and two erasures: more than the default 5 s.
+  it("warns, then erases through Better Auth's delete and the privacy erasure, sparing exempt accounts", {
+    timeout: 30_000,
+  }, async () => {
     const visitor = await demoAccount("expired@demo.test", 10);
     const kept = [
       await demoAccount("keep@demo.test", 30),

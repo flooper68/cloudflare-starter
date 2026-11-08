@@ -37,6 +37,29 @@ describe("eraseAccount", () => {
     ).toEqual([{ actor_kind: "system" }]);
   });
 
+  it("releases the erasure lock when Better Auth's delete fails, so the next erasure can run", async () => {
+    // The memory gateway above deletes no lock (no completion hook): start without one.
+    await rows("DELETE FROM privacy_erasure_lock");
+    const { deps, person } = await privacyFixture();
+    const failing = {
+      async deleteUser() {
+        throw new Error("user delete failed");
+      },
+    };
+    await expect(
+      eraseAccount(
+        {
+          ...deps,
+          gateway: failing,
+          eraseUserArtifacts: vi.fn(),
+          eraseWorkspaceArtifacts: vi.fn(),
+        },
+        { userId: person.id, actor: { kind: "system" } }
+      )
+    ).rejects.toThrow("user delete failed");
+    expect(await rows("SELECT id FROM privacy_erasure_lock")).toEqual([]);
+  });
+
   it("does nothing for a user that no longer exists", async () => {
     const { deps } = await privacyFixture();
     const gateway = memoryAdminAuthGateway();
