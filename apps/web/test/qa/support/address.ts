@@ -34,8 +34,8 @@ export function currentRunId(
 
 /**
  * The QA address of one role in one run: `qa+<runId>-<role>@<QA_EMAIL_DOMAIN>`, e.g.
- * `qa+20261108kqzt-owner@qa.flooper.me`: a subaddress of the inbox's one mailbox
- * `qa@`, which Email Routing delivers to the QA inbox Worker.
+ * `qa+20261108kqzt-owner@qa.flooper.me`. With QA_BYPASS=on the app keeps mail to it in its
+ * QA outbox instead of sending it.
  */
 export function qaAddress(
   runId: string,

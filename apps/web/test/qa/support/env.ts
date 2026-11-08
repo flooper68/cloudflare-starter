@@ -1,16 +1,12 @@
 /**
  * What the automated QA suite needs from its environment. `bun run test:qa -- --base-url
- * <url>` sets QA_BASE_URL; CI passes the three secrets (docs/guides/how-to-qa-a-deployment.md).
+ * <url>` sets QA_BASE_URL; CI passes QA_TOKEN (docs/guides/how-to-qa-a-deployment.md).
  */
 export interface QaEnv {
   /** The deployed app's origin, e.g. https://starter.flooper.me. */
   readonly baseURL: string;
   /** The app's QA_TOKEN secret, sent as X-QA-Token to the app's origin only. */
   readonly token: string;
-  /** The QA inbox Worker's origin (cloudflare-starter-qa-inbox on workers.dev). */
-  readonly inboxURL: string;
-  /** The inbox API's bearer token (its QA_INBOX_TOKEN secret). */
-  readonly inboxToken: string;
   /** The mail domain of QA addresses: QA_EMAIL_DOMAIN, default qa.flooper.me. */
   readonly emailDomain: string;
 }
@@ -18,10 +14,8 @@ export interface QaEnv {
 const REQUIRED = {
   QA_BASE_URL:
     "the deployed app's URL (bun run test:qa -- --base-url https://starter.flooper.me)",
-  QA_TOKEN: "the app's QA_TOKEN secret (X-QA-Token)",
-  QA_INBOX_URL:
-    "the QA inbox Worker's URL (https://cloudflare-starter-qa-inbox.<account>.workers.dev)",
-  QA_INBOX_TOKEN: "the QA inbox's bearer token (its QA_INBOX_TOKEN secret)",
+  QA_TOKEN:
+    "the app's QA_TOKEN secret (X-QA-Token: the QA bypass and the QA outbox)",
 } as const;
 
 /** The default QA mail domain: QA_EMAIL_DOMAIN of the starter's production vars. */
@@ -62,8 +56,7 @@ function origin(name: string, value: string): string {
 }
 
 /**
- * Reads QA_BASE_URL, QA_TOKEN, QA_INBOX_URL and QA_INBOX_TOKEN (and the optional
- * QA_EMAIL_DOMAIN). Throws one error naming every missing variable and what it is.
+ * Reads QA_BASE_URL and QA_TOKEN (and the optional QA_EMAIL_DOMAIN). Throws one error naming every missing variable and what it is.
  * Never puts a token in an error.
  */
 export function qaEnv(
@@ -77,8 +70,6 @@ export function qaEnv(
   return {
     baseURL: origin("QA_BASE_URL", env.QA_BASE_URL as string),
     token: (env.QA_TOKEN as string).trim(),
-    inboxURL: origin("QA_INBOX_URL", env.QA_INBOX_URL as string),
-    inboxToken: (env.QA_INBOX_TOKEN as string).trim(),
     emailDomain,
   };
 }

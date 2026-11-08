@@ -12,6 +12,7 @@ import {
   prepareUserErasure,
   promoteBootstrapAdmin,
   provisionUser,
+  qaAdminEmail,
   RATE_LIMIT_POLICIES,
   randomIds,
   recordAccountDeletion,
@@ -59,6 +60,14 @@ import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
+import {
+  type QaAdminAuth,
+  refuseQaAddressWithoutToken,
+  refuseQaUserWithoutToken,
+  refuseSocialQaAccount,
+  shortenQaAdminSession,
+  syncQaAdminRole,
+} from "@/server/qa-admin";
 import { qaBypassesHumanCheck } from "@/server/qa-bypass";
 
 export const AUTH_BASE_PATH = "/api/auth";
@@ -296,7 +305,10 @@ async function promoteBootstrapIfVerified(
   hook: string
 ): Promise<void> {
   const { bootstrapAdminEmail } = buildRequiredConfig(env).workspaces;
-  if (!bootstrapAdminEmail || !user.emailVerified) return;
+  // The QA suite's admin too, while QA_BYPASS=on (server/qa-admin.ts).
+  const qaBypass = buildPlatform(env).qaBypass;
+  const qaAdmin = qaBypass ? qaAdminEmail(qaBypass.emailDomain) : null;
+  if ((!bootstrapAdminEmail && !qaAdmin) || !user.emailVerified) return;
   const requestContext = contextFor(env, ctx);
   try {
     await promoteBootstrapAdmin(
@@ -307,7 +319,7 @@ async function promoteBootstrapIfVerified(
         requestContext,
         gateway: createAdminAuthGateway(() => getAuth(env), null),
       },
-      { user, bootstrapAdminEmail }
+      { user, bootstrapAdminEmail, qaAdminEmail: qaAdmin }
     );
   } catch (error) {
     buildPlatform(env).errors.capture(error, requestContext, {
@@ -570,11 +582,31 @@ export function createAuthOptions(env: AppEnv) {
       },
     },
     databaseHooks: {
-      // Audit log: sign-ins (server/auth-audit.ts).
-      session: audit.session,
+      // The QA admin's short sessions and role (server/qa-admin.ts).
+      session: {
+        ...audit.session,
+        create: {
+          before: (session) =>
+            shortenQaAdminSession(env, qaAdminAuth(env), session),
+          after: async (session, ctx) => {
+            await audit.session?.create?.after?.(session, ctx);
+            await syncQaAdminRole(env, qaAdminAuth(env), session.userId, ctx);
+          },
+        },
+      },
+      // No social account on a QA address's user (server/qa-admin.ts).
+      account: {
+        create: {
+          before: async (account) => {
+            await refuseSocialQaAccount(env, qaAdminAuth(env), account);
+          },
+        },
+      },
       user: {
         create: {
-          before: async (user) => {
+          before: async (user, ctx) => {
+            // QA addresses only with the QA token, by every method (server/qa-admin.ts).
+            refuseQaUserWithoutToken(env, user, ctx);
             await enforceSignUpPolicy(env, user);
           },
           after: async (user, ctx) => {
@@ -703,6 +735,8 @@ export function createAuthOptions(env: AppEnv) {
         // Turnstile on sign-up, sign-in and password reset (TURNSTILE=on), first: a bot
         // learns nothing else about the request.
         await enforceHumanCheck(env, ctx);
+        // QA addresses only with the QA token (QA_BYPASS=on): nobody else claims them.
+        refuseQaAddressWithoutToken(env, ctx);
         // No OAuth (MCP) grants from an admin's impersonation session.
         await refuseOAuthWhileImpersonating(env, ctx);
         await enforceAuthSecurity(env, ctx);
@@ -715,6 +749,26 @@ export function createAuthOptions(env: AppEnv) {
       }),
     },
   } satisfies BetterAuthOptions;
+}
+
+/** Better Auth's user lookup and the admin gateway, for the QA admin hooks. */
+function qaAdminAuth(env: AppEnv): QaAdminAuth {
+  return {
+    findUser: async (userId) => {
+      const found = await (
+        await getAuth(env).$context
+      ).internalAdapter.findUserById(userId);
+      return found
+        ? {
+            id: found.id,
+            email: found.email,
+            emailVerified: found.emailVerified,
+            role: (found as { role?: string | null }).role ?? null,
+          }
+        : null;
+    },
+    gateway: createAdminAuthGateway(() => getAuth(env), null),
+  };
 }
 
 function createAuth(env: AppEnv) {
