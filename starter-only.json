@@ -514,6 +514,11 @@
           "file": "docs/guides/how-to-publish-docs-and-landing.md",
           "action": "rewrite",
           "note": "replace the starter's landing page with the product's (copy in apps/web/src/landing/content.ts, sections in apps/web/src/pages/index.astro): see Replace the landing page"
+        },
+        {
+          "file": "docs/README.md",
+          "action": "remove",
+          "heading": "Start a project"
         }
       ],
       "manual": [

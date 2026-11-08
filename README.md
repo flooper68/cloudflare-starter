@@ -41,7 +41,18 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 
 ## Starting a new project from this starter
 
-This repository is a template, not a framework. Start with [docs/guides/how-to-start-a-project.md](docs/guides/how-to-start-a-project.md): it walks the whole path in order (create the repository from the template, `bun run starter:strip` to remove what exists only for the starter's own instance, branding, the setup scripts, the first deploy) and points back here. The `start-project` agent skill does the same flow. Beyond the strip, when you start a project from it:
+Open a coding agent (Claude Code or similar) in an empty folder and paste this prompt, with your app's name for `<name>`:
+
+```text
+Create a new agent-native app called <name> from the template https://github.com/flooper68/cloudflare-starter. Read its AGENTS.md first, then follow its start-project skill (.claude/skills/start-project/SKILL.md). Ask me for each decision it needs, and before every change to my GitHub or Cloudflare account.
+```
+
+The agent creates your repository from the template, strips what exists only for the starter's own instance (`bun run starter:strip`), brands the app, runs the setup scripts and deploys it, asking you for each decision and before every account change. What it does and what the strip removes: [docs/guides/how-to-start-a-project.md](docs/guides/how-to-start-a-project.md).
+
+<details>
+<summary>Doing it by hand</summary>
+
+This repository is a template, not a framework. The guide above walks the whole path; beyond the strip, when you start a project from it:
 
 1. **Update and pin every dependency.** The pins here are only as fresh as the last time the starter was touched.
 
@@ -81,6 +92,8 @@ This repository is a template, not a framework. Start with [docs/guides/how-to-s
 4. **Decide what the starter's own pages become.** The landing page at `/` and the docs site at `/docs` describe the starter. Replace the landing with the product's (copy in `apps/web/src/landing/content.ts`, sections in `apps/web/src/pages/index.astro`), and either keep publishing the repository's docs (the guides then serve the project's developers), turn `/docs` into product docs by pointing `DOCS.sources` at them, or remove it. Steps for each: [docs/guides/how-to-publish-docs-and-landing.md](docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page). Set the production `SITE_URL` in `apps/web/package.json` (`deploy:production`) to the project's domain.
 
 5. **Give the project its own rate-limit namespace block, domain and sender.** Workers Rate Limiting `namespace_id`s are account-wide: a project that keeps the starter's ids (7001–7013, 8001–8013, 9001–9013) shares its limits with every other project in the account that did. After renaming the Worker, `bun run setup:cloudflare --env all --dry-run` shows the block it will assign (from a hash of the Worker name, or `--namespace-base <n>`), and the same command without `--dry-run` writes it; `bun run doctor` fails until then ([docs/guides/how-to-configure-abuse-protection.md](docs/guides/how-to-configure-abuse-protection.md#namespace-ids)). Replace the starter's production hostname in `routes` (`starter.flooper.me`) with the project's, and pick its `EMAIL_FROM` ([docs/guides/how-to-setup-web-app.md](docs/guides/how-to-setup-web-app.md#deploy)).
+
+</details>
 
 ## Workspace
 

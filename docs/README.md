@@ -2,6 +2,14 @@
 
 Index of the repository's documentation. Each entry says when to read it. Where each kind of doc belongs is in [processes/documentation.md](processes/documentation.md). Use when you are looking for how to do something, why something is the way it is, or how work is done here.
 
+## Start a project
+
+Paste this into a coding agent in an empty folder, with your app's name for `<name>`; it runs the `start-project` skill ([how-to-start-a-project.md](guides/how-to-start-a-project.md) has what it does and the steps by hand):
+
+```text
+Create a new agent-native app called <name> from the template https://github.com/flooper68/cloudflare-starter. Read its AGENTS.md first, then follow its start-project skill (.claude/skills/start-project/SKILL.md). Ask me for each decision it needs, and before every change to my GitHub or Cloudflare account.
+```
+
 ## Guides
 
 How to set up or do something; read while doing it.
