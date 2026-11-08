@@ -159,19 +159,21 @@ test.describe("the owner hears that the invitee joined", () => {
   test("the bell shows the unread notification; opening the inbox and marking it read clears it", async ({
     page,
   }) => {
-    // The notification is written by a queued job: reload until the badge shows it.
+    // The notification is written by a queued job: reload until the inbox shows it. The
+    // shared user may already have other unread notices (a container demo run), so wait
+    // for this one, not just the badge.
     const unread = page.getByRole("button", {
       name: /^Notifications, \d+ unread$/,
     });
-    await expect(async () => {
-      await open(page, "/app/dashboard");
-      await expect(unread).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 30_000 });
-
-    await unread.click();
     const panel = page.getByRole("dialog", { name: "Notifications" });
     const title = `${invitee.name} joined ${team}`;
-    await expect(panel.getByRole("link", { name: title })).toBeVisible();
+    await expect(async () => {
+      await open(page, "/app/dashboard");
+      await unread.click({ timeout: 2_000 });
+      await expect(panel.getByRole("link", { name: title })).toBeVisible({
+        timeout: 2_000,
+      });
+    }).toPass({ timeout: 30_000 });
     await panel.getByRole("radio", { name: "Unread" }).click();
     await panel.getByRole("button", { name: `Mark read: ${title}` }).click();
     await expect(panel.getByRole("link", { name: title })).toBeHidden();
