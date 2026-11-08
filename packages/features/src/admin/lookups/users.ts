@@ -1,4 +1,4 @@
-import { and, count, eq, isNull, like, lte, or } from "drizzle-orm";
+import { and, count, eq, isNull, like, lte, notLike, or } from "drizzle-orm";
 
 import { user } from "../../accounts";
 import type { Database } from "../../database";
@@ -37,7 +37,8 @@ export async function findTargetUser(
 }
 
 /**
- * Admins whose suspension is not in force at `now`. `role` may be a comma list, so the
+ * Admins whose suspension is not in force at `now`, the QA suite's admin (`qa+admin@…`)
+ * aside. `role` may be a comma list, so the
  * match is on the list's items.
  */
 export async function countActiveAdmins(
@@ -59,7 +60,9 @@ export async function countActiveAdmins(
           eq(user.banned, false),
           isNull(user.banned),
           lte(user.banExpires, now)
-        )
+        ),
+        // The QA suite's automated admin is never the one that keeps the portal staffed.
+        notLike(user.email, "qa+admin@%")
       )
     );
   return row?.value ?? 0;

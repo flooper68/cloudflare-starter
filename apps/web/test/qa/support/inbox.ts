@@ -41,17 +41,30 @@ export interface WaitForMail {
   readonly timeoutMs?: number;
 }
 
-const POLL_MS = 2_000;
+/**
+ * Between polls. Every read counts against `qa.bypass` (30 a minute per IP, shared with
+ * the run's sign-ups and sign-ins), so a long wait stays well under it.
+ */
+const POLL_MS = 5_000;
 
 async function call(
   env: QaEnv,
   method: "GET" | "DELETE",
   query: URLSearchParams
 ): Promise<unknown> {
-  const response = await fetch(`${env.baseURL}${OUTBOX_PATH}?${query}`, {
+  let response = await fetch(`${env.baseURL}${OUTBOX_PATH}?${query}`, {
     method,
     headers: { [QA_TOKEN_HEADER]: env.token },
   });
+  // Over the qa.bypass limit: wait as long as the app says, once, then ask again.
+  if (response.status === 429) {
+    const seconds = Number(response.headers.get("retry-after")) || 60;
+    await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+    response = await fetch(`${env.baseURL}${OUTBOX_PATH}?${query}`, {
+      method,
+      headers: { [QA_TOKEN_HEADER]: env.token },
+    });
+  }
   if (!response.ok) {
     throw new Error(
       `QA outbox ${method} ${OUTBOX_PATH} answered ${response.status}${

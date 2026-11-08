@@ -1,21 +1,26 @@
 /**
  * The automated QA suite's self-provisioned admin at the Better Auth edge (QA_BYPASS=on),
  * docs/guides/how-to-configure-abuse-protection.md#the-qa-admin:
- * - QA addresses (`qa@`, `qa+<tag>@` in QA_EMAIL_DOMAIN) can be signed up or taken by an
- *   email change only with the QA token: nobody else can create or claim the QA admin;
+ * - QA addresses (`qa@`, `qa+<tag>@` in QA_EMAIL_DOMAIN) can be signed up, taken by an
+ *   email change or created by any other sign-in method (Google) only with the QA token,
+ *   and never linked to a social account: nobody else can create or claim the QA admin;
  * - `qa+admin@<QA_EMAIL_DOMAIN>` is promoted once verified (promoteBootstrapAdmin, at
  *   verification and at sign-in), recorded as `qa.admin.promoted`; its verification mail
  *   is only in the QA outbox, which only the token reads;
- * - its sessions last at most QA_ADMIN_SESSION_MS;
- * - with QA_BYPASS=off any `qa+admin@` account is demoted at sign-in (`qa.admin.demoted`)
- *   and refused as an admin before that (findAdminAccess).
+ * - it is an admin only within QA_ADMIN_SESSION_MS of a browser sign-in (findAdminAccess),
+ *   and its sessions are created that short;
+ * - any other `qa+admin@` account (QA_BYPASS=off, or an old QA_EMAIL_DOMAIN) is refused as
+ *   an admin (findAdminAccess) and demoted, its sessions revoked, at sign-in
+ *   (`qa.admin.demoted`).
  */
 import {
   type AdminAuthGateway,
   demoteQaAdmin,
   isAnyQaAdminEmail,
+  isQaAdminEmail,
   isQaEmail,
   promoteBootstrapAdmin,
+  QA_ADMIN_SESSION_MS,
   QA_TOKEN_HEADER,
   qaAdminEmail,
   randomIds,
@@ -29,9 +34,6 @@ import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
 
-/** The QA admin's sessions end after this long, whatever the app's default. */
-export const QA_ADMIN_SESSION_MS = 60 * 60 * 1000;
-
 /** The code of a refused sign-up or email change to a QA address without the QA token. */
 export const QA_ADDRESS_RESERVED = "QA_ADDRESS_RESERVED";
 
@@ -41,10 +43,36 @@ const ADDRESS_FIELDS: Readonly<Record<string, string>> = {
   "/change-email": "newEmail",
 };
 
+/** The QA admin's address while QA_BYPASS=on, else null. */
+export function currentQaAdminEmail(env: AppEnv): string | null {
+  const bypass = buildPlatform(env).qaBypass;
+  return bypass ? qaAdminEmail(bypass.emailDomain) : null;
+}
+
+function reserved(): APIError {
+  return new APIError("FORBIDDEN", {
+    code: QA_ADDRESS_RESERVED,
+    message: "This address is reserved for the automated QA suite.",
+  });
+}
+
+/** Whether a request may give an account `address`: not a QA address, or with the token. */
+function mayUseAddress(
+  env: AppEnv,
+  address: unknown,
+  headers: Headers | undefined
+): boolean {
+  const bypass = buildPlatform(env).qaBypass;
+  if (!bypass) return true;
+  if (typeof address !== "string" || !isQaEmail(address, bypass.emailDomain))
+    return true;
+  const presented = headers?.get(QA_TOKEN_HEADER) ?? "";
+  return timingSafeEqual(presented, bypass.token);
+}
+
 /**
  * `hooks.before`: with QA_BYPASS=on, refuses a sign-up or an email change to a QA address
- * unless the request carries the QA token, so only the QA suite creates QA accounts (and
- * so the QA admin is never someone else's account).
+ * unless the request carries the QA token, so only the QA suite creates QA accounts.
  */
 export function refuseQaAddressWithoutToken(
   env: AppEnv,
@@ -56,17 +84,21 @@ export function refuseQaAddressWithoutToken(
 ): void {
   const field = ADDRESS_FIELDS[ctx.path];
   if (!field) return;
-  const bypass = buildPlatform(env).qaBypass;
-  if (!bypass) return;
   const address = (ctx.body as Record<string, unknown> | undefined)?.[field];
-  if (typeof address !== "string" || !isQaEmail(address, bypass.emailDomain))
-    return;
-  const presented = ctx.headers?.get(QA_TOKEN_HEADER) ?? "";
-  if (timingSafeEqual(presented, bypass.token)) return;
-  throw new APIError("FORBIDDEN", {
-    code: QA_ADDRESS_RESERVED,
-    message: "This address is reserved for the automated QA suite.",
-  });
+  if (!mayUseAddress(env, address, ctx.headers)) throw reserved();
+}
+
+/**
+ * `user.create.before`, for every sign-in method (Google too): a QA address only with the
+ * QA token on the request that creates the user.
+ */
+export function refuseQaUserWithoutToken(
+  env: AppEnv,
+  user: { readonly email: string },
+  ctx: { readonly headers?: Headers; readonly request?: Request } | null
+): void {
+  const headers = ctx?.headers ?? ctx?.request?.headers;
+  if (!mayUseAddress(env, user.email, headers)) throw reserved();
 }
 
 /** What the hooks need from Better Auth; server/auth.ts passes it (no import cycle). */
@@ -81,9 +113,25 @@ export interface QaAdminAuth {
 }
 
 /**
- * Promotes the QA admin (verified, QA_BYPASS=on) or demotes any QA admin account
- * (QA_BYPASS=off). Runs after each sign-in. Fails open like the bootstrap promotion: the
- * failure is reported, and admin access is refused anyway while the bypass is off.
+ * `account.create.before`: with QA_BYPASS=on, no social account (Google) is linked to a
+ * QA address's user: such an account only ever signs in with its password.
+ */
+export async function refuseSocialQaAccount(
+  env: AppEnv,
+  auth: QaAdminAuth,
+  account: { readonly userId: string; readonly providerId: string }
+): Promise<void> {
+  if (account.providerId === "credential") return;
+  const bypass = buildPlatform(env).qaBypass;
+  if (!bypass) return;
+  const user = await auth.findUser(account.userId);
+  if (user && isQaEmail(user.email, bypass.emailDomain)) throw reserved();
+}
+
+/**
+ * After each sign-in: promotes the current QA admin once verified (QA_BYPASS=on), demotes
+ * any other QA admin account. Fails open like the bootstrap promotion: the failure is
+ * reported, and findAdminAccess refuses a stale QA admin anyway.
  */
 export async function syncQaAdminRole(
   env: AppEnv,
@@ -95,7 +143,7 @@ export async function syncQaAdminRole(
   try {
     const user = await auth.findUser(userId);
     if (!user || !isAnyQaAdminEmail(user.email)) return;
-    const bypass = buildPlatform(env).qaBypass;
+    const current = currentQaAdminEmail(env);
     const deps = {
       db: getDb(env),
       clock: systemClock,
@@ -103,7 +151,7 @@ export async function syncQaAdminRole(
       requestContext,
       gateway: auth.gateway,
     };
-    if (!bypass) {
+    if (!current || user.email.trim().toLowerCase() !== current) {
       await demoteQaAdmin(deps, { userId });
       return;
     }
@@ -115,7 +163,7 @@ export async function syncQaAdminRole(
         role: user.role ?? null,
       },
       bootstrapAdminEmail: null,
-      qaAdminEmail: qaAdminEmail(bypass.emailDomain),
+      qaAdminEmail: current,
     });
   } catch (error) {
     buildPlatform(env).errors.capture(error, requestContext, {
@@ -124,12 +172,23 @@ export async function syncQaAdminRole(
   }
 }
 
-/** `session.create.before`: a QA admin session lasts at most QA_ADMIN_SESSION_MS. */
+/**
+ * `session.create.before`: the current QA admin's sessions are created QA_ADMIN_SESSION_MS
+ * long. (Better Auth may extend a session later; the admin power still ends then, since
+ * findAdminAccess counts from the sign-in.) Nobody else's.
+ */
 export async function shortenQaAdminSession<
   T extends { readonly userId: string; readonly expiresAt: Date },
->(auth: QaAdminAuth, session: T): Promise<{ data: T } | undefined> {
+>(
+  env: AppEnv,
+  auth: QaAdminAuth,
+  session: T
+): Promise<{ data: T } | undefined> {
+  const bypass = buildPlatform(env).qaBypass;
+  if (!bypass) return undefined;
   const user = await auth.findUser(session.userId);
-  if (!user || !isAnyQaAdminEmail(user.email)) return undefined;
+  if (!user || !isQaAdminEmail(user.email, bypass.emailDomain))
+    return undefined;
   const latest = new Date(systemClock.now().getTime() + QA_ADMIN_SESSION_MS);
   if (session.expiresAt <= latest) return undefined;
   return { data: { ...session, expiresAt: latest } };

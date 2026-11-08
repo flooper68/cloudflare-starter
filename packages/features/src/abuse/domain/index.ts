@@ -23,6 +23,7 @@ export {
   isAnyQaAdminEmail,
   isQaAdminEmail,
   isQaEmail,
+  QA_ADMIN_SESSION_MS,
   QA_TOKEN_HEADER,
   type QaBypassRejection,
   type QaBypassSettings,

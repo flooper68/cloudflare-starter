@@ -84,6 +84,11 @@ export async function eraseQaAccounts(
           actor: { kind: "system", userId: null },
         });
       } catch (error) {
+        // Another account's erasure holds the global lease: try again on the next call,
+        // without reporting these as stuck.
+        if (error instanceof DomainError && error.code === "ERASURE_BUSY") {
+          return { erased, remaining: [] };
+        }
         if (error instanceof DomainError && error.kind === "conflict") {
           blocked.push(row);
           continue;

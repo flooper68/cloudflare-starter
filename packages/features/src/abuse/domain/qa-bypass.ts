@@ -64,3 +64,10 @@ export function isQaAdminEmail(email: string | null, domain: string): boolean {
 export function isAnyQaAdminEmail(email: string | null): boolean {
   return email !== null && email.trim().toLowerCase().startsWith("qa+admin@");
 }
+
+/**
+ * The QA admin is an admin only in a browser session signed in at most this long ago
+ * (never over MCP), whatever the session's own lifetime: Better Auth refreshes sessions,
+ * the admin power ends anyway.
+ */
+export const QA_ADMIN_SESSION_MS = 60 * 60 * 1000;

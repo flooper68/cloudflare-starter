@@ -244,7 +244,7 @@ export const RATE_LIMIT_POLICIES = {
     enforcer: "edge",
     binding: "RL_QA_BYPASS",
     description:
-      "Requests that carry the QA token (x-qa-token): on a human-checked auth endpoint, and every request to the QA outbox (/api/qa/outbox); per IP, counted before the token is compared (QA_BYPASS=on only)",
+      "Requests that carry the QA token (x-qa-token): on a human-checked auth endpoint, and every request to /api/qa/outbox and /api/qa/cleanup; per IP, counted before the token is compared (QA_BYPASS=on only)",
   },
 } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
 

@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 
-import { isAnyQaAdminEmail } from "../abuse";
+import { isAnyQaAdminEmail, QA_ADMIN_SESSION_MS } from "../abuse";
 import { session, user } from "../accounts";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
@@ -27,10 +27,17 @@ export async function findAdminAccess(
   input: {
     readonly userId: string;
     /**
-     * QA_BYPASS is off: a QA admin account (`qa+admin@…`) is no admin whatever its
-     * stored role (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin).
+     * The QA admin's address while QA_BYPASS=on, else null. Any other `qa+admin@` account
+     * (the bypass off, or an old QA_EMAIL_DOMAIN) is no admin whatever its stored role
+     * (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin). Required, so no
+     * caller can forget it.
      */
-    readonly qaBypassOff?: boolean;
+    readonly qaAdminEmail: string | null;
+    /**
+     * When the caller's browser session signed in; null without one (MCP). The QA admin is
+     * an admin only within QA_ADMIN_SESSION_MS of it.
+     */
+    readonly sessionCreatedAt: Date | null;
   }
 ): Promise<AdminAccess> {
   const [row] = await deps.db
@@ -46,8 +53,15 @@ export async function findAdminAccess(
   if (!row || !hasAdminRole(row.role)) {
     return { isAdmin: false, lastSignInAt: null };
   }
-  if (input.qaBypassOff && isAnyQaAdminEmail(row.email)) {
-    return { isAdmin: false, lastSignInAt: null };
+  if (isAnyQaAdminEmail(row.email)) {
+    const current =
+      input.qaAdminEmail !== null &&
+      row.email.trim().toLowerCase() === input.qaAdminEmail.toLowerCase();
+    const fresh =
+      input.sessionCreatedAt !== null &&
+      deps.clock.now().getTime() - input.sessionCreatedAt.getTime() <=
+        QA_ADMIN_SESSION_MS;
+    if (!current || !fresh) return { isAdmin: false, lastSignInAt: null };
   }
   const suspended = isBanActive(
     { banned: row.banned ?? false, banExpires: row.banExpires ?? null },

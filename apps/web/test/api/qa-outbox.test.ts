@@ -28,10 +28,11 @@ import { qaEndpoint } from "@/server/qa-endpoint";
 import { API_TEST_BINDINGS } from "../api-bindings";
 import {
   APP_URL,
-  callerFor,
+  browserCallerFor,
   env,
   humanHeaders,
   signUp,
+  type TestUser,
   testRequestContext,
 } from "./helpers";
 
@@ -306,6 +307,26 @@ describe("QA addresses are the QA suite's", () => {
   });
 });
 
+/** The QA admin as a test user with a cookie (signed in through the bypass). */
+async function qaAdminUser(): Promise<TestUser> {
+  const response = await getAuth(env).handler(
+    new Request(`${APP_URL}${AUTH_BASE_PATH}/sign-in/email`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: APP_URL,
+        [QA_TOKEN_HEADER]: TOKEN,
+        "cf-connecting-ip": freshIp(),
+      },
+      body: JSON.stringify({ email: ADMIN, password: "qa-test-password-1234" }),
+    })
+  );
+  expect(response.status).toBe(200);
+  const body = (await response.json()) as { user: { id: string } };
+  const cookie = (response.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
+  return { id: body.user.id, email: ADMIN, name: "QA", cookie };
+}
+
 describe("the QA admin", () => {
   it("is promoted once verified through the outbox, audited, with a short session", async () => {
     expect((await signUpQa(ADMIN)).status).toBe(200);
@@ -340,40 +361,74 @@ describe("the QA admin", () => {
     }
   });
 
-  it("can send the admin test email to any address", async () => {
-    const id = (
-      await env.DB.prepare("SELECT id FROM user WHERE email = ?")
-        .bind(ADMIN)
-        .first<{ id: string }>()
-    )?.id as string;
-    const caller = callerFor({ id, email: ADMIN, name: "QA" });
+  it("can send the admin test email to any address, from a fresh browser session", async () => {
+    const qa = await qaAdminUser();
+    const { caller } = browserCallerFor(qa, { signedInMinutesAgo: 5 });
     await expect(
       caller.admin.email.sendTest({ to: "delivery@example.test" })
     ).resolves.toEqual({ sent: true });
   });
 
-  it("is no admin, and is demoted at sign-in, with QA_BYPASS=off", async () => {
-    const id = (
-      await env.DB.prepare("SELECT id FROM user WHERE email = ?")
-        .bind(ADMIN)
-        .first<{ id: string }>()
-    )?.id as string;
-    expect(
-      (
-        await findAdminAccess(
-          { db: getDb(env), clock: systemClock },
-          { userId: id, qaBypassOff: true }
-        )
-      ).isAdmin
-    ).toBe(false);
-    expect(
-      (
-        await findAdminAccess(
-          { db: getDb(env), clock: systemClock },
-          { userId: id }
-        )
-      ).isAdmin
-    ).toBe(true);
+  it("is an admin only within an hour of a browser sign-in, never over MCP", async () => {
+    const qa = await qaAdminUser();
+    const access = (
+      sessionCreatedAt: Date | null,
+      qaAdminEmail: string | null = ADMIN
+    ) =>
+      findAdminAccess(
+        { db: getDb(env), clock: systemClock },
+        { userId: qa.id, qaAdminEmail, sessionCreatedAt }
+      ).then((result) => result.isAdmin);
+    expect(await access(new Date(Date.now() - 5 * 60 * 1000))).toBe(true);
+    expect(await access(new Date(Date.now() - 61 * 60 * 1000))).toBe(false);
+    expect(await access(null)).toBe(false);
+    // The bypass off, or another QA_EMAIL_DOMAIN: no admin at all.
+    expect(await access(new Date(), null)).toBe(false);
+    expect(await access(new Date(), "qa+admin@other.example.test")).toBe(false);
+    const { caller } = browserCallerFor(qa, { signedInMinutesAgo: 90 });
+    await expect(caller.admin.overview.get()).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("is never created or claimed by Google or any other sign-in method without the token", async () => {
+    const off = (await import("@/server/qa-admin")).refuseQaUserWithoutToken;
+    expect(() =>
+      off(
+        env,
+        { email: `qa+20261108abcd-google@${DOMAIN}` },
+        { headers: new Headers() }
+      )
+    ).toThrow(/reserved/);
+    expect(() =>
+      off(
+        env,
+        { email: `qa+20261108abcd-google@${DOMAIN}` },
+        { headers: new Headers({ [QA_TOKEN_HEADER]: TOKEN }) }
+      )
+    ).not.toThrow();
+    expect(() =>
+      off(env, { email: "google-person@example.test" }, null)
+    ).not.toThrow();
+    const qa = await qaAdminUser();
+    const { refuseSocialQaAccount } = await import("@/server/qa-admin");
+    const auth = {
+      findUser: async () => ({ id: qa.id, email: ADMIN, emailVerified: true }),
+      gateway: {} as never,
+    };
+    await expect(
+      refuseSocialQaAccount(env, auth, { userId: qa.id, providerId: "google" })
+    ).rejects.toThrow(/reserved/);
+    await expect(
+      refuseSocialQaAccount(env, auth, {
+        userId: qa.id,
+        providerId: "credential",
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  it("is no admin, and is demoted with its sessions revoked at sign-in, with QA_BYPASS=off", async () => {
+    const qa = await qaAdminUser();
     const off = { ...env, QA_BYPASS: "off" } as AppEnv;
     const signedIn = await getAuth(off).handler(
       new Request(`${APP_URL}${AUTH_BASE_PATH}/sign-in/email`, {
@@ -389,11 +444,23 @@ describe("the QA admin", () => {
         }),
       })
     );
-    expect(signedIn.status).toBe(200);
+    // The demotion revokes every session, the one being created too: no sign-in.
+    expect(signedIn.status).toBe(401);
     expect(await roleOf(ADMIN)).toBe("user");
+    const sessions = await env.DB.prepare(
+      "SELECT count(*) AS n FROM session WHERE user_id = ?"
+    )
+      .bind(qa.id)
+      .first<{ n: number }>();
+    expect(sessions?.n).toBe(0);
     const page = await listAuditEvents(
       { db: getDb(env) },
-      { action: "qa.admin.demoted", targetType: "user", targetId: id, limit: 5 }
+      {
+        action: "qa.admin.demoted",
+        targetType: "user",
+        targetId: qa.id,
+        limit: 5,
+      }
     );
     expect(page.events).toHaveLength(1);
   });

@@ -9,10 +9,11 @@ import { hasAdminRole } from "./domain";
 import type { AdminAuthGateway } from "./ports";
 
 /**
- * With QA_BYPASS=off, takes the admin role from a QA admin account (`qa+admin@…`) that
- * still has it, recorded as `qa.admin.demoted`. Runs at each sign-in of such an account
- * (server/auth.ts); access is refused before that anyway (findAdminAccess). Does nothing
- * for any other account or one that is no admin.
+ * Takes the admin role, and every session, from a QA admin account (`qa+admin@…`) that is
+ * not the current QA admin (QA_BYPASS=off, or an old QA_EMAIL_DOMAIN), recorded as
+ * `qa.admin.demoted`. Runs at each sign-in of such an account (server/qa-admin.ts); access
+ * is refused before that anyway (findAdminAccess). Does nothing for any other account or
+ * one that is no admin.
  */
 export async function demoteQaAdmin(
   deps: {
@@ -33,6 +34,7 @@ export async function demoteQaAdmin(
     return { demoted: false };
   }
   await deps.gateway.setRole(input.userId, "user");
+  await deps.gateway.revokeSessions(input.userId);
   await recordAuditEvent(deps, deps.requestContext, {
     action: "qa.admin.demoted",
     actor: { kind: "system", userId: null },

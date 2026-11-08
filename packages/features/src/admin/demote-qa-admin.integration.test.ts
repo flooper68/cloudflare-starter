@@ -1,6 +1,8 @@
+import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 import { adminDeps, seedAccount, userAudit } from "../../test/admin-fixtures";
+import { assertUserErasureAllowed } from "./assert-user-erasure-allowed";
 import { demoteQaAdmin } from "./demote-qa-admin";
 import { promoteBootstrapAdmin } from "./promote-bootstrap-admin";
 
@@ -78,6 +80,7 @@ describe("the QA admin's role", () => {
     });
     expect(deps.gateway.calls).toEqual([
       { op: "setRole", userId: qa.id, role: "user" },
+      { op: "revokeSessions", userId: qa.id },
     ]);
     expect((await userAudit(qa.id)).map((event) => event.action)).toEqual([
       "qa.admin.demoted",
@@ -94,5 +97,22 @@ describe("the QA admin's role", () => {
       demoted: false,
     });
     expect(deps.gateway.calls).toEqual([]);
+  });
+
+  it("never counts as the other admin that lets the last real admin go", async () => {
+    const owner = await seedAccount("Only Owner", { role: "admin" });
+    await seedAccount("QA admin three", {
+      email: "qa+admin@third-qa.example.test",
+      role: "admin",
+    });
+    // The only other admins are QA admins (earlier tests' real admins step down).
+    await env.DB.prepare(
+      "UPDATE user SET role = 'user' WHERE id != ? AND email NOT LIKE 'qa+admin@%'"
+    )
+      .bind(owner.id)
+      .run();
+    await expect(
+      assertUserErasureAllowed(adminDeps(), owner.id)
+    ).rejects.toMatchObject({ kind: "conflict" });
   });
 });

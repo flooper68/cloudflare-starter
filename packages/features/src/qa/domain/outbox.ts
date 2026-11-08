@@ -23,9 +23,9 @@ export function qaOutboxCutoff(now: Date): Date {
 
 /**
  * The QA suite's per-run addresses, `qa+<yyyymmdd><4 letters>-<role>@<domain>`
- * (apps/web/test/qa/support/address.ts): the only ones the read endpoint serves. Mail to
- * other QA addresses (the QA admin's `qa+admin@`) is stored but never served, so the QA
- * token alone never reads a password reset for the QA admin.
+ * (apps/web/test/qa/support/address.ts): the ones the QA cleanup erases. The read endpoint
+ * serves these and the QA admin's `qa+admin@` (whose password the token derives anyway);
+ * mail to any other QA address is stored but never served.
  */
 export function isQaRunAddress(email: string, domain: string): boolean {
   const match = /^qa\+\d{8}[a-z]{4}-[a-z0-9]{1,20}@(.+)$/.exec(

@@ -63,6 +63,8 @@ import { buildPlatform } from "@/server/platform";
 import {
   type QaAdminAuth,
   refuseQaAddressWithoutToken,
+  refuseQaUserWithoutToken,
+  refuseSocialQaAccount,
   shortenQaAdminSession,
   syncQaAdminRole,
 } from "@/server/qa-admin";
@@ -584,16 +586,27 @@ export function createAuthOptions(env: AppEnv) {
       session: {
         ...audit.session,
         create: {
-          before: (session) => shortenQaAdminSession(qaAdminAuth(env), session),
+          before: (session) =>
+            shortenQaAdminSession(env, qaAdminAuth(env), session),
           after: async (session, ctx) => {
             await audit.session?.create?.after?.(session, ctx);
             await syncQaAdminRole(env, qaAdminAuth(env), session.userId, ctx);
           },
         },
       },
+      // No social account on a QA address's user (server/qa-admin.ts).
+      account: {
+        create: {
+          before: async (account) => {
+            await refuseSocialQaAccount(env, qaAdminAuth(env), account);
+          },
+        },
+      },
       user: {
         create: {
-          before: async (user) => {
+          before: async (user, ctx) => {
+            // QA addresses only with the QA token, by every method (server/qa-admin.ts).
+            refuseQaUserWithoutToken(env, user, ctx);
             await enforceSignUpPolicy(env, user);
           },
           after: async (user, ctx) => {

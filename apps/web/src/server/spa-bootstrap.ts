@@ -14,7 +14,7 @@ import { buildRequiredConfig } from "@/lib/env";
 import { getAuthMethods } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
-import { buildPlatform } from "@/server/platform";
+import { currentQaAdminEmail } from "@/server/qa-admin";
 
 export interface SpaBootstrap {
   readonly user: {
@@ -66,7 +66,8 @@ export async function spaBootstrap(
             { db: getDb(env), clock: systemClock },
             {
               userId: user.id,
-              qaBypassOff: buildPlatform(env).qaBypass === null,
+              qaAdminEmail: currentQaAdminEmail(env),
+              sessionCreatedAt: session?.createdAt ?? null,
             }
           )
         ).isAdmin
