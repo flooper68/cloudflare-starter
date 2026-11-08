@@ -291,6 +291,12 @@
           "file": "docs/processes/agent-skills.md",
           "find": "abuse protection and `QA_BYPASS`, the admin portal",
           "replace": "abuse protection, the admin portal"
+        },
+        {
+          "file": "docs/processes/agentic-workflow.md",
+          "find": "| 13. QA suite | CI |",
+          "replace": "",
+          "line": true
         }
       ]
     },
@@ -806,6 +812,16 @@
         {
           "file": "test/architecture/qa-checklist.test.ts",
           "find": "  \"how-to-setup-container.md\":\n    \"the Container demo is its own Worker, deployed separately\",\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/content/features.ts",
+          "find": "  f(\n    \"containers\",\n    \"app-platform\",\n    \"Containers\",\n    \"Run a Docker container beside the app; a separate demo, not used by the app yet.\",\n    \"guides/how-to-setup-container\",\n    \"demo\"\n  ),\n  f(\n    \"container-tasks\",\n    \"app-platform\",\n    \"Container tasks from jobs\",\n    \"Send a bounded task to a container through the queue and keep the result.\",\n    \"guides/how-to-setup-container\",\n    \"planned\"\n  ),\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/content/features.test.ts",
+          "find": "\n  it(\"marks Containers as a demo, never as built\", () => {\n    expect(FEATURES.find((entry) => entry.id === \"containers\")?.status).toBe(\n      \"demo\"\n    );\n  });\n",
           "replace": ""
         }
       ]
