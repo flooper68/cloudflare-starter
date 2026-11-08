@@ -1,4 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   NON_HTML_CSP,
@@ -230,17 +232,22 @@ test("every HTML response says no-transform; other responses keep their Cache-Co
 // policy each, and an HTML page never the asset one. `astro preview` applies the rules
 // in file order only, which hid two policies on / in production.
 test("every built file gets exactly one policy, whatever order the edge applies _headers in", () => {
-  const client = new URL("../../dist/client/", import.meta.url);
-  const rules = parseHeaders(readFileSync(new URL("_headers", client), "utf8"));
+  const clientURL = new URL("../../dist/client/", import.meta.url);
+  const client = fileURLToPath(clientURL);
+  const rules = parseHeaders(
+    readFileSync(new URL("_headers", clientURL), "utf8")
+  );
   // Workers Static Assets keeps one block per path: a second one (the adapter's
   // /_astro/* Cache-Control, say) would replace the first.
   const patterns = rules.map((rule) => rule.pattern);
   expect(patterns.length).toBe(new Set(patterns).size);
   const files = readdirSync(client, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name !== "_headers")
-    .map((entry) =>
-      `${entry.parentPath}/${entry.name}`.slice(client.pathname.length)
-    );
+    // _headers and .assetsignore configure the asset layer; they are not served.
+    .filter(
+      (entry) =>
+        entry.isFile() && ![".assetsignore", "_headers"].includes(entry.name)
+    )
+    .map((entry) => relative(client, join(entry.parentPath, entry.name)));
   expect(files.length).toBeGreaterThan(100);
   const problems: string[] = [];
   for (const file of files) {
