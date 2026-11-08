@@ -20,9 +20,9 @@ import {
   Play,
   Rss,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
+import CopyPrompt from "@/components/site/CopyPrompt.astro";
 import FeatureMap from "@/components/site/FeatureMap.astro";
 import HeroScene from "@/components/site/HeroScene.astro";
 import SiteFooter from "@/components/site/SiteFooter.astro";
@@ -31,13 +31,12 @@ import { PILLARS, type PillarId } from "@/content/features";
 import { CHANGELOG_PATH, parseChangelog } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import {
-  COSTS,
   HERO,
   LINKS,
   PRODUCTION_CHECKS,
   RECEIPT,
   SECTIONS,
-  STEPS,
+  START_PROMPT,
 } from "@/landing/content";
 import { whatsNew } from "@/landing/whats-new";
 import PublicLayout from "@/layouts/PublicLayout.astro";
@@ -189,13 +188,13 @@ const inlineLink =
 
     <section
       aria-labelledby="costs-title"
-      class="mx-auto flex w-full max-w-6xl flex-wrap items-start gap-10 px-4 pt-20 pb-6 sm:px-6"
+      class="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-4 pt-20 pb-6 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16"
     >
-      <div class="flex min-w-0 flex-[1_1_340px] flex-col gap-3.5">
+      <div class="flex min-w-0 flex-col gap-3.5">
         <span class={kicker}>{SECTIONS.costs.kicker}</span>
         <p class="flex items-end gap-1.5">
           <span
-            class="text-[84px] leading-[80px] font-semibold tracking-[-0.05em] text-fg sm:text-[120px] sm:leading-[110px]"
+            class="text-[84px] leading-[80px] font-semibold tracking-[-0.05em] text-fg tabular-nums sm:text-[120px] sm:leading-[110px]"
             aria-hidden="true">$5</span
           >
           <span class={cn(lead, "pb-3")} aria-hidden="true">/month</span>
@@ -204,92 +203,45 @@ const inlineLink =
         <h2 id="costs-title" class="text-[26px] leading-8 font-semibold text-fg">
           {SECTIONS.costs.title}
         </h2>
-        <p class="text-sm leading-6 text-fg-muted">{SECTIONS.costs.lead}</p>
-        <figure class="receipt">
-          <figcaption class="receipt-head">Workers Paid plan · monthly</figcaption>
-          <ul>
-            {
-              RECEIPT.map((line) => (
-                <li>
-                  <span>{line}</span>
-                  <span class="receipt-dots" aria-hidden="true" />
-                  <span>incl.</span>
-                </li>
-              ))
-            }
-          </ul>
-          <p class="receipt-total"><span>Total</span><span>$5.00 / month</span></p>
-          <p class="receipt-note">+ usage above the included allowances</p>
-        </figure>
+        <p class="max-w-md text-base leading-7 text-fg-muted">{SECTIONS.costs.lead}</p>
         <p class="text-xs text-fg-subtle">
-          {SECTIONS.costs.note}
+          {SECTIONS.costs.note}{" "}
           <a class={inlineLink} href={LINKS.costs}>Cloudflare's pricing</a>
         </p>
       </div>
-      <div
-        class="min-w-0 flex-[1_1_520px] overflow-hidden rounded-xl border border-line bg-surface-raised"
-      >
-        <table class="w-full border-collapse text-sm">
-          <caption class="sr-only">Included each month on the Workers Paid plan</caption>
-          <thead>
-            <tr class="bg-surface text-left text-xs text-fg-subtle">
-              <th scope="col" class="px-3.5 py-2.5 font-medium">What</th>
-              <th scope="col" class="px-3.5 py-2.5 font-medium">Included every month</th>
-              <th scope="col" class="px-3.5 py-2.5 font-medium max-sm:hidden">Then</th>
-            </tr>
-          </thead>
-          <tbody>
-            {
-              COSTS.map((row) => (
-                <tr class="border-t border-line align-baseline">
-                  <th scope="row" class="px-3.5 py-2.5 text-left font-medium text-fg">
-                    {row.what}
-                  </th>
-                  <td class="px-3.5 py-2.5 font-mono text-xs text-fg">{row.included}</td>
-                  <td class="px-3.5 py-2.5 text-xs text-fg-muted max-sm:hidden">
-                    {row.after}
-                  </td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
-      </div>
+      <figure class="receipt">
+        <figcaption class="receipt-head">
+          <span>Workers Paid plan</span><span>monthly</span>
+        </figcaption>
+        <ul aria-label="Included every month">
+          {
+            RECEIPT.map((line) => (
+              <li class="receipt-line">
+                <span class="receipt-item">{line.item}</span>
+                <span class="receipt-dots" aria-hidden="true" />
+                <span class="receipt-included">{line.included}</span>
+                <span class="receipt-above">{line.above}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="receipt-total"><span>Total</span><span>$5.00 / month</span></p>
+        <p class="receipt-note">+ usage above allowances</p>
+      </figure>
     </section>
 
     <section
       aria-labelledby="start-title"
-      class="mx-auto flex w-full max-w-6xl flex-wrap gap-10 px-4 pt-20 pb-6 sm:px-6"
+      class="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-10 px-4 pt-24 pb-6 sm:px-6"
     >
       <div class="flex min-w-0 flex-[1_1_320px] flex-col gap-2.5">
         <span class={kicker}>{SECTIONS.start.kicker}</span>
         <h2 id="start-title" class={h2}>{SECTIONS.start.title}</h2>
         <p class="text-sm leading-6 text-fg-muted">{SECTIONS.start.lead}</p>
-        <p class="text-xs text-fg-subtle">{SECTIONS.start.measured}</p>
-        <div
-          class="mt-2 flex items-start gap-2.5 rounded-lg bg-accent-subtle px-3.5 py-3 text-sm text-fg"
-        >
-          <Sparkles className="mt-0.5 size-4 shrink-0 text-accent-text" aria-hidden="true" />
-          <p><b>Or hand it to your coding agent.</b> {SECTIONS.start.agent}</p>
-        </div>
       </div>
-      <ol class="flex min-w-0 flex-[1_1_520px] flex-col gap-3.5">
-        {
-          STEPS.map((step, index) => (
-            <li class="flex items-start gap-3.5">
-              <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-accent font-semibold text-accent-text">
-                {index + 1}
-              </span>
-              <div class="flex min-w-0 flex-1 flex-col gap-1.5">
-                <span class="text-sm font-semibold text-fg">{step.title}</span>
-                <pre
-                  tabindex="0"
-                  class="overflow-x-auto rounded-lg border border-line bg-surface px-3.5 py-3 font-mono text-xs leading-5 text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"><code>{step.command}</code></pre>
-              </div>
-            </li>
-          ))
-        }
-      </ol>
+      <div class="min-w-0 flex-[1_1_520px]">
+        <CopyPrompt prompt={START_PROMPT} label="Prompt for your coding agent" />
+      </div>
     </section>
 
     <section
@@ -422,45 +374,94 @@ const inlineLink =
   }
 
   .receipt {
-    margin-top: 6px;
-    padding: 16px 18px;
+    margin: 0;
+    padding: 20px 22px;
     border: 1px dashed var(--ui-line-strong);
-    border-radius: 10px;
-    background: var(--ui-surface);
-    font-family: var(--brand-font-mono);
-    font-size: 12px;
-    line-height: 20px;
+    border-radius: 12px;
+    background: var(--ui-surface-raised);
     color: var(--ui-fg);
+    font-family: var(--brand-font-mono);
+    font-size: 13px;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+    box-shadow: var(--ui-shadow-raised);
+  }
+  .receipt-head {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--ui-line-strong);
+    color: var(--ui-fg-muted);
+    font-size: 12px;
   }
   .receipt ul {
-    margin: 8px 0;
-    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 14px 0;
     list-style: none;
   }
-  .receipt li,
-  .receipt-total {
-    display: flex;
+  .receipt-line {
+    display: grid;
+    grid-template-columns: auto minmax(12px, 1fr) auto;
     align-items: baseline;
-    gap: 8px;
+    column-gap: 8px;
   }
   .receipt-dots {
-    flex: 1;
     border-bottom: 1px dotted var(--ui-line-strong);
   }
-  .receipt li > span:last-child {
-    color: var(--ui-fg-muted);
+  .receipt-included {
+    text-align: right;
+    white-space: nowrap;
   }
-  .receipt-head,
-  .receipt-note {
-    margin: 0;
-    color: var(--ui-fg-muted);
+  .receipt-above {
+    grid-column: 1 / -1;
+    justify-self: end;
+    color: var(--ui-fg-subtle);
+    font-size: 12px;
+    line-height: 16px;
   }
   .receipt-total {
+    display: flex;
     justify-content: space-between;
     margin: 0;
-    padding-top: 8px;
+    padding-top: 12px;
     border-top: 1px dashed var(--ui-line-strong);
+    font-size: 15px;
     font-weight: 600;
+  }
+  .receipt-note {
+    margin: 4px 0 0;
+    color: var(--ui-fg-muted);
+    font-size: 12px;
+    text-align: right;
+  }
+  @media (max-width: 420px) {
+    .receipt {
+      padding: 16px;
+      font-size: 12px;
+    }
+  }
+
+  /* The receipt prints in, line by line, as it scrolls into view; static where unsupported. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .receipt-line,
+      .receipt-total,
+      .receipt-note {
+        animation: receipt-print linear both;
+        animation-timeline: view();
+        animation-range: entry 10% entry 90%;
+      }
+    }
+  }
+  @keyframes receipt-print {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+      clip-path: inset(0 0 100% 0);
+    }
   }
 
   /* Pillar cards rise in as they scroll into view; static where unsupported. */
