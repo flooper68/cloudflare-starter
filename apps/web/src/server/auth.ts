@@ -739,7 +739,8 @@ export function createAuthOptions(env: AppEnv) {
         refuseQaAddressWithoutToken(env, ctx);
         // No OAuth (MCP) grants from an admin's impersonation session.
         await refuseOAuthWhileImpersonating(env, ctx);
-        await enforceAuthSecurity(env, ctx);
+        const signedOut = await enforceAuthSecurity(env, ctx);
+        if (signedOut) return signedOut;
         // Deployed without email, refuse link-sending endpoints up front, for every address:
         // failing only inside sendResetPassword would answer differently for registered
         // emails (account enumeration).

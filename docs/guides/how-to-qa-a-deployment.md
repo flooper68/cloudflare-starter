@@ -200,10 +200,10 @@ Mail: none.
 Guide: [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md). Production runs `BILLING=manual`.
 
 1. As A, open `/app/billing`: the trial plan, its end date and usage meters; no checkout (manual mode).
-2. As the owner's admin account, open `/admin/workspaces` → `QA <runId> shared` → Billing: assign a plan, set an add-on, set a storage-limit override of 1 MB with reason `QA <runId>` (used by [files](#files-both-upload-paths-and-limits)).
+2. As the QA admin, open `/admin/workspaces` → `QA <runId> shared` → Billing: assign a plan, set an add-on, set a storage-limit override of 1 MB with reason `QA <runId>` (used by [files](#files-both-upload-paths-and-limits)). Only shared workspaces are listed there: a personal workspace belongs to its user and has no admin page (on a user's page its name is not a link).
 3. Remove the override and set the plan back.
 
-Expected: A's billing page reflects each change after a reload; overridden limits are marked **Override**; every change appears in the audit log as `billing.*`.
+Expected: A's billing page reflects each change after a reload (the plan name, the add-on as "5 more seats × 1", the overridden limit's value, e.g. Storage 1 MB); the admin's billing panel lists the override under **Current overrides** (A's page shows the value, with no marker that it is an override); every change appears in the audit log as `billing.*`.
 Mail: none.
 
 ### Notifications: inbox, email, digest, unsubscribe
@@ -223,13 +223,13 @@ Mail: the notification mails above; **digest** (next day); none after unsubscrib
 Guides: [how-to-use-settings.md](how-to-use-settings.md), [how-to-define-branding.md](how-to-define-branding.md) (appearance only).
 
 1. Settings → Account: change the name; upload an avatar (PNG under the size limit), then remove it.
-2. Change the email to `qa+<runId>-a2@qa.flooper.me`, confirm from the mail, sign in with the new address.
+2. Change the email to `qa+<runId>-a2@qa.flooper.me`. A verified account gets **Confirm email change** at its current address; its link sends **Verify your email** to the new address, and that link changes the address (marked verified) and signs in. Sign out and sign in with the new address. (An unverified account gets only the **Verify your email** at the new address. If the new address already has an account, no mail is sent and the page answers the same.)
 3. Settings → Security: sessions lists this browser context and a second one A signed in from; revoke the other one (that context is signed out on its next request).
 4. Connected accounts: lists the email/password method (and Google if it is enabled for the environment).
 5. Settings → Appearance: dark, light and system theme; the change persists after a reload.
 
 Expected: the header avatar and name update at once; an oversize or non-image avatar is refused.
-Mail: **Confirm email change** (to the new address).
+Mail: **Confirm email change** (to the current address), then **Verify your email** (to the new address).
 
 ### Trash: delete, restore, purge
 
@@ -263,7 +263,7 @@ Guides: [how-to-use-admin-portal.md](how-to-use-admin-portal.md), [how-to-use-th
 4. Impersonate A: the impersonation banner shows; stop impersonating returns to the admin.
 5. `/admin/audit`: filter by A and by B: sign-ins, the suspension, the impersonation, workspace and billing changes of the run, each with a trace id.
 6. `/admin/flags`: the flags list opens. Do not change production flags; to test a change, add a rule that targets only `QA <runId> shared` and remove it again.
-7. `/admin/workspaces`: `QA <runId> shared` with its members and billing panel.
+7. `/admin/workspaces`: `QA <runId> shared` with its members and billing panel (shared workspaces only; personal ones have no admin page).
 8. `/admin/data-requests`: the run's export requests.
 9. `/admin/settings`: read-only values match `wrangler.jsonc` production vars.
 
