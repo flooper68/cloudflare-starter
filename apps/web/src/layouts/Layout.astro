@@ -1,9 +1,18 @@
 ---
+/**
+ * The document shell of the server-rendered account pages (sign-in, sign-up, password
+ * reset, verification, invitations, consent). The header is the public site's
+ * (SiteHeader: Docs, Changelog, Storybook, GitHub) with Sign in and Sign up, or Open app
+ * when signed in. These pages are rendered per request under the page policy, which runs
+ * scripts only from /_astro/: no public/site-theme.js, so no theme switch here and the OS
+ * setting applies.
+ */
 import "@cloudflare-starter/ui/globals.css";
 import "@/styles/globals.css";
 
-import { brand, Logo } from "@cloudflare-starter/ui";
+import { brand, buttonVariants } from "@cloudflare-starter/ui";
 
+import SiteHeader from "@/components/site/SiteHeader.astro";
 import WebAnalytics from "@/components/WebAnalytics.astro";
 
 interface Props {
@@ -27,29 +36,36 @@ const signedIn = Boolean(Astro.locals.user);
     <title>{title}{brand.titleSeparator}{brand.name}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body>
-    <header class="border-b border-line bg-surface backdrop-blur">
-      <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a href="/" aria-label={`${brand.name} home`}>
-          <Logo />
-        </a>
-        <nav class="flex items-center gap-4 text-sm text-fg-muted [&_a:hover]:text-fg">
-          <a href="/docs/">Docs</a>
-          <a href="/api/hello">API hello</a>
-          {signedIn ? (
-            <>
-              <a href="/app/dashboard">Dashboard</a>
-              <a href="/app/profile">Profile</a>
-            </>
+  <body class="bg-canvas text-fg">
+    <SiteHeader themeToggle={false}>
+      <Fragment slot="actions">
+        {
+          signedIn ? (
+            <a
+              class={buttonVariants({ variant: "primary", size: "sm" })}
+              href="/app/dashboard"
+            >
+              Open app
+            </a>
           ) : (
             <>
-              <a href="/sign-in">Sign in</a>
-              <a href="/sign-up">Sign up</a>
+              <a
+                class={buttonVariants({ variant: "ghost", size: "sm" })}
+                href="/sign-in"
+              >
+                Sign in
+              </a>
+              <a
+                class={buttonVariants({ variant: "primary", size: "sm" })}
+                href="/sign-up"
+              >
+                Sign up
+              </a>
             </>
-          )}
-        </nav>
-      </div>
-    </header>
+          )
+        }
+      </Fragment>
+    </SiteHeader>
     <slot />
     {analytics && <WebAnalytics />}
   </body>

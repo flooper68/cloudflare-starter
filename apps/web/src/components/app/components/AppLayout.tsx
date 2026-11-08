@@ -1,17 +1,17 @@
 import {
   AppShell,
   AppTopBar,
+  brand,
   EmptyState,
   ErrorState,
   ImpersonationBanner,
   OfflineNotice,
   SkeletonCard,
   Toaster,
-  toast,
 } from "@cloudflare-starter/ui";
 import { Outlet, useLocation } from "@tanstack/react-router";
 import { FolderX } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
@@ -20,8 +20,10 @@ import { trpc } from "@/lib/trpc/client";
 
 import { TrialBanner } from "../billing/TrialBanner";
 import { AppCommandMenu } from "../command-palette/AppCommandMenu";
-import { destinationTitle } from "../navigation";
+import { destinationTitle, documentTitle } from "../navigation";
 import { NotificationBellMenu } from "../notifications/NotificationBellMenu";
+import { PageTitleContext } from "../page-title";
+import { stopImpersonating } from "../use-nav-context";
 import { AppSidebar } from "./AppSidebar";
 
 /** Pages act in the active workspace: wait for it, and say so when there is none. */
@@ -61,15 +63,7 @@ function Impersonation() {
     <ImpersonationBanner
       userName={user.name}
       userEmail={user.email}
-      onStop={async () => {
-        try {
-          await trpc.admin.impersonation.stop.mutate();
-          // A full load: the browser holds the admin's session again.
-          window.location.href = `/admin/users/${encodeURIComponent(user.id)}`;
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : "Couldn't stop");
-        }
-      }}
+      onStop={() => stopImpersonating(user.id)}
     />
   );
 }
@@ -105,35 +99,46 @@ function Offline() {
 
 export function AppLayout() {
   const { pathname } = useLocation();
+  // A page's own title (one note's), set with usePageTitle while it is shown.
+  const [pageTitle, setPageTitle] = useState<string | null>(null);
+  const navTitle = destinationTitle(pathname) ?? "Not found";
+  const tabTitle = documentTitle(pageTitle ?? navTitle, brand);
+
+  // The browser tab names the page: "Dashboard · Starter", the note's title on a note.
+  useEffect(() => {
+    document.title = tabTitle;
+  }, [tabTitle]);
 
   return (
-    <AppShell sidebar={<AppSidebar />}>
-      <Offline />
-      <Impersonation />
-      <TrialBanner />
-      <AppTopBar
-        title={
-          <span className="truncate text-sm font-medium text-fg">
-            {destinationTitle(pathname) ?? "Not found"}
-          </span>
-        }
-        actions={
-          <>
-            <AppCommandMenu />
-            <NotificationBellMenu />
-          </>
-        }
-      />
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">
-          {pathname.startsWith("/app/settings") ? (
-            <Outlet />
-          ) : (
-            <WorkspaceGate />
-          )}
+    <PageTitleContext.Provider value={setPageTitle}>
+      <AppShell sidebar={<AppSidebar />}>
+        <Offline />
+        <Impersonation />
+        <TrialBanner />
+        <AppTopBar
+          title={
+            <span className="truncate text-sm font-medium text-fg">
+              {navTitle}
+            </span>
+          }
+          actions={
+            <>
+              <AppCommandMenu />
+              <NotificationBellMenu />
+            </>
+          }
+        />
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">
+            {pathname.startsWith("/app/settings") ? (
+              <Outlet />
+            ) : (
+              <WorkspaceGate />
+            )}
+          </div>
         </div>
-      </div>
-      <Toaster />
-    </AppShell>
+        <Toaster />
+      </AppShell>
+    </PageTitleContext.Provider>
   );
 }

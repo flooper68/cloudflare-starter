@@ -40,7 +40,14 @@ export type NavIcon =
   | "demos"
   | "upload"
   | "queue"
-  | "email";
+  | "email"
+  | "account"
+  | "security"
+  | "agents"
+  | "appearance"
+  | "library"
+  | "docs"
+  | "workspace-settings";
 
 export interface AppDestination {
   readonly id: string;
@@ -285,6 +292,106 @@ export function isActiveDestination(
     );
   }
   return pathname === destination.to;
+}
+
+/** One link of the sidebar's workspace or profile menu. */
+export interface MenuEntry {
+  readonly id: string;
+  readonly label: string;
+  readonly to: string;
+  readonly icon: NavIcon;
+  /** Another document: a full page load instead of client-side routing. */
+  readonly document?: boolean;
+  /** Opens in a new tab (the component library). */
+  readonly newTab?: boolean;
+}
+
+/** A destination of `appDestinations`, under the menu's own label and icon. */
+interface MenuPick {
+  readonly id: string;
+  readonly label: string;
+  readonly icon?: NavIcon;
+}
+
+function pickMenu(
+  context: NavContext,
+  picks: readonly MenuPick[]
+): MenuEntry[] {
+  const visible = visibleDestinations(context);
+  return picks.flatMap((pick) => {
+    const destination = visible.find((entry) => entry.id === pick.id);
+    if (!destination) return [];
+    return [
+      {
+        id: destination.id,
+        label: pick.label,
+        to: destination.to,
+        icon: pick.icon ?? destination.icon,
+        document: destination.document,
+      },
+    ];
+  });
+}
+
+/**
+ * The workspace menu's links after the workspace list: the active workspace's settings
+ * and members, for the roles and modes that see those pages.
+ */
+export function workspaceMenuEntries(context: NavContext): MenuEntry[] {
+  return pickMenu(context, [
+    {
+      id: "settings-workspace",
+      label: "Workspace settings",
+      icon: "workspace-settings",
+    },
+    { id: "members", label: "Members" },
+  ]);
+}
+
+/** Documents outside the app the profile menu links to (no app destinations). */
+const PROFILE_DOCUMENTS: readonly MenuEntry[] = [
+  {
+    id: "component-library",
+    label: "Component library",
+    to: "/_storybook/",
+    icon: "library",
+    document: true,
+    newTab: true,
+  },
+  { id: "docs", label: "Docs", to: "/docs/", icon: "docs", document: true },
+];
+
+/**
+ * The profile menu's links (the avatar in the sidebar footer), in order: the account's
+ * own pages, the component library and the docs, then the admin portal for admins. Sign
+ * out and Stop impersonating are actions the menu adds itself.
+ */
+export function profileMenuEntries(context: NavContext): MenuEntry[] {
+  return [
+    ...pickMenu(context, [
+      { id: "settings-account", label: "Account settings", icon: "account" },
+      { id: "settings-security", label: "Security", icon: "security" },
+      {
+        id: "settings-connected-agents",
+        label: "Connected agents",
+        icon: "agents",
+      },
+      { id: "notification-preferences", label: "Notifications" },
+      { id: "settings-appearance", label: "Appearance", icon: "appearance" },
+    ]),
+    ...PROFILE_DOCUMENTS,
+    ...pickMenu(context, [{ id: "admin", label: "Admin portal" }]),
+  ];
+}
+
+/** The browser tab's title: "Dashboard · Starter" (`brand.titleSeparator` between). */
+export function documentTitle(
+  pageTitle: string | null,
+  brand: { readonly name: string; readonly titleSeparator: string }
+): string {
+  return pageTitle
+    ? `${pageTitle}${brand.titleSeparator}${brand.name}`
+    : brand.name;
 }
 
 /** The top bar title of a path, or null for a path no destination is (a 404). */

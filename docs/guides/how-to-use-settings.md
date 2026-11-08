@@ -1,6 +1,6 @@
 # Account and workspace settings
 
-Use when changing personal preferences, managing sessions or adding a settings section. Open **Settings** in the app sidebar. `/app/profile` redirects to `/app/settings/account`.
+Use when changing personal preferences, managing sessions or adding a settings section. Open **Settings** in the app sidebar, or the profile menu (the avatar and name at the bottom of the sidebar: **Account settings**, **Security**, **Connected agents**, **Notifications**, **Appearance**); **Workspace settings** is in the workspace menu at the top. `/app/profile` redirects to `/app/settings/account`. Switching sections routes client-side, without reloading the page.
 
 ## Pages and extensions
 

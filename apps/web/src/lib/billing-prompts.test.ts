@@ -169,10 +169,29 @@ describe("checkoutInputFor", () => {
 });
 
 describe("trialDaysLeft and periodResetLabel", () => {
-  it("counts whole days left, never below 0", () => {
+  it("counts a started day as a day left, never below 0", () => {
     const now = new Date("2026-10-28T12:00:00.000Z");
-    expect(trialDaysLeft("2026-11-09T11:00:00.000Z", now)).toBe(11);
+    expect(trialDaysLeft("2026-11-09T11:00:00.000Z", now)).toBe(12);
+    expect(trialDaysLeft("2026-10-28T13:00:00.000Z", now)).toBe(1);
+    expect(trialDaysLeft("2026-10-28T12:00:00.000Z", now)).toBe(0);
     expect(trialDaysLeft("2026-10-01T00:00:00.000Z", now)).toBe(0);
+  });
+
+  it("shows the plan's whole trial length on the day of sign-up", () => {
+    const DAY = 86_400_000;
+    const signUp = new Date("2026-11-08T09:30:00.000Z");
+    const trialEndsAt = new Date(signUp.getTime() + 14 * DAY).toISOString();
+    expect(trialDaysLeft(trialEndsAt, signUp)).toBe(14);
+    // Seconds or hours later, the same day: still 14, not 13.
+    expect(trialDaysLeft(trialEndsAt, new Date(signUp.getTime() + 5_000))).toBe(
+      14
+    );
+    expect(
+      trialDaysLeft(trialEndsAt, new Date(signUp.getTime() + 8 * 3_600_000))
+    ).toBe(14);
+    expect(
+      trialDaysLeft(trialEndsAt, new Date(signUp.getTime() + DAY + 1))
+    ).toBe(13);
   });
 
   it("names the first day of the next month, across a year end", () => {
@@ -191,15 +210,15 @@ describe("trialNotice", () => {
     trialEndsAt: "2026-10-31T18:00:00.000Z",
   };
 
-  it("announces a trial ending within 7 days, in whole days", () => {
+  it("announces a trial ending within 7 days, counting a started day", () => {
     expect(trialNotice(trialing, now)).toEqual({
       kind: "trial-ending",
       planName: "Pro",
-      daysLeft: 3,
+      daysLeft: 4,
     });
     expect(
       trialNotice({ ...trialing, trialEndsAt: "2026-10-28T20:00:00.000Z" }, now)
-    ).toMatchObject({ daysLeft: 0 });
+    ).toMatchObject({ daysLeft: 1 });
     expect(
       trialNotice({ ...trialing, trialEndsAt: "2026-11-04T12:00:00.000Z" }, now)
     ).toMatchObject({ daysLeft: 7 });

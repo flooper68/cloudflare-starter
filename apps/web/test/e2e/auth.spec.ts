@@ -6,6 +6,7 @@ import {
   latestVerificationLink,
   newAccount,
   open,
+  openProfileMenu,
   signIn,
   signOut,
   signUp,
@@ -33,8 +34,9 @@ test("sign up lands on the dashboard", async () => {
   await expect(
     page.getByRole("heading", { name: `Welcome, ${account.name}` })
   ).toBeVisible();
-  await page.getByRole("button", { name: /workspace menu/ }).click();
-  await expect(page.getByRole("menu")).toContainText(account.email);
+  const menu = await openProfileMenu(page);
+  await expect(menu).toContainText(account.name);
+  await expect(menu).toContainText(account.email);
   await page.keyboard.press("Escape");
 });
 
@@ -81,8 +83,9 @@ test("the profile shows the signed-in account", async () => {
     page.getByRole("heading", { name: "Account settings" })
   ).toBeVisible();
   await expect(page.getByText(account.email).first()).toBeVisible();
+  // The sidebar footer's profile menu names the account.
   await expect(
-    page.getByText(account.name, { exact: true }).first()
+    page.getByRole("button", { name: `${account.name} profile menu` })
   ).toBeVisible();
 });
 

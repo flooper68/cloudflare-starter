@@ -4,10 +4,13 @@ import { describe, expect, it } from "vitest";
 import {
   appDestinations,
   destinationTitle,
+  documentTitle,
   isActiveDestination,
   type NavContext,
   paletteDestinations,
+  profileMenuEntries,
   sidebarDestinations,
+  workspaceMenuEntries,
 } from "./navigation";
 
 /** Routes that are no destination of their own, with the reason. */
@@ -185,5 +188,78 @@ describe("permission filtering", () => {
     expect(none).not.toContain("members");
     expect(none).toContain("settings-account");
     expect(none).toContain("notes");
+  });
+});
+
+describe("the sidebar's menus", () => {
+  const PROFILE = [
+    "settings-account",
+    "settings-security",
+    "settings-connected-agents",
+    "notification-preferences",
+    "settings-appearance",
+    "component-library",
+    "docs",
+  ];
+
+  it("gives the workspace menu the workspace's settings and members, as the role and mode allow", () => {
+    expect(ids(workspaceMenuEntries(owner))).toEqual([
+      "settings-workspace",
+      "members",
+    ]);
+    expect(ids(workspaceMenuEntries(member))).toEqual(["members"]);
+    expect(
+      ids(
+        workspaceMenuEntries({
+          ...owner,
+          mode: "personal",
+          workspace: { kind: "personal", role: "owner" },
+        })
+      )
+    ).toEqual(["settings-workspace"]);
+    expect(ids(workspaceMenuEntries({ ...owner, mode: "single" }))).toEqual([
+      "settings-workspace",
+      "members",
+    ]);
+    expect(ids(workspaceMenuEntries({ ...member, mode: "single" }))).toEqual([
+      "members",
+    ]);
+    expect(workspaceMenuEntries({ ...owner, workspace: null })).toEqual([]);
+    expect(workspaceMenuEntries(owner)[0]?.label).toBe("Workspace settings");
+  });
+
+  it("gives the profile menu the account's pages and help, the admin portal only to admins", () => {
+    expect(ids(profileMenuEntries(owner))).toEqual(PROFILE);
+    expect(ids(profileMenuEntries({ ...owner, workspace: null }))).toEqual(
+      PROFILE
+    );
+    const admin = profileMenuEntries({ ...member, admin: true });
+    expect(ids(admin)).toEqual([...PROFILE, "admin"]);
+    expect(admin.at(-1)).toMatchObject({
+      label: "Admin portal",
+      to: "/admin/overview",
+      document: true,
+    });
+    const byId = Object.fromEntries(admin.map((entry) => [entry.id, entry]));
+    expect(byId["component-library"]).toMatchObject({
+      to: "/_storybook/",
+      document: true,
+      newTab: true,
+    });
+    expect(byId.docs).toMatchObject({ to: "/docs/", document: true });
+    expect(byId["settings-account"]).toMatchObject({
+      label: "Account settings",
+      to: "/app/settings/account",
+    });
+    expect(byId["settings-account"]?.document).toBeFalsy();
+  });
+
+  it("titles the browser tab with the page and the brand", () => {
+    const brand = { name: "Starter", titleSeparator: " · " };
+    expect(documentTitle("Dashboard", brand)).toBe("Dashboard · Starter");
+    expect(
+      documentTitle(destinationTitle("/app/settings/security"), brand)
+    ).toBe("Security · Starter");
+    expect(documentTitle(null, brand)).toBe("Starter");
   });
 });

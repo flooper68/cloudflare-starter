@@ -42,6 +42,21 @@ export function DemosPage() {
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
+        <Card className="flex flex-col gap-3">
+          <CardTitle>API hello</CardTitle>
+          <CardDescription className="grow">
+            The Worker's smallest JSON endpoint, <code>/api/hello</code>: what a
+            public route returns with the security headers applied.
+          </CardDescription>
+          <div>
+            <Button asChild size="sm" variant="secondary">
+              {/* A JSON response, not an SPA page: a full load in a new tab. */}
+              <a href="/api/hello" target="_blank" rel="noreferrer">
+                Open API hello
+              </a>
+            </Button>
+          </div>
+        </Card>
         {demos.map((demo) => (
           <Card key={demo.to} className="flex flex-col gap-3">
             <CardTitle>{demo.title}</CardTitle>
