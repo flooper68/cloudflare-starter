@@ -3,18 +3,19 @@
  * The docs site: one prerendered page per published repository file (DOCS.sources),
  * in the docs shell (layouts/DocsLayout.astro: navigation from docs/README.md, "On this
  * page", edit link, search). The rendered Markdown is what Pagefind indexes. The
- * changelog has its own page (changelog.astro). A doc with a `<!-- walkthrough: <id> -->`
- * line also loads the video player. docs/guides/how-to-publish-docs-and-landing.md
+ * changelog has its own page (changelog.astro). A doc with a recorded `::video`
+ * (src/docs/walkthroughs.ts) also loads the video player's script. docs/guides/how-to-publish-docs-and-landing.md
  */
 import { getCollection, render } from "astro:content";
 import { Prose } from "@cloudflare-starter/ui";
 import PlayerAssets from "@/components/media/PlayerAssets.astro";
+import DocsHome from "@/components/site/DocsHome.astro";
 import { CHANGELOG_PATH } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import { slugFor } from "@/docs/links";
 import { docDescription } from "@/docs/meta";
 import { buildNav, docTitle } from "@/docs/nav";
-import { hasWalkthrough } from "@/docs/walkthroughs";
+import { hasRecordedVideo } from "@/docs/walkthroughs";
 import DocsLayout from "@/layouts/DocsLayout.astro";
 
 export const prerender = true;
@@ -36,6 +37,8 @@ export async function getStaticPaths() {
 
 const { entry, nav, title } = Astro.props;
 const { Content, headings } = await render(entry);
+// The docs home: DocsHome's h1 and cards first; the index's own h1 is dropped.
+const isHome = entry.id === DOCS.navSource;
 ---
 
 <DocsLayout
@@ -45,8 +48,9 @@ const { Content, headings } = await render(entry);
   nav={nav}
   headings={headings}
 >
-  <Prose>
+  {isHome && <DocsHome />}
+  <Prose className={isHome ? "docs-index" : undefined}>
     <Content />
   </Prose>
-  {hasWalkthrough(entry.body ?? "") && <PlayerAssets />}
+  {hasRecordedVideo(entry.body ?? "") && <PlayerAssets />}
 </DocsLayout>

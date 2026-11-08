@@ -3,7 +3,7 @@
  * plans/home-docs-v2.md, section 12 (the Brain spec).
  */
 import { AGENT_NAME } from "../lib/agent";
-import { SEED } from "../lib/seed";
+import { LIVE } from "../lib/seed";
 import { connect, go, settle, summary, titles } from "./scenes";
 import type { VideoScript } from "./types";
 
@@ -47,9 +47,9 @@ export const agents: VideoScript = {
     });
 
     await d.step(34, "It writes a note", "It writes one; you see it at once.");
-    const created = await agent.call("create_note", SEED.agentNote);
+    const created = await agent.call("create_note", LIVE.agentNote);
     await d.agentSays({
-      call: `create_note  "${SEED.agentNote.title}"`,
+      call: `create_note  "${LIVE.agentNote.title}"`,
       result: summary(created, () => "created"),
       ok: created.ok,
     });
@@ -58,7 +58,7 @@ export const agents: VideoScript = {
     await page.reload();
     await settle(page);
     await d.showConsole();
-    await d.moveToLocator(page.getByText(SEED.agentNote.title).first());
+    await d.moveToLocator(page.getByText(LIVE.agentNote.title).first());
     await d.poster();
 
     await d.step(

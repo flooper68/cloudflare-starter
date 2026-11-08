@@ -3,7 +3,7 @@
  * two changes for today's app: Ada signs in (the seed made her account) instead of
  * signing up, and the invite goes to Katherine (Grace is already a member).
  */
-import { SEED } from "../lib/seed";
+import { DEMO, LIVE } from "../lib/seed";
 import { connect, go, settle, summary } from "./scenes";
 import type { VideoScript } from "./types";
 
@@ -36,8 +36,8 @@ export const tour: VideoScript = {
       page.getByRole("banner").getByRole("link", { name: "Sign in" })
     );
     await settle(page);
-    await d.type(page.getByLabel("Email"), SEED.ada.email);
-    await d.type(page.getByLabel("Password"), SEED.password);
+    await d.type(page.getByLabel("Email"), DEMO.owner.email);
+    await d.type(page.getByLabel("Password"), DEMO.owner.password);
     await d.click(page.getByRole("button", { name: "Sign in", exact: true }));
     await page.waitForURL(/\/app\/dashboard$/);
     await settle(page);
@@ -62,16 +62,16 @@ export const tour: VideoScript = {
     await d.showConsole();
 
     await d.step(38, "It works as you", "It works in your app, as you.");
-    const created = await agent.call("create_note", SEED.agentNote);
+    const created = await agent.call("create_note", LIVE.agentNote);
     await d.agentSays({
-      call: `create_note  "${SEED.agentNote.title}"`,
+      call: `create_note  "${LIVE.agentNote.title}"`,
       result: summary(created, () => "created"),
       ok: created.ok,
     });
     await d.pause(700);
     await d.click(page.getByRole("link", { name: "Notes", exact: true }));
     await settle(page);
-    await d.moveToLocator(page.getByText(SEED.agentNote.title).first());
+    await d.moveToLocator(page.getByText(LIVE.agentNote.title).first());
     await d.poster();
     await d.pause(1200);
     await d.hideConsole();
@@ -81,7 +81,7 @@ export const tour: VideoScript = {
     await settle(page);
     await d.click(page.getByRole("button", { name: "Invite people" }));
     const dialog = page.getByRole("dialog", { name: "Invite people" });
-    await d.type(dialog.getByLabel("Email"), SEED.katherine.email);
+    await d.type(dialog.getByLabel("Email"), LIVE.invitee);
     await d.click(dialog.getByRole("button", { name: "Send invitation" }));
 
     await d.step(58, "Plans and limits", "Plans and limits are built in.");

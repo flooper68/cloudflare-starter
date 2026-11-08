@@ -44,6 +44,7 @@
     "test:components": "bun run --filter @cloudflare-starter/storybook test",
     "test:e2e": "bun run --filter @cloudflare-starter/web test:e2e",
     "test:e2e:build": "bun run --filter @cloudflare-starter/web test:e2e:build",
+    "docs:screenshots": "bun run --filter @cloudflare-starter/web docs:screenshots",
     "test:smoke": "bun scripts/smoke.ts",
     "test:qa": "bun scripts/qa.ts",
     "media:record": "bun apps/web/media/record.ts",

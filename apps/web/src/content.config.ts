@@ -4,7 +4,7 @@
  * id is its path from the root, e.g. `docs/guides/how-to-setup-d1.md`.
  *
  * Astro keeps each rendered doc until its file changes. A doc's video player
- * (`<!-- walkthrough: <id> -->`, src/docs/walkthroughs.ts) is rendered from the media
+ * (`::video`, src/docs/kit/) is rendered from the media
  * manifest, so a changed manifest clears the collection and every doc renders again.
  */
 import { defineCollection } from "astro:content";

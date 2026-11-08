@@ -3,7 +3,7 @@
  * Each has one or two steps: the lead-in (getting to the right screen, connecting an
  * agent) is cut, so the loop is only the moment itself.
  */
-import { SEED } from "../lib/seed";
+import { LIVE } from "../lib/seed";
 import { connect, go, settle, summary } from "./scenes";
 import type { VideoScript } from "./types";
 
@@ -23,9 +23,9 @@ export const loopAgentNote: VideoScript = {
 
     await d.step(0, "An agent adds a note", "An agent adds a note.");
     await d.pause(900);
-    const created = await agent.call("create_note", SEED.agentNote);
+    const created = await agent.call("create_note", LIVE.agentNote);
     await d.agentSays({
-      call: `create_note  "${SEED.agentNote.title}"`,
+      call: `create_note  "${LIVE.agentNote.title}"`,
       result: summary(created, () => "created"),
       ok: created.ok,
     });
@@ -34,7 +34,7 @@ export const loopAgentNote: VideoScript = {
     await page.reload();
     await settle(page);
     await d.showConsole();
-    await d.moveToLocator(page.getByText(SEED.agentNote.title).first());
+    await d.moveToLocator(page.getByText(LIVE.agentNote.title).first());
     await d.end(8);
   },
 };
@@ -50,11 +50,9 @@ export const loopInvite: VideoScript = {
     await d.step(0, "Invite a teammate", "Invite a teammate.");
     await d.click(page.getByRole("button", { name: "Invite people" }));
     const dialog = page.getByRole("dialog", { name: "Invite people" });
-    await d.type(dialog.getByLabel("Email"), SEED.katherine.email);
+    await d.type(dialog.getByLabel("Email"), LIVE.invitee);
     await d.click(dialog.getByRole("button", { name: "Send invitation" }));
-    await page
-      .getByText(`Invitation sent to ${SEED.katherine.email}`)
-      .waitFor();
+    await page.getByText(`Invitation sent to ${LIVE.invitee}`).waitFor();
     await d.end(8);
   },
 };

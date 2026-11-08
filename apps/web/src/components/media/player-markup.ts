@@ -1,8 +1,7 @@
 /**
  * The walkthrough player's markup, as a small element tree: one source for the Astro
  * component (VideoPlayer.astro renders the tree with MarkupNode.astro, no `set:html`) and
- * the docs' Markdown plugin (`<!-- walkthrough: <id> -->`, which serialises it with
- * `toHtml`). The page works before and without its script: the poster, the chapters and
+ * the docs kit's `::video` (src/docs/kit/render.ts, which serialises it with `toHtml`). The page works before and without its script: the poster, the chapters and
  * the transcript are plain HTML; video-player.ts (the `<walkthrough-video>` element)
  * plays it. No script, no inline style, no event handler attributes. Pure: tested in
  * player-markup.test.ts. docs/guides/how-to-record-walkthrough-videos.md#the-player

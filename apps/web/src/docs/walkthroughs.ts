@@ -1,24 +1,15 @@
 /**
- * Walkthrough videos in the docs: a line that is only `<!-- walkthrough: agents -->` (an
- * HTML comment, so GitHub shows nothing) becomes the video player on the site, from the
- * media manifest (src/content/media.ts). A recorded video renders the player; one not
- * recorded yet renders its "coming soon" poster; an id that is not a video fails the
- * build. Pure, so the Markdown plugin (markdown-plugins.ts) and its test share it.
+ * Which videos a doc shows: its `::video{id="…"}` directives (the docs kit, kit/plugin.ts),
+ * outside fenced code blocks. A doc whose video is recorded loads the player's script
+ * (pages/docs/[...slug].astro). Pure, so the page and the tests share it.
  * docs/guides/how-to-record-walkthrough-videos.md#in-the-docs
  */
-import { playerHtml } from "../components/media/player-markup";
 import { mediaEntry } from "../content/media";
-import { video } from "../content/videos";
 
-const MARKER = /^<!--\s*walkthrough:\s*([a-z0-9-]+)\s*-->$/;
+const VIDEO = /^\s*::video\{[^}]*\bid="([^"]+)"/;
 
-/** The video id of a Markdown HTML block, or null when it is not a marker. */
-export function walkthroughId(html: string): string | null {
-  return MARKER.exec(html.trim())?.[1] ?? null;
-}
-
-/** The ids of a doc's markers, outside fenced code blocks (an example is not one). */
-export function walkthroughIds(markdown: string): string[] {
+/** The ids of a doc's `::video` directives, outside fenced code blocks. */
+export function videoIds(markdown: string): string[] {
   const ids: string[] = [];
   let fence: string | null = null;
   for (const line of markdown.split("\n")) {
@@ -28,23 +19,13 @@ export function walkthroughIds(markdown: string): string[] {
       else if (opener[0] === fence) fence = null;
       continue;
     }
-    const id = fence === null ? walkthroughId(line) : null;
+    const id = fence === null ? VIDEO.exec(line)?.[1] : undefined;
     if (id) ids.push(id);
   }
   return ids;
 }
 
-/** Whether a doc has a marker (its page then loads the player's script). */
-export function hasWalkthrough(markdown: string): boolean {
-  return walkthroughIds(markdown).length > 0;
-}
-
-/** The player's HTML for a marker's id; throws (failing the build) for an unknown id. */
-export function walkthroughHtml(id: string, from: string): string {
-  const meta = video(id);
-  if (!meta)
-    throw new Error(
-      `${from}: <!-- walkthrough: ${id} --> names no video in src/content/videos.ts`
-    );
-  return `<div class="docs-walkthrough not-prose">${playerHtml(mediaEntry(id), meta.title)}</div>`;
+/** Whether a doc shows a recorded video (its page then loads the player's script). */
+export function hasRecordedVideo(markdown: string): boolean {
+  return videoIds(markdown).some((id) => mediaEntry(id) !== undefined);
 }

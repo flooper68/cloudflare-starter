@@ -2,8 +2,6 @@
 
 Every web app built from this starter is also a remote [MCP](https://modelcontextprotocol.io) server at `<APP_URL>/mcp`. An MCP client such as Claude connects as the signed-in user and can do what that user can do in the web app, through tools.
 
-<!-- walkthrough: agents -->
-
 ## The Rule
 
 > Anything the app can do over HTTP, an MCP client can do too.

@@ -404,7 +404,7 @@
     {
       "id": "walkthrough-videos",
       "title": "The starter's walkthrough videos",
-      "why": "The recorded videos show the starter itself (its tour, Agents & MCP, the home page's loops): their scripts, catalogue entries, manifest entries and the docs' marker. A project records videos of its own product, or none. The pipeline stays: the recorder, the seed's structure, the upload, the /media route, the player and the workflow.",
+      "why": "The recorded videos show the starter itself (its tour, Agents & MCP, the home page's loops): their scripts, catalogue entries and manifest entries; the docs' ::video directives stay and show their posters. A project records videos of its own product, or none. The pipeline stays: the recorder, the seed's structure, the upload, the /media route, the player and the workflow.",
       "status": "active",
       "default": true,
       "delete": [
@@ -419,18 +419,11 @@
         },
         {
           "file": "apps/web/src/content/videos.ts",
-          "content": "/**\n * The feature walkthrough videos, as data: which exist, which are scripted, and where the\n * site shows them. The recorder (apps/web/media/) has one script per `scripted` video\n * with the same id; `bun run media:record` writes their files and\n * src/content/media-manifest.json; the player (components/media/) reads the manifest.\n * Plain data, no Astro or DOM. Ids are stable once published: they are file names in R2\n * and the docs' `<!-- walkthrough: <id> -->` markers.\n * docs/guides/how-to-record-walkthrough-videos.md\n */\nimport type { PillarId } from \"./features\";\n\n/** `walkthrough`: 30–90 s with captions and chapters. `loop`: a muted 6–10 s clip. */\nexport type VideoKind = \"walkthrough\" | \"loop\";\n\n/**\n * `scripted`: a recorder script exists (apps/web/media/videos/<id>.ts).\n * `planned`: in the plan, not scripted yet (`followUp` says what it needs).\n */\nexport type VideoStatus = \"scripted\" | \"planned\";\n\n/** UI work in flight that changes what a video shows: re-record it once it lands. */\nexport type PendingChange = \"demo-mode\" | \"container-demo\";\n\nexport interface Video {\n  readonly id: string;\n  readonly title: string;\n  readonly kind: VideoKind;\n  readonly status: VideoStatus;\n  /** What it shows, for the transcript intro and the docs. */\n  readonly summary: string;\n  /** Re-record after these land. */\n  readonly rerecordAfter: readonly PendingChange[];\n  /** For a planned video: what scripting it needs. */\n  readonly followUp?: string;\n}\n\nexport const VIDEOS: readonly Video[] = [];\n\n/** The clip in each pillar card on the home page (a card without one shows none). */\nexport const HOME_CLIPS: Readonly<Partial<Record<PillarId, string>>> = {};\n\n/** The walkthrough on the home page, under the pillars (null: no such section). */\nexport const HOME_WALKTHROUGH: string | null = null;\n\nexport function video(id: string): Video | undefined {\n  return VIDEOS.find((entry) => entry.id === id);\n}\n"
+          "content": "/**\n * The feature walkthrough videos, as data: which exist, which are scripted, and where the\n * site shows them. The recorder (apps/web/media/) has one script per `scripted` video\n * with the same id; `bun run media:record` writes their files and\n * src/content/media-manifest.json; the player (components/media/) reads the manifest.\n * Plain data, no Astro or DOM. Ids are stable once published: they are file names in R2\n * and the docs' `::video{id=\"…\"}` directives.\n * docs/guides/how-to-record-walkthrough-videos.md\n */\nimport type { PillarId } from \"./features\";\n\n/** `walkthrough`: 30–90 s with captions and chapters. `loop`: a muted 6–10 s clip. */\nexport type VideoKind = \"walkthrough\" | \"loop\";\n\n/**\n * `scripted`: a recorder script exists (apps/web/media/videos/<id>.ts).\n * `planned`: in the plan, not scripted yet (`followUp` says what it needs).\n */\nexport type VideoStatus = \"scripted\" | \"planned\";\n\n/** UI work in flight that changes what a video shows: re-record it once it lands. */\nexport type PendingChange = \"demo-mode\" | \"container-demo\";\n\nexport interface Video {\n  readonly id: string;\n  readonly title: string;\n  readonly kind: VideoKind;\n  readonly status: VideoStatus;\n  /** What it shows, for the transcript intro and the docs. */\n  readonly summary: string;\n  /** Re-record after these land. */\n  readonly rerecordAfter: readonly PendingChange[];\n  /** For a planned video: what scripting it needs. */\n  readonly followUp?: string;\n}\n\nexport const VIDEOS: readonly Video[] = [];\n\n/** The clip in each pillar card on the home page (a card without one shows none). */\nexport const HOME_CLIPS: Readonly<Partial<Record<PillarId, string>>> = {};\n\n/** The walkthrough on the home page, under the pillars (null: no such section). */\nexport const HOME_WALKTHROUGH: string | null = null;\n\nexport function video(id: string): Video | undefined {\n  return VIDEOS.find((entry) => entry.id === id);\n}\n"
         },
         {
           "file": "apps/web/src/content/media-manifest.json",
           "content": "{\n  \"version\": 1,\n  \"videos\": {}\n}\n"
-        }
-      ],
-      "text": [
-        {
-          "file": "docs/guides/how-to-setup-mcp.md",
-          "find": "\n<!-- walkthrough: agents -->\n",
-          "replace": ""
         }
       ],
       "manual": [

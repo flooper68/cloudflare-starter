@@ -4,7 +4,7 @@
  * with the same id; `bun run media:record` writes their files and
  * src/content/media-manifest.json; the player (components/media/) reads the manifest.
  * Plain data, no Astro or DOM. Ids are stable once published: they are file names in R2
- * and the docs' `<!-- walkthrough: <id> -->` markers.
+ * and the docs' `::video{id="…"}` directives.
  * docs/guides/how-to-record-walkthrough-videos.md
  */
 import type { PillarId } from "./features";

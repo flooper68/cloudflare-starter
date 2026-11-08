@@ -1,7 +1,7 @@
 /**
  * The walkthrough videos agree everywhere: the recorder's scripts, the catalogue
  * (src/content/videos.ts), the committed manifest, the home page's slots and the docs'
- * `<!-- walkthrough: <id> -->` markers.
+ * `::video{id="…"}` directives.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { MEDIA_MANIFEST } from "../src/content/media";
 import { HOME_CLIPS, HOME_WALKTHROUGH, VIDEOS } from "../src/content/videos";
-import { walkthroughIds } from "../src/docs/walkthroughs";
+import { videoIds } from "../src/docs/walkthroughs";
 import { SCRIPTS } from "./videos";
 
 const scripted = VIDEOS.filter((video) => video.status === "scripted").map(
@@ -88,12 +88,13 @@ describe("walkthrough videos", () => {
     }
   });
 
-  it("names only catalogued videos in the docs' markers", () => {
+  it("names only catalogued videos in the docs' ::video directives", () => {
     const markers = markdownFiles(join(ROOT, "docs")).flatMap((file) =>
-      walkthroughIds(readFileSync(file, "utf8")).map(
-        (id) => [file, id] as const
-      )
+      videoIds(readFileSync(file, "utf8")).map((id) => [file, id] as const)
     );
+    // A project that stripped the starter's videos keeps the directives as posters.
+    if (VIDEOS.length === 0) return;
+    expect(markers.length).toBeGreaterThan(0);
     for (const [file, id] of markers) {
       expect(
         VIDEOS.map((video) => video.id),

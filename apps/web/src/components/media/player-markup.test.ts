@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { MediaEntry } from "../../content/media";
-import {
-  walkthroughHtml as docsHtml,
-  walkthroughId,
-  walkthroughIds,
-} from "../../docs/walkthroughs";
+import { videoIds } from "../../docs/walkthroughs";
 import {
   escapeHtml,
   loopHtml,
@@ -88,21 +84,12 @@ describe("playerHtml", () => {
   });
 });
 
-describe("docs markers", () => {
-  it("reads `<!-- walkthrough: <id> -->` and nothing else", () => {
-    expect(walkthroughId("<!-- walkthrough: agents -->")).toBe("agents");
-    expect(walkthroughId("  <!--walkthrough:tour-->  ")).toBe("tour");
-    expect(walkthroughId("<!-- walkthrough: agents --> more")).toBeNull();
-    expect(walkthroughId("<!-- a comment -->")).toBeNull();
+describe("docs ::video directives", () => {
+  it("finds the ids outside code blocks", () => {
     expect(
-      walkthroughIds(
-        "<!-- walkthrough: tour -->\n```markdown\n<!-- walkthrough: agents -->\n```\n"
+      videoIds(
+        '::video{id="tour" title="Tour"}\n```markdown\n::video{id="agents"}\n```\n  ::video{poster="x" id="privacy"}\n'
       )
-    ).toEqual(["tour"]);
-  });
-
-  it("fails the build for an id that is not a video", () => {
-    expect(() => docsHtml("nope", "docs/x.md")).toThrow(/docs\/x\.md/);
-    expect(docsHtml("agents", "docs/x.md")).toContain("docs-walkthrough");
+    ).toEqual(["tour", "privacy"]);
   });
 });

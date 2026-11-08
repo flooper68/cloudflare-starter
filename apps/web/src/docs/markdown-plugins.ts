@@ -2,8 +2,7 @@
  * Sätteri plugins of the docs site (astro.config.mjs, `markdown.processor`), run on
  * every Markdown file the site renders:
  * - `docsDiagramsPlugin` (mdast) inlines a paragraph that is only an image of a
- *   repository `.svg` as the SVG itself (diagrams.ts), before Astro collects images,
- *   and a `<!-- walkthrough: <id> -->` line as the video player (walkthroughs.ts).
+ *   repository `.svg` as the SVG itself (diagrams.ts), before Astro collects images.
  * - `docsLinksPlugin` rewrites each link's `href` with `rewriteHref` (links.ts), so links
  *   written for GitHub work on the site. Files outside the repository are left alone.
  * - `docsTablesPlugin` wraps each table in a named, keyboard-scrollable region
@@ -21,7 +20,6 @@ import type { SatteriProcessorOptions } from "@astrojs/markdown-satteri";
 
 import { diagramHtml, diagramPath } from "./diagrams";
 import { rewriteHref } from "./links";
-import { walkthroughHtml, walkthroughId } from "./walkthroughs";
 
 type HastPluginEntry = NonNullable<
   SatteriProcessorOptions["hastPlugins"]
@@ -39,15 +37,6 @@ export function docsDiagramsPlugin(repoRoot: URL): MdastPluginEntry {
     if (from.startsWith("..")) return null;
     return {
       name: "docs-diagrams",
-      // `<!-- walkthrough: <id> -->`: the video player (walkthroughs.ts).
-      html(node, ctx) {
-        const id = walkthroughId(node.value);
-        if (!id) return;
-        ctx.replaceNode(node, {
-          raw: walkthroughHtml(id, from),
-          mdxExpressions: false,
-        });
-      },
       paragraph(node, ctx) {
         if (node.children.length !== 1) return;
         const [image] = node.children;

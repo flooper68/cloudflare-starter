@@ -226,6 +226,8 @@ function finish(
 }
 
 async function main() {
+  // The demo seed reads the local mail log relative to the working directory.
+  process.chdir(APP_DIR);
   const ffmpeg = hasFfmpeg();
   if (!ffmpeg && (values["require-ffmpeg"] || process.env.CI)) {
     console.error(
@@ -257,7 +259,6 @@ async function main() {
       seeded = await seed({
         browser,
         baseURL: server.baseURL,
-        appDir: APP_DIR,
         stateDir: SEED_STATE,
         stub: stubTurnstile,
       });

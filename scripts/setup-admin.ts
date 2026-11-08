@@ -1,5 +1,5 @@
 /**
- * `bun run setup:admin --email <address> [--demote] [--remote] [--env develop|staging|production] [--dry-run]`
+ * `bun run setup:admin --email <address> [--demote] [--remote] [--env develop|staging|production] [--persist-to <dir>] [--dry-run]`
  *
  * Makes an existing account a platform admin (role=admin), or a regular user again with
  * `--demote`, by updating the D1 `user` table through Wrangler, and records the change in
@@ -31,6 +31,8 @@ const { values } = parseArgs({
     remote: { type: "boolean", default: false },
     env: { type: "string" },
     "dry-run": { type: "boolean", default: false },
+    // Another local state than .wrangler/state (the walkthrough recorder's own).
+    "persist-to": { type: "string" },
   },
 });
 
@@ -45,7 +47,12 @@ if (environments.length !== 1) fail("Pick one environment with --env");
 const env = environments[0] as Environment;
 const role = values.demote ? "user" : "admin";
 const dryRun = values["dry-run"] ?? false;
-const target = values.remote ? ["--remote"] : ["--local"];
+const target = values.remote
+  ? ["--remote"]
+  : [
+      "--local",
+      ...(values["persist-to"] ? ["--persist-to", values["persist-to"]] : []),
+    ];
 const where = `${values.remote ? "remote" : "local"} ${env}`;
 
 const d1Args = (command: string) => [

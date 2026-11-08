@@ -92,9 +92,9 @@ test.describe("video player", () => {
     }
   });
 
-  test("the MCP guide opens with its walkthrough", async ({ page }) => {
+  test("the agents feature page plays its walkthrough", async ({ page }) => {
     await withoutMedia(page);
-    await page.goto("/docs/guides/how-to-setup-mcp/");
+    await page.goto("/docs/features/agents/");
     const agents = MEDIA_MANIFEST.videos.agents;
     test.skip(!agents, "agents is not recorded yet");
     await expect(
