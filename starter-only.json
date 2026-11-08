@@ -226,11 +226,6 @@
         },
         {
           "file": "apps/web/src/server/cron.test.ts",
-          "find": "    expect(new Set(traces).size).toBe(12);",
-          "replace": "    expect(new Set(traces).size).toBe(10);"
-        },
-        {
-          "file": "apps/web/src/server/cron.test.ts",
           "find": "      \"cron qa-outbox.purge\",\n",
           "replace": ""
         },

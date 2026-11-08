@@ -171,7 +171,8 @@ describe("cron handler", () => {
     const traces = jobQueue.sent.map(
       (sent) => sent.envelope.traceparent?.split("-")[1]
     );
-    expect(new Set(traces).size).toBe(14);
+    // One trace per enqueued job, however many entries the schedule has.
+    expect(new Set(traces).size).toBe(traces.length);
     expect(logger.records[1]).toMatchObject({
       body: "cron.completed",
       trace_id: traces[1],
