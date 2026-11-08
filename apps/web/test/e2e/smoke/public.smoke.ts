@@ -17,9 +17,21 @@ test.describe("public pages", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const header = page.getByRole("banner");
     await expect(header.getByRole("link", { name: "Sign in" })).toBeVisible();
-    await expect(header.getByRole("link", { name: "Open app" })).toBeVisible();
     await expect(
-      page.getByRole("main").getByRole("link", { name: "Read the docs" })
+      header.getByRole("link", { name: "Try the demo" })
+    ).toHaveAttribute("href", "/sign-up");
+    const main = page.getByRole("main");
+    await expect(
+      main.getByRole("link", { name: "Try the demo app" }).first()
+    ).toBeVisible();
+    await expect(
+      main.getByRole("link", { name: "View on GitHub" }).first()
+    ).toBeVisible();
+    await expect(
+      main.getByRole("img", { name: /One app in the middle/ })
+    ).toBeVisible();
+    await expect(
+      main.getByRole("group", { name: "Feature map" })
     ).toBeVisible();
   });
 

@@ -50,11 +50,13 @@ function directive(policy: string, name: string): string[] | undefined {
 }
 
 describe("page policy", () => {
-  it("is strict by default: hashed inline code and our bundles only", () => {
+  it("is strict by default: hashed inline code, our bundles and the theme script only", () => {
     const policy = pagePolicy(deployed);
     expect(directive(policy, "default-src")).toEqual(["'self'"]);
     expect(directive(policy, "script-src")).toEqual([
       `${ORIGIN}/_astro/`,
+      // An exact file: no trailing slash, so no other path under / matches it.
+      `${ORIGIN}/site-theme.js`,
       "'sha256-script='",
     ]);
     expect(directive(policy, "script-src-attr")).toEqual(["'none'"]);
@@ -239,7 +241,7 @@ describe("securityHeadersFor", () => {
       settings
     );
     expect(headers["Content-Security-Policy"]).toContain(
-      `script-src ${ORIGIN}/_astro/ 'sha256-island=' https://challenges.cloudflare.com`
+      `script-src ${ORIGIN}/_astro/ ${ORIGIN}/site-theme.js 'sha256-island=' https://challenges.cloudflare.com`
     );
     expect(headers["Content-Security-Policy"]).toContain(
       "style-src 'self' 'unsafe-inline';"

@@ -31,7 +31,7 @@ What an HTML page of the app (`/`, `/sign-in`, `/app/*`, `/admin/*`, `/consent`,
 
 ```text
 default-src 'self';
-script-src https://<origin>/_astro/ 'sha256-…' … https://challenges.cloudflare.com;
+script-src https://<origin>/_astro/ https://<origin>/site-theme.js 'sha256-…' … https://challenges.cloudflare.com;
 script-src-attr 'none';
 style-src 'self' 'unsafe-inline';
 img-src 'self' data:;
@@ -48,7 +48,7 @@ report-uri https://<origin>/api/csp-report;
 report-to csp-endpoint
 ```
 
-- **Scripts.** Only the app's bundles (`<origin>/_astro/`, not all of `'self'`: `/api/files` serves user uploads from the same origin, and a `<script src>` pointing at an upload must not run) and the inline scripts whose SHA-256 hash Astro computed at build (`security.csp`: the island hydration code). No `'unsafe-inline'`, no `'unsafe-eval'`, no inline event handlers (`script-src-attr 'none'`). The SPA's bootstrap is `<script type="application/json">`: data, which CSP does not run.
+- **Scripts.** Only the app's bundles (`<origin>/_astro/`, not all of `'self'`: `/api/files` serves user uploads from the same origin, and a `<script src>` pointing at an upload must not run), the theme script `<origin>/site-theme.js` (`THEME_SCRIPT_PATH`: a source without a trailing slash matches that one file, which the build owns; it applies the saved theme before the first paint, which a deferred bundle cannot) and the inline scripts whose SHA-256 hash Astro computed at build (`security.csp`: the island hydration code). No `'unsafe-inline'`, no `'unsafe-eval'`, no inline event handlers (`script-src-attr 'none'`). The SPA's bootstrap is `<script type="application/json">`: data, which CSP does not run.
 - **Styles.** Our stylesheets and inline styles (`'self' 'unsafe-inline'`, no hashes, [an exception](#exceptions)): Radix's modal primitives (Dialog, Sheet, menus, Select) append a `<style>` computed from the measured scrollbar width at runtime, which no build-time hash can match, and sonner injects its toast stylesheet. A hash in `style-src` would switch `'unsafe-inline'` off, so Astro's style hashes are dropped. Injected CSS cannot run script.
 - **Third parties, only when their setting is on:**
 

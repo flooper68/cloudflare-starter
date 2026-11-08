@@ -113,7 +113,7 @@ describe("HTML pages", () => {
     expect(response.status).toBe(200);
     expectBaseHeaders(response);
     expect(directive(response, "script-src")).toBe(
-      `script-src ${APP_URL}/_astro/ 'sha256-island=' https://challenges.cloudflare.com`
+      `script-src ${APP_URL}/_astro/ ${APP_URL}/site-theme.js 'sha256-island=' https://challenges.cloudflare.com`
     );
     expect(directive(response, "style-src")).toBe(
       "style-src 'self' 'unsafe-inline'"

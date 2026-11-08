@@ -1,6 +1,6 @@
 # Development Process
 
-The loop every change follows, by a person or an agent: plan, implement, verify, produce evidence, audit docs, self-review, ship on the owner's yes. It also defines the plan schema for work handed to an agent and the definition of done. Use when you start any change, and again before you say it is finished.
+The loop every change follows, by a person or an agent: plan, implement, verify, produce evidence, audit docs, self-review, ship on the owner's yes. It also defines the plan schema for work handed to an agent and the definition of done. Use when you start any change, and again before you say it is finished. How an orchestrator agent runs this loop with implementer and reviewer subagents: [agentic-workflow.md](agentic-workflow.md).
 
 ## The loop
 
@@ -60,7 +60,7 @@ Per [code-review.md](code-review.md): pick the risk tier, run the six checklists
 
 ### 7. Ship
 
-Commit, push, open a PR, run a deploy, change the owner's Cloudflare account, create resources, set secrets or change GitHub settings only on the owner's explicit yes for that action. Dry-run first (`--dry-run` on the setup scripts). The PR uses [the template](../../.github/pull_request_template.md).
+Commit, push, open a PR, run a deploy, change the owner's Cloudflare account, create resources, set secrets or change GitHub settings only on the owner's explicit yes for that action. A request that names the action ("build X and open a PR", "deploy it to staging") is that yes, and a brief written from it passes the yes on to the agent doing the work ([agentic-workflow.md](agentic-workflow.md#what-agents-may-do-on-their-own)). Dry-run first (`--dry-run` on the setup scripts). The PR uses [the template](../../.github/pull_request_template.md).
 
 ## Changelog
 
