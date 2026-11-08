@@ -642,7 +642,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "admin.overview.get",
     "Admin: overview",
-    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, and workspace counts and sizes."
+    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, workspace counts and sizes, and with DEMO_MODE=on the demo counters (active demo accounts, deletions scheduled today, accounts erased in the last 7 days; null otherwise)."
   ),
   direct(
     "admin_get_health",
@@ -656,7 +656,7 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "read",
     "admin.settings.get",
     "Admin: deployment settings",
-    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL."
+    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL, and DEMO_MODE with its retention days, sample data, protected emails and QA domain."
   ),
   direct(
     "admin_list_users",

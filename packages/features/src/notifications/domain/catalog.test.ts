@@ -70,6 +70,7 @@ describe("notification catalog", () => {
       "privacy.export-ready",
 
       "container-runs.finished",
+      "demo.deletion-warning",
     ]);
     for (const entry of notificationCatalog.values()) {
       expect(entry.label.length).toBeGreaterThan(5);

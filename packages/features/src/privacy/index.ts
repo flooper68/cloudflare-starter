@@ -18,6 +18,7 @@ export {
   purgeDataExportsJob,
 } from "./domain";
 export { downloadDataExport } from "./download-data-export";
+export { eraseAccount } from "./erase-account";
 export { eraseIdentityReferences } from "./erase-identity-references";
 export { eraseUserData } from "./erase-user-data";
 export { eraseUserExports } from "./erase-user-exports";

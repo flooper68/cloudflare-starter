@@ -7,6 +7,15 @@ import { expireTrials, expireTrialsJob } from "./billing";
 import { purgeContainerRuns, purgeContainerRunsJob } from "./container-runs";
 import { DATA_CATALOG } from "./data-catalog";
 import {
+  enforceDemoRetention,
+  enforceDemoRetentionJob,
+  seedDemoWorkspace,
+  seedDemoWorkspaceJob,
+  warnDemoAccount,
+  warnDemoAccountJob,
+} from "./demo";
+import { buildErasureHandlers } from "./erasure-catalog";
+import {
   cleanupStorage,
   cleanupStorageJob,
   retryFileCleanups,
@@ -147,6 +156,38 @@ export const jobCatalog = createJobCatalog<JobDeps>([
     purgeExpiredTrash(
       { ...deps, requestContext: job.context, entities: TRASH_CATALOG },
       payload
+    )
+  ),
+  // Demo mode (DEMO_MODE=on; starter-only). Each re-reads the settings when it runs.
+  registerJob(seedDemoWorkspaceJob, (deps: JobDeps, payload, job) =>
+    seedDemoWorkspace(
+      {
+        ...deps,
+        requestContext: job.context,
+        billing: deps.billing(job.context),
+      },
+      payload
+    )
+  ),
+  // Judged as of the cron run's time; erasures through the privacy erasure.
+  registerJob(enforceDemoRetentionJob, (deps: JobDeps, payload, job) =>
+    enforceDemoRetention(
+      {
+        ...deps,
+        requestContext: job.context,
+        ...buildErasureHandlers(deps),
+      },
+      { asOf: new Date(payload.asOf), batch: payload.batch, skip: payload.skip }
+    )
+  ),
+  registerJob(warnDemoAccountJob, (deps: JobDeps, payload, job) =>
+    warnDemoAccount(
+      {
+        ...deps,
+        requestContext: job.context,
+        notify: (definition, input) => notify(deps, definition, input),
+      },
+      { userId: payload.userId, asOf: new Date(payload.asOf) }
     )
   ),
 ]);

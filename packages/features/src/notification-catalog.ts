@@ -8,6 +8,7 @@ import {
   securityFactorChangedNotification,
 } from "./accounts";
 import { containerRunFinishedNotification } from "./container-runs";
+import { demoDeletionWarningNotification } from "./demo";
 import type { NotificationDefinition } from "./kernel";
 import { createNotificationCatalog } from "./notifications";
 import { exportReadyNotification } from "./privacy";
@@ -26,4 +27,19 @@ export const notificationCatalog = createNotificationCatalog([
   exportReadyNotification,
 
   containerRunFinishedNotification,
+  // Demo mode only (DEMO_MODE=on); starter-only, removable with the demo feature.
+  demoDeletionWarningNotification,
 ] as readonly NotificationDefinition<unknown>[]);
+
+/**
+ * The catalog the preferences matrix shows: without the demo warning unless DEMO_MODE=on,
+ * so a deployment that is not a demo never lists it.
+ */
+export function preferenceCatalogFor(demoMode: "on" | "off") {
+  if (demoMode === "on") return notificationCatalog;
+  return createNotificationCatalog(
+    [...notificationCatalog.values()].filter(
+      (definition) => definition.type !== demoDeletionWarningNotification.type
+    )
+  );
+}

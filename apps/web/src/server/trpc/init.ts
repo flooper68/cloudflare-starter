@@ -8,6 +8,7 @@ import {
   type Clock,
   type ContainerRunWorkflows,
   type Database,
+  type DemoRuntime,
   DomainError,
   type EmailService,
   type ErrorReporter,
@@ -103,6 +104,8 @@ export interface Context {
    * (server/health.ts): a live check, nothing stored.
    */
   readonly readiness: () => Promise<HealthResponseBody>;
+  /** DEMO_MODE with its retention policy (server/demo.ts). */
+  readonly demo: DemoRuntime;
 }
 
 /** What procedures read from the Better Auth session. */

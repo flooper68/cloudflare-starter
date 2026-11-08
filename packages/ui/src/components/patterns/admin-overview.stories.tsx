@@ -68,6 +68,31 @@ export const Content: Story = {
   },
 };
 
+/** A demo instance (DEMO_MODE=on): the demo retention's counters. */
+export const DemoInstance: Story = {
+  args: {
+    data: {
+      ...data,
+      demo: {
+        retentionDays: 7,
+        activeAccounts: 342,
+        scheduledToday: 18,
+        erasedLast7Days: 121,
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Demo instance")).toBeVisible();
+    await expect(canvas.getByText("Active demo accounts")).toBeVisible();
+    await expect(canvas.getByText("342")).toBeVisible();
+    await expect(canvas.getByText("Deletions scheduled today")).toBeVisible();
+    await expect(canvas.getByText("18")).toBeVisible();
+    await expect(canvas.getByText("Deleted, last 7 days")).toBeVisible();
+    await expect(canvas.getByText("121")).toBeVisible();
+  },
+};
+
 /** With billing on: workspaces per plan and status, trials and this month's usage. */
 export const WithBilling: Story = {
   args: {

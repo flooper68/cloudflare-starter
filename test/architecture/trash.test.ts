@@ -22,6 +22,8 @@ const UNSCOPED_READS: Readonly<Record<string, string>> = {
     "account erasure deletes every file of a workspace being deleted, live or trashed, bypassing the trash",
   "packages/features/src/notes/count-workspace-notes.ts":
     "billing's notes metric counts live notes by workspace id for a caller that authorized it; it filters deleted_at itself (no actor to pass liveIn)",
+  "packages/features/src/demo/seed-demo-workspace.ts":
+    "the demo seed's idempotency check: a workspace with any note, live or trashed, is never seeded again",
   "packages/features/src/files/measure-workspace-storage.ts":
     "storage_bytes counts trashed files until they are purged (R2 still stores them)",
 };

@@ -2,7 +2,10 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 import { seedUser, testDb } from "../../test/fixtures";
-import { notificationCatalog } from "../notification-catalog";
+import {
+  notificationCatalog,
+  preferenceCatalogFor,
+} from "../notification-catalog";
 import { getNotificationPreferences } from "./get-notification-preferences";
 
 describe("getNotificationPreferences", () => {
@@ -26,7 +29,26 @@ describe("getNotificationPreferences", () => {
       ["privacy.export-ready", true, true, true],
 
       ["container-runs.finished", false, true, false],
+      ["demo.deletion-warning", true, true, true],
     ]);
+  });
+
+  it("lists the demo warning only for a demo deployment (preferenceCatalogFor)", async () => {
+    const ada = await seedUser("Ada Prefs", "ada.prefs@example.test");
+    const types = async (mode: "on" | "off") =>
+      (
+        await getNotificationPreferences(
+          {
+            db: testDb(),
+            catalog: preferenceCatalogFor(mode),
+            emailEnabled: true,
+          },
+          { userId: ada.id }
+        )
+      ).types.map((row) => row.type);
+    expect(await types("on")).toContain("demo.deletion-warning");
+    expect(await types("off")).not.toContain("demo.deletion-warning");
+    expect(await types("off")).toContain("privacy.export-ready");
   });
 
   it("applies the user's overrides and cadence", async () => {

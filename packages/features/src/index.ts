@@ -11,6 +11,7 @@ export * from "./container-runs";
 export { type CronDeps, cronCatalog } from "./cron-catalog";
 export { DATA_CATALOG } from "./data-catalog";
 export { createDatabase, type Database, schema } from "./database";
+export * from "./demo";
 export { buildErasureHandlers } from "./erasure-catalog";
 export * from "./feature-flags";
 export * from "./files";
@@ -20,7 +21,10 @@ export { jobCatalog } from "./job-catalog";
 export * from "./jobs";
 export * from "./kernel";
 export * from "./notes";
-export { notificationCatalog } from "./notification-catalog";
+export {
+  notificationCatalog,
+  preferenceCatalogFor,
+} from "./notification-catalog";
 export * from "./notifications";
 export * from "./platform";
 export * from "./privacy";

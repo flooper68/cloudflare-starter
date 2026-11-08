@@ -28,6 +28,7 @@ describe("deployment settings", () => {
     bootstrapAdminEmail: "founder@acme.test",
     emailEnabled: true,
     adminPortal: "on" as const,
+    demo: { mode: "off" as const },
   };
 
   it("lists the enabled sign-in methods", () => {

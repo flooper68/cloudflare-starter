@@ -71,6 +71,24 @@ describe("notify", () => {
     });
   });
 
+  it("uses a stable event id when the producer gives one, so a repeat has the same dispatch key", async () => {
+    const d = deps();
+    for (let i = 0; i < 2; i++) {
+      await notify(d, memberJoinedNotification, {
+        recipients: ["user-ada"],
+        data,
+        eventId: "demo-warning-user-ada-2026-10-28T03:17:00.000Z",
+        context: { workspaceId: "ws-acme", requestContext },
+      });
+    }
+    expect(d.jobQueue.sent.map((sent) => sent.envelope.idempotencykey)).toEqual(
+      [
+        "notifications.dispatch:demo-warning-user-ada-2026-10-28T03:17:00.000Z",
+        "notifications.dispatch:demo-warning-user-ada-2026-10-28T03:17:00.000Z",
+      ]
+    );
+  });
+
   it("keeps the actor for a security notification", async () => {
     const d = deps();
     const result = await notify(d, newSignInNotification, {

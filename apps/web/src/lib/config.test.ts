@@ -5,11 +5,13 @@ import {
   parseAbuseConfig,
   parseAnalyticsConfig,
   parseAppConfig,
+  parseDemoConfig,
   parseOptionalFeature,
   parsePlatformConfig,
 } from "./config";
 
 const core = {
+  DEMO_MODE: "off",
   STORAGE_RECONCILE: "off",
   TWO_FACTOR: "optional",
   TWO_FACTOR_EMAIL_OTP: "off",
@@ -486,5 +488,83 @@ describe("analytics config", () => {
       expect((error as ConfigError).setting).toBe(setting);
       expect((error as Error).message).toMatch(message);
     }
+  });
+});
+
+describe("demo config", () => {
+  const on = {
+    DEMO_MODE: "on",
+    DEMO_RETENTION_DAYS: "7",
+    DEMO_SAMPLE_DATA: "on",
+  };
+
+  it("requires DEMO_MODE, without a default", () => {
+    expect(() => parseDemoConfig({})).toThrow(
+      new ConfigError(
+        "DEMO_MODE",
+        "DEMO_MODE is not set: set DEMO_MODE to one of off, on in the vars of apps/web/wrangler.jsonc (docs/guides/how-to-run-a-public-demo.md)"
+      )
+    );
+    expect(() => parseDemoConfig({ DEMO_MODE: "true" })).toThrow(
+      /^DEMO_MODE is "true"/
+    );
+  });
+
+  it("with off, ignores the other DEMO_* vars, valid or not", () => {
+    expect(
+      parseDemoConfig({
+        DEMO_MODE: "off",
+        DEMO_RETENTION_DAYS: "nope",
+        DEMO_PROTECTED_EMAILS: "not an email",
+      })
+    ).toEqual({ mode: "off" });
+  });
+
+  it("with on, parses the retention, sample data and the protected list", () => {
+    expect(
+      parseDemoConfig({
+        ...on,
+        DEMO_SAMPLE_DATA: "off",
+        DEMO_PROTECTED_EMAILS:
+          " Owner@Flooper.me, second@flooper.me,,owner@flooper.me ",
+      })
+    ).toEqual({
+      mode: "on",
+      retentionDays: 7,
+      sampleData: false,
+      protectedEmails: ["owner@flooper.me", "second@flooper.me"],
+    });
+    expect(parseDemoConfig(on)).toMatchObject({
+      sampleData: true,
+      protectedEmails: [],
+    });
+  });
+
+  it("with on, requires a whole DEMO_RETENTION_DAYS from 2 to 365", () => {
+    for (const days of [undefined, "", "1", "0", "366", "7.5", "-3", "7d"]) {
+      expect(() =>
+        parseDemoConfig({ ...on, DEMO_RETENTION_DAYS: days })
+      ).toThrow(/^DEMO_MODE=on needs DEMO_RETENTION_DAYS/);
+    }
+    expect(parseDemoConfig({ ...on, DEMO_RETENTION_DAYS: "2" })).toMatchObject({
+      retentionDays: 2,
+    });
+  });
+
+  it("with on, requires DEMO_SAMPLE_DATA and validates the protected addresses", () => {
+    expect(() =>
+      parseDemoConfig({ ...on, DEMO_SAMPLE_DATA: undefined })
+    ).toThrow(/^DEMO_SAMPLE_DATA is not set/);
+    expect(() =>
+      parseDemoConfig({ ...on, DEMO_PROTECTED_EMAILS: "a@b.test, nope" })
+    ).toThrow(/"nope" is not one/);
+    const many = Array.from({ length: 51 }, (_, i) => `u${i}@x.test`).join(",");
+    expect(() =>
+      parseDemoConfig({ ...on, DEMO_PROTECTED_EMAILS: many })
+    ).toThrow(/at most 50/);
+  });
+
+  it("is part of the app config and required there", () => {
+    expect(() => parseAppConfig({ ...core, DEMO_MODE: undefined })).toThrow();
   });
 });

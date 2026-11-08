@@ -117,6 +117,21 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     target: target("user"),
     metadata: z.object({}).strict(),
   }),
+  // Demo mode (DEMO_MODE=on): the daily retention, actor `system`.
+  z.object({
+    ...common,
+    /** The "deleted tomorrow" warning was sent; the retention erases only warned accounts. */
+    action: z.literal("demo.deletion_warned"),
+    target: target("user"),
+    metadata: z.object({ deletesAt: z.iso.datetime() }).strict(),
+  }),
+  z.object({
+    ...common,
+    /** The retention erased an account through the privacy erasure. */
+    action: z.literal("demo.account_erased"),
+    target: target("user"),
+    metadata: z.object({ retentionDays: z.number().int().positive() }).strict(),
+  }),
   z.object({
     ...common,
     action: z.literal("account.settings_updated"),

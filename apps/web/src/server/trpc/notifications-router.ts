@@ -8,6 +8,7 @@ import {
   markNotificationsRead,
   markReadInputSchema,
   notificationCatalog,
+  preferenceCatalogFor,
   preferencesUpdateSchema,
   updateNotificationPreferences,
 } from "@cloudflare-starter/features";
@@ -59,7 +60,7 @@ export const notificationsRouter = router({
       getNotificationPreferences(
         {
           db: ctx.db,
-          catalog: notificationCatalog,
+          catalog: preferenceCatalogFor(ctx.demo.mode),
           emailEnabled: ctx.emailOut.enabled,
         },
         { userId: ctx.user.id }
