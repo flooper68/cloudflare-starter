@@ -8,7 +8,6 @@ export {
   qaCleanup,
 } from "./accounts";
 export { currentRunId, isQaAddress, newRunId, qaAddress } from "./address";
-export { ensureQaAdmin, qaAdmin } from "./admin";
 export { callApp, open, signIn } from "./app";
 export { missingQaEnv, type QaEnv, qaEnv, qaSkipReason } from "./env";
 export { expect, qaTest } from "./fixtures";

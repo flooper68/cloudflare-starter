@@ -60,6 +60,8 @@ A journey is a `*.qa.ts` file in `apps/web/test/qa/` that imports from [support/
 
 Start every file with `qaTest.skip(qaSkipReason() !== null, qaSkipReason() ?? "")`, take `since` just before the action that sends mail, and never log a password or put one in an assertion message. [account-lifecycle.qa.ts](../../apps/web/test/qa/account-lifecycle.qa.ts) is the worked example (sign up → verify → dashboard → erase).
 
+Which file covers which checklist section, what each one skips and why, and the run's sign-up and mail budget: [apps/web/test/qa/README.md](../../apps/web/test/qa/README.md).
+
 ## The QA outbox
 
 With `QA_BYPASS=on`, mail the app would send to a QA address (`qa@` or `qa+<tag>@` in `QA_EMAIL_DOMAIN`) is not sent: the email adapter keeps it in the app's own table `qa_outbox` instead (`withQaOutbox`, wired once in `apps/web/src/lib/env.ts`, so every mail of every feature is covered). Mail to anyone else is sent as always; the port sends one recipient per call, so a mail to a QA address and a real one still reaches the real one.
