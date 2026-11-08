@@ -8,6 +8,10 @@ What changed in each release of the starter, for people evaluating it or buildin
 
 - **The starter has its own brand.** The mock brand Acme is replaced by Starter ("Everything a new app needs on day one."): a deep teal accent that passes WCAG AA as text and on buttons in both themes, a stacked-layers logo mark and favicon, Instrument Sans with JetBrains Mono (self-hosted), and 8px corners. Notification emails show the app's name as a header. A new project still replaces it in `packages/ui/src/brand/` ([how-to-define-branding.md](docs/guides/how-to-define-branding.md)).
 
+### Fixed
+
+- **No more blocked Web Analytics beacon on zones with automatic setup.** Every HTML response now sends `Cache-Control: no-transform` (merged into its existing value, without adding `public`), so Cloudflare's edge no longer injects its beacon into the app's pages when the zone has Web Analytics automatic setup on for other sites. Before, the Content Security Policy blocked it on every page view, with a console error and a `csp.violation` log. HTML is no longer compressed at the edge as a result ([how-to-configure-security-headers.md](docs/guides/how-to-configure-security-headers.md#edge-injected-web-analytics)).
+
 ## [0.1.0] - 2026-11-08
 
 The first release: a Cloudflare-first SaaS starter with auth, workspaces, billing, an admin portal and an MCP server, built, tested and documented.

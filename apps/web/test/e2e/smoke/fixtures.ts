@@ -1,9 +1,12 @@
-import { test as base, expect } from "@playwright/test";
+import { test as base, expect } from "../fixtures";
 
 /**
  * The production smoke suite's `test`: every page refuses to write to the deployed app and
- * fails on console errors.
+ * fails on console errors and on Content-Security-Policy violations.
  *
+ * - Built on the E2E journeys' `test` (../fixtures.ts), so any CSP violation in any page
+ *   or frame fails the test, as it does locally: a script the edge injects into the HTML
+ *   (Cloudflare Web Analytics' automatic setup) is one.
  * - Read-only by construction: a request to the app's own origin with any method other
  *   than GET, HEAD or OPTIONS is aborted before it leaves the browser, and the test fails.
  *   Cloudflare's RUM beacon (`/cdn-cgi/rum`) is answered locally with a 204 instead.

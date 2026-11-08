@@ -71,4 +71,15 @@ describe("E2E journeys", () => {
       expect(source).toMatch(/from "\.\.?\/(e2e\/)?fixtures"/);
     }
   );
+
+  it("the production smoke suite runs under the CSP guard too", () => {
+    const fixtures = read("apps/web/test/e2e/smoke/fixtures.ts");
+    expect(fixtures).not.toMatch(/from "@playwright\/test"/);
+    expect(fixtures).toMatch(
+      /import \{ test as base, expect \} from "\.\.\/fixtures"/
+    );
+    for (const file of filesUnder("apps/web/test/e2e/smoke", /\.smoke\.ts$/)) {
+      expect(read(file), file).toMatch(/from "\.\/fixtures"/);
+    }
+  });
 });
