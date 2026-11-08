@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * Opens a path of the app and waits until its React islands have hydrated (Astro drops
@@ -11,15 +11,27 @@ export async function open(page: Page, path: string): Promise<void> {
   });
 }
 
+/**
+ * Waits until an auth form can be sent: its button is enabled only once React has
+ * hydrated the form and the human check has passed. Astro drops `ssr` from the island
+ * as hydration starts, before React commits, so text typed earlier can be reset by the
+ * hydrating form (it then reports "Email is required").
+ */
+export async function waitForForm(submit: Locator): Promise<void> {
+  await expect(submit).toBeEnabled({ timeout: 30_000 });
+}
+
 /** Signs in through the real form; ends on the dashboard. */
 export async function signIn(
   page: Page,
   account: { readonly email: string; readonly password: string }
 ): Promise<void> {
   await open(page, "/sign-in");
+  const submit = page.getByRole("button", { name: "Sign in", exact: true });
+  await waitForForm(submit);
   await page.getByLabel("Email").fill(account.email);
   await page.getByLabel("Password").fill(account.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await submit.click();
   await expect(page).toHaveURL(/\/app\/dashboard$/, { timeout: 30_000 });
 }
 

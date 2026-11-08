@@ -1,7 +1,7 @@
 import { type Browser, expect, type Page } from "@playwright/test";
 
 import { currentRunId, qaAddress } from "./address";
-import { callApp, open, signIn } from "./app";
+import { callApp, open, signIn, waitForForm } from "./app";
 import { type QaEnv, qaEnv } from "./env";
 import { inbox } from "./inbox";
 import { linkTo } from "./links";
@@ -40,10 +40,12 @@ export async function createVerifiedAccount(
 
   const since = new Date(Date.now() - SKEW_MS);
   await open(page, "/sign-up");
+  const submit = page.getByRole("button", { name: "Create account" });
+  await waitForForm(submit);
   await page.getByLabel("Name").fill(`QA ${runId} ${options.role}`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: "Create account" }).click();
+  await submit.click();
   // With AUTH_REQUIRE_EMAIL_VERIFICATION=true (production) the form shows the check-inbox
   // card; without it the app opens the dashboard straight away and still sends the mail.
   await expect

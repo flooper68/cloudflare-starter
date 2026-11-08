@@ -7,6 +7,7 @@
 import type { Locator, Page } from "@playwright/test";
 
 import { openProfileMenu } from "../../e2e/helpers";
+import { waitForForm } from "./app";
 import { expect, open, QA_TOKEN_HEADER, qaEnv } from "./index";
 import { authPolicies, takeSlots } from "./limits";
 
@@ -38,14 +39,9 @@ export async function submitSignIn(
   await submit.click();
 }
 
-/**
- * Waits until an auth form can be sent: its button is enabled only once React has
- * hydrated the form and the human check has passed. Astro drops `ssr` from the island
- * as hydration starts, before React commits, so text typed earlier can be reset by the
- * hydrating form (it then reports "Email is required").
- */
+/** The suite's `waitForForm` (app.ts), under the name the journeys use. */
 export async function formReady(submit: Locator): Promise<void> {
-  await expect(submit).toBeEnabled({ timeout: 30_000 });
+  await waitForForm(submit);
 }
 
 /** Signs in with the password and lands on `landing` (the dashboard by default). */
