@@ -278,7 +278,7 @@ Guide: [how-to-configure-security-headers.md](how-to-configure-security-headers.
 1. `curl -sI <url>/` and `curl -sI <url>/api/hello`: `Content-Security-Policy`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy` and `Cross-Origin-Resource-Policy` on both; the page's policy has `script-src <url>/_astro/ 'sha256-…'`, the API's is `default-src 'none'; …`.
 2. `curl -sI <url>/favicon.svg` and `<url>/_storybook/`: the same headers from `_headers`; Storybook's policy has `frame-ancestors 'self'`.
 3. During every section above, DevTools shows no "violates the following Content Security Policy directive" message; afterwards Workers Logs has no `csp.violation` for the app's own origin, Turnstile or the R2 bucket (browser extensions' are noise).
-4. With automatic Web Analytics injection on for the hostname, see [Edge-injected Web Analytics](how-to-configure-security-headers.md#edge-injected-web-analytics) first.
+4. `curl -sI <url>/sign-in` and `<url>/docs/`: `Cache-Control` contains `no-transform`; with `WEB_ANALYTICS=none` no page's HTML holds a `cloudflareinsights` script even though the zone's Web Analytics automatic setup may be on ([Edge-injected Web Analytics](how-to-configure-security-headers.md#check-it); the smoke suite checks it too).
 
 Expected: `CSP_MODE=enforce` in production (`bun run doctor`).
 Mail: none.

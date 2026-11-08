@@ -214,6 +214,100 @@ describe("HTML pages", () => {
   });
 });
 
+describe("Cache-Control: no-transform (no edge-injected Web Analytics)", () => {
+  it("is on every page rendered per request, with WEB_ANALYTICS none or cloudflare", async () => {
+    for (const runtimeEnv of [env, analyticsEnv]) {
+      const response = await serve(
+        new Request(`${APP_URL}/sign-in`),
+        page,
+        runtimeEnv
+      );
+      expect(response.status).toBe(200);
+      // Only no-transform: no public on a page that may be someone's own.
+      expect(
+        response.headers.get("cache-control"),
+        runtimeEnv.WEB_ANALYTICS
+      ).toBe("no-transform");
+    }
+  });
+
+  it("keeps the no-store a page set", async () => {
+    const response = await serve(
+      new Request(`${APP_URL}/unsubscribe?t=x`),
+      () =>
+        new Response("<!doctype html>", {
+          headers: { "content-type": "text/html", "cache-control": "no-store" },
+        })
+    );
+    expect(response.headers.get("cache-control")).toBe(
+      "no-store, no-transform"
+    );
+  });
+
+  it("is on a prerendered page the middleware passes through", async () => {
+    const request = new Request(`${APP_URL}/404`);
+    const context: MiddlewareContext = {
+      request,
+      url: new URL(request.url),
+      isPrerendered: true,
+      locals: {} as MiddlewareContext["locals"],
+      redirect: () => new Response(null, { status: 302 }),
+    };
+    const response = await handleAppRequest(
+      context,
+      env,
+      async () =>
+        new Response("<!doctype html>", {
+          status: 404,
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            "cache-control": "public, max-age=0, must-revalidate",
+          },
+        })
+    );
+    expect(response.headers.get("cache-control")).toBe(
+      "public, max-age=0, must-revalidate, no-transform"
+    );
+  });
+
+  it("is not on redirects, which carry no HTML", async () => {
+    const response = await serve(new Request(`${APP_URL}/app/dashboard`));
+    expect(response.status).toBe(302);
+    expect(response.headers.get("cache-control")).toBeNull();
+  });
+
+  it("is not on API or health responses, whose Cache-Control stays as the route set it", async () => {
+    const hello = await serve(
+      new Request(`${APP_URL}/api/hello`),
+      helloRoute as Route
+    );
+    expect(hello.headers.get("cache-control") ?? "").not.toContain(
+      "no-transform"
+    );
+    const live = await serve(
+      new Request(`${APP_URL}/health/live`),
+      liveRoute as Route
+    );
+    expect(live.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("is on an uploaded file served as HTML, keeping private, no-store", async () => {
+    const response = await serve(
+      new Request(`${APP_URL}/api/files/f1`),
+      () =>
+        new Response("<p>x</p>", {
+          headers: {
+            "content-type": "text/html",
+            "cache-control": "private, no-store",
+          },
+        })
+    );
+    expect(response.headers.get("cache-control")).toBe(
+      "private, no-store, no-transform"
+    );
+  });
+});
+
 describe("non-HTML responses", () => {
   it("API: /api/hello", async () => {
     const response = await serve(

@@ -19,6 +19,7 @@ import {
   type SecurityHeaderSettings,
   securityHeadersFor,
 } from "./security-headers";
+import { STATIC_HTML_PATHS } from "./static-cache";
 
 const ORIGIN = "https://starter.example";
 
@@ -293,6 +294,76 @@ describe("securityHeadersFor", () => {
     expect(headers["Content-Security-Policy-Report-Only"]).toBeUndefined();
   });
 
+  it("adds no-transform to every HTML response, whatever WEB_ANALYTICS says", () => {
+    for (const webAnalytics of [false, true]) {
+      const headers = securityHeadersFor(new Request(`${ORIGIN}/`), html(), {
+        ...settings,
+        webAnalytics,
+      });
+      // No public: a page rendered per request may be someone's own.
+      expect(headers["Cache-Control"], `webAnalytics=${webAnalytics}`).toBe(
+        "no-transform"
+      );
+    }
+    // Also when the settings cannot be read.
+    expect(
+      securityHeadersFor(new Request(`${ORIGIN}/`), html(), {
+        ...settings,
+        cspMode: null,
+      })["Cache-Control"]
+    ).toBe("no-transform");
+  });
+
+  it("merges no-transform into the Cache-Control a page set, keeping no-store", () => {
+    expect(
+      securityHeadersFor(
+        new Request(`${ORIGIN}/unsubscribe`),
+        html({ "cache-control": "no-store" }),
+        settings
+      )["Cache-Control"]
+    ).toBe("no-store, no-transform");
+  });
+
+  it("adds no-transform to HTML that is not a page (uploads, Better Auth's error page)", () => {
+    for (const [path, cacheControl, expected] of [
+      ["/api/files/f1", "private, no-store", "private, no-store, no-transform"],
+      ["/api/auth/error", null, "no-transform"],
+    ] as const) {
+      const headers = securityHeadersFor(
+        new Request(`${ORIGIN}${path}`),
+        new Response("x", {
+          headers: {
+            "content-type": "text/html; charset=utf-8",
+            ...(cacheControl ? { "cache-control": cacheControl } : {}),
+          },
+        }),
+        settings
+      );
+      expect(headers["Cache-Control"], path).toBe(expected);
+      expect(headers["Content-Security-Policy"], path).toBe(NON_HTML_CSP);
+    }
+  });
+
+  it("leaves the Cache-Control of every other response alone", () => {
+    for (const response of [
+      new Response("{}", {
+        headers: {
+          "content-type": "application/json",
+          "cache-control": "no-store",
+        },
+      }),
+      new Response("{}", { headers: { "content-type": "application/json" } }),
+      // A redirect has no HTML body.
+      new Response(null, { status: 302, headers: { location: "/sign-in" } }),
+    ]) {
+      expect(
+        securityHeadersFor(new Request(`${ORIGIN}/app`), response, settings)[
+          "Cache-Control"
+        ]
+      ).toBeUndefined();
+    }
+  });
+
   it("classifies pages by path and content type", () => {
     const page = html();
     expect(isAppPage("/", page)).toBe(true);
@@ -336,6 +407,29 @@ describe("public/_headers", () => {
     expect(pagefind).toContain(`Content-Security-Policy: ${PAGEFIND_CSP}`);
     expect(PAGEFIND_CSP).toContain("connect-src 'self'");
     expect(PAGEFIND_CSP).not.toMatch(/'unsafe-(eval|inline)'/);
+  });
+
+  it("adds no-transform to every static HTML file, keeping its caching", () => {
+    const rules = renderStaticHeaders().split("\n\n");
+    const cacheOf = (path: string) =>
+      rules
+        .find((rule) => rule.startsWith(`${path}\n`))
+        ?.split("\n")
+        .find((line) => line.trim().startsWith("Cache-Control:"))
+        ?.trim();
+    for (const path of [...PRERENDERED_PAGE_PATHS, ...STATIC_HTML_PATHS]) {
+      expect(cacheOf(path), path).toBe(
+        "Cache-Control: public, max-age=0, must-revalidate, no-transform"
+      );
+    }
+    // The Atom feed under /docs/* is not HTML: it gets its plain value back.
+    const feed = rules.find((rule) => rule.startsWith("/docs/changelog.xml\n"));
+    expect(feed).toContain("! Cache-Control");
+    expect(cacheOf("/docs/changelog.xml")).toBe(
+      "Cache-Control: public, max-age=0, must-revalidate"
+    );
+    // Assets keep Workers Static Assets' default: no rule for /* sets Cache-Control.
+    expect(cacheOf("/*")).toBeUndefined();
   });
 
   it("has one block per path, so no rule replaces another's headers", () => {
