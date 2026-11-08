@@ -1,8 +1,8 @@
 /**
- * The copy and links of the landing page (src/pages/index.astro): the starter's own
- * page. A project replaces this file (and the page's sections) with its product's
- * landing; docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page.
- * Feature highlights summarise the README's Highlights.
+ * The copy and links of the home page (src/pages/index.astro): the starter's own page.
+ * What the starter does (pillars, groups, features) is data in src/content/features.ts;
+ * this file holds the page's own words. A project replaces both with its product's
+ * landing: docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page.
  */
 import { DOCS } from "@/docs/docs.config";
 
@@ -10,150 +10,172 @@ export const LINKS = {
   docs: "/docs/",
   start: "/docs/start/",
   changelog: "/docs/changelog/",
+  feed: "/docs/changelog.xml",
   github: DOCS.repoUrl,
+  issues: `${DOCS.repoUrl}/issues`,
   storybook: "/_storybook/",
   signIn: "/sign-in",
-  /** Signed out, /app redirects to /sign-in; signed in, it opens the dashboard. */
+  /**
+   * "Try the demo app": sign up on this deployment. A signed-in visitor who follows it is
+   * sent on to the app by /sign-up itself, so the prerendered page needs no session.
+   */
+  demo: "/sign-up",
+  /** Per-request pages show it instead of Sign in and Try the demo when signed in. */
   app: "/app/dashboard",
+  costs: "https://developers.cloudflare.com/workers/platform/pricing/",
 } as const;
 
+/**
+ * The hook. Measured on 8 Nov 2026 from a fresh clone to the local sign-up page: about
+ * 45 s with Bun's cache warm (clone 27 s, install 3 s, migrate 3 s, dev server and first
+ * page 8 s) and about 80 s cold (install 41 s). A deploy needs a Cloudflare login,
+ * resources and secrets and was not timed, so the headline says "today", not minutes.
+ */
 export const HERO = {
-  badges: ["Template", "Bun monorepo"],
-  title: "The Cloudflare-first SaaS starter",
+  eyebrow: {
+    tag: "New",
+    text: "Connected agents: see and disconnect every agent",
+  },
+  title: "Ship an agent-native app today.",
   description:
-    "One Astro Worker for the site, the app, the API, queues and cron. Auth, workspaces, billing, admin, notifications and an MCP server, already built, tested and documented. Clone it, choose your modes, strip what you don't need.",
-  commands: [
-    `git clone ${DOCS.repoUrl} my-product`,
-    "cd my-product && bun install",
-    "bun run setup:auth   # workspace mode, sign-up, billing",
-    "bun run dev:web",
-  ],
+    "A starter for small, agent-native apps. Sign-in, workspaces, billing and an agent endpoint with access already solved, running on one Cloudflare account for $5 a month plus usage.",
+  demoLine: "The demo is this starter, deployed. Already have an account?",
+  sceneLabel:
+    "One app in the middle, with agents and people sending it requests, and the database, file storage, jobs, email and analytics beside it.",
 } as const;
 
-export type FeatureIcon =
-  | "shield"
-  | "users"
-  | "card"
-  | "admin"
-  | "bot"
-  | "bell"
-  | "files"
-  | "clock"
-  | "activity"
-  | "scroll"
-  | "flag"
-  | "palette";
+export const SECTIONS = {
+  pillars: {
+    kicker: "What you get",
+    title: "Four things you don't have to build",
+    lead: "Start from a working app, not an empty folder. Good for a personal CRM, a team notes tool, or an internal tool your agents act on.",
+  },
+  map: {
+    kicker: "Feature map",
+    title: "Everything in the box, and how it connects",
+    lead: "Every part of the starter, grouped by what it does for you, and the main ways the parts work together.",
+  },
+  costs: {
+    kicker: "What it costs",
+    title: "One platform, one bill.",
+    lead: "Everything on this page runs on Cloudflare's Workers Paid plan: $5 a month, plus usage above the included allowances. A small app stays inside them; above them you pay for what you use, for example $0.35 per 1,000 emails after the first 3,000 a month.",
+    note: "Prices from Cloudflare's docs, checked 8 Nov 2026. Your domain is extra.",
+  },
+  start: {
+    kicker: "Start in minutes",
+    title: "Running locally in under two minutes",
+    lead: "The database, files, email, queue and schedules all run locally. Nothing else to install but Bun.",
+    agent:
+      "AGENTS.md points your coding agent to the docs; its skills set up sign-in, the database and email.",
+    measured:
+      "Measured from a fresh clone to the sign-up page: about 45 seconds with Bun's cache warm, 80 seconds cold.",
+  },
+  closing: {
+    title: "Start from a working app",
+    lead: "Try the demo, then clone the repo. Your agents can use it the day you deploy.",
+  },
+} as const;
 
-export const FEATURES: readonly {
-  readonly icon: FeatureIcon;
-  readonly title: string;
-  readonly description: string;
+/** The included allowances that matter first, from docs/start costs. */
+export const COSTS: readonly {
+  readonly what: string;
+  readonly included: string;
+  readonly after: string;
 }[] = [
+  { what: "Requests", included: "10 million", after: "$0.30 / million" },
   {
-    icon: "shield",
-    title: "Auth and account security",
-    description:
-      "Better Auth with email and password and/or Google, passkeys, authenticator two-factor with recovery codes, email verification, and MCP access bound to the session that granted it.",
+    what: "Database",
+    included: "25 billion rows read · 50 million written · 5 GB",
+    after: "$1 / million writes",
   },
   {
-    icon: "users",
-    title: "Workspaces and roles",
-    description:
-      "Personal, single or multi-workspace mode; open or invite-only sign-up; invitations by email; one permission map; a members page and a switcher.",
+    what: "File storage",
+    included: "10 GB · free egress",
+    after: "$0.015 / GB-month",
   },
   {
-    icon: "card",
-    title: "Plans and limits",
-    description:
-      "A plan catalog in code, trials with a daily expiry, usage meters, limit-reached errors with upgrade options, BILLING off, manual or through a provider.",
+    what: "Background jobs",
+    included: "1 million queue operations (about 330,000 jobs)",
+    after: "$0.40 / million",
   },
+  { what: "Email", included: "3,000 emails", after: "$0.35 / 1,000" },
   {
-    icon: "admin",
-    title: "Admin portal",
-    description:
-      "Users, impersonation, workspace rescue, audit log, data requests and a D1 overview; destructive actions behind a recent sign-in.",
-  },
-  {
-    icon: "bot",
-    title: "MCP server with OAuth",
-    description:
-      "Claude signs in as the user at /mcp; people disconnect agents in Settings. A test fails the build if any API lacks an MCP tool or a reasoned exemption.",
-  },
-  {
-    icon: "bell",
-    title: "Notifications",
-    description:
-      "A typed catalog, an in-app inbox with an unread badge, email at once or as a daily digest, preferences per type and one-click unsubscribe.",
-  },
-  {
-    icon: "files",
-    title: "Files on R2, with a trash",
-    description:
-      "Uploads through the Worker or straight to R2 with presigned URLs; deleted files restore for 30 days before a daily purge.",
-  },
-  {
-    icon: "clock",
-    title: "Jobs and cron",
-    description:
-      "Typed Queues jobs as CloudEvents with backoff, idempotency keys and a dead-letter queue; a cron catalog checked against wrangler.jsonc.",
-  },
-  {
-    icon: "activity",
-    title: "Observability",
-    description:
-      "OpenTelemetry-shaped logs, metrics and traces on one trace id; error reports give users a reference instead of a stack trace.",
-  },
-  {
-    icon: "scroll",
-    title: "Audit log and privacy",
-    description:
-      "Append-only audit events with the trace id; data exports and account erasure through one pipeline.",
-  },
-  {
-    icon: "flag",
-    title: "Flags and analytics",
-    description:
-      "OpenFeature-shaped flags with workspace, plan and percentage rules; Segment-shaped product events under pseudonymous ids.",
-  },
-  {
-    icon: "palette",
-    title: "Component library",
-    description:
-      "60+ components in Linear's visual language, every story an axe-checked test, re-branded in two files.",
+    what: "Analytics and metrics",
+    included: "10 million data points",
+    after: "Not billed yet",
   },
 ];
 
-export const BUILT_ON = [
-  "Astro 7",
-  "React 19",
-  "Cloudflare Workers",
-  "D1 + Drizzle",
-  "R2",
-  "Queues",
-  "Cron Triggers",
-  "Email Service",
-  "Turnstile",
-  "Rate Limiting",
-  "Analytics Engine",
-  "tRPC",
-  "Better Auth",
-  "Bun",
-] as const;
+/** The receipt beside the cost table: what the $5 covers. */
+export const RECEIPT: readonly string[] = [
+  "Website, docs and app",
+  "Agent endpoint",
+  "Database",
+  "File storage",
+  "Job queue and schedules",
+  "Email",
+  "Analytics, logs and traces",
+  "Rate limits and bot checks",
+];
 
-export const STEPS = [
+export const STEPS: readonly {
+  readonly title: string;
+  readonly command: string;
+}[] = [
+  { title: "Clone it", command: `git clone ${DOCS.repoUrl} my-app` },
+  { title: "Install", command: "cd my-app && bun install" },
   {
-    title: "Update and pin every dependency",
-    description:
-      "The pins are only as fresh as the starter's last change. bunfig.toml keeps new ones exact.",
+    title: "Add local settings",
+    command:
+      "cp apps/web/.dev.vars.example apps/web/.dev.vars && bun run db:migrate:local",
+  },
+  { title: "Run it", command: "bun run dev:web" },
+];
+
+export const PRODUCTION_CHECKS: readonly string[] = [
+  "Tested at every layer, in CI",
+  "Accessible components, checked on every story",
+  "Strict content policy, checked in every journey",
+  "Logs, metrics and traces in OpenTelemetry shape",
+  "Every change to data is audited",
+  "Every table is in the privacy catalog",
+  "Every action has a rate limit",
+  "Health checks in the IETF format",
+];
+
+/** The only place the page names the technology. */
+export const UNDER_THE_HOOD =
+  "Astro and React on Cloudflare Workers, D1 with Drizzle, R2, Queues, Cron Triggers, Email Service, Analytics Engine, Turnstile, Rate Limiting, Better Auth and tRPC, on Bun.";
+
+export const FOOTER: readonly {
+  readonly title: string;
+  readonly links: readonly { readonly label: string; readonly href: string }[];
+}[] = [
+  {
+    title: "Product",
+    links: [
+      { label: "Try the demo", href: LINKS.demo },
+      { label: "Sign in", href: LINKS.signIn },
+      { label: "Changelog", href: LINKS.changelog },
+      { label: "Feature map", href: "/#feature-map" },
+    ],
   },
   {
-    title: "Choose how users are grouped",
-    description:
-      "WORKSPACE_MODE, SIGN_UP and BILLING per environment; a deploy refuses to start until you have chosen.",
+    title: "Docs",
+    links: [
+      { label: "Overview", href: LINKS.docs },
+      { label: "Start a project", href: LINKS.start },
+      { label: "Add a feature", href: "/docs/guides/how-to-add-a-feature/" },
+      { label: "Architecture", href: "/docs/architecture/overview/" },
+    ],
   },
   {
-    title: "Strip what the product does not use",
-    description:
-      "Containers, Storybook, jobs, cron, files, email, notifications: each has a removal list.",
+    title: "Project",
+    links: [
+      { label: "GitHub", href: LINKS.github },
+      { label: "Storybook", href: LINKS.storybook },
+      { label: "Release feed", href: LINKS.feed },
+      { label: "Report an issue", href: LINKS.issues },
+    ],
   },
-] as const;
+];
