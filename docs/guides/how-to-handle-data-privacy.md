@@ -1,6 +1,31 @@
 # Data exports and account erasure
 
-Use this guide when adding persisted data, handling an export or deletion request, connecting a payment provider, or restoring a database after an erasure. These are reusable product capabilities, not a claim of legal compliance for a consuming application.
+::reviewed{date="2026-11-08"}
+
+People export their data and delete their account themselves; admins handle the rest from the portal. Use this guide when you add persisted data (every table must declare how it is exported and erased), handle an export or deletion request, set up export expiry, or restore a database after an erasure. These are reusable product capabilities, not a claim of legal compliance for your application. What people see: [Export, delete, restore and audit](../features/privacy.md).
+
+::flow[Request -> Background job builds the ZIP -> Notification with a signed link -> Download within 24 hours]{title="Export flow: a request starts a background job that builds the archive; a notification brings a signed link that works for 24 hours"}
+
+::shot{id="settings-privacy" alt="Settings › Privacy: export your data or delete your account"}
+
+:::steps
+1. **Add a table?** Declare its export columns, scope and erasure treatment in `DATA_CATALOG`; the architecture tests fail until you do ([below](#implementation-and-limits)).
+2. **Store objects in file storage?** Extend `buildErasureHandlers`: a foreign-key cascade never removes an object.
+3. **Deployed?** Set the export expiry rule on the bucket, once ([below](#storage-expiry-setup)).
+
+:::
+
+:::prompt{title="Paste this into your coding agent"}
+```text
+I added the <table> table. Register it in DATA_CATALOG with its export columns, scope
+and erasure treatment, extend buildErasureHandlers if it stores objects, and run the
+privacy architecture tests. Follow docs/guides/how-to-handle-data-privacy.md.
+```
+:::
+
+:::decision{title="Why erasure is browser-only"}
+Permanent erasure needs a fresh sign-in and the configured second factor, so it has no agent tool. Agents and admins can request exports; an export requested for someone is delivered to them, never to the admin.
+:::
 
 ## User and administrator flows
 

@@ -1,0 +1,741 @@
+/*
+ * The docs components kit (src/docs/kit/): annotated screenshots, steps, flows, before
+ * and after, settings cards, callouts, tabs, the prompt block, "Doing it by hand", the
+ * video slot. Tokens only, so both themes work; plain (unlayered) CSS, so it wins over
+ * Prose's utility defaults for lists and paragraphs inside a component. Nothing is
+ * wider than the column: phones never scroll sideways.
+ */
+
+.dk-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dk-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+.dk-icon-lg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+/* Every component is a block in the Prose flow; its own children reset Prose's rhythm. */
+:is(
+    .dk-shot,
+    .dk-steps,
+    .dk-flow,
+    .dk-compare,
+    .dk-settings,
+    .dk-callout,
+    .dk-tabs,
+    .dk-prompt,
+    .dk-byhand,
+    .dk-video
+  )
+  :is(p, ul, ol) {
+  margin: 0;
+}
+
+/* ---------- Screenshots ---------- */
+
+.dk-shot {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dk-shot-frame {
+  position: relative;
+  display: none;
+  border: 1px solid var(--ui-line);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--ui-surface);
+}
+
+.dk-shot-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dk-shot-frame[data-variant="dark"],
+.dk-shot-frame[data-variant="any"] {
+  display: block;
+}
+
+:root[data-theme="light"] .dk-shot-frame[data-variant="dark"] {
+  display: none;
+}
+
+:root[data-theme="light"] .dk-shot-frame[data-variant="light"] {
+  display: block;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .dk-shot-frame[data-variant="dark"] {
+    display: none;
+  }
+
+  :root:not([data-theme]) .dk-shot-frame[data-variant="light"] {
+    display: block;
+  }
+}
+
+/* Phones: the phone capture, when the shot has one. */
+@media (max-width: 639px) {
+  .dk-shot:has([data-variant^="phone"]) .dk-shot-frame {
+    display: none;
+  }
+
+  .dk-shot:has([data-variant^="phone"])
+    .dk-shot-frame[data-variant="phone-dark"] {
+    display: block;
+    max-width: 24rem;
+  }
+
+  :root[data-theme="light"]
+    .dk-shot:has([data-variant^="phone"])
+    .dk-shot-frame[data-variant="phone-dark"] {
+    display: none;
+  }
+
+  :root[data-theme="light"]
+    .dk-shot:has([data-variant^="phone"])
+    .dk-shot-frame[data-variant="phone-light"] {
+    display: block;
+    max-width: 24rem;
+  }
+}
+
+@media (max-width: 639px) and (prefers-color-scheme: light) {
+  :root:not([data-theme])
+    .dk-shot:has([data-variant^="phone"])
+    .dk-shot-frame[data-variant="phone-dark"] {
+    display: none;
+  }
+
+  :root:not([data-theme])
+    .dk-shot:has([data-variant^="phone"])
+    .dk-shot-frame[data-variant="phone-light"] {
+    display: block;
+    max-width: 24rem;
+  }
+}
+
+.dk-marker {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--ui-accent);
+  color: var(--ui-accent-fg);
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--ui-canvas) 70%, transparent),
+    0 2px 6px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+
+@media (max-width: 639px) {
+  .dk-marker {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.6875rem;
+  }
+}
+
+.dk-shot-legend ol {
+  list-style: none;
+  padding: 0;
+  counter-reset: dk-callout;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.dk-shot-legend li {
+  position: relative;
+  counter-increment: dk-callout;
+  padding-left: 2rem;
+  margin: 0;
+  color: var(--ui-fg-muted);
+}
+
+.dk-shot-legend li::before {
+  content: counter(dk-callout);
+  position: absolute;
+  left: 0;
+  top: 0.125rem;
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--ui-accent);
+  color: var(--ui-accent-fg);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/* ---------- Steps ---------- */
+
+.dk-steps > ol {
+  list-style: none;
+  padding: 0;
+  counter-reset: dk-step;
+  display: grid;
+  gap: 1rem;
+}
+
+.dk-steps > ol > li {
+  position: relative;
+  counter-increment: dk-step;
+  margin: 0;
+  padding: 0.875rem 1rem 1rem 3.25rem;
+  border: 1px solid var(--ui-line);
+  border-radius: 0.75rem;
+  background: var(--ui-surface-raised);
+}
+
+.dk-steps > ol > li::before {
+  content: counter(dk-step);
+  position: absolute;
+  left: 0.875rem;
+  top: 0.875rem;
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 999px;
+  background: var(--ui-accent-subtle);
+  color: var(--ui-accent-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.dk-steps > ol > li > * + * {
+  margin-top: 0.625rem;
+}
+
+.dk-steps > ol > li > p:first-child > strong:first-child {
+  display: block;
+  font-size: 0.9375rem;
+}
+
+.dk-steps .dk-shot {
+  margin-top: 0.75rem;
+}
+
+/* ---------- Flow ---------- */
+
+.dk-flow {
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.dk-flow svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  min-width: 0;
+}
+
+/* Prose gives diagrams a minimum width to scroll; a flow reflows instead. */
+.dk-flow[data-docs-diagram] svg {
+  min-width: 0;
+}
+
+.dk-flow .dk-flow-column {
+  display: none;
+  max-width: 18rem;
+  margin-inline: auto;
+}
+
+@media (max-width: 639px) {
+  .dk-flow .dk-flow-row {
+    display: none;
+  }
+
+  .dk-flow .dk-flow-column {
+    display: block;
+    width: 100%;
+  }
+}
+
+/* ---------- Before and after ---------- */
+
+.dk-compare {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .dk-compare {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.dk-compare-side {
+  border: 1px solid var(--ui-line);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: var(--ui-surface-raised);
+}
+
+.dk-compare-side[data-side="after"] {
+  border-color: color-mix(in oklab, var(--ui-success) 45%, var(--ui-line));
+}
+
+.dk-compare-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ui-fg-muted);
+}
+
+.dk-compare-side[data-side="before"] .dk-compare-label .dk-icon {
+  color: var(--ui-danger);
+}
+
+.dk-compare-side[data-side="after"] .dk-compare-label .dk-icon {
+  color: var(--ui-success);
+}
+
+.dk-compare-body {
+  margin-top: 0.375rem;
+}
+
+/* ---------- Settings ---------- */
+
+.dk-settings {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+}
+
+.dk-settings > li.dk-setting {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--ui-line);
+  border-radius: 0.75rem;
+  background: var(--ui-surface-raised);
+}
+
+.dk-setting-name code {
+  font-weight: 600;
+}
+
+.dk-setting-desc {
+  color: var(--ui-fg-muted);
+}
+
+.dk-setting-default {
+  font-size: 0.75rem;
+  color: var(--ui-fg-muted);
+}
+
+.dk-setting-values {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.dk-setting-values li {
+  margin: 0;
+}
+
+.dk-setting-values li code {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--ui-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ui-fg-muted);
+  font-size: 0.75rem;
+}
+
+.dk-setting-values li[data-default] code {
+  border-color: var(--ui-accent);
+  background: var(--ui-accent-subtle);
+  color: var(--ui-fg);
+}
+
+/* ---------- Callouts ---------- */
+
+.dk-callout {
+  border: 1px solid var(--ui-line);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--ui-surface-raised);
+}
+
+.dk-callout[data-kind="decision"] {
+  border-color: color-mix(in oklab, var(--ui-info) 45%, var(--ui-line));
+  background: color-mix(in oklab, var(--ui-info) 6%, var(--ui-surface-raised));
+}
+
+.dk-callout[data-kind="gotcha"] {
+  border-color: color-mix(in oklab, var(--ui-warning) 50%, var(--ui-line));
+  background: color-mix(
+    in oklab,
+    var(--ui-warning) 6%,
+    var(--ui-surface-raised)
+  );
+}
+
+.dk-callout-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--ui-fg);
+}
+
+.dk-callout-title .dk-icon {
+  margin-top: 0.25rem;
+}
+
+.dk-callout[data-kind="decision"] .dk-callout-title .dk-icon {
+  color: var(--ui-info);
+}
+
+.dk-callout[data-kind="gotcha"] .dk-callout-title .dk-icon {
+  color: var(--ui-warning);
+}
+
+.dk-callout-kind {
+  color: var(--ui-fg-muted);
+}
+
+.dk-callout-body {
+  margin-top: 0.25rem;
+  padding-left: 1.5rem;
+  color: var(--ui-fg);
+}
+
+.dk-callout-body > * + * {
+  margin-top: 0.5rem;
+}
+
+/* ---------- Tabs ---------- */
+
+.dk-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dk-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--ui-line);
+}
+
+.dk-tablist[hidden] {
+  display: none;
+}
+
+.dk-tablist [role="tab"] {
+  min-height: 2.5rem;
+  padding: 0.25rem 0.875rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--ui-fg-muted);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dk-tablist [role="tab"]:hover {
+  color: var(--ui-fg);
+}
+
+.dk-tablist [role="tab"][aria-selected="true"] {
+  border-bottom-color: var(--ui-accent);
+  color: var(--ui-fg);
+}
+
+.dk-tablist [role="tab"]:focus-visible,
+.dk-tabpanel:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ui-focus);
+  border-radius: 0.25rem;
+}
+
+.dk-tabpanel-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ui-fg-muted);
+}
+
+.dk-tabpanel + .dk-tabpanel {
+  margin-top: 0.5rem;
+}
+
+/* With script: ARIA tabs, one panel at a time (docs-kit.ts). */
+.dk-tabs[data-ready] .dk-tabpanel-label {
+  display: none;
+}
+
+.dk-tabs[data-ready] .dk-tabpanel + .dk-tabpanel {
+  margin-top: 0;
+}
+
+.dk-tabpanel[hidden] {
+  display: none;
+}
+
+/* ---------- Prompt ---------- */
+
+.dk-prompt {
+  border: 1px solid color-mix(in oklab, var(--ui-accent) 45%, var(--ui-line));
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: color-mix(
+    in oklab,
+    var(--ui-accent) 5%,
+    var(--ui-surface-raised)
+  );
+}
+
+.dk-prompt-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dk-prompt-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.dk-prompt-title .dk-icon {
+  color: var(--ui-accent-text);
+}
+
+.dk-prompt pre {
+  white-space: pre-wrap;
+}
+
+.dk-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--ui-line-strong);
+  border-radius: 0.5rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-fg);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.dk-copy[hidden] {
+  display: none;
+}
+
+.dk-copy:hover {
+  background: var(--ui-hover);
+}
+
+.dk-copy:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ui-focus);
+}
+
+/* ---------- Doing it by hand ---------- */
+
+.dk-byhand {
+  border: 1px solid var(--ui-line);
+  border-radius: 0.75rem;
+  background: var(--ui-surface-raised);
+}
+
+.dk-byhand > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.dk-byhand > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dk-byhand > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--ui-fg-muted);
+  border-bottom: 2px solid var(--ui-fg-muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s;
+}
+
+.dk-byhand[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+.dk-byhand > summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ui-focus);
+}
+
+.dk-byhand > summary .dk-icon {
+  color: var(--ui-fg-muted);
+}
+
+.dk-byhand-body {
+  padding: 0 1rem 1rem;
+}
+
+.dk-byhand-body > * + * {
+  margin-top: 0.75rem;
+}
+
+.dk-byhand-body ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+.dk-byhand-body ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+/* ---------- Video slot ---------- */
+
+.dk-video {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dk-video video {
+  display: block;
+  width: 100%;
+  border-radius: 0.75rem;
+  background: #000;
+}
+
+.dk-video-stage {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.dk-video-stage .dk-shot-frame {
+  border-radius: 0.75rem;
+}
+
+.dk-video-stage .dk-shot-frame img {
+  filter: saturate(0.6) brightness(0.55);
+}
+
+:root[data-theme="light"] .dk-video-stage .dk-shot-frame img {
+  filter: saturate(0.6) brightness(0.85);
+}
+
+.dk-video-blank {
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--ui-line);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(circle at 30% 20%, var(--ui-accent-subtle), transparent 60%),
+    var(--ui-surface);
+}
+
+.dk-video-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.dk-video-play {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ui-canvas) 70%, transparent);
+  border: 1px solid var(--ui-line-strong);
+  color: var(--ui-fg-muted);
+}
+
+.dk-video-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ui-fg-muted);
+}
+
+.dk-video-caption strong {
+  color: var(--ui-fg);
+}
+
+.dk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--ui-line-strong);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--ui-fg-muted);
+}
+
+/* ---------- Last reviewed ---------- */
+
+.dk-reviewed {
+  font-size: 0.75rem;
+  color: var(--ui-fg-muted);
+}
+
+/* ---------- The docs home ---------- */
+
+/* DocsHome.astro has the page's h1; the index's own "# Docs" is for GitHub readers. */
+.docs-index > h1:first-child {
+  display: none;
+}

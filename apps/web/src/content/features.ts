@@ -161,7 +161,7 @@ export const GROUPS: readonly Group[] = [
     short: "Agents",
     benefit:
       "Agents sign in as a user, ask first, and act through the same API as the app.",
-    docs: "guides/how-to-setup-mcp",
+    docs: "features/agents",
     highlights: [
       "agent-endpoint",
       "agent-consent",
@@ -193,7 +193,7 @@ export const GROUPS: readonly Group[] = [
     short: "Sign-in & security",
     benefit:
       "Sign-in, passkeys and two-factor, with rate limits and strict headers on every page.",
-    docs: "guides/how-to-setup-auth",
+    docs: "features/accounts",
     highlights: [
       "sign-in-methods",
       "passkeys",
@@ -209,7 +209,7 @@ export const GROUPS: readonly Group[] = [
     short: "Workspaces & billing",
     benefit:
       "People work in workspaces with roles; plans set the limits; admins can help anyone.",
-    docs: "guides/how-to-configure-workspaces",
+    docs: "features/workspaces",
     highlights: [
       "workspaces",
       "invitations",
@@ -225,7 +225,7 @@ export const GROUPS: readonly Group[] = [
     short: "Privacy & data",
     benefit:
       "Export, erase, restore from trash and audit, built in rather than bolted on.",
-    docs: "guides/how-to-handle-data-privacy",
+    docs: "features/privacy",
     highlights: ["data-export", "account-erasure", "trash", "audit-log"],
   },
   {
@@ -235,7 +235,7 @@ export const GROUPS: readonly Group[] = [
     short: "Jobs, email & files",
     benefit:
       "Jobs, schedules, email, files, notifications and flags, ready for your features.",
-    docs: "guides/how-to-add-a-feature",
+    docs: "features/notes",
     highlights: [
       "background-jobs",
       "scheduled-tasks",
@@ -252,7 +252,7 @@ export const GROUPS: readonly Group[] = [
     short: "Observability",
     benefit:
       "Every request and job is logged, measured and traced; health checks answer monitors.",
-    docs: "guides/how-to-setup-logging",
+    docs: "features/observability",
     highlights: [
       "product-analytics",
       "logs-errors",
@@ -279,49 +279,49 @@ const RAW = [
     "agents-mcp",
     "Agent endpoint",
     "Claude or any MCP client signs in as a user and acts through tools.",
-    "guides/how-to-setup-mcp"
+    "features/agents"
   ),
   f(
     "agent-consent",
     "agents-mcp",
     "Agent sign-in and consent",
     "Agents ask first, with the scopes in plain words.",
-    "guides/how-to-setup-mcp"
+    "features/agents"
   ),
   f(
     "session-bound-tokens",
     "agents-mcp",
     "Tokens tied to the browser",
     "Signing that browser out ends the agent's access.",
-    "guides/how-to-configure-account-security"
+    "features/agents"
   ),
   f(
     "connected-agents",
     "agents-mcp",
     "Connected agents",
     "See every agent you allowed in Settings and disconnect one at once.",
-    "guides/how-to-use-settings"
+    "features/agents"
   ),
   f(
     "tool-parity",
     "agents-mcp",
     "A tool for every API",
     "A test fails the build if an API has no tool and no reason.",
-    "guides/how-to-setup-mcp"
+    "features/agents"
   ),
   f(
     "admin-agent-tools",
     "agents-mcp",
     "Admin tools for agents",
     "Platform admins run the admin portal from an agent, destructive actions behind a fresh sign-in.",
-    "guides/how-to-use-admin-portal"
+    "features/admin"
   ),
   f(
     "untrusted-data",
     "agents-mcp",
     "Untrusted-data wrapping",
     "User content returned to agents is marked as data, not instructions.",
-    "guides/how-to-setup-mcp"
+    "features/agents"
   ),
   // Built for coding agents
   f(
@@ -400,42 +400,42 @@ const RAW = [
     "accounts-security",
     "Email, password and Google sign-in",
     "Switch each method per environment.",
-    "guides/how-to-setup-auth"
+    "features/accounts"
   ),
   f(
     "email-verification",
     "accounts-security",
     "Email verification and password reset",
     '"Check your inbox", with a rate-limited resend.',
-    "guides/how-to-setup-auth"
+    "features/accounts"
   ),
   f(
     "passkeys",
     "accounts-security",
     "Passkeys",
     "Sign in without a password.",
-    "guides/how-to-configure-account-security"
+    "features/accounts"
   ),
   f(
     "two-factor",
     "accounts-security",
     "Two-factor",
     "Authenticator and recovery codes, with a policy per environment.",
-    "guides/how-to-configure-account-security"
+    "features/accounts"
   ),
   f(
     "step-up",
     "accounts-security",
     "Fresh second factor for admin actions",
     "A stolen session can't wipe data.",
-    "guides/how-to-configure-account-security"
+    "features/accounts"
   ),
   f(
     "account-settings",
     "accounts-security",
     "Account settings",
     "Profile, avatar, email change, linked accounts, sessions, locale and theme.",
-    "guides/how-to-use-settings"
+    "features/accounts"
   ),
   f(
     "rate-limits",
@@ -464,84 +464,84 @@ const RAW = [
     "workspaces-billing-admin",
     "Workspaces",
     "Personal, one team or many; data belongs to workspaces.",
-    "guides/how-to-configure-workspaces"
+    "features/workspaces"
   ),
   f(
     "sign-up-policy",
     "workspaces-billing-admin",
     "Open or invite-only sign-up",
     "With a domain allowlist and a first admin.",
-    "guides/how-to-configure-workspaces"
+    "features/workspaces"
   ),
   f(
     "invitations",
     "workspaces-billing-admin",
     "Invitations by email",
     "Teammates accept on a page of their own.",
-    "guides/how-to-configure-workspaces"
+    "features/workspaces"
   ),
   f(
     "roles",
     "workspaces-billing-admin",
     "Roles from one permission map",
     "The same rules in the app, the API and for agents.",
-    "guides/how-to-configure-workspaces"
+    "features/workspaces"
   ),
   f(
     "members",
     "workspaces-billing-admin",
     "Members page and workspace switcher",
     "Manage people without leaving the app.",
-    "guides/how-to-configure-workspaces"
+    "features/workspaces"
   ),
   f(
     "workspace-settings",
     "workspaces-billing-admin",
     "Workspace settings",
     "Name, logo and a confirmed deletion.",
-    "guides/how-to-use-settings"
+    "features/workspaces"
   ),
   f(
     "plans-limits",
     "workspaces-billing-admin",
     "Plans and usage limits",
     "A catalog in code, usage meters and upgrade options when a limit is reached.",
-    "guides/how-to-configure-plans-and-billing"
+    "features/billing"
   ),
   f(
     "trials",
     "workspaces-billing-admin",
     "Trials",
     "A daily job ends them on time.",
-    "guides/how-to-configure-plans-and-billing"
+    "features/billing"
   ),
   f(
     "billing-modes",
     "workspaces-billing-admin",
     "Billing off, manual or a provider",
     "Start free, bring your own payment adapter later.",
-    "guides/how-to-configure-plans-and-billing"
+    "features/billing"
   ),
   f(
     "admin-portal",
     "workspaces-billing-admin",
     "Admin portal",
     "Find users, suspend, sign out, reset, change role, erase.",
-    "guides/how-to-use-admin-portal"
+    "features/admin"
   ),
   f(
     "impersonation",
     "workspaces-billing-admin",
     "Impersonation",
     "See what a user sees, with a banner and an audit entry.",
-    "guides/how-to-use-admin-portal"
+    "features/admin"
   ),
   f(
     "workspace-rescue",
     "workspaces-billing-admin",
     "Workspace rescue",
     "Reassign an owner or delete a workspace.",
-    "guides/how-to-use-admin-portal"
+    "features/admin"
   ),
   // Privacy & data
   f(
@@ -549,28 +549,28 @@ const RAW = [
     "privacy-data",
     "Data export",
     "Personal and workspace ZIPs, built in the background, behind expiring links.",
-    "guides/how-to-handle-data-privacy"
+    "features/privacy"
   ),
   f(
     "account-erasure",
     "privacy-data",
     "Account erasure",
     "Self-service or by an admin, through one pipeline.",
-    "guides/how-to-handle-data-privacy"
+    "features/privacy"
   ),
   f(
     "privacy-catalog",
     "privacy-data",
     "Privacy data catalog",
     "Every table declares its data; CI enforces it.",
-    "guides/how-to-handle-data-privacy"
+    "features/privacy"
   ),
   f(
     "trash",
     "privacy-data",
     "Trash",
     "Deleted notes and files restore for 30 days.",
-    "guides/how-to-use-trash"
+    "features/privacy"
   ),
   f(
     "storage-reconciliation",
@@ -584,14 +584,14 @@ const RAW = [
     "privacy-data",
     "Audit log",
     "Append-only, with each request's reference and a retention.",
-    "guides/how-to-use-the-audit-log"
+    "features/privacy"
   ),
   f(
     "security-notices",
     "privacy-data",
     "Security notices",
     "People always hear about new sign-ins and changes.",
-    "guides/how-to-send-notifications"
+    "features/notifications"
   ),
   // App platform
   f(
@@ -599,49 +599,49 @@ const RAW = [
     "app-platform",
     "Notes, the example feature",
     "A small real feature wired end to end. Copy it.",
-    "guides/how-to-add-a-feature"
+    "features/notes"
   ),
   f(
     "command-palette",
     "app-platform",
     "Command palette",
     "Jump to any page, note, workspace or action.",
-    "guides/how-to-add-a-feature"
+    "features/command-palette"
   ),
   f(
     "notifications",
     "app-platform",
     "Notifications",
     "An inbox, preferences per type, a daily digest and one-click unsubscribe.",
-    "guides/how-to-send-notifications"
+    "features/notifications"
   ),
   f(
     "email",
     "app-platform",
     "Email",
     "Send from the app; simulated locally.",
-    "guides/how-to-setup-email"
+    "features/jobs-and-email"
   ),
   f(
     "file-storage",
     "app-platform",
     "File storage",
     "Uploads through the app or straight to storage with signed links.",
-    "guides/how-to-setup-r2"
+    "features/files"
   ),
   f(
     "background-jobs",
     "app-platform",
     "Background jobs",
     "Typed, with retries, no duplicates and a dead-letter queue.",
-    "guides/how-to-add-background-jobs"
+    "features/jobs-and-email"
   ),
   f(
     "scheduled-tasks",
     "app-platform",
     "Scheduled tasks",
     "One catalog, checked against the config.",
-    "guides/how-to-add-background-jobs"
+    "features/jobs-and-email"
   ),
   f(
     "feature-flags",
@@ -679,42 +679,42 @@ const RAW = [
     "observability-ops",
     "Product analytics",
     "Events per feature under pseudonymous ids, no personal data.",
-    "guides/how-to-setup-product-analytics"
+    "features/observability"
   ),
   f(
     "web-analytics",
     "observability-ops",
     "Cookieless web analytics",
     "Page views without a cookie banner (optional).",
-    "guides/how-to-setup-product-analytics"
+    "features/observability"
   ),
   f(
     "logs-errors",
     "observability-ops",
     "Logs and error reports",
     "One trace id across requests and jobs; users quote a reference.",
-    "guides/how-to-setup-logging"
+    "features/observability"
   ),
   f(
     "metrics-traces",
     "observability-ops",
     "Metrics and traces",
     "Latency of requests, procedures, jobs and schedules.",
-    "guides/how-to-setup-metrics-and-tracing"
+    "features/observability"
   ),
   f(
     "health-checks",
     "observability-ops",
     "Health checks",
     "Point an uptime monitor at /health/ready.",
-    "guides/how-to-monitor-health"
+    "features/observability"
   ),
   f(
     "database-restore",
     "observability-ops",
     "30-day database restore",
     "Roll the database back to any minute in 30 days.",
-    "guides/how-to-setup-d1"
+    "features/observability"
   ),
 ] as const;
 
