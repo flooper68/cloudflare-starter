@@ -11,9 +11,7 @@ test.use({ storageState: sharedSession });
 test("containers: start a run, watch every step, see the result and the past run", async ({
   page,
 }) => {
-  await open(page, "/app/demos");
-  await page.getByRole("link", { name: "Run a workflow" }).click();
-  await expect(page).toHaveURL(/\/app\/container-demo$/);
+  await open(page, "/app/container-demo");
   await expect(
     page.getByRole("heading", { name: "Containers: run a workflow" })
   ).toBeVisible();

@@ -13,6 +13,9 @@ import {
   workspaceMenuEntries,
 } from "./navigation";
 
+/** The container workflow demo's entry; starter-only (container-workflow-demo in starter-only.json). */
+const CONTAINER_DEMO = ["container-demo"];
+
 /** Routes that are no destination of their own, with the reason. */
 const NOT_DESTINATIONS: Readonly<Record<string, string>> = {
   "/app": "redirects to the dashboard",
@@ -97,7 +100,7 @@ describe("the app's navigation source", () => {
       "upload-demo",
       "queue-demo",
       "email-demo",
-      "container-demo",
+      ...CONTAINER_DEMO,
     ]);
     expect(ids(sidebarDestinations(owner, "admin"))).toEqual([]);
   });
@@ -122,7 +125,7 @@ describe("the app's navigation source", () => {
       "upload-demo",
       "queue-demo",
       "email-demo",
-      "container-demo",
+      ...CONTAINER_DEMO,
     ]);
   });
 

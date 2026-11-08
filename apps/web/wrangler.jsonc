@@ -232,8 +232,7 @@
   ],
   // The container workflow demo: its Workflow (class ContainerRunWorkflow in src/worker.ts;
   // created on deploy, nothing to create by hand; the name is account-wide, so one per
-  // environment) and the pi container Worker (apps/container) as a service binding. Results
-  // go to the FILES bucket under workspaces/<id>/container-runs/.
+  // environment). Results go to the FILES bucket under workspaces/<id>/container-runs/.
   "workflows": [
     {
       "name": "cloudflare-starter-container-run",
@@ -241,6 +240,7 @@
       "class_name": "ContainerRunWorkflow"
     }
   ],
+  // The pi container Worker (apps/container), CONTAINER_DEMO_RUNNER=container.
   "services": [
     {
       "binding": "PI_CONTAINER_SERVICE",
@@ -408,8 +408,7 @@
       ],
       // The container workflow demo: its Workflow (class ContainerRunWorkflow in src/worker.ts;
       // created on deploy, nothing to create by hand; the name is account-wide, so one per
-      // environment) and the pi container Worker (apps/container) as a service binding. Results
-      // go to the FILES bucket under workspaces/<id>/container-runs/.
+      // environment). Results go to the FILES bucket under workspaces/<id>/container-runs/.
       "workflows": [
         {
           "name": "cloudflare-starter-container-run-staging",
@@ -417,6 +416,7 @@
           "class_name": "ContainerRunWorkflow"
         }
       ],
+      // The pi container Worker (apps/container), CONTAINER_DEMO_RUNNER=container.
       "services": [
         {
           "binding": "PI_CONTAINER_SERVICE",
@@ -610,8 +610,7 @@
       ],
       // The container workflow demo: its Workflow (class ContainerRunWorkflow in src/worker.ts;
       // created on deploy, nothing to create by hand; the name is account-wide, so one per
-      // environment) and the pi container Worker (apps/container) as a service binding. Results
-      // go to the FILES bucket under workspaces/<id>/container-runs/.
+      // environment). Results go to the FILES bucket under workspaces/<id>/container-runs/.
       "workflows": [
         {
           "name": "cloudflare-starter-container-run-production",
@@ -619,6 +618,7 @@
           "class_name": "ContainerRunWorkflow"
         }
       ],
+      // The pi container Worker (apps/container), CONTAINER_DEMO_RUNNER=container.
       "services": [
         {
           "binding": "PI_CONTAINER_SERVICE",

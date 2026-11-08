@@ -284,13 +284,6 @@
           "path": ["vars", "WEB_ANALYTICS_TOKEN"]
         }
       ],
-      "json": [
-        {
-          "file": "apps/web/package.json",
-          "path": ["scripts", "deploy:production"],
-          "value": "CLOUDFLARE_ENV=production SITE_URL=https://app.example.com bun run build && wrangler deploy"
-        }
-      ],
       "docs": [
         {
           "file": "docs/guides/how-to-setup-web-app.md",
@@ -303,6 +296,13 @@
         "Give the project its own resources and rate-limit namespace block: bun run setup:cloudflare --env all --dry-run, then without --dry-run (it writes the D1 ids and the namespace_ids; bun run doctor fails until then).",
         "Choose the product settings per environment: bun run setup:auth --env <env> (a deploy refuses to start until you have), bun run setup:analytics --env <env>, bun run setup:storage.",
         "Pick the sender per environment: bun run setup:email --env <env>; create the Turnstile widgets and put their site keys in the vars (bun run setup:cloudflare prints how)."
+      ],
+      "text": [
+        {
+          "file": "apps/web/package.json",
+          "find": "SITE_URL=https://starter.flooper.me",
+          "replace": "SITE_URL=https://app.example.com"
+        }
       ]
     },
     {
@@ -528,13 +528,13 @@
         },
         {
           "file": "apps/web/src/components/app/navigation.test.ts",
-          "find": "\"demos\"))).toEqual([\n      \"upload-demo\",\n      \"queue-demo\",\n      \"email-demo\",\n    ]);",
-          "replace": "\"demos\"))).toEqual([\"upload-demo\"]);"
+          "find": "\"demos\"))).toEqual([\n      \"upload-demo\",\n      \"queue-demo\",\n      \"email-demo\",\n      ...CONTAINER_DEMO,\n    ]);",
+          "replace": "\"demos\"))).toEqual([\n      \"upload-demo\",\n      ...CONTAINER_DEMO,\n    ]);"
         },
         {
           "file": "apps/web/src/components/app/navigation.test.ts",
-          "find": "      \"demos\",\n      \"upload-demo\",\n      \"queue-demo\",\n      \"email-demo\",\n    ]);",
-          "replace": "      \"upload-demo\",\n    ]);"
+          "find": "      \"demos\",\n      \"upload-demo\",\n      \"queue-demo\",\n      \"email-demo\",\n      ...CONTAINER_DEMO,\n    ]);",
+          "replace": "      \"upload-demo\",\n      ...CONTAINER_DEMO,\n    ]);"
         },
         {
           "file": "apps/web/src/components/app/pages/DashboardPage.tsx",
@@ -598,7 +598,7 @@
     {
       "id": "containers",
       "title": "Containers demo",
-      "why": "apps/container is a separate Worker with a Cloudflare Container (a Dockerized pi computation) that shows the pattern. Few products need a container; it costs Workers Paid, Docker and a second deploy.",
+      "why": "apps/container is a separate Worker with a Cloudflare Container (a Dockerized pi computation) that shows the pattern. Few products need a container; it costs Workers Paid, Docker and a second deploy. The container workflow demo (container-workflow-demo) then runs with the fake runner: the strip switches CONTAINER_DEMO_RUNNER to fake, drops the PI_CONTAINER_SERVICE binding and the container step of the deploy scripts.",
       "status": "active",
       "default": true,
       "delete": ["apps/container", "docs/guides/how-to-setup-container.md"],
@@ -679,23 +679,130 @@
         },
         {
           "file": "apps/web/src/content/features.ts",
-          "find": "  f(\n    \"containers\",\n    \"app-platform\",\n    \"Containers\",\n    \"Run a Docker container beside the app; a separate demo, not used by the app yet.\",\n    \"guides/how-to-setup-container\",\n    \"demo\"\n  ),\n  f(\n    \"container-tasks\",\n    \"app-platform\",\n    \"Container tasks from jobs\",\n    \"Send a bounded task to a container through the queue and keep the result.\",\n    \"guides/how-to-setup-container\",\n    \"planned\"\n  ),\n",
+          "find": "  f(\n    \"containers\",\n    \"app-platform\",\n    \"Containers\",\n    \"A Workflow runs a Docker container task and keeps each step; a capped demo in the app.\",\n    \"guides/how-to-run-container-workflows\",\n    \"demo\"\n  ),\n  f(\n    \"container-tasks\",\n    \"app-platform\",\n    \"Container tasks from jobs\",\n    \"Send a bounded task to a container through the queue and keep the result.\",\n    \"guides/how-to-run-container-workflows\",\n    \"planned\"\n  ),\n",
           "replace": ""
         },
         {
           "file": "apps/web/src/content/features.test.ts",
           "find": "\n  it(\"marks Containers as a demo, never as built\", () => {\n    expect(FEATURES.find((entry) => entry.id === \"containers\")?.status).toBe(\n      \"demo\"\n    );\n  });\n",
           "replace": ""
+        },
+        {
+          "file": "test/architecture/wrangler.test.ts",
+          "find": "\n/**\n * The container workflow demo: a Workflow per environment (names are account-wide) and a\n * service binding to the pi container Worker of the same environment, which has no public\n * URL and the demo's cost limits (docs/guides/how-to-run-container-workflows.md).\n */\ndescribe(\"container workflow demo wiring\", () => {\n  const container = parse(read(\"apps/container/wrangler.jsonc\")) as Block & {\n    env?: Record<string, Block>;\n  };\n  const web: [string, Block][] = [\n    [\"develop\", config],\n    ...Object.entries(config.env ?? {}),\n  ];\n  const containerOf = (env: string): Block =>\n    env === \"develop\" ? container : (container.env?.[env] ?? {});\n  const containerName = (env: string) =>\n    env === \"develop\"\n      ? String(container.name)\n      : `${String(container.name)}-${env}`;\n\n  it(\"names one Workflow per environment, bound as CONTAINER_RUN_WORKFLOW to ContainerRunWorkflow\", () => {\n    const names = web.map(([, block]) => {\n      const [workflow] = (block.workflows as Block[] | undefined) ?? [];\n      expect(workflow).toMatchObject({\n        binding: \"CONTAINER_RUN_WORKFLOW\",\n        class_name: \"ContainerRunWorkflow\",\n      });\n      return workflow?.name;\n    });\n    expect(new Set(names).size).toBe(web.length);\n  });\n\n  it.each(web)(\n    \"%s binds PI_CONTAINER_SERVICE to the container Worker of the same environment\",\n    (env, block) => {\n      expect(block.services).toEqual([\n        { binding: \"PI_CONTAINER_SERVICE\", service: containerName(env) },\n      ]);\n    }\n  );\n\n  it.each(web.map(([env]) => env))(\n    \"the %s container Worker has no public URL, the smallest instance and at most two instances\",\n    (env) => {\n      const block = containerOf(env);\n      expect(block.workers_dev).toBe(false);\n      expect(block.preview_urls).toBe(false);\n      expect(block.containers).toEqual([\n        expect.objectContaining({\n          class_name: \"PiContainer\",\n          instance_type: \"lite\",\n          max_instances: 2,\n        }),\n      ]);\n    }\n  );\n\n  it(\"keeps PI_INSTANCES equal to max_instances\", () => {\n    expect(read(\"apps/container/src/index.ts\")).toContain(\n      \"export const PI_INSTANCES = 2;\"\n    );\n  });\n});\n",
+          "replace": "\n"
+        },
+        {
+          "file": "docs/guides/how-to-run-container-workflows.md",
+          "find": "| The container | `apps/container`: a Worker",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "apps/web/package.json",
+          "find": "bun run --filter @cloudflare-starter/container deploy && ",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/package.json",
+          "find": "bun run --filter @cloudflare-starter/container deploy:staging && ",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/package.json",
+          "find": "bun run --filter @cloudflare-starter/container deploy:production && ",
+          "replace": ""
+        }
+      ],
+      "wrangler": [
+        {
+          "env": "all",
+          "path": ["services"],
+          "comment": null
+        },
+        {
+          "env": "staging",
+          "path": ["vars", "CONTAINER_DEMO_RUNNER"],
+          "value": "fake",
+          "comment": "The pi computer of the container workflow demo: fake (computed in the Worker); this\nproject has no container Worker (docs/guides/how-to-run-container-workflows.md#settings)."
+        },
+        {
+          "env": "production",
+          "path": ["vars", "CONTAINER_DEMO_RUNNER"],
+          "value": "fake",
+          "comment": "The pi computer of the container workflow demo: fake (computed in the Worker); this\nproject has no container Worker (docs/guides/how-to-run-container-workflows.md#settings)."
         }
       ]
     },
     {
       "id": "container-workflow-demo",
       "title": "Container workflow demo",
-      "why": "In flight: a Workflow that drives the container demo. Strip it with containers.",
-      "status": "pending",
-      "pending": "the container workflow demo PR (not opened yet); when it merges, list its files here and set status to active",
-      "default": true
+      "why": "Developer demos › Containers runs a Cloudflare Workflow that computes digits of pi in the container and shows each step; the starter's production runs it with a daily cap. A product does not need the demo page: the strip removes the page, its route, navigation entry and demo card, and turns CONTAINER_DEMO off in production. Its backend (container-runs feature, Workflow, tRPC and MCP tools) stays as the worked example of long-running work, inert with off.",
+      "status": "active",
+      "default": true,
+      "delete": ["apps/web/src/components/app/pages/ContainerDemoPage.tsx"],
+      "tests": ["apps/web/test/e2e/container-demo.spec.ts"],
+      "wrangler": [
+        {
+          "env": "production",
+          "path": ["vars", "CONTAINER_DEMO"],
+          "value": "off",
+          "comment": "The container workflow demo (required, no default: on | off;\ndocs/guides/how-to-run-container-workflows.md#settings). off: this project runs no public demo."
+        }
+      ],
+      "text": [
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "import { ContainerDemoPage } from \"./pages/ContainerDemoPage\";\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "const containerDemoRoute = createRoute({\n  getParentRoute: () => appLayoutRoute,\n  path: \"/app/container-demo\",\n  component: ContainerDemoPage,\n  // `?run=<id>` opens a run (the finished notification links here).\n  validateSearch: (search: Record<string, unknown>): { run?: string } =>\n    typeof search.run === \"string\" ? { run: search.run } : {},\n});\n\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/routes.tsx",
+          "find": "    containerDemoRoute,\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.ts",
+          "find": "  {\n    id: \"container-demo\",\n    label: \"Containers\",\n    title: \"Containers: run a workflow\",\n    to: \"/app/container-demo\",\n    icon: \"containers\",\n    sidebar: \"demos\",\n    palette: true,\n    keywords: [\"demo\", \"workflow\", \"container\", \"pi\"],\n    visible: always,\n  },\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/components/app/navigation.test.ts",
+          "find": "const CONTAINER_DEMO = [\"container-demo\"];",
+          "replace": "const CONTAINER_DEMO: string[] = [];"
+        },
+        {
+          "file": "apps/web/src/components/app/pages/DemosPage.tsx",
+          "find": "  {\n    to: \"/app/container-demo\",\n    title: \"Containers\",\n    cta: \"Run a workflow\",\n    description:\n      \"Run a Cloudflare Workflow that computes digits of pi in a Cloudflare Container, stores the result in R2 and notifies you, and watch each step.\",\n  },\n",
+          "replace": ""
+        },
+        {
+          "file": "test/architecture/spa-links.test.ts",
+          "find": "  \"apps/web/src/components/app/pages/ContainerDemoPage.tsx\":\n    \"only a run's result download (/api/container-runs/<id>/result), a file\",\n",
+          "replace": ""
+        },
+        {
+          "file": "test/architecture/qa-checklist.test.ts",
+          "find": "  \"how-to-setup-product-analytics.md\":\n    \"write-only analytics events; nothing visible in the app\",\n",
+          "replace": "  \"how-to-setup-product-analytics.md\":\n    \"write-only analytics events; nothing visible in the app (no page)\",\n  \"how-to-run-container-workflows.md\":\n    \"the container workflow demo's page is stripped; its backend stays, inert, as the worked example\",\n"
+        }
+      ],
+      "docs": [
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "remove",
+          "heading": "Demos: containers (a workflow)"
+        }
+      ],
+      "manual": [
+        "The container-runs backend stays, inert with CONTAINER_DEMO=off (develop keeps it on with the fake runner for the API tests). To delete the demo entirely, follow Remove the demo in docs/guides/how-to-run-container-workflows.md; that touches the schema (three tables in 0000_init).",
+        "Keeping the demo (--keep container-workflow-demo) with the real container needs containers kept too: without apps/container the demo runs with the fake runner."
+      ]
     },
     {
       "id": "tasks",
