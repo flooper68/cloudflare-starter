@@ -89,6 +89,14 @@ EMAIL_FROM_NAME=Cloudflare Starter
 # TURNSTILE=off
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
+# The automated QA suite's bypass of the human check (QA_BYPASS: on | off, required, no
+# default; docs/guides/how-to-configure-abuse-protection.md#qa-bypass). The top-level vars
+# set it on for the develop deploy; local dev keeps it off (the E2E journeys run Turnstile
+# with the test keys instead). With on, the QA_TOKEN secret (32+ characters, e.g.
+# openssl rand -hex 32) and QA_EMAIL_DOMAIN (wrangler.jsonc) are required too.
+QA_BYPASS=off
+# QA_TOKEN=
+
 # Security headers (docs/guides/how-to-configure-security-headers.md). CSP_MODE
 # (enforce | report-only) is a required var set in apps/web/wrangler.jsonc; uncomment to
 # try a policy change in report-only locally (never leave it blank).

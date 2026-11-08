@@ -16,11 +16,13 @@ import { parseArgs } from "node:util";
 import {
   ask,
   type Environment,
+  envBlock,
   envFlag,
   fail,
   parseEnvironments,
   ROOT,
   readDevVars,
+  readWranglerConfig,
   wrangler,
   writeDevVars,
 } from "./lib";
@@ -83,6 +85,12 @@ const SECRETS: readonly Secret[] = [
         : undefined,
   },
   {
+    name: "QA_TOKEN",
+    prompt:
+      "QA bypass token (required with QA_BYPASS=on, 32+ chars; type the same value you store as the QA_TOKEN GitHub secret, e.g. openssl rand -hex 32; Enter keeps the current one or skips it)",
+    hidden: true,
+  },
+  {
     name: "ANALYTICS_ID_SECRET",
     prompt:
       "Key of the pseudonymous analytics ids (32+ chars; needed with ANALYTICS=analytics-engine; locally Enter generates one; deployed, Enter keeps the current one, so type a key the first time (openssl rand -base64 32) and never rotate it)",
@@ -139,6 +147,9 @@ if (
 ) {
   fail("ANALYTICS_ID_SECRET must be at least 32 characters");
 }
+if (collected.QA_TOKEN && collected.QA_TOKEN.length < 32) {
+  fail("QA_TOKEN must be at least 32 characters (openssl rand -hex 32)");
+}
 
 const names = Object.keys(collected);
 if (dryRun) {
@@ -149,6 +160,26 @@ if (dryRun) {
   console.log(`✓ apps/web/.dev.vars: ${["APP_ENV", ...names].join(", ")}`);
 } else {
   const [env] = parseEnvironments(target) as [Environment];
+  // QA_BYPASS=on without QA_TOKEN fails every request of that environment: refuse to
+  // leave it unset (docs/guides/how-to-configure-abuse-protection.md#qa-bypass).
+  const vars = (envBlock(readWranglerConfig(), env).vars ?? {}) as Record<
+    string,
+    string
+  >;
+  if (vars.QA_BYPASS === "on" && !collected.QA_TOKEN && !dryRun) {
+    const listed = wrangler([
+      "secret",
+      "list",
+      "--format",
+      "json",
+      ...envFlag(env),
+    ]);
+    if (!listed.ok || !listed.stdout.includes('"QA_TOKEN"')) {
+      fail(
+        `${env} has QA_BYPASS=on but no QA_TOKEN secret: the Worker would refuse every request. Run again and enter QA_TOKEN (openssl rand -hex 32), or set QA_BYPASS to off in apps/web/wrangler.jsonc.`
+      );
+    }
+  }
   if (names.length === 0) {
     console.log("Nothing to store.");
   } else {

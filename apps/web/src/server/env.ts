@@ -25,6 +25,7 @@ export interface AppEnv {
   readonly RL_ANALYTICS?: RateLimit;
   readonly RL_HEALTH?: RateLimit;
   readonly RL_CSP_REPORT?: RateLimit;
+  readonly RL_QA_BYPASS?: RateLimit;
   /** Workers Analytics Engine dataset of product events (ANALYTICS=analytics-engine). */
   readonly ANALYTICS_EVENTS?: AnalyticsEngineDataset;
   readonly APP_ENV?: string;
@@ -38,6 +39,12 @@ export interface AppEnv {
   readonly METRICS?: string;
   /** Required var, validated by `parsePlatformConfig`: workers | none. */
   readonly TRACING?: string;
+  /** Required var, validated by `parseAbuseConfig`: on | off (the QA suite's human-check bypass). */
+  readonly QA_BYPASS?: string;
+  /** With QA_BYPASS=on: the mail domain the bypass covers (`parseAbuseConfig`). */
+  readonly QA_EMAIL_DOMAIN?: string;
+  /** Secret, with QA_BYPASS=on: the token the QA suite sends in `x-qa-token`. */
+  readonly QA_TOKEN?: string;
   /** Required var, validated by `parsePlatformConfig`: enforce | report-only. */
   readonly CSP_MODE?: string;
   /** Analytics Engine dataset binding; required when METRICS=analytics-engine. */

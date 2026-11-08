@@ -174,3 +174,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: dry-run-no-account
           CLOUDFLARE_ACCOUNT_ID: "00000000000000000000000000000000"
         run: bun run deploy:dry-run
+      # The QA inbox Worker (apps/qa-inbox) has one environment: package it once.
+      - name: Dry-run deploy of the QA inbox
+        if: matrix.environment == 'production'
+        working-directory: apps/qa-inbox
+        env:
+          CLOUDFLARE_API_TOKEN: dry-run-no-account
+          CLOUDFLARE_ACCOUNT_ID: "00000000000000000000000000000000"
+        run: bun run deploy:dry-run

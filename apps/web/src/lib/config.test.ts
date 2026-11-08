@@ -304,18 +304,46 @@ describe("platform config", () => {
       TURNSTILE: "on",
       TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+      QA_BYPASS: "off",
+    };
+    const qaToken = "qa-token-0123456789abcdefghijklmnop";
+    const qaOn = {
+      ...on,
+      QA_BYPASS: "on",
+      QA_TOKEN: qaToken,
+      QA_EMAIL_DOMAIN: "qa.example.com",
     };
 
     it("parses explicit settings", () => {
-      expect(parseAbuseConfig(on)).toEqual(on);
+      expect(parseAbuseConfig(on)).toEqual({ ...on, qaBypass: null });
       expect(
-        parseAbuseConfig({ RATE_LIMITING: "none", TURNSTILE: "off" })
+        parseAbuseConfig({
+          RATE_LIMITING: "none",
+          TURNSTILE: "off",
+          QA_BYPASS: "off",
+        })
       ).toEqual({
         RATE_LIMITING: "none",
         TURNSTILE: "off",
         TURNSTILE_SITE_KEY: null,
         TURNSTILE_SECRET_KEY: null,
+        QA_BYPASS: "off",
+        qaBypass: null,
       });
+    });
+
+    it("parses the QA bypass with its token and mail domain", () => {
+      expect(parseAbuseConfig(qaOn)).toMatchObject({
+        QA_BYPASS: "on",
+        qaBypass: { token: qaToken, emailDomain: "qa.example.com" },
+      });
+    });
+
+    it("ignores the QA token and domain with QA_BYPASS=off", () => {
+      expect(
+        parseAbuseConfig({ ...qaOn, QA_BYPASS: "off", QA_EMAIL_DOMAIN: "x" })
+          .qaBypass
+      ).toBeNull();
     });
 
     it.each([
@@ -324,6 +352,14 @@ describe("platform config", () => {
       ["TURNSTILE", { ...on, TURNSTILE: undefined }],
       ["TURNSTILE_SITE_KEY", { ...on, TURNSTILE_SITE_KEY: "" }],
       ["TURNSTILE_SECRET_KEY", { ...on, TURNSTILE_SECRET_KEY: undefined }],
+      ["QA_BYPASS", { ...on, QA_BYPASS: undefined }],
+      ["QA_BYPASS", { ...on, QA_BYPASS: "true" }],
+      ["QA_TOKEN", { ...qaOn, QA_TOKEN: undefined }],
+      ["QA_TOKEN", { ...qaOn, QA_TOKEN: "short" }],
+      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: undefined }],
+      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: "QA.Example.com" }],
+      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: "@qa.example.com" }],
+      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: "localhost" }],
     ])("refuses a missing or wrong %s, naming it", (setting, env) => {
       let error: unknown;
       try {
@@ -333,6 +369,22 @@ describe("platform config", () => {
       }
       expect(error).toBeInstanceOf(ConfigError);
       expect((error as ConfigError).setting).toBe(setting);
+    });
+
+    it("never puts the QA token in an error message", () => {
+      for (const env of [
+        { ...qaOn, QA_EMAIL_DOMAIN: "bad domain" },
+        { ...qaOn, QA_TOKEN: qaToken.slice(0, 20) },
+      ]) {
+        let message = "";
+        try {
+          parseAbuseConfig(env);
+        } catch (caught) {
+          message = (caught as Error).message;
+        }
+        expect(message).not.toBe("");
+        expect(message).not.toContain(qaToken.slice(0, 20));
+      }
     });
   });
 });

@@ -61,6 +61,10 @@ const ANALYTICS_SETTINGS = {
   WEB_ANALYTICS: ["cloudflare", "none"],
 } as const;
 
+/** A lowercase hostname with two labels or more (apps/web/src/lib/config.ts). */
+const QA_EMAIL_DOMAIN_PATTERN =
+  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+
 let errors = 0;
 const ok = (message: string) => console.log(`✓ ${message}`);
 const warn = (message: string) => console.log(`! ${message}`);
@@ -203,6 +207,7 @@ if (!existsSync(DEV_VARS)) {
       "TURNSTILE=on needs TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY (copy them from .dev.vars.example)"
     );
   else ok("Turnstile on");
+  checkQaBypass("local", setting, (key) => value(key));
 
   if (value("APP_URL")) ok(`APP_URL ${value("APP_URL")}`);
   else error("APP_URL is not set");
@@ -396,6 +401,8 @@ for (const env of ENVIRONMENTS) {
   } else if (vars.TURNSTILE !== "off") {
     error(`${env}: TURNSTILE must be on or off`);
   }
+  // Deployed secrets cannot be read back: QA_TOKEN is only reminded of.
+  checkQaBypass(env, (key) => vars[key] || undefined, null);
   const ids = (
     (block.ratelimits as { namespace_id: string }[] | undefined) ?? []
   ).map((binding) => binding.namespace_id);
@@ -455,6 +462,46 @@ else
 
 console.log(errors ? `\n${errors} problem(s) to fix.` : "\nAll good.");
 process.exit(errors ? 1 : 0);
+
+/**
+ * QA_BYPASS (on | off, required) and, with on, QA_EMAIL_DOMAIN and the QA_TOKEN secret, as
+ * parseAbuseConfig checks them at startup. `secret` reads QA_TOKEN where it can be read
+ * (.dev.vars), null for a deployed environment.
+ */
+function checkQaBypass(
+  label: string,
+  setting: (key: string) => string | undefined,
+  secret: ((key: string) => string | undefined) | null
+) {
+  const bypass = setting("QA_BYPASS");
+  if (bypass === "off") {
+    ok(`${label}: QA_BYPASS=off (Turnstile for everyone)`);
+    return;
+  }
+  if (bypass !== "on") {
+    error(
+      `${label}: QA_BYPASS must be on or off (it is ${bypass ? `"${bypass}"` : "missing"}; docs/guides/how-to-configure-abuse-protection.md#qa-bypass)`
+    );
+    return;
+  }
+  const domain = setting("QA_EMAIL_DOMAIN");
+  if (!domain || !QA_EMAIL_DOMAIN_PATTERN.test(domain))
+    error(
+      `${label}: QA_BYPASS=on needs QA_EMAIL_DOMAIN, a lowercase hostname (it is ${domain ? `"${domain}"` : "missing"})`
+    );
+  else
+    ok(
+      `${label}: QA_BYPASS=on: X-QA-Token skips Turnstile for @${domain} only`
+    );
+  if (secret === null)
+    warn(
+      `${label}: QA_BYPASS=on needs the QA_TOKEN Worker secret, the same value as the QA_TOKEN GitHub secret (bun run setup:secrets --env ${label})`
+    );
+  else if ((secret("QA_TOKEN") ?? "").length < 32)
+    error(
+      `${label}: QA_BYPASS=on needs QA_TOKEN (32+ characters) in .dev.vars, or set QA_BYPASS=off there`
+    );
+}
 
 /** Explicit orphan-maintenance setting, required in every runtime environment. */
 function checkStorageVar(label: string, value: string | undefined) {

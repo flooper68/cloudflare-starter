@@ -4,6 +4,7 @@ import {
   HumanCheckFailedError,
   HumanCheckUnavailableError,
   type LimitSubject,
+  RATE_LIMIT_POLICIES,
   RateLimitedError,
   type RateLimiter,
   type RateLimitPolicyId,
@@ -15,6 +16,12 @@ import {
   rateLimitedHeaders,
   rateLimitPolicyHeader,
 } from "@/server/rate-limit-headers";
+
+/**
+ * Field of a 429 a Better Auth hook throws (server/qa-bypass.ts) that names the refusing
+ * edge policy for `betterAuthResponse`; the Problem Details answer replaces that body.
+ */
+export const RATE_LIMIT_POLICY_FIELD = "violatedPolicy";
 
 /** Where the starter documents its own problem types; a project points it at its docs. */
 const DOCS =
@@ -84,6 +91,24 @@ const HUMAN_CHECK_PROBLEMS: Readonly<
 };
 
 /**
+ * The edge policy one of our own Better Auth hooks refused with (`qa.bypass`,
+ * server/qa-bypass.ts), named in the 429's JSON body; null for Better Auth's own limits.
+ */
+async function hookPolicy(
+  response: Response
+): Promise<RateLimitPolicyId | null> {
+  if (!response.headers.get("content-type")?.includes("json")) return null;
+  const body = (await response
+    .clone()
+    .json()
+    .catch(() => null)) as Record<string, unknown> | null;
+  const policy = body?.[RATE_LIMIT_POLICY_FIELD];
+  return typeof policy === "string" && policy in RATE_LIMIT_POLICIES
+    ? (policy as RateLimitPolicyId)
+    : null;
+}
+
+/**
  * Better Auth's answer in the app's HTTP conventions: its 429s and the human-check
  * refusals become Problem Details, and every answer names the quotas that applied
  * (RateLimit-Policy). Other errors keep Better Auth's format, which its client reads.
@@ -103,7 +128,10 @@ export async function betterAuthResponse(
   if (response.status === 429) {
     const retryAfter = Number(response.headers.get("x-retry-after")) || 60;
     return rateLimitedResponse(
-      new RateLimitedError(authPolicy ?? "auth.ip", retryAfter),
+      new RateLimitedError(
+        (await hookPolicy(response)) ?? authPolicy ?? "auth.ip",
+        retryAfter
+      ),
       requestContext,
       instance
     );

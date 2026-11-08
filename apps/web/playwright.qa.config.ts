@@ -1,44 +1,54 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Scripted feature QA (docs/guides/how-to-qa-a-deployment.md) as Playwright journeys
-// against a deployed environment, unattended: `bun run test:qa -- --base-url <url>`.
-// The run creates its own accounts (`qa-<runId>-<role>@<QA_EMAIL_DOMAIN>`) and the
-// global teardown erases them, also after failures. Without the QA variables every
-// journey skips with the reason. Map, budget and skips: test/qa/README.md.
-//
-// STUB of the QA infrastructure PR's config (same project name, test dir and script).
+// The automated QA suite: real journeys with real accounts against a DEPLOYED app (by
+// default production, https://starter.flooper.me), with no human. Mail goes to the QA
+// inbox Worker (apps/qa-inbox); the QA bypass replaces Turnstile for QA addresses only.
+// Run with `bun run test:qa -- --base-url <url>` and QA_TOKEN, QA_INBOX_URL and
+// QA_INBOX_TOKEN set; without them every journey skips and says why.
+// docs/guides/how-to-qa-a-deployment.md
+const baseURL = process.env.QA_BASE_URL;
 const ci = Boolean(process.env.CI);
-
-// Never write what a person typed into an artifact: no traces (they record every fill,
-// passwords included) and no page snapshot in error-context.md (it holds input values).
-// Failures keep a screenshot, where password fields show as dots.
-process.env.PLAYWRIGHT_NO_COPY_PROMPT = "1";
 
 export default defineConfig({
   testDir: "./test/qa",
-  testMatch: /\.qa\.ts$/,
-  outputDir: "./test-results/qa",
-  globalSetup: "./test/qa/support/global-setup.ts",
-  globalTeardown: "./test/qa/support/global-teardown.ts",
-  // Files run in parallel, the steps of one file in order on its own accounts. Rate
-  // limits are per IP across the whole run; support/limits.ts paces every worker.
-  workers: 4,
+  // Its own folders, so a local E2E run and a QA run never overwrite each other's results.
+  outputDir: "test-results/qa",
+  // The run id (QA_RUN_ID) all workers share; afterwards every account the run created is
+  // erased (support/accounts.ts cleanupRun), whatever happened.
+  globalSetup: "./test/qa/global-setup.ts",
+  globalTeardown: "./test/qa/global-teardown.ts",
+  // Production is shared and rate limited per IP (5 sign-ups and 3 erasures a minute or
+  // hour, auth.* in the abuse catalog): one journey at a time, never a blind retry that
+  // would sign up more accounts.
+  workers: 1,
   fullyParallel: false,
   forbidOnly: ci,
-  // A journey that failed half-way has used its accounts; a retry would sign up anew.
   retries: 0,
-  // Hooks that create accounts may wait for sign-up slots (support/limits.ts).
-  timeout: 300_000,
+  // Journeys wait for real mail (up to two minutes each).
+  timeout: 5 * 60_000,
   expect: { timeout: 15_000 },
   reporter: [
     ["list"],
     ["html", { open: "never", outputFolder: "playwright-report/qa" }],
   ],
   use: {
-    baseURL: process.env.QA_BASE_URL,
-    trace: "off",
+    baseURL,
+    trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    colorScheme: "dark",
+    video: "retain-on-failure",
   },
-  projects: [{ name: "qa", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "qa",
+      testMatch: /\.qa\.ts$/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // Nightly, not part of `test:qa`: erases accounts aborted runs left behind, as the
+      // QA admin (cleanup/leftovers.cleanup.ts).
+      name: "qa-cleanup",
+      testMatch: /cleanup\/.*\.cleanup\.ts$/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
 });
