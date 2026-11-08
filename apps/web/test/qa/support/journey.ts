@@ -5,6 +5,8 @@
  *   app's per-IP limits (limits.ts), so a run never trips a 429 on the shared deployment;
  * - `newUserPage(browser)`: a second person's browser (signed out), with the same QA
  *   routing (`installQaRouting`) and pacing;
+ * - `newQaAccount(page, { role })`: `createVerifiedAccount` once a sign-up slot is free
+ *   (the helper waits 30 s for the form's answer, less than a paced request may wait);
  * - `skipWithoutQaEnv()`: the file-level skip with the suite's reason.
  */
 import type {
@@ -14,7 +16,15 @@ import type {
   Page,
 } from "@playwright/test";
 
-import { expect, installQaRouting, qaEnv, qaSkipReason, qaTest } from "./index";
+import {
+  createVerifiedAccount,
+  expect,
+  installQaRouting,
+  type QaAccount,
+  qaEnv,
+  qaSkipReason,
+  qaTest,
+} from "./index";
 import { authPolicies, takeSlots } from "./limits";
 
 export type { Page };
@@ -28,7 +38,11 @@ export async function paceAuth(context: BrowserContext): Promise<void> {
   paced.add(context);
   const { baseURL } = qaEnv();
   await context.route(
-    (url) => url.origin === baseURL && url.pathname.startsWith("/api/auth/"),
+    // Sign-ups take their slot before the form is sent (newQaAccount, takeSignUpSlot).
+    (url) =>
+      url.origin === baseURL &&
+      url.pathname.startsWith("/api/auth/") &&
+      !url.pathname.startsWith("/api/auth/sign-up/"),
     async (route) => {
       const path = new URL(route.request().url()).pathname;
       await takeSlots(authPolicies(path.slice("/api/auth".length)));
@@ -63,4 +77,18 @@ export const test = qaTest.extend({
 export function skipWithoutQaEnv(): void {
   const reason = qaSkipReason();
   test.skip(reason !== null, reason ?? "");
+}
+
+/** Waits for a sign-up slot (limits.ts); call it right before a sign-up form is sent. */
+export async function takeSignUpSlot(): Promise<void> {
+  await takeSlots(authPolicies("/sign-up/email"));
+}
+
+/** `createVerifiedAccount` once the run may sign up again. */
+export async function newQaAccount(
+  page: Page,
+  options: { readonly role: string }
+): Promise<QaAccount> {
+  await takeSignUpSlot();
+  return createVerifiedAccount(page, options);
 }

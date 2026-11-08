@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { createVerifiedAccount, currentRunId, qaAddress } from "./support";
+import { currentRunId, qaAddress } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -32,7 +33,7 @@ const newPassword = `${randomBytes(18).toString("base64url")}-Qa1`;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  account = { ...(await createVerifiedAccount(page, { role: "reset" })) };
+  account = { ...(await newQaAccount(page, { role: "reset" })) };
   oldPassword = account.password;
 });
 

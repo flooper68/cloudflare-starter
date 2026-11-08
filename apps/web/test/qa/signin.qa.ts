@@ -1,6 +1,7 @@
-import { createVerifiedAccount, currentRunId, qaAddress } from "./support";
+import { currentRunId, qaAddress } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -28,7 +29,7 @@ let createdAt: number;
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
   createdAt = Date.now();
-  account = { ...(await createVerifiedAccount(page, { role: "signin" })) };
+  account = { ...(await newQaAccount(page, { role: "signin" })) };
 });
 
 test.afterAll(async () => {

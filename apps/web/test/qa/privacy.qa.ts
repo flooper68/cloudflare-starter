@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 
-import { createVerifiedAccount } from "./support";
 import { tinyPng } from "./support/files";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -32,7 +32,7 @@ const png = tinyPng(9);
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  account = { ...(await createVerifiedAccount(page, { role: "privacy" })) };
+  account = { ...(await newQaAccount(page, { role: "privacy" })) };
 });
 
 test.afterAll(async () => {

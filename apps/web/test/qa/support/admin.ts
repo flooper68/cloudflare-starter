@@ -10,6 +10,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, inbox, linkTo, open, qaEnv } from "./index";
+import { takeSignUpSlot } from "./journey";
 import { qaPassword } from "./password";
 import { type Account, AUTH_WAIT, submitSignIn } from "./session";
 
@@ -19,11 +20,17 @@ export function qaAdminAccount(): Account {
   return { email, password: qaPassword(email, token) };
 }
 
+/** True on the dashboard, false once the form shows a refusal. */
 async function landed(page: Page): Promise<boolean> {
-  return page
-    .waitForURL(/\/app\/dashboard$/, { timeout: AUTH_WAIT })
-    .then(() => true)
-    .catch(() => false);
+  const refused = page.getByText(/invalid email or password/i);
+  await expect
+    .poll(
+      async () =>
+        /\/app\/dashboard$/.test(page.url()) || (await refused.isVisible()),
+      { timeout: AUTH_WAIT }
+    )
+    .toBe(true);
+  return /\/app\/dashboard$/.test(page.url());
 }
 
 /**
@@ -40,6 +47,7 @@ export async function signInQaAdmin(page: Page): Promise<Account> {
     await page.getByLabel("Name").fill("QA admin");
     await page.getByLabel("Email").fill(account.email);
     await page.getByLabel("Password").fill(account.password);
+    await takeSignUpSlot();
     await page.getByRole("button", { name: "Create account" }).click();
     const mail = await inbox.waitFor({
       to: account.email,

@@ -1,6 +1,6 @@
-import { createVerifiedAccount } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -43,7 +43,7 @@ test.beforeAll(async ({ browser }) => {
       automaticPresenceSimulation: true,
     },
   });
-  account = { ...(await createVerifiedAccount(page, { role: "passkey" })) };
+  account = { ...(await newQaAccount(page, { role: "passkey" })) };
 });
 
 test.afterAll(async () => {

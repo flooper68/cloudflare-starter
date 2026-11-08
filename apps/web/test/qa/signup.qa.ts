@@ -4,6 +4,7 @@ import {
   newUserPage,
   type Page,
   skipWithoutQaEnv,
+  takeSignUpSlot,
   test,
 } from "./support/journey";
 import { expectMail, linkTo } from "./support/mail";
@@ -39,6 +40,7 @@ test("sign-up shows Check your inbox naming the address, and sends the link", as
   await page.getByLabel("Name").fill(`QA ${currentRunId()} signup`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
+  await takeSignUpSlot();
   await page.getByRole("button", { name: "Create account" }).click();
   const checkInbox = page.getByRole("heading", { name: "Check your inbox" });
   const signedIn = page.getByRole("heading", { name: /^Welcome, / });

@@ -1,6 +1,6 @@
-import { createVerifiedAccount } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -19,7 +19,7 @@ let email: string;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  ({ email } = await createVerifiedAccount(page, { role: "demos" }));
+  ({ email } = await newQaAccount(page, { role: "demos" }));
 });
 
 test.afterAll(async () => {

@@ -1,7 +1,7 @@
-import { createVerifiedAccount } from "./support";
 import { signInQaAdmin } from "./support/admin";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -80,7 +80,7 @@ let page: Page;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  await createVerifiedAccount(page, { role: "screens" });
+  await newQaAccount(page, { role: "screens" });
 });
 
 test.afterAll(async () => {

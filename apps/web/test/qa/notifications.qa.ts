@@ -1,6 +1,7 @@
-import { createVerifiedAccount, inbox } from "./support";
+import { inbox } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -37,8 +38,8 @@ const roleLabel = "Your role in a workspace changes";
 test.beforeAll(async ({ browser }) => {
   a = await newUserPage(browser);
   b = await newUserPage(browser);
-  accountA = { ...(await createVerifiedAccount(a, { role: "notifowner" })) };
-  accountB = { ...(await createVerifiedAccount(b, { role: "notifmember" })) };
+  accountA = { ...(await newQaAccount(a, { role: "notifowner" })) };
+  accountB = { ...(await newQaAccount(b, { role: "notifmember" })) };
   nameA = await displayName(a);
   nameB = await displayName(b);
 });

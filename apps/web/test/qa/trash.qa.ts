@@ -1,7 +1,7 @@
-import { createVerifiedAccount } from "./support";
 import { tinyPng } from "./support/files";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -23,7 +23,7 @@ const png = tinyPng(5);
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  await createVerifiedAccount(page, { role: "trash" });
+  await newQaAccount(page, { role: "trash" });
   name = await displayName(page);
 });
 

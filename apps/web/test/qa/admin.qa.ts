@@ -1,7 +1,7 @@
-import { createVerifiedAccount } from "./support";
 import { signInQaAdmin } from "./support/admin";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -10,6 +10,7 @@ import {
 import {
   type Account,
   AUTH_WAIT,
+  createWorkspace,
   displayName,
   open,
   signInAs,
@@ -27,15 +28,17 @@ let target: Page;
 let account: Account;
 let targetName: string;
 const reason = `QA ${process.env.QA_RUN_ID ?? "run"}`;
+const workspace = `QA ${process.env.QA_RUN_ID ?? "run"} admin`;
 
 test.beforeAll(async ({ browser }) => {
   admin = await newUserPage(browser);
   target = await newUserPage(browser);
   await signInQaAdmin(admin);
   account = {
-    ...(await createVerifiedAccount(target, { role: "admintarget" })),
+    ...(await newQaAccount(target, { role: "admintarget" })),
   };
   targetName = await displayName(target);
+  await createWorkspace(target, workspace);
 });
 
 test.afterAll(async () => {
@@ -130,13 +133,11 @@ test("billing: a plan, an add-on and a 1 MB storage override show on T's billing
     before.getByText("Your admin manages this workspace's plan.")
   ).toBeVisible();
 
-  await openTarget();
-  const workspaceLink = admin
-    .locator("main")
-    .getByRole("link")
-    .filter({ hasText: /workspace/i })
-    .first();
-  await workspaceLink.click();
+  await open(admin, "/admin/workspaces");
+  await admin
+    .getByRole("searchbox", { name: "Search workspaces" })
+    .fill(workspace);
+  await admin.getByText(workspace, { exact: true }).click();
   await expect(
     admin.getByRole("heading", { name: "Billing", exact: true })
   ).toBeVisible();

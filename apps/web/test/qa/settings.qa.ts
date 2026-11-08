@@ -8,6 +8,7 @@ import {
 import { tinyPng } from "./support/files";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -36,7 +37,7 @@ const newName = `QA ${process.env.QA_RUN_ID ?? "run"} renamed`;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  account = { ...(await createVerifiedAccount(page, { role: "settings" })) };
+  account = { ...(await newQaAccount(page, { role: "settings" })) };
 });
 
 test.afterAll(async ({ browser }) => {
@@ -51,8 +52,16 @@ test.afterAll(async ({ browser }) => {
 test("the name changes and the shell shows it at once", async () => {
   await openSettings(page, "account");
   await page.getByLabel("Name", { exact: true }).fill(newName);
+  // Saving reloads the page: wait for the save, then for the reloaded value.
+  const saved = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/auth/update-user" &&
+      response.request().method() === "POST"
+  );
   await page.getByRole("button", { name: "Save profile" }).click();
-  await expect(page.getByText("Profile saved").first()).toBeVisible();
+  expect((await saved).ok()).toBe(true);
+  await openSettings(page, "account");
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(newName);
   await open(page, "/app/dashboard");
   await expect(
     page.getByRole("heading", { name: `Welcome, ${newName}` })

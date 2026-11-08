@@ -1,6 +1,6 @@
-import { createVerifiedAccount } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -20,7 +20,7 @@ const title = `QA ${process.env.QA_RUN_ID ?? "run"} note`;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  await createVerifiedAccount(page, { role: "notes" });
+  await newQaAccount(page, { role: "notes" });
 });
 
 test.afterAll(async () => {

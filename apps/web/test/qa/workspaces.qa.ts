@@ -1,6 +1,6 @@
-import { createVerifiedAccount } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -40,8 +40,8 @@ const shared = `QA ${process.env.QA_RUN_ID ?? "run"} shared`;
 test.beforeAll(async ({ browser }) => {
   a = await newUserPage(browser);
   b = await newUserPage(browser);
-  accountA = { ...(await createVerifiedAccount(a, { role: "wsowner" })) };
-  accountB = { ...(await createVerifiedAccount(b, { role: "wsmember" })) };
+  accountA = { ...(await newQaAccount(a, { role: "wsowner" })) };
+  accountB = { ...(await newQaAccount(b, { role: "wsmember" })) };
   nameA = await displayName(a);
   nameB = await displayName(b);
 });

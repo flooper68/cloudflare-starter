@@ -1,6 +1,6 @@
-import { createVerifiedAccount } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -20,7 +20,7 @@ const palette = () => page.getByRole("dialog", { name: "Search and jump" });
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  await createVerifiedAccount(page, { role: "palette" });
+  await newQaAccount(page, { role: "palette" });
   await createWorkspace(page, `QA ${process.env.QA_RUN_ID ?? "run"} palette`);
 });
 
@@ -97,7 +97,7 @@ test("the theme action switches at once and is remembered after a reload", async
   await page.keyboard.type("light theme");
   await page.getByRole("option", { name: /Switch to the light theme/ }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page.reload();
+  await open(page, "/app/dashboard");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.keyboard.press("ControlOrMeta+k");
   await page.keyboard.type("dark theme");

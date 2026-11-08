@@ -1,8 +1,8 @@
-import { createVerifiedAccount } from "./support";
 import { signInQaAdmin } from "./support/admin";
 import { tinyPng } from "./support/files";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -21,7 +21,7 @@ const workspace = `QA ${process.env.QA_RUN_ID ?? "run"} files`;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  await createVerifiedAccount(page, { role: "files" });
+  await newQaAccount(page, { role: "files" });
   await createWorkspace(page, workspace);
 });
 

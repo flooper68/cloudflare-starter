@@ -1,6 +1,6 @@
-import { createVerifiedAccount } from "./support";
 import {
   expect,
+  newQaAccount,
   newUserPage,
   type Page,
   skipWithoutQaEnv,
@@ -29,7 +29,7 @@ let codes: string[];
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  account = { ...(await createVerifiedAccount(page, { role: "tfa" })) };
+  account = { ...(await newQaAccount(page, { role: "tfa" })) };
 });
 
 test.afterAll(async () => {
