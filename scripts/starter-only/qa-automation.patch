@@ -1,0 +1,901 @@
+diff --git a/apps/web/.dev.vars.example b/apps/web/.dev.vars.example
+index 2ca89cc..301d1e5 100644
+--- a/apps/web/.dev.vars.example
++++ b/apps/web/.dev.vars.example
+@@ -95,10 +95,2 @@ TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+ 
+-# The automated QA suite's bypass of the human check (QA_BYPASS: on | off, required, no
+-# default; docs/guides/how-to-configure-abuse-protection.md#qa-bypass). The top-level vars
+-# set it on for the develop deploy; local dev keeps it off (the E2E journeys run Turnstile
+-# with the test keys instead). With on, the QA_TOKEN secret (32+ characters, e.g.
+-# openssl rand -hex 32) and QA_EMAIL_DOMAIN (wrangler.jsonc) are required too.
+-QA_BYPASS=off
+-# QA_TOKEN=
+-
+ # Security headers (docs/guides/how-to-configure-security-headers.md). CSP_MODE
+diff --git a/apps/web/src/lib/config.test.ts b/apps/web/src/lib/config.test.ts
+index aaeacfc..4e424c1 100644
+--- a/apps/web/src/lib/config.test.ts
++++ b/apps/web/src/lib/config.test.ts
+@@ -308,10 +308,2 @@ describe("platform config", () => {
+       TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+-      QA_BYPASS: "off",
+-    };
+-    const qaToken = "qa-token-0123456789abcdefghijklmnop";
+-    const qaOn = {
+-      ...on,
+-      QA_BYPASS: "on",
+-      QA_TOKEN: qaToken,
+-      QA_EMAIL_DOMAIN: "qa.example.com",
+     };
+@@ -319,3 +311,3 @@ describe("platform config", () => {
+     it("parses explicit settings", () => {
+-      expect(parseAbuseConfig(on)).toEqual({ ...on, qaBypass: null });
++      expect(parseAbuseConfig(on)).toEqual(on);
+       expect(
+@@ -324,3 +316,2 @@ describe("platform config", () => {
+           TURNSTILE: "off",
+-          QA_BYPASS: "off",
+         })
+@@ -331,4 +322,2 @@ describe("platform config", () => {
+         TURNSTILE_SECRET_KEY: null,
+-        QA_BYPASS: "off",
+-        qaBypass: null,
+       });
+@@ -336,16 +325,2 @@ describe("platform config", () => {
+ 
+-    it("parses the QA bypass with its token and mail domain", () => {
+-      expect(parseAbuseConfig(qaOn)).toMatchObject({
+-        QA_BYPASS: "on",
+-        qaBypass: { token: qaToken, emailDomain: "qa.example.com" },
+-      });
+-    });
+-
+-    it("ignores the QA token and domain with QA_BYPASS=off", () => {
+-      expect(
+-        parseAbuseConfig({ ...qaOn, QA_BYPASS: "off", QA_EMAIL_DOMAIN: "x" })
+-          .qaBypass
+-      ).toBeNull();
+-    });
+-
+     it.each([
+@@ -356,10 +331,2 @@ describe("platform config", () => {
+       ["TURNSTILE_SECRET_KEY", { ...on, TURNSTILE_SECRET_KEY: undefined }],
+-      ["QA_BYPASS", { ...on, QA_BYPASS: undefined }],
+-      ["QA_BYPASS", { ...on, QA_BYPASS: "true" }],
+-      ["QA_TOKEN", { ...qaOn, QA_TOKEN: undefined }],
+-      ["QA_TOKEN", { ...qaOn, QA_TOKEN: "short" }],
+-      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: undefined }],
+-      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: "QA.Example.com" }],
+-      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: "@qa.example.com" }],
+-      ["QA_EMAIL_DOMAIN", { ...qaOn, QA_EMAIL_DOMAIN: "localhost" }],
+     ])("refuses a missing or wrong %s, naming it", (setting, env) => {
+@@ -374,18 +341,2 @@ describe("platform config", () => {
+     });
+-
+-    it("never puts the QA token in an error message", () => {
+-      for (const env of [
+-        { ...qaOn, QA_EMAIL_DOMAIN: "bad domain" },
+-        { ...qaOn, QA_TOKEN: qaToken.slice(0, 20) },
+-      ]) {
+-        let message = "";
+-        try {
+-          parseAbuseConfig(env);
+-        } catch (caught) {
+-          message = (caught as Error).message;
+-        }
+-        expect(message).not.toBe("");
+-        expect(message).not.toContain(qaToken.slice(0, 20));
+-      }
+-    });
+   });
+diff --git a/apps/web/src/lib/config.ts b/apps/web/src/lib/config.ts
+index 3bde9b2..a971614 100644
+--- a/apps/web/src/lib/config.ts
++++ b/apps/web/src/lib/config.ts
+@@ -287,12 +287,2 @@ export const TURNSTILE_SETTINGS = ["on", "off"] as const;
+ 
+-/** Whether the automated QA suite may skip the human check (QA_BYPASS). */
+-export const QA_BYPASS_SETTINGS = ["on", "off"] as const;
+-
+-/** QA_TOKEN is a shared secret: at least this many characters (`openssl rand -hex 32`). */
+-export const QA_TOKEN_MIN_LENGTH = 32;
+-
+-/** A lowercase hostname with at least two labels, e.g. `qa.flooper.me`. */
+-const HOSTNAME =
+-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+-
+ export interface AbuseConfig {
+@@ -302,8 +292,2 @@ export interface AbuseConfig {
+   readonly TURNSTILE_SECRET_KEY: string | null;
+-  readonly QA_BYPASS: (typeof QA_BYPASS_SETTINGS)[number];
+-  /** With QA_BYPASS=on: the shared secret and the mail domain it covers; else null. */
+-  readonly qaBypass: {
+-    readonly token: string;
+-    readonly emailDomain: string;
+-  } | null;
+ }
+@@ -313,7 +297,4 @@ export interface AbuseConfig {
+  * no defaults; with TURNSTILE=on the site key (var) and secret key (secret) are required too.
+- * QA_BYPASS (on | off) is required as well; with on, the QA_TOKEN secret (32+ characters)
+- * and QA_EMAIL_DOMAIN (a hostname) are required, and both are ignored with off.
+  */
+ export function parseAbuseConfig(env: PartialEnv): AbuseConfig {
+-  const qaBypass = requiredChoice(env, "QA_BYPASS", QA_BYPASS_SETTINGS);
+   const config: AbuseConfig = {
+@@ -323,4 +304,2 @@ export function parseAbuseConfig(env: PartialEnv): AbuseConfig {
+     TURNSTILE_SECRET_KEY: env.TURNSTILE_SECRET_KEY || null,
+-    QA_BYPASS: qaBypass,
+-    qaBypass: qaBypass === "on" ? parseQaBypass(env) : null,
+   };
+@@ -341,24 +320,2 @@ export function parseAbuseConfig(env: PartialEnv): AbuseConfig {
+ 
+-/** QA_BYPASS=on: the QA_TOKEN secret and QA_EMAIL_DOMAIN, both required and checked. */
+-function parseQaBypass(env: PartialEnv): {
+-  readonly token: string;
+-  readonly emailDomain: string;
+-} {
+-  const token = env.QA_TOKEN ?? "";
+-  if (token.length < QA_TOKEN_MIN_LENGTH) {
+-    throw new ConfigError(
+-      "QA_TOKEN",
+-      `QA_BYPASS=on needs the QA_TOKEN secret (${QA_TOKEN_MIN_LENGTH}+ characters, e.g. openssl rand -hex 32): bun run setup:secrets --env <env>, or set QA_BYPASS to off`
+-    );
+-  }
+-  const emailDomain = env.QA_EMAIL_DOMAIN ?? "";
+-  if (!HOSTNAME.test(emailDomain)) {
+-    throw new ConfigError(
+-      "QA_EMAIL_DOMAIN",
+-      `QA_BYPASS=on needs QA_EMAIL_DOMAIN, the lowercase mail domain of QA addresses (e.g. qa.example.com), in the vars of apps/web/wrangler.jsonc${emailDomain ? `; "${emailDomain}" is not a hostname` : ""}`
+-    );
+-  }
+-  return { token, emailDomain };
+-}
+-
+ /** Where product events go: Workers Analytics Engine (ANALYTICS_EVENTS), or nowhere. */
+diff --git a/apps/web/src/lib/env.ts b/apps/web/src/lib/env.ts
+index 4f628b1..de72d41 100644
+--- a/apps/web/src/lib/env.ts
++++ b/apps/web/src/lib/env.ts
+@@ -2,8 +2,4 @@ import {
+   createCloudflareEmail,
+-  createDatabase,
+   type EmailService,
+   type R2Config,
+-  randomIds,
+-  systemClock,
+-  withQaOutbox,
+ } from "@cloudflare-starter/features";
+@@ -11,3 +7,2 @@ import {
+   type FeatureConfig,
+-  parseAbuseConfig,
+   parseAppConfig,
+@@ -82,17 +77,5 @@ export function buildEmailFeature(
+ 
+-    const from = { email: config.EMAIL_FROM, name: config.EMAIL_FROM_NAME };
+-    const email = createCloudflareEmail({ binding, from });
+-    // QA_BYPASS=on: mail to a QA address goes to the QA outbox instead of being sent
+-    // (docs/guides/how-to-qa-a-deployment.md#the-qa-outbox); everything else is sent.
+-    const { qaBypass } = parseAbuseConfig(env);
+-    const d1 = runtimeEnv?.DB as D1Database | undefined;
+-    if (!qaBypass) return email;
+-    if (!d1)
+-      throw new Error("QA_BYPASS=on needs the DB binding for the QA outbox");
+-    return withQaOutbox(email, {
+-      db: createDatabase(d1),
+-      clock: systemClock,
+-      ids: randomIds,
+-      from,
+-      emailDomain: qaBypass.emailDomain,
++    return createCloudflareEmail({
++      binding,
++      from: { email: config.EMAIL_FROM, name: config.EMAIL_FROM_NAME },
+     });
+diff --git a/apps/web/src/server/auth-audit.ts b/apps/web/src/server/auth-audit.ts
+index de404dc..f73444c 100644
+--- a/apps/web/src/server/auth-audit.ts
++++ b/apps/web/src/server/auth-audit.ts
+@@ -331,21 +331,2 @@ export async function auditHumanCheckFailed(
+ 
+-/**
+- * The automated QA suite skipped the human check on a QA address (QA_BYPASS=on,
+- * server/qa-bypass.ts). Never carries the token. Fails open like the other auth events.
+- */
+-export async function auditQaBypassUsed(
+-  env: AppEnv,
+-  ctx: { readonly body?: unknown; readonly request?: Request },
+-  form: "sign-up" | "sign-in" | "password-reset"
+-): Promise<void> {
+-  const email = emailOf(ctx);
+-  if (!email) return;
+-  await record(env, ctx, {
+-    action: "qa.bypass.used",
+-    actor: { kind: "user", userId: null },
+-    target: { type: "email", id: email },
+-    metadata: { form },
+-  });
+-}
+-
+ /**
+diff --git a/apps/web/src/server/auth.ts b/apps/web/src/server/auth.ts
+index add555a..6e33017 100644
+--- a/apps/web/src/server/auth.ts
++++ b/apps/web/src/server/auth.ts
+@@ -14,3 +14,2 @@ import {
+   provisionUser,
+-  qaAdminEmail,
+   RATE_LIMIT_POLICIES,
+@@ -64,11 +63,2 @@ import type { AppEnv } from "@/server/env";
+ import { buildPlatform } from "@/server/platform";
+-import {
+-  type QaAdminAuth,
+-  refuseQaAddressWithoutToken,
+-  refuseQaUserWithoutToken,
+-  refuseSocialQaAccount,
+-  shortenQaAdminSession,
+-  syncQaAdminRole,
+-} from "@/server/qa-admin";
+-import { qaBypassesHumanCheck } from "@/server/qa-bypass";
+ 
+@@ -164,4 +154,3 @@ function isInProcessCall(ctx: {
+  * unless the verifier accepts the token, and records the refusal in the audit log. Fails
+- * closed: an unavailable provider refuses the request too. With QA_BYPASS=on the QA suite's
+- * requests skip it (server/qa-bypass.ts).
++ * closed: an unavailable provider refuses the request too.
+  */
+@@ -179,5 +168,2 @@ async function enforceHumanCheck(
+   if (isInProcessCall(ctx)) return;
+-  // The automated QA suite (QA_BYPASS=on, a QA address and the QA token) skips Turnstile
+-  // only; everything after this hook still runs.
+-  if (await qaBypassesHumanCheck(env, ctx, form)) return;
+   const headers = ctx.headers ?? new Headers();
+@@ -330,6 +316,3 @@ async function promoteBootstrapIfVerified(
+   const { bootstrapAdminEmail } = buildRequiredConfig(env).workspaces;
+-  // The QA suite's admin too, while QA_BYPASS=on (server/qa-admin.ts).
+-  const qaBypass = buildPlatform(env).qaBypass;
+-  const qaAdmin = qaBypass ? qaAdminEmail(qaBypass.emailDomain) : null;
+-  if ((!bootstrapAdminEmail && !qaAdmin) || !user.emailVerified) return;
++  if (!bootstrapAdminEmail || !user.emailVerified) return;
+   const requestContext = contextFor(env, ctx);
+@@ -344,3 +327,3 @@ async function promoteBootstrapIfVerified(
+       },
+-      { user, bootstrapAdminEmail, qaAdminEmail: qaAdmin }
++      { user, bootstrapAdminEmail }
+     );
+@@ -607,27 +590,7 @@ export function createAuthOptions(env: AppEnv) {
+     databaseHooks: {
+-      // The QA admin's short sessions and role (server/qa-admin.ts).
+-      session: {
+-        ...audit.session,
+-        create: {
+-          before: (session) =>
+-            shortenQaAdminSession(env, qaAdminAuth(env), session),
+-          after: async (session, ctx) => {
+-            await audit.session?.create?.after?.(session, ctx);
+-            await syncQaAdminRole(env, qaAdminAuth(env), session.userId, ctx);
+-          },
+-        },
+-      },
+-      // No social account on a QA address's user (server/qa-admin.ts).
+-      account: {
+-        create: {
+-          before: async (account) => {
+-            await refuseSocialQaAccount(env, qaAdminAuth(env), account);
+-          },
+-        },
+-      },
++      // Audit log: sign-ins (server/auth-audit.ts).
++      session: audit.session,
+       user: {
+         create: {
+-          before: async (user, ctx) => {
+-            // QA addresses only with the QA token, by every method (server/qa-admin.ts).
+-            refuseQaUserWithoutToken(env, user, ctx);
++          before: async (user) => {
+             await enforceSignUpPolicy(env, user);
+@@ -760,4 +723,2 @@ export function createAuthOptions(env: AppEnv) {
+         await enforceHumanCheck(env, ctx);
+-        // QA addresses only with the QA token (QA_BYPASS=on): nobody else claims them.
+-        refuseQaAddressWithoutToken(env, ctx);
+         // No OAuth (MCP) grants from an admin's impersonation session.
+@@ -777,22 +738,2 @@ export function createAuthOptions(env: AppEnv) {
+ 
+-/** Better Auth's user lookup and the admin gateway, for the QA admin hooks. */
+-function qaAdminAuth(env: AppEnv): QaAdminAuth {
+-  return {
+-    findUser: async (userId) => {
+-      const found = await (
+-        await getAuth(env).$context
+-      ).internalAdapter.findUserById(userId);
+-      return found
+-        ? {
+-            id: found.id,
+-            email: found.email,
+-            emailVerified: found.emailVerified,
+-            role: (found as { role?: string | null }).role ?? null,
+-          }
+-        : null;
+-    },
+-    gateway: createAdminAuthGateway(() => getAuth(env), null),
+-  };
+-}
+-
+ function createAuth(env: AppEnv) {
+diff --git a/apps/web/src/server/cron.test.ts b/apps/web/src/server/cron.test.ts
+index e6bfd60..c492a5c 100644
+--- a/apps/web/src/server/cron.test.ts
++++ b/apps/web/src/server/cron.test.ts
+@@ -43,3 +43,2 @@ function memoryPlatform() {
+     turnstile: null,
+-    qaBypass: null,
+     productAnalytics: () => noopProductAnalytics,
+diff --git a/apps/web/src/server/env.ts b/apps/web/src/server/env.ts
+index cb03aea..b7691c7 100644
+--- a/apps/web/src/server/env.ts
++++ b/apps/web/src/server/env.ts
+@@ -27,3 +27,2 @@ export interface AppEnv {
+   readonly RL_CSP_REPORT?: RateLimit;
+-  readonly RL_QA_BYPASS?: RateLimit;
+   /** Workers Analytics Engine dataset of product events (ANALYTICS=analytics-engine). */
+@@ -41,8 +40,2 @@ export interface AppEnv {
+   readonly TRACING?: string;
+-  /** Required var, validated by `parseAbuseConfig`: on | off (the QA suite's human-check bypass). */
+-  readonly QA_BYPASS?: string;
+-  /** With QA_BYPASS=on: the mail domain the bypass covers (`parseAbuseConfig`). */
+-  readonly QA_EMAIL_DOMAIN?: string;
+-  /** Secret, with QA_BYPASS=on: the token the QA suite sends in `x-qa-token`. */
+-  readonly QA_TOKEN?: string;
+   /** Required var, validated by `parsePlatformConfig`: enforce | report-only. */
+diff --git a/apps/web/src/server/mcp/server.test.ts b/apps/web/src/server/mcp/server.test.ts
+index 7020744..77c750d 100644
+--- a/apps/web/src/server/mcp/server.test.ts
++++ b/apps/web/src/server/mcp/server.test.ts
+@@ -77,3 +77,2 @@ function context(overrides: Partial<Context> = {}): Context {
+     rateLimiter: noopRateLimiter,
+-    qaAdminEmail: null,
+     analytics: noopProductAnalytics,
+diff --git a/apps/web/src/server/mcp/tools.ts b/apps/web/src/server/mcp/tools.ts
+index ee34671..0138e7c 100644
+--- a/apps/web/src/server/mcp/tools.ts
++++ b/apps/web/src/server/mcp/tools.ts
+@@ -790,6 +790,2 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
+     "public readiness check for uptime monitors (IETF application/health+json); platform admins' agents use admin_get_health",
+-  "api/qa/cleanup.ts":
+-    "the automated QA suite's erasure of its own run accounts (QA_BYPASS=on), authorized by the QA token, not a user; admins use admin_remove_user",
+-  "api/qa/outbox.ts":
+-    "the automated QA suite's read of the QA outbox (QA_BYPASS=on), authorized by the QA token, not a user; no MCP client reads it",
+   "api/csp-report.ts":
+diff --git a/apps/web/src/server/platform.ts b/apps/web/src/server/platform.ts
+index 422064f..5a5f59d 100644
+--- a/apps/web/src/server/platform.ts
++++ b/apps/web/src/server/platform.ts
+@@ -2,3 +2,3 @@
+  * Composition root of the platform ports: picks one adapter per port from explicit settings
+- * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, RATE_LIMITING, TURNSTILE, QA_BYPASS, ANALYTICS; CSP_MODE) and builds it once per isolate. JobQueue has one
++ * (LOG_SINK, ERROR_REPORTER, FEATURE_FLAGS, METRICS, TRACING, RATE_LIMITING, TURNSTILE, ANALYTICS; CSP_MODE) and builds it once per isolate. JobQueue has one
+  * adapter, the APP_QUEUE binding, and no setting: it has no "off" (dropping jobs silently is
+@@ -38,3 +38,2 @@ import {
+   type ProductAnalytics,
+-  type QaBypassSettings,
+   RATE_LIMIT_POLICIES,
+@@ -100,7 +99,2 @@ export interface Platform {
+   readonly turnstile: { readonly siteKey: string } | null;
+-  /**
+-   * The automated QA suite's bypass of the human check (QA_BYPASS=on): its token and mail
+-   * domain, or null with QA_BYPASS=off (server/qa-bypass.ts).
+-   */
+-  readonly qaBypass: QaBypassSettings | null;
+   /**
+@@ -281,3 +275,2 @@ export function buildPlatform(env: AppEnv): Platform {
+         : null,
+-    qaBypass: abuse.qaBypass,
+     productAnalytics: buildProductAnalytics(env, analytics, logger),
+diff --git a/apps/web/src/server/rate-limited-response.ts b/apps/web/src/server/rate-limited-response.ts
+index 1c30fda..d9267a7 100644
+--- a/apps/web/src/server/rate-limited-response.ts
++++ b/apps/web/src/server/rate-limited-response.ts
+@@ -20,3 +20,3 @@ import {
+ /**
+- * Field of a 429 a Better Auth hook throws (server/qa-bypass.ts) that names the refusing
++ * Field of a 429 a Better Auth hook of ours throws that names the refusing
+  * edge policy for `betterAuthResponse`; the Problem Details answer replaces that body.
+@@ -93,4 +93,4 @@ const HUMAN_CHECK_PROBLEMS: Readonly<
+ /**
+- * The edge policy one of our own Better Auth hooks refused with (`qa.bypass`,
+- * server/qa-bypass.ts), named in the 429's JSON body; null for Better Auth's own limits.
++ * The edge policy one of our own Better Auth hooks refused with, named in the 429's JSON
++ * body; null for Better Auth's own limits.
+  */
+diff --git a/apps/web/src/server/spa-bootstrap.ts b/apps/web/src/server/spa-bootstrap.ts
+index 0a3c16c..6278eb1 100644
+--- a/apps/web/src/server/spa-bootstrap.ts
++++ b/apps/web/src/server/spa-bootstrap.ts
+@@ -16,3 +16,2 @@ import { getDb } from "@/server/db";
+ import type { AppEnv } from "@/server/env";
+-import { currentQaAdminEmail } from "@/server/qa-admin";
+ 
+@@ -68,7 +67,3 @@ export async function spaBootstrap(
+             { db: getDb(env), clock: systemClock },
+-            {
+-              userId: user.id,
+-              qaAdminEmail: currentQaAdminEmail(env),
+-              sessionCreatedAt: session?.createdAt ?? null,
+-            }
++            { userId: user.id }
+           )
+diff --git a/apps/web/src/server/trpc/admin-router.ts b/apps/web/src/server/trpc/admin-router.ts
+index 63c1ce8..7bcc1b9 100644
+--- a/apps/web/src/server/trpc/admin-router.ts
++++ b/apps/web/src/server/trpc/admin-router.ts
+@@ -132,3 +132,3 @@ export const adminRouter = router({
+   email: router({
+-    // The real sending path to any address (the QA suite's weekly delivery check).
++    // The real sending path to any address.
+     sendTest: adminProcedure
+diff --git a/apps/web/src/server/trpc/context.ts b/apps/web/src/server/trpc/context.ts
+index 5b27b0d..bb39e82 100644
+--- a/apps/web/src/server/trpc/context.ts
++++ b/apps/web/src/server/trpc/context.ts
+@@ -5,3 +5,2 @@ import {
+   notify,
+-  qaAdminEmail,
+   type RequestContext,
+@@ -95,5 +94,2 @@ export function createAppContext(
+     rateLimiter: platform.rateLimiter,
+-    qaAdminEmail: platform.qaBypass
+-      ? qaAdminEmail(platform.qaBypass.emailDomain)
+-      : null,
+     notify: notifier,
+diff --git a/apps/web/src/server/trpc/init.ts b/apps/web/src/server/trpc/init.ts
+index 2ed69c3..224e5d3 100644
+--- a/apps/web/src/server/trpc/init.ts
++++ b/apps/web/src/server/trpc/init.ts
+@@ -72,7 +72,2 @@ export interface Context {
+   readonly rateLimiter: RateLimiter;
+-  /**
+-   * The QA admin's address while QA_BYPASS=on, else null: no other `qa+admin@` account is
+-   * an admin (server/qa-admin.ts).
+-   */
+-  readonly qaAdminEmail: string | null;
+   /** Product analytics of this request; use cases track with `trackEvent`. */
+@@ -329,7 +324,3 @@ export const requireAdmin = t.middleware(async ({ ctx, next }) => {
+   if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user) throw notFound();
+-  const access = await findAdminAccess(ctx, {
+-    userId: ctx.user.id,
+-    qaAdminEmail: ctx.qaAdminEmail,
+-    sessionCreatedAt: ctx.session?.createdAt ?? null,
+-  });
++  const access = await findAdminAccess(ctx, { userId: ctx.user.id });
+   if (!access.isAdmin) throw notFound();
+@@ -409,7 +400,3 @@ export const requireImpersonator = t.middleware(async ({ ctx, next }) => {
+   }
+-  const access = await findAdminAccess(ctx, {
+-    userId: impersonatedBy,
+-    qaAdminEmail: ctx.qaAdminEmail,
+-    sessionCreatedAt: ctx.session?.createdAt ?? null,
+-  });
++  const access = await findAdminAccess(ctx, { userId: impersonatedBy });
+   if (!access.isAdmin) throw notFound();
+diff --git a/apps/web/test/api-bindings.ts b/apps/web/test/api-bindings.ts
+index 3d9282c..a26f4ed 100644
+--- a/apps/web/test/api-bindings.ts
++++ b/apps/web/test/api-bindings.ts
+@@ -39,7 +39,2 @@ export const API_TEST_BINDINGS = {
+   TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+-  // The QA suite's human-check bypass, on as in the develop vars, with a test token
+-  // (test/api/qa-bypass.test.ts; tests of QA_BYPASS=off override it).
+-  QA_BYPASS: "on",
+-  QA_EMAIL_DOMAIN: "qa.flooper.me",
+-  QA_TOKEN: "api-test-qa-token-0123456789abcdefghij",
+   // Not in wrangler.jsonc (setup:auth writes them per environment); tests of other modes
+diff --git a/packages/features/src/abuse/domain/index.ts b/packages/features/src/abuse/domain/index.ts
+index 70dc1e4..9815a63 100644
+--- a/packages/features/src/abuse/domain/index.ts
++++ b/packages/features/src/abuse/domain/index.ts
+@@ -21,12 +21,2 @@ export {
+ } from "./policies";
+-export {
+-  isAnyQaAdminEmail,
+-  isQaAdminEmail,
+-  isQaEmail,
+-  QA_ADMIN_SESSION_MS,
+-  QA_TOKEN_HEADER,
+-  type QaBypassRejection,
+-  type QaBypassSettings,
+-  qaAdminEmail,
+-} from "./qa-bypass";
+ export { timingSafeEqual } from "./timing-safe-equal";
+diff --git a/packages/features/src/abuse/domain/policies.ts b/packages/features/src/abuse/domain/policies.ts
+index cf84cfe..5736144 100644
+--- a/packages/features/src/abuse/domain/policies.ts
++++ b/packages/features/src/abuse/domain/policies.ts
+@@ -237,13 +237,2 @@ export const RATE_LIMIT_POLICIES = {
+   },
+-  "qa.bypass": {
+-    // The automated QA suite signs up a handful of accounts per run from one runner IP;
+-    // a guesser of the token gets this many tries a minute and nothing else.
+-    limit: 30,
+-    periodSeconds: 60,
+-    scope: "ip",
+-    enforcer: "edge",
+-    binding: "RL_QA_BYPASS",
+-    description:
+-      "Requests that carry the QA token (x-qa-token): on a human-checked auth endpoint, and every request to /api/qa/outbox and /api/qa/cleanup; per IP, counted before the token is compared (QA_BYPASS=on only)",
+-  },
+ } as const satisfies Readonly<Record<string, RateLimitPolicy>>;
+@@ -287,4 +276,2 @@ export const ROUTE_POLICIES: Readonly<
+   "api/csp-report.ts": ["csp.report"],
+-  "api/qa/outbox.ts": ["qa.bypass"],
+-  "api/qa/cleanup.ts": ["qa.bypass"],
+ };
+diff --git a/packages/features/src/abuse/index.ts b/packages/features/src/abuse/index.ts
+index a777976..67c34c6 100644
+--- a/packages/features/src/abuse/index.ts
++++ b/packages/features/src/abuse/index.ts
+@@ -3,3 +3,2 @@
+ 
+-export { checkQaBypass } from "./check-qa-bypass";
+ export {
+@@ -12,5 +11,2 @@ export {
+   HumanCheckUnavailableError,
+-  isAnyQaAdminEmail,
+-  isQaAdminEmail,
+-  isQaEmail,
+   type LimitSubject,
+@@ -19,7 +15,2 @@ export {
+   PROCEDURE_POLICIES,
+-  QA_ADMIN_SESSION_MS,
+-  QA_TOKEN_HEADER,
+-  type QaBypassRejection,
+-  type QaBypassSettings,
+-  qaAdminEmail,
+   RATE_LIMIT_EXEMPT,
+diff --git a/packages/features/src/admin/find-admin-access.integration.test.ts b/packages/features/src/admin/find-admin-access.integration.test.ts
+index 40ed039..5d44bfa 100644
+--- a/packages/features/src/admin/find-admin-access.integration.test.ts
++++ b/packages/features/src/admin/find-admin-access.integration.test.ts
+@@ -16,4 +16,2 @@ describe("findAdminAccess", () => {
+       userId: ada.id,
+-      qaAdminEmail: null,
+-      sessionCreatedAt: null,
+     });
+@@ -38,4 +36,2 @@ describe("findAdminAccess", () => {
+           userId,
+-          qaAdminEmail: null,
+-          sessionCreatedAt: null,
+         })
+@@ -49,4 +45,2 @@ describe("findAdminAccess", () => {
+         userId: lifted.id,
+-        qaAdminEmail: null,
+-        sessionCreatedAt: null,
+       })
+diff --git a/packages/features/src/admin/find-admin-access.ts b/packages/features/src/admin/find-admin-access.ts
+index 53b5516..ffbcf7d 100644
+--- a/packages/features/src/admin/find-admin-access.ts
++++ b/packages/features/src/admin/find-admin-access.ts
+@@ -2,3 +2,2 @@ import { and, desc, eq, isNull } from "drizzle-orm";
+ 
+-import { isAnyQaAdminEmail, QA_ADMIN_SESSION_MS } from "../abuse";
+ import { session, user } from "../accounts";
+@@ -26,17 +25,3 @@ export async function findAdminAccess(
+   deps: { readonly db: Database; readonly clock: Clock },
+-  input: {
+-    readonly userId: string;
+-    /**
+-     * The QA admin's address while QA_BYPASS=on, else null. Any other `qa+admin@` account
+-     * (the bypass off, or an old QA_EMAIL_DOMAIN) is no admin whatever its stored role
+-     * (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin). Required, so no
+-     * caller can forget it.
+-     */
+-    readonly qaAdminEmail: string | null;
+-    /**
+-     * When the caller's browser session signed in; null without one (MCP). The QA admin is
+-     * an admin only within QA_ADMIN_SESSION_MS of it.
+-     */
+-    readonly sessionCreatedAt: Date | null;
+-  }
++  input: { readonly userId: string }
+ ): Promise<AdminAccess> {
+@@ -44,3 +29,2 @@ export async function findAdminAccess(
+     .select({
+-      email: user.email,
+       role: user.role,
+@@ -55,12 +39,2 @@ export async function findAdminAccess(
+   }
+-  if (isAnyQaAdminEmail(row.email)) {
+-    const current =
+-      input.qaAdminEmail !== null &&
+-      row.email.trim().toLowerCase() === input.qaAdminEmail.toLowerCase();
+-    const fresh =
+-      input.sessionCreatedAt !== null &&
+-      deps.clock.now().getTime() - input.sessionCreatedAt.getTime() <=
+-        QA_ADMIN_SESSION_MS;
+-    if (!current || !fresh) return { isAdmin: false, lastSignInAt: null };
+-  }
+   const suspended = isBanActive(
+diff --git a/packages/features/src/admin/index.ts b/packages/features/src/admin/index.ts
+index 8bd56c1..daa6c28 100644
+--- a/packages/features/src/admin/index.ts
++++ b/packages/features/src/admin/index.ts
+@@ -4,3 +4,2 @@ export { banUser } from "./ban-user";
+ export { deleteWorkspace } from "./delete-workspace";
+-export { demoteQaAdmin } from "./demote-qa-admin";
+ export {
+diff --git a/packages/features/src/admin/lookups/users.ts b/packages/features/src/admin/lookups/users.ts
+index 4b2ae28..b08e894 100644
+--- a/packages/features/src/admin/lookups/users.ts
++++ b/packages/features/src/admin/lookups/users.ts
+@@ -1,2 +1,2 @@
+-import { and, count, eq, isNull, like, lte, notLike, or } from "drizzle-orm";
++import { and, count, eq, isNull, like, lte, or } from "drizzle-orm";
+ 
+@@ -39,4 +39,3 @@ export async function findTargetUser(
+ /**
+- * Admins whose suspension is not in force at `now`, the QA suite's admin (`qa+admin@…`)
+- * aside. `role` may be a comma list, so the
++ * Admins whose suspension is not in force at `now`. `role` may be a comma list, so the
+  * match is on the list's items.
+@@ -62,5 +61,3 @@ export async function countActiveAdmins(
+           lte(user.banExpires, now)
+-        ),
+-        // The QA suite's automated admin is never the one that keeps the portal staffed.
+-        notLike(user.email, "qa+admin@%")
++        )
+       )
+diff --git a/packages/features/src/admin/promote-bootstrap-admin.ts b/packages/features/src/admin/promote-bootstrap-admin.ts
+index 14411eb..69633fb 100644
+--- a/packages/features/src/admin/promote-bootstrap-admin.ts
++++ b/packages/features/src/admin/promote-bootstrap-admin.ts
+@@ -12,6 +12,2 @@ import type { AdminAuthGateway } from "./ports";
+  * one, or one that is already an admin. Recorded with the system as actor.
+- *
+- * The same for the QA admin (`qaAdminEmail`, `qa+admin@<QA_EMAIL_DOMAIN>`, passed only
+- * while QA_BYPASS=on), recorded as `qa.admin.promoted`: only QA-token holders can create
+- * that account and read its verification mail (the QA outbox).
+  */
+@@ -33,4 +29,2 @@ export async function promoteBootstrapAdmin(
+     readonly bootstrapAdminEmail: string | null;
+-    /** The QA admin's address while QA_BYPASS=on, else null. */
+-    readonly qaAdminEmail?: string | null;
+   }
+@@ -42,7 +36,3 @@ export async function promoteBootstrapAdmin(
+     email === normalizeEmail(bootstrapAdminEmail);
+-  const qa =
+-    !bootstrap &&
+-    Boolean(input.qaAdminEmail) &&
+-    email === normalizeEmail(input.qaAdminEmail as string);
+-  if ((!bootstrap && !qa) || !user.emailVerified || hasAdminRole(user.role)) {
++  if (!bootstrap || !user.emailVerified || hasAdminRole(user.role)) {
+     return { promoted: false };
+@@ -50,19 +40,8 @@ export async function promoteBootstrapAdmin(
+   await deps.gateway.setRole(user.id, "admin");
+-  await recordAuditEvent(
+-    deps,
+-    deps.requestContext,
+-    qa
+-      ? {
+-          action: "qa.admin.promoted",
+-          actor: { kind: "system", userId: null },
+-          target: { type: "user", id: user.id },
+-          metadata: { previousRole: platformRoleOf(user.role) },
+-        }
+-      : {
+-          action: "user.role_changed",
+-          actor: { kind: "system", userId: null },
+-          target: { type: "user", id: user.id },
+-          metadata: { previousRole: platformRoleOf(user.role), role: "admin" },
+-        }
+-  );
++  await recordAuditEvent(deps, deps.requestContext, {
++    action: "user.role_changed",
++    actor: { kind: "system", userId: null },
++    target: { type: "user", id: user.id },
++    metadata: { previousRole: platformRoleOf(user.role), role: "admin" },
++  });
+   return { promoted: true };
+diff --git a/packages/features/src/audit/domain/audit-event.test.ts b/packages/features/src/audit/domain/audit-event.test.ts
+index 953bf9c..ff66646 100644
+--- a/packages/features/src/audit/domain/audit-event.test.ts
++++ b/packages/features/src/audit/domain/audit-event.test.ts
+@@ -104,13 +104,2 @@ const VALID: Record<AuditAction, AuditEventInput> = {
+   },
+-  "qa.bypass.used": {
+-    action: "qa.bypass.used",
+-    target: email,
+-    metadata: { form: "sign-up" },
+-  },
+-  "qa.admin.promoted": {
+-    action: "qa.admin.promoted",
+-    target: user,
+-    metadata: { previousRole: "user" },
+-  },
+-  "qa.admin.demoted": { action: "qa.admin.demoted", target: user },
+   "admin.test_email_sent": { action: "admin.test_email_sent", target: email },
+diff --git a/packages/features/src/audit/domain/audit-event.ts b/packages/features/src/audit/domain/audit-event.ts
+index 6c87d50..ca029bf 100644
+--- a/packages/features/src/audit/domain/audit-event.ts
++++ b/packages/features/src/audit/domain/audit-event.ts
+@@ -234,14 +234,2 @@ export const auditEventSchema = z.discriminatedUnion("action", [
+   }),
+-  z.object({
+-    ...common,
+-    outcome: z.literal("success").default("success"),
+-    action: z.literal("qa.bypass.used"),
+-    target: target("email"),
+-    metadata: z
+-      .object({
+-        /** The human-checked form the automated QA suite skipped Turnstile on. */
+-        form: z.enum(["sign-up", "sign-in", "password-reset"]),
+-      })
+-      .strict(),
+-  }),
+   z.object({
+@@ -337,14 +325,2 @@ export const auditEventSchema = z.discriminatedUnion("action", [
+   }),
+-  z.object({
+-    ...common,
+-    action: z.literal("qa.admin.promoted"),
+-    target: target("user"),
+-    metadata: z.object({ previousRole: role }).strict(),
+-  }),
+-  z.object({
+-    ...common,
+-    action: z.literal("qa.admin.demoted"),
+-    target: target("user"),
+-    metadata: noMetadata,
+-  }),
+   z.object({
+diff --git a/packages/features/src/cron-catalog.ts b/packages/features/src/cron-catalog.ts
+index 0f0b293..9034038 100644
+--- a/packages/features/src/cron-catalog.ts
++++ b/packages/features/src/cron-catalog.ts
+@@ -19,3 +19,2 @@ import type { JobQueue, Logger } from "./platform";
+ import { purgeDataExportsJob } from "./privacy";
+-import { purgeQaOutboxJob } from "./qa";
+ import {
+@@ -109,14 +108,2 @@ export const cronCatalog = createCronCatalog<CronDeps>([
+   },
+-  {
+-    // Mail the QA outbox kept instead of sending (QA_BYPASS=on) lives 24 hours.
+-    name: "qa-outbox.purge",
+-    schedule: DAILY,
+-    run: (deps, { scheduledTime, context }) =>
+-      enqueueJob(
+-        deps,
+-        purgeQaOutboxJob,
+-        { asOf: new Date(scheduledTime).toISOString() },
+-        { context }
+-      ),
+-  },
+   {
+diff --git a/packages/features/src/data-catalog.ts b/packages/features/src/data-catalog.ts
+index b93777b..d85bb83 100644
+--- a/packages/features/src/data-catalog.ts
++++ b/packages/features/src/data-catalog.ts
+@@ -308,10 +308,2 @@ export const DATA_CATALOG: readonly DataEntity[] = [
+   })),
+-  {
+-    table: "qa_outbox",
+-    scope: "platform",
+-    columns: [],
+-    erase: "retain-platform",
+-    reason:
+-      "Test mail the app kept instead of sending to the automated QA suite's own addresses (QA_BYPASS=on), never a person's; deleted after 24 hours by the daily qa-outbox.purge job.",
+-  },
+   {
+diff --git a/packages/features/src/database.ts b/packages/features/src/database.ts
+index 4679af8..ee13154 100644
+--- a/packages/features/src/database.ts
++++ b/packages/features/src/database.ts
+@@ -14,3 +14,2 @@ import { createDb, type Db } from "./platform";
+ import * as privacySchema from "./privacy/privacy.schema";
+-import * as qaSchema from "./qa/qa.schema";
+ import * as workspacesSchema from "./workspaces/workspaces.schema";
+@@ -27,3 +26,2 @@ export const schema = {
+   ...notificationsSchema,
+-  ...qaSchema,
+   ...workspacesSchema,
+diff --git a/packages/features/src/index.ts b/packages/features/src/index.ts
+index 8011405..81e365d 100644
+--- a/packages/features/src/index.ts
++++ b/packages/features/src/index.ts
+@@ -30,3 +30,2 @@ export * from "./privacy";
+ export * from "./product-analytics";
+-export * from "./qa";
+ export * from "./storage-reconciliation";
+diff --git a/packages/features/src/job-catalog.ts b/packages/features/src/job-catalog.ts
+index 1874514..a993b7f 100644
+--- a/packages/features/src/job-catalog.ts
++++ b/packages/features/src/job-catalog.ts
+@@ -51,3 +51,2 @@ import {
+ } from "./privacy";
+-import { purgeQaOutbox, purgeQaOutboxJob } from "./qa";
+ import {
+@@ -101,6 +100,2 @@ export const jobCatalog = createJobCatalog<JobDeps>([
+   registerJob(helloJob, sayHello),
+-  // The cutoff comes from the cron run's time, so every retry purges the same mail.
+-  registerJob(purgeQaOutboxJob, (deps: JobDeps, payload) =>
+-    purgeQaOutbox({ db: deps.db, clock: { now: () => new Date(payload.asOf) } })
+-  ),
+   // The cutoff comes from the cron run's time, so every retry purges the same events.
+diff --git a/scripts/cloudflare-plan.test.ts b/scripts/cloudflare-plan.test.ts
+index e4cf2e2..fde16db 100644
+--- a/scripts/cloudflare-plan.test.ts
++++ b/scripts/cloudflare-plan.test.ts
+@@ -189,3 +189,3 @@ describe("bucketJurisdictionPlan", () => {
+     );
+-    expect(result.stdout).toContain("= 9001–9013 kept");
++    expect(result.stdout).toContain("= 9001–9012 kept");
+   });
+diff --git a/scripts/setup-secrets.ts b/scripts/setup-secrets.ts
+index ca3479e..d99bb40 100644
+--- a/scripts/setup-secrets.ts
++++ b/scripts/setup-secrets.ts
+@@ -18,3 +18,2 @@ import {
+   type Environment,
+-  envBlock,
+   envFlag,
+@@ -24,3 +23,2 @@ import {
+   readDevVars,
+-  readWranglerConfig,
+   wrangler,
+@@ -86,8 +84,2 @@ const SECRETS: readonly Secret[] = [
+   },
+-  {
+-    name: "QA_TOKEN",
+-    prompt:
+-      "QA bypass token (required with QA_BYPASS=on, 32+ chars; type the same value you store as the QA_TOKEN GitHub secret, e.g. openssl rand -hex 32; Enter keeps the current one or skips it)",
+-    hidden: true,
+-  },
+   {
+@@ -149,5 +141,2 @@ if (
+ }
+-if (collected.QA_TOKEN && collected.QA_TOKEN.length < 32) {
+-  fail("QA_TOKEN must be at least 32 characters (openssl rand -hex 32)");
+-}
+ 
+@@ -162,22 +151,2 @@ if (dryRun) {
+   const [env] = parseEnvironments(target) as [Environment];
+-  // QA_BYPASS=on without QA_TOKEN fails every request of that environment: refuse to
+-  // leave it unset (docs/guides/how-to-configure-abuse-protection.md#qa-bypass).
+-  const vars = (envBlock(readWranglerConfig(), env).vars ?? {}) as Record<
+-    string,
+-    string
+-  >;
+-  if (vars.QA_BYPASS === "on" && !collected.QA_TOKEN && !dryRun) {
+-    const listed = wrangler([
+-      "secret",
+-      "list",
+-      "--format",
+-      "json",
+-      ...envFlag(env),
+-    ]);
+-    if (!listed.ok || !listed.stdout.includes('"QA_TOKEN"')) {
+-      fail(
+-        `${env} has QA_BYPASS=on but no QA_TOKEN secret: the Worker would refuse every request. Run again and enter QA_TOKEN (openssl rand -hex 32), or set QA_BYPASS to off in apps/web/wrangler.jsonc.`
+-      );
+-    }
+-  }
+   if (names.length === 0) {
+diff --git a/test/architecture/audit-coverage.test.ts b/test/architecture/audit-coverage.test.ts
+index 6153db0..ae351f9 100644
+--- a/test/architecture/audit-coverage.test.ts
++++ b/test/architecture/audit-coverage.test.ts
+@@ -139,7 +139,3 @@ describe("audit coverage", () => {
+     expect(auth).toContain("const audit = auditDatabaseHooks(env);");
+-    // Session hooks: the audit's first, then the QA admin's (server/qa-admin.ts).
+-    expect(auth).toContain("...audit.session,");
+-    expect(auth).toContain(
+-      "await audit.session?.create?.after?.(session, ctx);"
+-    );
++    expect(auth).toContain("session: audit.session,");
+     expect(auth).toContain("await audit.user?.create?.after?.(user, ctx);");
+diff --git a/test/architecture/workspace-scope.test.ts b/test/architecture/workspace-scope.test.ts
+index 8397026..64c0590 100644
+--- a/test/architecture/workspace-scope.test.ts
++++ b/test/architecture/workspace-scope.test.ts
+@@ -43,4 +43,2 @@ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
+     "a user's own settings across workspaces; rows cascade with the user",
+-  qa_outbox:
+-    "platform table: test mail to the QA suite's own addresses, kept 24 hours, belongs to no workspace",
+   job_idempotency_keys:

@@ -4,22 +4,38 @@
     {
       "id": "qa-automation",
       "title": "Automated QA of the starter's production",
-      "why": "The starter tests its own deployment at starter.flooper.me with real accounts: a QA suite (apps/web/test/qa), a QA workflow with a GitHub environment, and QA_BYPASS=on, which lets the suite skip Turnstile for QA addresses and keeps their mail in an outbox. A new project has no QA suite: the strip removes the suite, its workflow and scripts, and sets QA_BYPASS off everywhere. The bypass, outbox and QA admin code stays, inert with QA_BYPASS=off (its endpoints answer 404).",
+      "why": "The starter tests its own deployment at starter.flooper.me with real accounts and no human: a QA suite with its journeys (apps/web/test/qa, #53, #54), a QA workflow with a GitHub environment, and in the app the QA bypass of Turnstile, the QA outbox that keeps QA mail instead of sending it, the QA admin and the /api/qa endpoints (#59). A new project has none of that: the strip deletes all of it, its settings, its rate-limit binding, its cron entry, audit events and tests, and regenerates 0000_init without the qa_outbox table. Keep it with --keep qa-automation to run the automated QA against your own deployment.",
       "status": "active",
       "default": true,
       "delete": [
+        ".github/workflows/qa.yml",
         "apps/web/playwright.qa.config.ts",
-        "scripts/qa.ts",
+        "apps/web/src/pages/api/qa",
+        "apps/web/src/server/qa-admin.ts",
+        "apps/web/src/server/qa-bypass.ts",
+        "apps/web/src/server/qa-endpoint.ts",
+        "packages/features/src/abuse/check-qa-bypass.ts",
+        "packages/features/src/abuse/domain/qa-bypass.ts",
+        "packages/features/src/admin/demote-qa-admin.ts",
+        "packages/features/src/qa",
         "scripts/qa-scrub-artifacts.py",
-        ".github/workflows/qa.yml"
+        "scripts/qa.ts"
       ],
-      "tests": ["apps/web/test/qa", "scripts/qa-scrub-artifacts.test.ts"],
+      "tests": [
+        "apps/web/test/api/qa-bypass.test.ts",
+        "apps/web/test/api/qa-outbox.test.ts",
+        "apps/web/test/qa",
+        "packages/features/src/abuse/check-qa-bypass.test.ts",
+        "packages/features/src/abuse/domain/qa-bypass.test.ts",
+        "packages/features/src/admin/demote-qa-admin.integration.test.ts",
+        "packages/features/test/qa-fixtures.ts",
+        "scripts/qa-scrub-artifacts.test.ts"
+      ],
       "wrangler": [
         {
           "env": "all",
           "path": ["vars", "QA_BYPASS"],
-          "value": "off",
-          "comment": "The QA suite's bypass of the human check and its mail outbox (required: on | off;\ndocs/guides/how-to-configure-abuse-protection.md#qa-bypass). off: this project runs no QA suite."
+          "comment": null
         },
         {
           "env": "all",
@@ -96,10 +112,30 @@
           "file": "docs/guides/how-to-setup-ci.md",
           "action": "remove",
           "heading": "4. The QA environment"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "remove",
+          "heading": "The QA outbox"
+        },
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "action": "remove",
+          "heading": "The QA cleanup"
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "action": "remove",
+          "heading": "QA Bypass"
+        },
+        {
+          "file": "docs/architecture/testing.md",
+          "action": "remove",
+          "heading": "Production QA journeys"
         }
       ],
       "manual": [
-        "The QA bypass, the QA outbox (packages/features/src/qa, its qa_outbox table), the QA admin and /api/qa/* stay, inert with QA_BYPASS=off; the API test bindings keep it on so their tests still run. Remove the code too only if you want it gone: it touches the schema and the first migration."
+        "Delete the QA_TOKEN Worker secrets and the GitHub environment qa only if this account or repository ran the starter's QA (a new project never set them)."
       ],
       "text": [
         {
@@ -139,49 +175,74 @@
           "replace": "weekly delivery check of the QA workflow"
         },
         {
-          "file": "test/architecture/api-test-bindings.test.ts",
-          "find": "  it.each(Object.entries(topLevelVars))(\n",
-          "replace": "  // QA_BYPASS stays on in the test bindings: the API tests exercise the QA code the\n  // project keeps inert with off (starter-only.json, qa-automation).\n  it.each(Object.entries(topLevelVars).filter(([key]) => key !== \"QA_BYPASS\"))(\n"
-        }
-      ]
-    },
-    {
-      "id": "qa-outbox",
-      "title": "QA outbox",
-      "why": "The QA outbox (#59): with QA_BYPASS=on, mail to QA addresses is kept in the app (qa_outbox table) for the QA suite instead of being sent, plus the QA admin and /api/qa/*. The code stays in a project, inert with QA_BYPASS=off (qa-automation sets it off); nothing else to strip automatically.",
-      "status": "active",
-      "default": true,
-      "manual": [
-        "To remove the QA outbox code as well: packages/features/src/qa (and its table in the first migration), apps/web/src/pages/api/qa, apps/web/src/server/qa-admin.ts and qa-endpoint.ts, withQaOutbox in apps/web/src/lib/env.ts, its jobs and cron entry, MCP tools and audit events; regenerate the migration (docs/guides/how-to-setup-d1.md)."
-      ]
-    },
-    {
-      "id": "qa-journeys",
-      "title": "QA journeys",
-      "why": "The QA suite's journeys (#54): one *.qa.ts per checklist section, run against the starter's production by the QA workflow. A project has no QA suite to run them (qa-automation). Strip it with qa-automation.",
-      "status": "active",
-      "default": true,
-      "tests": ["apps/web/test/qa/README.md"],
-      "docs": [
-        {
-          "file": "docs/architecture/testing.md",
-          "action": "remove",
-          "heading": "Production QA journeys"
-        }
-      ],
-      "text": [
-        {
-          "file": "docs/guides/how-to-qa-a-deployment.md",
-          "find": "[apps/web/test/qa/README.md](../../apps/web/test/qa/README.md)",
-          "replace": "",
-          "line": true
+          "file": "scripts/doctor.ts",
+          "find": "/** A lowercase hostname with two labels or more (apps/web/src/lib/config.ts). */\nconst QA_EMAIL_DOMAIN_PATTERN =\n  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$/;\n\n",
+          "replace": ""
         },
         {
-          "file": "CHANGELOG.md",
-          "find": "[apps/web/test/qa/README.md](apps/web/test/qa/README.md)",
-          "replace": "`apps/web/test/qa/README.md`"
+          "file": "scripts/doctor.ts",
+          "find": "  checkQaBypass(\"local\", setting, (key) => value(key));\n",
+          "replace": ""
+        },
+        {
+          "file": "scripts/doctor.ts",
+          "find": "  // Deployed secrets cannot be read back: QA_TOKEN is only reminded of.\n  checkQaBypass(env, (key) => vars[key] || undefined, null);\n",
+          "replace": ""
+        },
+        {
+          "file": "scripts/doctor.ts",
+          "find": " * QA_BYPASS (on | off, required) and, with on, QA_EMAIL_DOMAIN and the QA_TOKEN secret, as\n * parseAbuseConfig checks them at startup. `secret` reads QA_TOKEN where it can be read\n * (.dev.vars), null for a deployed environment.\n */\nfunction checkQaBypass(\n  label: string,\n  setting: (key: string) => string | undefined,\n  secret: ((key: string) => string | undefined) | null\n) {\n  const bypass = setting(\"QA_BYPASS\");\n  if (bypass === \"off\") {\n    ok(`${label}: QA_BYPASS=off (Turnstile for everyone)`);\n    return;\n  }\n  if (bypass !== \"on\") {\n    error(\n      `${label}: QA_BYPASS must be on or off (it is ${bypass ? `\"${bypass}\"` : \"missing\"}; docs/guides/how-to-configure-abuse-protection.md#qa-bypass)`\n    );\n    return;\n  }\n  const domain = setting(\"QA_EMAIL_DOMAIN\");\n  if (!domain || !QA_EMAIL_DOMAIN_PATTERN.test(domain))\n    error(\n      `${label}: QA_BYPASS=on needs QA_EMAIL_DOMAIN, a lowercase hostname (it is ${domain ? `\"${domain}\"` : \"missing\"})`\n    );\n  else\n    ok(\n      `${label}: QA_BYPASS=on: X-QA-Token skips Turnstile for @${domain} only`\n    );\n  if (secret === null)\n    warn(\n      `${label}: QA_BYPASS=on needs the QA_TOKEN Worker secret, the same value as the QA_TOKEN GitHub secret (bun run setup:secrets --env ${label})`\n    );\n  else if ((secret(\"QA_TOKEN\") ?? \"\").length < 32)\n    error(\n      `${label}: QA_BYPASS=on needs QA_TOKEN (32+ characters) in .dev.vars, or set QA_BYPASS=off there`\n    );\n}\n\n/**\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/test/api/health.test.ts",
+          "find": "    [\"QA_BYPASS\", { QA_BYPASS: undefined }],\n    [\"QA_TOKEN\", { QA_BYPASS: \"on\", QA_TOKEN: undefined }],\n    [\"QA_EMAIL_DOMAIN\", { QA_BYPASS: \"on\", QA_EMAIL_DOMAIN: \"not a domain\" }],\n",
+          "replace": "    [\"TURNSTILE_SECRET_KEY\", { TURNSTILE_SECRET_KEY: undefined }],\n"
+        },
+        {
+          "file": "apps/web/test/api/health.test.ts",
+          "find": "      expect(detail).not.toContain(env.QA_TOKEN as string);",
+          "replace": "      expect(detail).not.toContain(env.TURNSTILE_SECRET_KEY as string);"
+        },
+        {
+          "file": "apps/web/src/server/cron.test.ts",
+          "find": "notifications.purge, qa-outbox.purge and trash.purge-expired",
+          "replace": "notifications.purge and trash.purge-expired"
+        },
+        {
+          "file": "apps/web/src/server/cron.test.ts",
+          "find": "      \"notifications.purge\",\n      \"qa-outbox.purge\",\n",
+          "replace": "      \"notifications.purge\",\n"
+        },
+        {
+          "file": "apps/web/src/server/cron.test.ts",
+          "find": "      expect.objectContaining({\n        type: \"qa-outbox.purge\",\n        source: \"/staging/cron\",\n        data: { asOf: \"2026-10-28T03:17:00.000Z\" },\n      }),\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/server/cron.test.ts",
+          "find": "      expect.objectContaining({ type: \"qa-outbox.purge\" }),\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/server/cron.test.ts",
+          "find": "    expect(new Set(traces).size).toBe(12);",
+          "replace": "    expect(new Set(traces).size).toBe(10);"
+        },
+        {
+          "file": "apps/web/src/server/cron.test.ts",
+          "find": "      \"cron qa-outbox.purge\",\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/server/cron.test.ts",
+          "find": "      expect.objectContaining({\n        attributes: {\n          \"app.cron.name\": \"qa-outbox.purge\",\n          \"app.cron.schedule\": \"17 3 * * *\",\n        },\n      }),\n",
+          "replace": ""
         }
-      ]
+      ],
+      "patch": "scripts/starter-only/qa-automation.patch",
+      "tables": ["qa_outbox"],
+      "rateLimits": ["RL_QA_BYPASS"]
     },
     {
       "id": "production-instance",
@@ -574,25 +635,82 @@
     {
       "id": "demo-mode",
       "title": "Demo mode",
-      "why": "Demo mode (#63) runs the starter's staging and production as a public demo: a notice and banner, sample notes, and accounts erased after DEMO_RETENTION_DAYS. A product is not a public demo, so the strip sets DEMO_MODE off in every environment; the code stays, inert with off.",
+      "why": "Demo mode (#63) runs the starter's staging and production as a public demo: a notice and banner, a seeded sample workspace, and accounts warned and erased after DEMO_RETENTION_DAYS, with its jobs, cron entries, notifications, admin overview and settings. A product is not a public demo: the strip deletes the code, its DEMO_* settings and tests, and the public demo guide.",
       "status": "active",
       "default": true,
       "wrangler": [
         {
-          "env": "staging",
+          "env": "all",
           "path": ["vars", "DEMO_MODE"],
-          "value": "off",
-          "comment": "Demo mode (required, no default: on | off; docs/guides/how-to-run-a-public-demo.md).\noff: this project is not a public demo; the other DEMO_* vars are ignored."
+          "comment": null
         },
         {
-          "env": "production",
-          "path": ["vars", "DEMO_MODE"],
-          "value": "off",
-          "comment": "Demo mode (required, no default: on | off; docs/guides/how-to-run-a-public-demo.md).\noff: this project is not a public demo; the other DEMO_* vars are ignored."
+          "env": "all",
+          "path": ["vars", "DEMO_RETENTION_DAYS"]
+        },
+        {
+          "env": "all",
+          "path": ["vars", "DEMO_SAMPLE_DATA"]
+        },
+        {
+          "env": "all",
+          "path": ["vars", "DEMO_PROTECTED_EMAILS"]
         }
       ],
-      "manual": [
-        "Demo mode's code stays, inert with DEMO_MODE=off. To delete it, follow Removing demo mode in docs/guides/how-to-run-a-public-demo.md."
+      "delete": [
+        "apps/web/src/lib/demo-banner.ts",
+        "apps/web/src/server/demo.ts",
+        "packages/features/src/audit/count-audit-events.ts",
+        "packages/features/src/audit/find-latest-audit-times.ts",
+        "packages/features/src/demo",
+        "packages/features/src/privacy/erase-account.ts",
+        "packages/ui/src/components/patterns/demo-banner.stories.tsx",
+        "packages/ui/src/components/patterns/demo-banner.tsx",
+        "docs/guides/how-to-run-a-public-demo.md"
+      ],
+      "tests": [
+        "apps/web/src/lib/demo-banner.test.ts",
+        "apps/web/test/api/demo-mode.test.ts",
+        "apps/web/test/e2e/demo",
+        "apps/web/test/e2e/demo-vite.mjs",
+        "packages/features/src/audit/count-audit-events.integration.test.ts",
+        "packages/features/src/audit/find-latest-audit-times.integration.test.ts",
+        "packages/features/src/privacy/erase-account.integration.test.ts",
+        "packages/features/test/demo-fixtures.ts"
+      ],
+      "patch": "scripts/starter-only/demo-mode.patch",
+      "text": [
+        {
+          "file": "scripts/doctor.ts",
+          "find": "import {\n  DEMO_PROTECTED_EMAILS_MAX,\n  DEMO_RETENTION_MAX_DAYS,\n  DEMO_RETENTION_MIN_DAYS,\n} from \"../packages/features/src/demo/domain/settings\";\n",
+          "replace": ""
+        },
+        {
+          "file": "scripts/doctor.ts",
+          "find": "  // .dev.vars overrides the develop var; wrangler.jsonc's applies without the line.\n  checkDemoVars(\"local\", (key) => vars.get(key) ?? topVars[key]);\n",
+          "replace": ""
+        },
+        {
+          "file": "scripts/doctor.ts",
+          "find": "  checkDemoVars(env, (key) => vars[key]);\n",
+          "replace": ""
+        },
+        {
+          "file": "scripts/doctor.ts",
+          "find": "/**\n * DEMO_MODE (off | on, required; docs/guides/how-to-run-a-public-demo.md) and, with on,\n * DEMO_RETENTION_DAYS, DEMO_SAMPLE_DATA and DEMO_PROTECTED_EMAILS, as parseDemoConfig\n * checks them. Starter-only: a project keeps off.\n */\nfunction checkDemoVars(\n  label: string,\n  setting: (key: string) => string | undefined\n) {\n  const mode = setting(\"DEMO_MODE\");\n  if (mode === \"off\") {\n    ok(`${label}: DEMO_MODE=off`);\n    return;\n  }\n  if (mode !== \"on\") {\n    error(\n      `${label}: DEMO_MODE must be off or on (it is ${mode ? `\"${mode}\"` : \"missing\"}; docs/guides/how-to-run-a-public-demo.md)`\n    );\n    return;\n  }\n  const days = setting(\"DEMO_RETENTION_DAYS\") ?? \"\";\n  const n = Number(days);\n  const daysOk =\n    /^\\d+$/.test(days) &&\n    n >= DEMO_RETENTION_MIN_DAYS &&\n    n <= DEMO_RETENTION_MAX_DAYS;\n  if (!daysOk)\n    error(\n      `${label}: DEMO_MODE=on needs DEMO_RETENTION_DAYS, a whole number from ${DEMO_RETENTION_MIN_DAYS} to ${DEMO_RETENTION_MAX_DAYS} (it is ${days ? `\"${days}\"` : \"missing\"})`\n    );\n  const sample = setting(\"DEMO_SAMPLE_DATA\");\n  if (sample !== \"on\" && sample !== \"off\")\n    error(`${label}: DEMO_MODE=on needs DEMO_SAMPLE_DATA=on or off`);\n  const emails = (setting(\"DEMO_PROTECTED_EMAILS\") ?? \"\")\n    .split(\",\")\n    .map((email) => email.trim())\n    .filter(Boolean);\n  const bad = emails.filter(\n    (email) => !/^[^\\s@,]+@[^\\s@,]+\\.[^\\s@,]+$/.test(email)\n  );\n  if (bad.length)\n    error(\n      `${label}: DEMO_PROTECTED_EMAILS has entries that are not addresses: ${bad.join(\", \")}`\n    );\n  if (emails.length > DEMO_PROTECTED_EMAILS_MAX)\n    error(\n      `${label}: DEMO_PROTECTED_EMAILS holds at most ${DEMO_PROTECTED_EMAILS_MAX} addresses`\n    );\n  if (daysOk && (sample === \"on\" || sample === \"off\"))\n    ok(\n      `${label}: DEMO_MODE=on: accounts erased after ${n} days (warned a day before), sample data ${sample}, ${emails.length} protected address${emails.length === 1 ? \"\" : \"es\"} besides admins, BOOTSTRAP_ADMIN_EMAIL and QA_EMAIL_DOMAIN`\n    );\n}\n\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/test/api/health.test.ts",
+          "find": "    [\"DEMO_MODE\", { DEMO_MODE: undefined }],\n    [\"DEMO_RETENTION_DAYS\", { DEMO_MODE: \"on\", DEMO_RETENTION_DAYS: \"1\" }],\n    [\"DEMO_SAMPLE_DATA\", { DEMO_MODE: \"on\", DEMO_SAMPLE_DATA: undefined }],\n    [\n      \"DEMO_PROTECTED_EMAILS\",\n      { DEMO_MODE: \"on\", DEMO_PROTECTED_EMAILS: \"not-an-email\" },\n    ],\n",
+          "replace": ""
+        },
+        {
+          "file": "docs/README.md",
+          "find": "[how-to-run-a-public-demo.md](guides/how-to-run-a-public-demo.md)",
+          "replace": "",
+          "line": true
+        }
       ]
     },
     {

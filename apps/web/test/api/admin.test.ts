@@ -186,6 +186,11 @@ describe("admin procedures", () => {
     expect(overview.plans?.trials.active).toBeGreaterThanOrEqual(4);
     expect(overview.usage?.period).toMatch(/^\d{4}-\d{2}$/);
 
+    // The real sending path to any address (the local email simulation answers).
+    await expect(
+      caller.admin.email.sendTest({ to: "delivery@example.test" })
+    ).resolves.toEqual({ sent: true });
+
     expect(await caller.admin.settings.get()).toMatchObject({
       environment: "develop",
       workspaceMode: "multi",

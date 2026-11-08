@@ -35,7 +35,7 @@ Each with the recommended answer, so they can reply "yes":
 
 1. **App name** (from the prompt's `<name>`; confirm it). It becomes `--name`: page titles, mails, the authenticator app, passkeys, the MCP server, the docs title.
 2. **Repository**: owner (their `gh` account or an organization), name (the app name in kebab-case), visibility (recommend private).
-3. **What to strip.** Recommend the defaults: strip every default (`bun run starter:strip --list` shows them: the QA automation, journeys and outbox, the production values, the marketing and home page, the name, demo mode, the developer demos, the Container demo and the repository conventions); keep `tasks` and `notes`. Ask whether they want the Container demo (`--keep containers`) or the developer demos (`--keep developer-demos`).
+3. **What to strip.** Recommend the defaults: strip every default (`bun run starter:strip --list` shows them: the QA automation (suite, bypass, outbox), the production values, the marketing and home page, the name, demo mode, the developer demos, the Container demo and the repository conventions); keep `tasks` and `notes`. Ask whether they want the automated QA suite against their own deployment (`--keep qa-automation`), the Container demo (`--keep containers`) or the developer demos (`--keep developer-demos`).
 4. **Production hostname** (for example `app.example.com`), or "later" (it stays a placeholder and the deploy waits).
 5. **Product settings** for production: workspace mode (personal, single or multi), sign-up (open or invite), billing (off, manual, provider). `setup:auth` asks the rest.
 
