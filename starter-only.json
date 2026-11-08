@@ -850,17 +850,63 @@
     {
       "id": "container-workflow-demo",
       "title": "Container workflow demo",
-      "why": "Developer demos › Containers runs a Cloudflare Workflow that computes digits of pi in the container and shows each step; the starter's production runs it with a daily cap. A product does not need the demo page: the strip removes the page, its route, navigation entry and demo card, and turns CONTAINER_DEMO off in production. Its backend (container-runs feature, Workflow, tRPC and MCP tools) stays as the worked example of long-running work, inert with off.",
+      "why": "Developer demos › Containers runs a Cloudflare Workflow that computes digits of pi in the pi container, stores them in R2 and notifies the person, with a step timeline, past runs and Retry; the starter's production runs it under a daily cap. A product has its own long-running work: the strip deletes the demo (the container-runs feature and its tables, the Workflow, its tRPC procedures and MCP tools, the page, the PiComputer port and adapters, the settings, the container.run rate limit and the guide) and regenerates 0000_init without its tables.",
       "status": "active",
       "default": true,
-      "delete": ["apps/web/src/components/app/pages/ContainerDemoPage.tsx"],
-      "tests": ["apps/web/test/e2e/container-demo.spec.ts"],
+      "delete": [
+        "packages/features/src/container-runs",
+        "packages/features/src/platform/ports/pi-computer.ts",
+        "packages/features/src/platform/ports/pi-computer.contract.ts",
+        "packages/features/src/platform/adapters/cloudflare/container-pi-computer.ts",
+        "packages/features/src/platform/adapters/memory/fake-pi-computer.ts",
+        "apps/web/src/server/container-runs.ts",
+        "apps/web/src/server/container-run-workflow.ts",
+        "apps/web/src/server/trpc/container-runs-router.ts",
+        "apps/web/src/pages/api/container-runs",
+        "apps/web/src/components/app/pages/ContainerDemoPage.tsx",
+        "packages/ui/src/components/patterns/container-run.tsx",
+        "docs/guides/how-to-run-container-workflows.md"
+      ],
+      "tests": [
+        "apps/web/test/api/container-runs.test.ts",
+        "apps/web/test/e2e/container-demo.spec.ts",
+        "packages/features/test/container-run-fixtures.ts",
+        "packages/features/src/platform/adapters/cloudflare/container-pi-computer.contract.test.ts",
+        "packages/features/src/platform/adapters/memory/fake-pi-computer.contract.test.ts",
+        "packages/ui/src/components/patterns/container-run.stories.tsx"
+      ],
+      "patch": "scripts/starter-only/container-workflow-demo.patch",
+      "tables": [
+        "container_runs",
+        "container_run_quota",
+        "container_run_user_quota"
+      ],
+      "rateLimits": ["RL_CONTAINER_RUN"],
       "wrangler": [
         {
-          "env": "production",
+          "env": "all",
           "path": ["vars", "CONTAINER_DEMO"],
-          "value": "off",
-          "comment": "The container workflow demo (required, no default: on | off;\ndocs/guides/how-to-run-container-workflows.md#settings). off: this project runs no public demo."
+          "comment": null
+        },
+        {
+          "env": "all",
+          "path": ["vars", "CONTAINER_DEMO_DAILY_CAP"],
+          "comment": null
+        },
+        {
+          "env": "all",
+          "path": ["vars", "CONTAINER_DEMO_RUNNER"],
+          "comment": null
+        },
+        {
+          "env": "all",
+          "path": ["workflows"],
+          "comment": null
+        },
+        {
+          "env": "all",
+          "path": ["services"],
+          "comment": null
         }
       ],
       "text": [
@@ -900,9 +946,131 @@
           "replace": ""
         },
         {
-          "file": "test/architecture/qa-checklist.test.ts",
-          "find": "  \"how-to-setup-product-analytics.md\":\n    \"write-only analytics events; nothing visible in the app\",\n",
-          "replace": "  \"how-to-setup-product-analytics.md\":\n    \"write-only analytics events; nothing visible in the app (no page)\",\n  \"how-to-run-container-workflows.md\":\n    \"the container workflow demo's page is stripped; its backend stays, inert, as the worked example\",\n"
+          "file": "apps/web/src/content/features.ts",
+          "find": "\"A Workflow runs a Docker container task and keeps each step; a capped demo in the app.\"",
+          "replace": "\"Run a Docker container beside the app; a separate demo, not used by the app yet.\""
+        },
+        {
+          "file": "apps/web/src/content/features.ts",
+          "find": "\"guides/how-to-run-container-workflows\"",
+          "replace": "\"guides/how-to-setup-container\""
+        },
+        {
+          "file": "apps/web/src/content/features.ts",
+          "find": "\"Containers: a workflow demo you can run in the app\"",
+          "replace": "\"Containers: a demo today, not yet wired in\""
+        },
+        {
+          "file": "CHANGELOG.md",
+          "find": "- **Container workflow demo.**",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "docs/README.md",
+          "find": "| [how-to-run-container-workflows.md](guides/how-to-run-container-workflows.md) |",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": ", `RL_CONTAINER_RUN`",
+          "replace": ""
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": ", `CONTAINER_RUN_WORKFLOW` (Workflows: the container demo's `ContainerRunWorkflow`, exported from `src/worker.ts`), `PI_CONTAINER_SERVICE` (a service binding to the pi container Worker)",
+          "replace": ""
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": ", `CONTAINER_DEMO` (`on` | `off`), `CONTAINER_DEMO_DAILY_CAP` and `CONTAINER_DEMO_RUNNER` (`container` | `fake`; all required, no defaults: [the container demo](../guides/how-to-run-container-workflows.md#settings))",
+          "replace": ""
+        },
+        {
+          "file": "docs/architecture/overview.md",
+          "find": "; the web app's container workflow demo reaches it through a service binding ([how-to-run-container-workflows.md](../guides/how-to-run-container-workflows.md))",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "find": ", `RL_CONTAINER_RUN`",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "find": " `CONTAINER_RUN_WORKFLOW` (the container demo's Workflow, created on deploy) and `PI_CONTAINER_SERVICE` (a service binding to the pi container Worker, `apps/container`, deployed by the same deploy scripts),",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "find": ", and the container demo's `CONTAINER_DEMO` (`on`|`off`), `CONTAINER_DEMO_DAILY_CAP` (runs a day) and `CONTAINER_DEMO_RUNNER` (`container`|`fake`), all required ([settings](how-to-run-container-workflows.md#settings))",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-setup-web-app.md",
+          "find": "- `/app/container-demo` runs the container workflow",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": ", `RL_CONTAINER_RUN`",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "| `containerRuns.start` (the container workflow demo",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "docs/guides/how-to-configure-abuse-protection.md",
+          "find": "; a new binding takes the next number in each block (`RL_CONTAINER_RUN` is 7014, 8014, 9014)",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-add-background-jobs.md",
+          "find": "A job can start a Workflow instance, and so can a use case. The starter includes one, the container workflow demo: [how-to-run-container-workflows.md](how-to-run-container-workflows.md) is the worked example (a binding per environment, the class exported from `src/worker.ts`, each step recording its own state, a stable error per step, the Workflows test utilities) and compares the two in detail.",
+          "replace": "A job can start a Workflow instance; the starter does not include one. Adding it is a new binding ([overview.md](../architecture/overview.md#extension-checklists))."
+        },
+        {
+          "file": "docs/guides/how-to-setup-ci.md",
+          "find": ", which deploy the pi container Worker (`apps/container`, its image built with Docker and pushed to Cloudflare's registry) and then the web Worker ([how-to-run-container-workflows.md](how-to-run-container-workflows.md#deploy))",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-setup-container.md",
+          "find": " The web app's container workflow demo calls it through a service binding; how that works, its limits and cost are in [how-to-run-container-workflows.md](how-to-run-container-workflows.md).",
+          "replace": ""
+        },
+        {
+          "file": "docs/guides/how-to-send-notifications.md",
+          "find": "| `container-runs.finished`",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "docs/guides/how-to-use-the-audit-log.md",
+          "find": "| `container_run.",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "docs/guides/how-to-setup-product-analytics.md",
+          "find": "| `container_runs.started`",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "apps/web/README.md",
+          "find": ", `/app/container-demo` (a Workflow running a container task: [how-to-run-container-workflows.md](../../docs/guides/how-to-run-container-workflows.md))",
+          "replace": ""
+        },
+        {
+          "file": "apps/container/README.md",
+          "find": " The web app's container workflow demo (`/app/container-demo`) calls it through its `PI_CONTAINER_SERVICE` service binding; the Worker has no public URL ([docs/guides/how-to-run-container-workflows.md](../../docs/guides/how-to-run-container-workflows.md)).",
+          "replace": ""
         }
       ],
       "docs": [
@@ -913,8 +1081,7 @@
         }
       ],
       "manual": [
-        "The container-runs backend stays, inert with CONTAINER_DEMO=off (develop keeps it on with the fake runner for the API tests). To delete the demo entirely, follow Remove the demo in docs/guides/how-to-run-container-workflows.md; that touches the schema (three tables in 0000_init).",
-        "Keeping the demo (--keep container-workflow-demo) with the real container needs containers kept too: without apps/container the demo runs with the fake runner."
+        "The starter's production may hold the three tables (applied by hand); a project's own database is created from the regenerated 0000_init without them."
       ]
     },
     {
