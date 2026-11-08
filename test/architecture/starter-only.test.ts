@@ -26,8 +26,10 @@ import {
   type Component,
   definedEnvironments,
   envJsonPath,
+  FIRST_MIGRATION,
   hasText,
   jobRange,
+  migrationHasTables,
   patchState,
   readManifest,
   STARTER_NOTE,
@@ -64,6 +66,11 @@ function missing(component: Component): string[] {
     const state = patchState(ROOT, component.patch);
     if (state !== "applicable") problems.push(`${component.patch}: ${state}`);
   }
+
+  if (component.tables?.length && !migrationHasTables(ROOT, component.tables))
+    problems.push(
+      `${FIRST_MIGRATION} creates none of ${component.tables.join(", ")}`
+    );
 
   for (const edit of component.wrangler ?? []) {
     const file = edit.file ?? WRANGLER;

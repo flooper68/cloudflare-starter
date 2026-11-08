@@ -19,6 +19,8 @@ const demoEnv = {
   DEMO_RETENTION_DAYS: "7",
   DEMO_SAMPLE_DATA: "on",
   DEMO_PROTECTED_EMAILS: "keep@demo.test",
+  // Set here, not only in the bindings: a project without the QA suite has no QA domain.
+  QA_EMAIL_DOMAIN: "qa.flooper.me",
 } as AppEnv;
 const DAY = 24 * 60 * 60 * 1000;
 

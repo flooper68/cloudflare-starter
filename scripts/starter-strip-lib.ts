@@ -147,6 +147,12 @@ export interface Component {
   readonly files?: readonly FileWrite[];
   /** Steps the script cannot do, printed after the strip. */
   readonly manual?: readonly string[];
+  /**
+   * Tables the component's schema adds. Stripping it regenerates the first migration
+   * (packages/features/migrations/0000_init.sql) from the remaining schema, the documented
+   * flow before a project's first real deploy (docs/guides/how-to-setup-d1.md).
+   */
+  readonly tables?: readonly string[];
 }
 
 export interface Manifest {
@@ -165,15 +171,20 @@ export interface Action {
   readonly description: string;
   readonly done: boolean;
   readonly run: () => void;
-  /** Patches run before every other change of every component (they need the original text). */
-  readonly phase?: "patch";
+  /**
+   * Patches run before every other change of every component (they need the original
+   * text); the migration is regenerated after all of them (it reads the final schema).
+   */
+  readonly phase?: "patch" | "last";
 }
 
 /** The actions of several components in the order they run: every patch first. */
 export function inRunOrder(actions: readonly Action[]): Action[] {
   return [
     ...actions.filter((action) => action.phase === "patch"),
-    ...actions.filter((action) => action.phase !== "patch"),
+    ...actions.filter((action) => !action.phase),
+    // One regeneration covers every component.
+    ...actions.filter((action) => action.phase === "last").slice(0, 1),
   ];
 }
 
@@ -596,7 +607,9 @@ export function planComponent(
   const actions: Action[] = [];
   const skipped: string[] = [];
 
-  if (component.patch) {
+  // A stripped component's patch is not checked again: the changes that ran after it
+  // (other components' edits, lint:fix) may have moved its context.
+  if (component.patch && component.status !== "stripped") {
     const patch = component.patch;
     const state = patchState(root, patch);
     if (state !== "applied" && state !== "applicable")
@@ -800,7 +813,51 @@ export function planComponent(
   for (const path of [...(component.tests ?? []), ...(component.delete ?? [])])
     actions.push(deleteAction(id, root, path));
 
+  if (component.tables?.length)
+    actions.push(migrationAction(id, root, component.tables));
+
   return { actions, skipped };
+}
+
+export const FIRST_MIGRATION = "packages/features/migrations/0000_init.sql";
+
+/** Whether the first migration still creates one of `tables`. */
+export function migrationHasTables(
+  root: string,
+  tables: readonly string[]
+): boolean {
+  const sql = readText(root, FIRST_MIGRATION) ?? "";
+  return tables.some((table) => sql.includes(`CREATE TABLE \`${table}\``));
+}
+
+/**
+ * Regenerates the single `0000_init` from the schema left after the strip: in
+ * packages/features, delete `migrations/` and run `drizzle-kit generate --name init`.
+ */
+function migrationAction(
+  component: string,
+  root: string,
+  tables: readonly string[]
+): Action {
+  return {
+    component,
+    description: `regenerate ${FIRST_MIGRATION} without ${tables.join(", ")} (drizzle-kit generate --name init)`,
+    done: !migrationHasTables(root, tables),
+    phase: "last",
+    run: () => {
+      const features = join(root, "packages/features");
+      rmSync(join(features, "migrations"), { recursive: true, force: true });
+      const result = spawnSync(
+        "bunx",
+        ["drizzle-kit", "generate", "--name", "init"],
+        { cwd: features, encoding: "utf8" }
+      );
+      if (result.status !== 0)
+        throw new Error(
+          `drizzle-kit generate failed: ${result.stderr || result.stdout}`
+        );
+    },
+  };
 }
 
 /** The first line of a text, quoted and cut to 70 characters, for the plan. */
