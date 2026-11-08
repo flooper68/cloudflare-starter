@@ -367,7 +367,9 @@ describe("rate limits", () => {
     expect(await response.json()).toMatchObject({
       error: { data: { code: "RATE_LIMITED", retryAfterSeconds: 60 } },
     });
-  });
+    // 120 authorized /mcp requests, each reading the user, the session and the agent
+    // grant from D1; with the other API files running in parallel that can pass 5 s.
+  }, 15_000);
 });
 
 /** Failed human checks recorded for an email, newest first. */
