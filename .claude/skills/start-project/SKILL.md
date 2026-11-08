@@ -19,7 +19,7 @@ Ask only these, each with the recommended answer so they can say "yes":
 
 1. **Project name** (for `--name`): the product's name, shown in page titles, mails, the authenticator app, passkeys, the MCP server and the docs. No default; without it the renames are left as next steps.
 2. **Repository URL** (for `--repo-url`): defaults to the `origin` remote on GitHub; confirm it.
-3. **What to strip.** Recommend the defaults: strip `qa-automation`, `production-instance`, `marketing`, `brand-name`, `developer-demos`, `containers`, `starter-repo`; keep `tasks` and `notes`. Ask whether they want the Container demo (`--keep containers`) or the developer demos (`--keep developer-demos`), and whether Tasks can go (`--only` with `tasks` added).
+3. **What to strip.** Recommend the defaults: strip `qa-automation`, `qa-journeys`, `production-instance`, `marketing`, `brand-name`, `developer-demos`, `containers`, `starter-repo`; keep `tasks` and `notes`. Ask whether they want the Container demo (`--keep containers`) or the developer demos (`--keep developer-demos`), and whether Tasks can go (`--only` with `tasks` added).
 
 Pending components (their PRs have not landed on the starter) are skipped by the script; mention them only if the owner asks.
 

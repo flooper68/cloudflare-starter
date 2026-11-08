@@ -295,11 +295,25 @@
     {
       "id": "qa-journeys",
       "title": "QA journeys",
-      "why": "The QA suite's journeys (one *.qa.ts per checklist section) for the starter's production. They live in apps/web/test/qa/, which qa-automation deletes.",
-      "status": "pending",
-      "pending": "#54 QA journeys; when it merges, set status to active and fold its doc changes into qa-automation",
+      "why": "The QA suite's journeys (#54): one *.qa.ts per checklist section, run against the starter's production by the QA workflow. A project has no QA suite to run them (qa-automation). Strip it with qa-automation.",
+      "status": "active",
       "default": true,
-      "delete": ["apps/web/test/qa/README.md"]
+      "tests": ["apps/web/test/qa/README.md"],
+      "docs": [
+        {
+          "file": "docs/architecture/testing.md",
+          "action": "remove",
+          "heading": "Production QA journeys"
+        }
+      ],
+      "text": [
+        {
+          "file": "docs/guides/how-to-qa-a-deployment.md",
+          "find": "[apps/web/test/qa/README.md](../../apps/web/test/qa/README.md)",
+          "replace": "",
+          "line": true
+        }
+      ]
     },
     {
       "id": "production-instance",
