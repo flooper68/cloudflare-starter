@@ -186,7 +186,48 @@ describe("createD1FeatureFlags", () => {
     ).toMatchObject({ value: false, reason: "STATIC" });
   });
 
-  it("shares one query between concurrent evaluations on a cold cache", async () => {
+  it("never makes an evaluation wait on another caller's pending query", async () => {
+    // In Workers the first caller's request can end (and its query be cancelled) before
+    // the query settles; here its query never settles at all.
+    await setFallthrough("independent", true);
+    let calls = 0;
+    const firstHangs = new Proxy(env.DB, {
+      get(target, property) {
+        if (property === "prepare") {
+          return (query: string) => {
+            calls += 1;
+            if (calls === 1) {
+              const never = () => new Promise<never>(() => {});
+              const hanging: Record<string, unknown> = {};
+              for (const method of ["all", "raw", "first", "run"]) {
+                hanging[method] = never;
+              }
+              hanging.bind = () => hanging;
+              return hanging as unknown as D1PreparedStatement;
+            }
+            return target.prepare(query);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    const flags = createD1FeatureFlags({
+      d1: firstHangs,
+      clock: manualClock(),
+    });
+    const context = contractFlagContext();
+    void flags.getBooleanDetails("independent", false, context);
+    const second = flags.getBooleanDetails("independent", false, context);
+    const timedOut = new Promise<"timed out">((resolve) =>
+      setTimeout(() => resolve("timed out"), 2_000)
+    );
+    expect(await Promise.race([second, timedOut])).toMatchObject({
+      value: true,
+    });
+  });
+
+  it("serves the flags a finished query loaded to every later evaluation", async () => {
     await setFallthrough("shared", true);
     const counted = countingD1(env.DB);
     const flags = createD1FeatureFlags({
@@ -194,8 +235,8 @@ describe("createD1FeatureFlags", () => {
       clock: manualClock(),
     });
     const context = contractFlagContext();
+    await flags.getBooleanDetails("shared", false, context);
     await Promise.all([
-      flags.getBooleanDetails("shared", false, context),
       flags.getBooleanDetails("shared", false, context),
       flags.getStringDetails("other", "x", context),
     ]);

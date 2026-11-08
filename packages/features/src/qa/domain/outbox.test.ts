@@ -1,11 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatMailbox,
   isQaRunAddress,
   QA_OUTBOX_RETENTION_MS,
   qaOutboxCutoff,
   renderedHeaders,
 } from "./outbox";
+
+describe("formatMailbox", () => {
+  it("shows the display name in quotes before the address, as a From header does", () => {
+    expect(
+      formatMailbox({ email: "starter@flooper.me", name: "Cloudflare Starter" })
+    ).toBe('"Cloudflare Starter" <starter@flooper.me>');
+  });
+
+  it("is the bare address without a name, and drops quotes and backslashes from a name", () => {
+    expect(formatMailbox({ email: "a@b.test" })).toBe("a@b.test");
+    expect(formatMailbox({ email: "a@b.test", name: 'Ada "\\" L' })).toBe(
+      '"Ada  L" <a@b.test>'
+    );
+  });
+});
 
 describe("isQaRunAddress", () => {
   it.each([

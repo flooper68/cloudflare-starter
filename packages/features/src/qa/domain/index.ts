@@ -1,4 +1,5 @@
 export {
+  formatMailbox,
   isQaRunAddress,
   type Mailbox,
   QA_CLEANUP_BATCH,

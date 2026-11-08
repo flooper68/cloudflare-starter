@@ -28,6 +28,8 @@ What changed in each release of the starter, for people evaluating it or buildin
 
 ### Fixed
 
+- **App pages no longer hang after a quick navigation.** The feature-flag provider shared one pending D1 query between requests of an isolate. When the request that started it ended early (the browser navigated away), the query was cancelled and never settled, and every request waiting on it hung: the shell's tRPC batch (`flags.client`) never answered, so pages stayed on their loading skeleton and the workspace menu showed the brand name. Flags still come from memory for 30 s, but a pending query is no longer shared between requests.
+- **The QA outbox keeps the From address with its display name** (`"Cloudflare Starter" <starter@flooper.me>`), as the message would have carried it, instead of the bare address.
 - **A suspended or erased account's browser is signed out instead of seeing an error.** With the session cookie of an account an admin suspended, or one that was deleted, `/sign-in` and the app answered 500 ("Session expired") while the one-minute session cookie cache lasted. Now the session counts as signed out on the next request: pages redirect to `/sign-in`, which renders, APIs answer 401, and the stale session cookies are expired.
 - **Settings and other in-app links no longer reload the page.** The settings section navigation used plain links that loaded the whole document; it now routes client-side like the rest of the app, and a test fails on a plain link to an /app page.
 - **A trial shows its full length on the day it starts.** Billing showed "Trial · 13 days left" on the first day of a 14-day trial; days left now count a started day, so the last day shows 1 and an ended trial 0.

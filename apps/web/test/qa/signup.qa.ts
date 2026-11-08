@@ -10,7 +10,7 @@ import {
 import { expectMail, linkTo } from "./support/mail";
 import { qaPassword } from "./support/password";
 import { registerAccount } from "./support/registry";
-import { open, submitSignIn } from "./support/session";
+import { formReady, open, submitSignIn } from "./support/session";
 
 // Checklist: Sign-up and email verification. The one journey that signs up through the
 // form by hand (the others use createVerifiedAccount): check-inbox, one resend, sign-in
@@ -37,6 +37,7 @@ test.afterAll(async () => {
 test("sign-up shows Check your inbox naming the address, and sends the link", async () => {
   const since = new Date();
   await open(page, "/sign-up");
+  await formReady(page.getByRole("button", { name: "Create account" }));
   await page.getByLabel("Name").fill(`QA ${currentRunId()} signup`);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);

@@ -148,6 +148,9 @@ describe("the QA outbox", () => {
     expect((await signUpQa(run)).status).toBe(200);
     const [mail] = await messages(run);
     expect(mail).toMatchObject({ to: run, subject: "Verify your email" });
+    // `from` reads as the From header does, display name included.
+    expect(mail?.from).toMatch(/^".+" <[^@>]+@[^>]+>$/);
+    expect(mail?.from).toBe((mail?.headers as Record<string, string>).from);
     expect(String(mail?.text)).toContain("/api/auth/verify-email?");
     expect(mail?.headers).toMatchObject({
       to: expect.stringContaining(run),

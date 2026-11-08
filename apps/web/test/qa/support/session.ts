@@ -4,7 +4,7 @@
  * signing out through the profile menu, settings, the workspace switcher. When the shell's
  * menus move, only this file changes.
  */
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 import { openProfileMenu } from "../../e2e/helpers";
 import { expect, open, QA_TOKEN_HEADER, qaEnv } from "./index";
@@ -31,9 +31,21 @@ export async function submitSignIn(
   password: string
 ): Promise<void> {
   await open(page, "/sign-in");
+  const submit = page.getByRole("button", { name: "Sign in", exact: true });
+  await formReady(submit);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await submit.click();
+}
+
+/**
+ * Waits until an auth form can be sent: its button is enabled only once React has
+ * hydrated the form and the human check has passed. Astro drops `ssr` from the island
+ * as hydration starts, before React commits, so text typed earlier can be reset by the
+ * hydrating form (it then reports "Email is required").
+ */
+export async function formReady(submit: Locator): Promise<void> {
+  await expect(submit).toBeEnabled({ timeout: 30_000 });
 }
 
 /** Signs in with the password and lands on `landing` (the dashboard by default). */
