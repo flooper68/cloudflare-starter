@@ -116,6 +116,7 @@ describe("the real docs index", () => {
   it("has the sections of docs/README.md", () => {
     expect(nav.map((section) => section.title)).toEqual([
       "Start",
+      "Working with agents",
       "Guides",
       "Architecture",
       "Processes",

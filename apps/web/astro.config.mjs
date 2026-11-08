@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, sessionDrivers } from "astro/config";
 import { devPort } from "./dev-port.mjs";
 import {
+  docsDiagramsPlugin,
   docsLinksPlugin,
   docsTablesPlugin,
 } from "./src/docs/markdown-plugins.ts";
@@ -30,10 +31,12 @@ export default defineConfig({
   integrations: [react(), ...siteIntegrations(SITE_URL)],
   // The docs site (/docs) renders the repository's Markdown (src/content.config.ts):
   // links written for GitHub are rewritten for the site and tables scroll in their own
-  // box (src/docs/markdown-plugins.ts); code blocks carry both Shiki themes as CSS
+  // box, and an image of a repository .svg is inlined as the diagram itself
+  // (src/docs/markdown-plugins.ts, src/docs/diagrams.ts); code blocks carry both Shiki themes as CSS
   // variables, switched with data-theme (packages/ui/src/styles/prose.css).
   markdown: {
     processor: satteri({
+      mdastPlugins: [docsDiagramsPlugin(REPO_ROOT)],
       hastPlugins: [docsLinksPlugin(REPO_ROOT), docsTablesPlugin()],
       // Off so text and heading ids match GitHub's ("--" stays "--"): links written
       // for GitHub then work on the site, and test/architecture/docs.test.ts models both.

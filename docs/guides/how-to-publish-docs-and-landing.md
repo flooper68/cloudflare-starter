@@ -25,7 +25,17 @@ Write links as you always do: relative paths between files (`[testing.md](../arc
 - any other file becomes its GitHub page (`…/blob/main/apps/web/wrangler.jsonc`), a folder (`../.claude/skills/`) its GitHub tree;
 - absolute URLs, site paths (`/app`) and `#fragments` stay as they are.
 
-Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks are shown as code.
+Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks are shown as code; for a diagram on the site, use an SVG ([Diagrams](#diagrams)).
+
+### Diagrams
+
+A paragraph that is only an image of an SVG in the repository is a diagram: `![The lifecycle of a change](images/agentic-lifecycle.svg)`. GitHub shows the file as an image. The site inlines the SVG itself into the page (a Sätteri mdast plugin, `docsDiagramsPlugin` with `apps/web/src/docs/diagrams.ts`), in a `<figure data-docs-diagram>` named by the alt text that scrolls sideways on phones, so the diagram's own `<style>` can use the site's tokens and follows the theme switch:
+
+- colour with classes and `var(--ui-fg, <fallback>)`-style tokens (`--ui-surface`, `--ui-line-strong`, `--ui-accent`, `--ui-fg-muted`), with fallback colours for GitHub and a `@media (prefers-color-scheme: dark)` block that also uses the tokens first;
+- give the root `<svg>` a `viewBox`, a `width` and `height` (its size on GitHub), `role="img"` and a `<title>`, and the image alt text; no blank lines (a blank line ends the inlined HTML), no script, no event handlers;
+- prefix class names and marker ids (`dg-`, `dg-<diagram>-arrow`): every inlined SVG shares the page's styles and ids.
+
+The build fails when an inlined SVG has no `<title>` or alt text, or contains script. The docs pages allow inline styles (`style-src 'unsafe-inline'`), so the inlined `<style>` passes their Content-Security-Policy. Examples: `docs/processes/images/`.
 
 ## Add, move or remove a doc
 
