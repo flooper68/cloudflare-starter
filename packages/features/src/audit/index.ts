@@ -1,3 +1,4 @@
+export { countAuditEvents } from "./count-audit-events";
 export {
   AUDIT_ACTIONS,
   AUDIT_ACTOR_KINDS,
@@ -20,6 +21,7 @@ export {
   InvalidAuditInputError,
   purgeAuditEventsJob,
 } from "./domain";
+export { findLatestAuditTimes } from "./find-latest-audit-times";
 export { type AuditEventPage, listAuditEvents } from "./list-audit-events";
 export { purgeAuditEvents } from "./purge-audit-events";
 export { recordAuditEvent } from "./record-audit-event";

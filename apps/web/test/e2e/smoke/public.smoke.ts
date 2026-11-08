@@ -53,6 +53,34 @@ test.describe("public pages", () => {
   }
 });
 
+test.describe("demo notice", () => {
+  // DEMO_MODE of the environment named with `--env` (scripts/smoke.ts passes
+  // SMOKE_DEMO_MODE from its vars in wrangler.jsonc): on, the sign-up page names the
+  // retention and links the starter on GitHub before anyone signs up; off, no notice.
+  // With a bare --base-url the setting is unknown and the test is skipped.
+  test(
+    "/sign-up shows the demo notice exactly when demo mode is on",
+    smoke,
+    async ({ page }) => {
+      const demo = process.env.SMOKE_DEMO_MODE;
+      test.skip(!demo, "demo mode unknown without --env");
+      await page.goto("/sign-up");
+      await hydrated(page);
+      const notice = page.getByRole("status", { name: "Demo instance" });
+      if (demo === "on") {
+        await expect(notice).toContainText(
+          /Demo instance: your account and data are deleted after \d+ days\./
+        );
+        await expect(
+          notice.getByRole("link", { name: /Get the starter on GitHub/ })
+        ).toHaveAttribute("href", /^https:\/\/github\.com\//);
+      } else {
+        await expect(notice).toHaveCount(0);
+      }
+    }
+  );
+});
+
 test.describe("signed-out access", () => {
   for (const path of ["/app", "/app/dashboard"]) {
     test(`${path} redirects to sign-in`, smoke, async ({ request }) => {

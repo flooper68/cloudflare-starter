@@ -31,6 +31,7 @@ function memoryPlatform() {
     metrics,
     tracer,
     storageReconcile: "off",
+    demo: { mode: "off" },
     cspMode: "enforce",
     email: noopEmail,
     flags: noopFeatureFlags,
@@ -84,6 +85,28 @@ describe("cron handler", () => {
         });
     }
   });
+  it("demo.enforce-retention enqueues the first batch as of the run with DEMO_MODE=on and nothing with off", async () => {
+    for (const demo of [
+      { mode: "off" as const },
+      {
+        mode: "on" as const,
+        retentionDays: 7,
+        sampleData: true,
+        protectedEmails: [],
+      },
+    ]) {
+      const { platform, jobQueue } = memoryPlatform();
+      await runScheduled(controller("17 3 * * *"), { ...platform, demo });
+      const runs = jobQueue.sent.filter(
+        (x) => x.envelope.type === "demo.enforce-retention"
+      );
+      expect(runs.map((x) => x.envelope.data)).toEqual(
+        demo.mode === "on"
+          ? [{ asOf: "2026-10-28T03:17:00.000Z", batch: 0 }]
+          : []
+      );
+    }
+  });
   it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials notifications.purge and trash.purge-expired, each in a new trace", async () => {
     const { platform, logger, jobQueue } = memoryPlatform();
     expect(
@@ -94,6 +117,7 @@ describe("cron handler", () => {
       "billing.expire-trials",
       "notifications.purge",
       "trash.purge-expired",
+      "demo.enforce-retention",
       "storage.reconcile",
     ]);
 
@@ -225,6 +249,7 @@ describe("cron handler", () => {
       "cron billing.expire-trials",
       "cron notifications.purge",
       "cron trash.purge-expired",
+      "cron demo.enforce-retention",
       "cron storage.reconcile",
     ]);
     expect(tracer.spans[0]).toMatchObject({
@@ -267,6 +292,12 @@ describe("cron handler", () => {
       expect.objectContaining({
         attributes: {
           "app.cron.name": "trash.purge-expired",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "demo.enforce-retention",
           "app.cron.schedule": "17 3 * * *",
         },
       }),

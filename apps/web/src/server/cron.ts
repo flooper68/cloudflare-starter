@@ -76,6 +76,7 @@ async function runEntries(
           entry.run(
             {
               storageReconcile: platform.storageReconcile,
+              demo: platform.demo,
               jobQueue: platform.jobQueue,
               clock: systemClock,
               ids: randomIds,

@@ -12,6 +12,16 @@ export interface DeploymentSettings {
   readonly emailVerificationRequired: boolean;
   readonly emailEnabled: boolean;
   readonly adminPortal: "on" | "off";
+  /** DEMO_MODE and, with on, its retention, sample data and the accounts it never erases. */
+  readonly demo:
+    | { readonly mode: "off" }
+    | {
+        readonly mode: "on";
+        readonly retentionDays: number;
+        readonly sampleData: boolean;
+        readonly protectedEmails: readonly string[];
+        readonly qaEmailDomain: string | null;
+      };
 }
 
 export interface DeploymentSettingsInput

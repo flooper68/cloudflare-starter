@@ -10,6 +10,7 @@ export * from "./billing";
 export { type CronDeps, cronCatalog } from "./cron-catalog";
 export { DATA_CATALOG } from "./data-catalog";
 export { createDatabase, type Database, schema } from "./database";
+export * from "./demo";
 export { buildErasureHandlers } from "./erasure-catalog";
 export * from "./feature-flags";
 export * from "./files";

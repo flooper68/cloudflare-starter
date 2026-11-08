@@ -53,6 +53,7 @@ function context(overrides: Partial<Context> = {}): Context {
       AUTH_REQUIRE_EMAIL_VERIFICATION: false,
       APP_ENV: "local",
       STORAGE_RECONCILE: "off",
+      demo: { mode: "off" },
       workspaces: {
         mode: "multi",
         signUp: "open",
@@ -91,6 +92,7 @@ function context(overrides: Partial<Context> = {}): Context {
     readiness: async () => {
       throw new Error("not used by these tests");
     },
+    demo: { mode: "off" },
     ...overrides,
   };
 }

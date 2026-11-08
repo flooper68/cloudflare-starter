@@ -2,7 +2,7 @@
  * The JSON the `/app` and `/admin` pages hand the SPA (`__APP_AUTH__`, read by
  * components/shared/spa/auth-context.tsx): the user, sign-in methods, workspace mode,
  * the billing mode, whether they may open the admin portal, and whether this session is
- * an impersonation.
+ * an impersonation, and demo mode's retention (the demo banner).
  */
 import {
   findAdminAccess,
@@ -38,6 +38,8 @@ export interface SpaBootstrap {
   readonly admin: boolean;
   /** Set while an admin impersonates this user: the admin's user id. */
   readonly impersonatedBy: string | null;
+  /** DEMO_MODE=on: the retention the demo banner names; null with off. */
+  readonly demo: { readonly retentionDays: number } | null;
 }
 
 /**
@@ -97,5 +99,9 @@ export async function spaBootstrap(
     billing: { mode: config.billing.mode },
     admin,
     impersonatedBy: session?.impersonatedBy ?? null,
+    demo:
+      config.demo.mode === "on"
+        ? { retentionDays: config.demo.retentionDays }
+        : null,
   };
 }

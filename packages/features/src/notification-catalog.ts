@@ -7,6 +7,7 @@ import {
   passwordChangedNotification,
   securityFactorChangedNotification,
 } from "./accounts";
+import { demoDeletionWarningNotification } from "./demo";
 import type { NotificationDefinition } from "./kernel";
 import { createNotificationCatalog } from "./notifications";
 import { exportReadyNotification } from "./privacy";
@@ -23,4 +24,6 @@ export const notificationCatalog = createNotificationCatalog([
   securityFactorChangedNotification,
 
   exportReadyNotification,
+  // Demo mode only (DEMO_MODE=on); starter-only, removable with the demo feature.
+  demoDeletionWarningNotification,
 ] as readonly NotificationDefinition<unknown>[]);
