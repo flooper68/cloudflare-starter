@@ -1,0 +1,115 @@
+---
+/**
+ * The hero's picture of the app: a members page in the app shell, drawn with the
+ * library's badge and button styles and sample people. The panel is the raised surface,
+ * where the status badges keep 4.5:1 in the light theme too. Decorative (aria-hidden): the page's text
+ * says what the app does.
+ */
+import { Badge, buttonVariants, cn } from "@cloudflare-starter/ui";
+import {
+  CreditCard,
+  LayoutDashboard,
+  Settings,
+  Trash2,
+  Users,
+} from "lucide-react";
+
+const nav = [
+  { icon: LayoutDashboard, label: "Dashboard" },
+  { icon: Users, label: "Members", current: true },
+  { icon: CreditCard, label: "Billing" },
+  { icon: Trash2, label: "Trash" },
+  { icon: Settings, label: "Settings" },
+];
+// Initials on the solid status fills, like Avatar's fallback (no image loading here).
+const members = [
+  {
+    name: "Ada Lovelace",
+    role: "Owner",
+    tone: "accent",
+    fill: "bg-info-solid",
+  },
+  {
+    name: "Grace Hopper",
+    role: "Member",
+    tone: "neutral",
+    fill: "bg-success-solid",
+  },
+  {
+    name: "Charles Babbage",
+    role: "Member",
+    tone: "neutral",
+    fill: "bg-warning-solid",
+  },
+  {
+    name: "Alan Turing",
+    role: "Invited",
+    tone: "warning",
+    fill: "bg-danger-solid",
+  },
+] as const;
+const initials = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .join("");
+---
+
+<div
+  aria-hidden="true"
+  class="flex h-80 overflow-hidden rounded-lg border border-line bg-canvas text-sm shadow-overlay select-none sm:h-90"
+>
+  <div class="hidden w-44 shrink-0 flex-col gap-0.5 p-2.5 sm:flex">
+    <div class="flex items-center gap-2 px-1.5 pt-1 pb-2.5 font-semibold text-fg">
+      <span
+        class="inline-flex size-5 items-center justify-center rounded-sm bg-accent text-2xs text-accent-fg"
+        >AE</span
+      >
+      Analytical Engines
+    </div>
+    {
+      nav.map(({ icon: Icon, label, current }) => (
+        <span
+          class={cn(
+            "flex h-7 items-center gap-2 rounded-md px-2 text-fg-muted",
+            current && "bg-active text-fg"
+          )}
+        >
+          <Icon className="size-4" />
+          {label}
+        </span>
+      ))
+    }
+  </div>
+  <div
+    class="m-2 flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-line bg-surface-raised sm:ml-0"
+  >
+    <div class="flex h-11 items-center border-b border-line px-4 font-medium text-fg">
+      Members
+    </div>
+    <div class="flex flex-col gap-2.5 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-base font-semibold text-fg">Members</span>
+        <span class={buttonVariants({ variant: "primary", size: "sm" })}>
+          Invite people
+        </span>
+      </div>
+      {
+        members.map((member) => (
+          <div class="flex items-center gap-2.5 border-b border-line py-2">
+            <span
+              class={cn(
+                "inline-flex size-6 items-center justify-center rounded-full text-2xs font-semibold text-on-solid",
+                member.fill
+              )}
+            >
+              {initials(member.name)}
+            </span>
+            <span class="flex-1 truncate text-fg">{member.name}</span>
+            <Badge tone={member.tone}>{member.role}</Badge>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-# How To Setup And Deploy The Container Demo
+# How to set up and deploy the Container demo
 
 This guide explains how to run and deploy the Cloudflare Container demo in this repo.
 

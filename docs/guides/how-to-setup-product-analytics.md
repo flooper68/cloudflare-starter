@@ -1,4 +1,4 @@
-# How To Set Up Product Analytics
+# How to set up product analytics
 
 The app records what users do (an account created, a workspace created, a file uploaded, a page of the SPA shown) as product events in Workers Analytics Engine, under pseudonymous ids, and can load Cloudflare Web Analytics' cookieless beacon for page views and Web Vitals. The app only writes: there is no analytics screen, reader port or query token in the app; you query the data outside it, with the Analytics Engine SQL API or Grafana. This guide covers the settings per environment, the event catalog and its rules, privacy and erasure, the stored layout, sampling, querying, Web Analytics, and how to send events to another vendor. Use when you set up analytics for an environment, add or change a product event, write a query or dashboard, answer a privacy question about analytics, or connect PostHog or Amplitude.
 

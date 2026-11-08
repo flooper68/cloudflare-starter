@@ -1,4 +1,4 @@
-# How To Define The Brand
+# How to define the brand
 
 The UI is themed entirely by CSS variables. A project gets its own look by editing two files
 in `packages/ui/src/brand/`; every component, the web app and Storybook follow.

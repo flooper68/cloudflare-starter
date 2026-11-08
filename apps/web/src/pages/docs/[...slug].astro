@@ -1,0 +1,144 @@
+---
+/**
+ * The docs site: one prerendered page per published repository file (DOCS.sources),
+ * with the navigation built from docs/README.md, an "On this page" list, an edit link
+ * and the search dialog. The rendered Markdown is what Pagefind indexes
+ * (`data-pagefind-body`). docs/guides/how-to-publish-docs-and-landing.md
+ */
+import { getCollection, render } from "astro:content";
+import {
+  Breadcrumbs,
+  DocsNav,
+  Prose,
+  TableOfContents,
+} from "@cloudflare-starter/ui";
+import { ArrowLeft, ArrowRight, Menu, SquarePen } from "lucide-react";
+
+import DocsSearch from "@/components/site/DocsSearch.astro";
+import SiteHeader from "@/components/site/SiteHeader.astro";
+import { DOCS } from "@/docs/docs.config";
+import { editUrl, routeFor, slugFor } from "@/docs/links";
+import { docDescription } from "@/docs/meta";
+import { buildNav, docTitle, locate } from "@/docs/nav";
+import PublicLayout from "@/layouts/PublicLayout.astro";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const entries = await getCollection("docs");
+  const titles = new Map(
+    entries.map((entry) => [entry.id, docTitle(entry.body ?? "") ?? entry.id])
+  );
+  const index = entries.find((entry) => entry.id === DOCS.navSource);
+  const nav = buildNav(index?.body ?? "", titles);
+  return entries.map((entry) => ({
+    params: { slug: slugFor(entry.id) || undefined },
+    props: { entry, nav, title: titles.get(entry.id) ?? entry.id },
+  }));
+}
+
+const { entry, nav, title } = Astro.props;
+const { Content, headings } = await render(entry);
+const href = routeFor(entry.id);
+const { section, previous, next } = locate(nav, entry.id);
+const description = docDescription(entry.body ?? "");
+// The index is the root of the trail; other pages show their section.
+const crumbs =
+  href === "/docs/"
+    ? []
+    : [
+        { label: "Docs", href: "/docs/" },
+        ...(section ? [{ label: section.title }] : []),
+        { label: title },
+      ];
+---
+
+<PublicLayout
+  title={`${title} · ${DOCS.siteName} docs`}
+  description={description}
+  type={href === "/docs/" ? "website" : "article"}
+>
+  <SiteHeader slot="header" variant="docs">
+    <DocsSearch slot="search" />
+  </SiteHeader>
+  <div class="mx-auto flex w-full max-w-[1360px] flex-1">
+    <aside
+      class="hidden w-62 shrink-0 border-r border-line px-4 py-6 lg:block"
+      aria-label="Docs sections"
+    >
+      <DocsNav sections={nav} currentHref={href} />
+    </aside>
+    <main id="main" class="min-w-0 flex-1 px-4 pt-6 pb-16 sm:px-8 lg:px-12">
+      <div class="mx-auto flex max-w-[52rem] flex-col gap-6">
+        <details class="group rounded-lg border border-line lg:hidden">
+          <summary
+            class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden"
+          >
+            <Menu className="size-4 text-fg-muted" aria-hidden="true" />
+            Docs menu
+          </summary>
+          <div class="border-t border-line px-2 py-3">
+            <DocsNav sections={nav} currentHref={href} label="Docs menu" />
+          </div>
+        </details>
+        {crumbs.length > 0 && <Breadcrumbs items={crumbs} />}
+        <Prose
+          data-pagefind-body=""
+          data-pagefind-meta={`section:${section?.title ?? "Docs"}`}
+        >
+          <Content />
+        </Prose>
+        <footer
+          class="mt-6 flex flex-wrap items-stretch justify-between gap-3 border-t border-line pt-5"
+        >
+          {
+            previous ? (
+              <a
+                href={previous.href}
+                rel="prev"
+                class="flex min-w-48 flex-col rounded-lg border border-line bg-surface-raised px-4 py-3 shadow-raised transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <span class="inline-flex items-center gap-1 text-xs text-fg-muted">
+                  <ArrowLeft className="size-3.5" aria-hidden="true" />
+                  Previous
+                </span>
+                <span class="text-sm text-fg">{previous.label}</span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+          <a
+            href={editUrl(entry.id)}
+            class="inline-flex items-center gap-1.5 self-center rounded-sm text-xs text-accent-text hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <SquarePen className="size-3.5" aria-hidden="true" />
+            Edit this page on GitHub
+          </a>
+          {
+            next ? (
+              <a
+                href={next.href}
+                rel="next"
+                class="flex min-w-48 flex-col items-end rounded-lg border border-line bg-surface-raised px-4 py-3 shadow-raised transition-colors hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              >
+                <span class="inline-flex items-center gap-1 text-xs text-fg-muted">
+                  Next
+                  <ArrowRight className="size-3.5" aria-hidden="true" />
+                </span>
+                <span class="text-sm text-fg">{next.label}</span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+        </footer>
+      </div>
+    </main>
+    <aside class="hidden w-52 shrink-0 px-4 py-8 xl:block" aria-label="Page outline">
+      <div class="sticky top-6">
+        <TableOfContents headings={headings} />
+      </div>
+    </aside>
+  </div>
+</PublicLayout>

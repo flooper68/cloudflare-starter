@@ -34,6 +34,7 @@ const signedIn = Boolean(Astro.locals.user);
           <Logo />
         </a>
         <nav class="flex items-center gap-4 text-sm text-fg-muted [&_a:hover]:text-fg">
+          <a href="/docs/">Docs</a>
           <a href="/api/hello">API hello</a>
           {signedIn ? (
             <>

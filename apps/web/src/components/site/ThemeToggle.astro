@@ -1,0 +1,13 @@
+---
+/**
+ * Switches the public pages between the dark and the light theme. Behaviour (and the
+ * label naming the theme it switches to) comes from public/site-theme.js; without
+ * JavaScript the button does nothing and the OS setting applies.
+ */
+import { IconButton } from "@cloudflare-starter/ui";
+import { SunMoon } from "lucide-react";
+---
+
+<IconButton label="Switch theme" size="sm" data-theme-toggle="">
+  <SunMoon aria-hidden="true" />
+</IconButton>

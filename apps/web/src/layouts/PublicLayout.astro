@@ -1,0 +1,61 @@
+---
+/**
+ * The document shell of the public, prerendered pages (landing, docs, 404): no session is read,
+ * so the HTML is the same for everyone and is built once. The theme comes from
+ * public/site-theme.js (saved choice, else the OS setting). The header is the page's
+ * own (SiteHeader in its variant), passed in the `header` slot.
+ *
+ * Canonical and Open Graph URLs need the site's origin, `site` in astro.config.mjs
+ * (SITE_URL at build time); without it they are left out.
+ */
+import "@cloudflare-starter/ui/globals.css";
+import "@/styles/globals.css";
+
+import WebAnalytics from "@/components/WebAnalytics.astro";
+import { DOCS } from "@/docs/docs.config";
+
+interface Props {
+  /** The whole <title>. */
+  title: string;
+  description?: string | null;
+  /** Open Graph type. */
+  type?: "website" | "article";
+  /** False on pages search engines should not list (the 404). */
+  indexable?: boolean;
+}
+
+const { title, description, type = "website", indexable = true } = Astro.props;
+const canonical = Astro.site
+  ? new URL(Astro.url.pathname, Astro.site).href
+  : null;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {!indexable && <meta name="robots" content="noindex" />}
+    {canonical && indexable && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={DOCS.siteName} />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    {canonical && indexable && <meta property="og:url" content={canonical} />}
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline src="/site-theme.js"></script>
+  </head>
+  <body class="flex min-h-screen flex-col bg-canvas text-fg">
+    <a
+      href="#main"
+      class="sr-only rounded-md bg-surface-raised px-3 py-2 text-sm text-fg shadow-overlay focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+      >Skip to content</a
+    >
+    <slot name="header" />
+    <slot />
+    <WebAnalytics />
+  </body>
+</html>

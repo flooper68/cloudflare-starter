@@ -1,4 +1,4 @@
-# How To Configure Plans And Billing
+# How to configure plans and billing
 
 Plans, add-ons, gated features and usage limits per workspace, and how a project sells them: the catalog in code, the `BILLING` setting, trials, admin overrides, the daily expiry cron, the billing page and upgrade prompts in the app, the admin portal's billing panel, and how to plug in a payment provider (a Stripe adapter is sketched below; the starter ships none). Use when you define or change plans, gate a feature or limit something, choose a billing mode for an environment, change or add an upgrade prompt, write a provider adapter, or debug a `limit_reached` error.
 
