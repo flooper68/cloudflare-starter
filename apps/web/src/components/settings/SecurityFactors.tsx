@@ -20,8 +20,18 @@ import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 
-/** Security settings and the enrollment page share the native factor-management UI. */
-export function SecurityFactors({ search = "" }: { readonly search?: string }) {
+/**
+ * Security settings and the enrollment page share the native factor-management UI.
+ * `continueToApp` (the enrollment page, outside the app) offers the way into the app once
+ * enrollment allows it; the settings page is already in the app and shows no such link.
+ */
+export function SecurityFactors({
+  search = "",
+  continueToApp = false,
+}: {
+  readonly search?: string;
+  readonly continueToApp?: boolean;
+}) {
   const state = useAsync(
     () => trpc.account.security.status.query(),
     "security"
@@ -248,8 +258,9 @@ export function SecurityFactors({ search = "" }: { readonly search?: string }) {
                 />
               </Card>
             ) : null}
-            {data.decision === "allowed" ? (
+            {continueToApp && data.decision === "allowed" ? (
               <Button asChild>
+                {/* /two-factor is an Astro page: entering the app is a document load. */}
                 <a href="/app/dashboard">Continue to app</a>
               </Button>
             ) : null}

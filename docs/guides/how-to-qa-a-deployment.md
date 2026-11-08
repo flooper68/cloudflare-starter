@@ -41,7 +41,7 @@ Mail: **Verify your email** (to each account, once more after Resend).
 
 ## Sign-in and sign-out
 
-1. Sign out (workspace menu → Sign out); you land on `/`.
+1. Sign out (profile menu, the avatar at the bottom of the sidebar → Sign out); you land on `/`.
 2. Sign in as A at `/sign-in` with a wrong password: refused, no hint whether the email exists.
 3. Sign in with the right password.
 

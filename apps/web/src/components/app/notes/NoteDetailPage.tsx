@@ -20,6 +20,8 @@ import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { trpc } from "@/lib/trpc/client";
 import { useAsync } from "@/lib/use-async";
 
+import { usePageTitle } from "../page-title";
+
 /** No such note here: unknown, trashed, another workspace's, or not a note id at all. */
 function isNotFound(error: unknown): boolean {
   const code = (error as { data?: { code?: string } })?.data?.code;
@@ -51,6 +53,8 @@ export function NoteDetailPage() {
     () => trpc.notes.get.query({ workspaceId, noteId }),
     `note:${workspaceId}:${noteId}`
   );
+  // The browser tab names the note ("Q3 planning · Starter"), the top bar says "Note".
+  usePageTitle(note.data?.title);
 
   async function moveToTrash(title: string) {
     setDeleting(true);

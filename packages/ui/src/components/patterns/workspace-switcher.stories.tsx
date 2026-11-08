@@ -1,20 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { LogOut, UserRound } from "lucide-react";
+import { Settings, Users } from "lucide-react";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
-import {
-  AppShell,
-  Sidebar,
-  SidebarHeader,
-  SidebarMenuItem,
-  SidebarMenuLabel,
-} from "./app-shell";
+import { AppShell, Sidebar, SidebarHeader, SidebarMenuItem } from "./app-shell";
 import { type WorkspaceOption, WorkspaceSwitcher } from "./workspace-switcher";
 
 /**
  * The sidebar's workspace menu. In multi-workspace apps it lists the user's workspaces
- * (their role on the right), switches between them and creates new ones; with one
- * workspace per user or per app it shows the name and the account items only.
+ * (the current one checked, their role on the right), switches between them and creates
+ * new ones; with one workspace per user or per app it shows the name and the workspace's
+ * own items only. Account items (profile, sign out) are in `ProfileMenu`.
  */
 const meta = {
   title: "Patterns/WorkspaceSwitcher",
@@ -42,9 +37,10 @@ const meta = {
         <Sidebar>
           <SidebarHeader>
             <WorkspaceSwitcher {...args}>
-              <SidebarMenuLabel>ada@acme.test</SidebarMenuLabel>
-              <SidebarMenuItem icon={<UserRound />}>Profile</SidebarMenuItem>
-              <SidebarMenuItem icon={<LogOut />}>Sign out</SidebarMenuItem>
+              <SidebarMenuItem icon={<Settings />}>
+                Workspace settings
+              </SidebarMenuItem>
+              <SidebarMenuItem icon={<Users />}>Members</SidebarMenuItem>
             </WorkspaceSwitcher>
           </SidebarHeader>
         </Sidebar>
@@ -61,7 +57,7 @@ type Story = StoryObj<typeof meta>;
 /** Several workspaces (multi mode). */
 export const MultiWorkspace: Story = {};
 
-/** One workspace per user or per app (personal and single mode): name and account only. */
+/** One workspace per user or per app (personal and single mode): name and workspace items only. */
 export const SingleWorkspace: Story = {
   args: {
     workspaces: [
@@ -70,6 +66,39 @@ export const SingleWorkspace: Story = {
     activeId: "ws-acme",
     onSwitch: undefined,
     onCreate: undefined,
+  },
+};
+
+/** Nothing to switch to and no workspace items (a member in single mode): no empty menu. */
+export const NothingToShow: Story = {
+  args: {
+    workspaces: [
+      { id: "ws-acme", name: "Acme Robotics", kind: "shared", role: "member" },
+    ],
+    activeId: "ws-acme",
+    onSwitch: undefined,
+    onCreate: undefined,
+  },
+  render: (args) => (
+    <AppShell
+      sidebar={
+        <Sidebar>
+          <SidebarHeader>
+            <WorkspaceSwitcher {...args} />
+          </SidebarHeader>
+        </Sidebar>
+      }
+    >
+      <div className="p-6 text-sm text-fg-muted">Workspace content</div>
+    </AppShell>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      canvas.getByRole("button", { name: /Acme Robotics workspace menu/ })
+    );
+    await expect(page.queryByRole("menu")).toBeNull();
   },
 };
 

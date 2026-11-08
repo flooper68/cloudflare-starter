@@ -13,9 +13,15 @@ import ThemeToggle from "./ThemeToggle.astro";
 
 interface Props {
   variant?: "site" | "docs";
+  /**
+   * The theme switch; it needs public/site-theme.js, which the per-request account pages'
+   * policy does not allow (their scripts come only from /_astro/), so Layout.astro turns
+   * it off.
+   */
+  themeToggle?: boolean;
 }
 
-const { variant = "site" } = Astro.props;
+const { variant = "site", themeToggle = true } = Astro.props;
 const docs = variant === "docs";
 const link =
   "rounded-sm font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus";
@@ -65,7 +71,7 @@ const link =
         <GitBranch aria-hidden="true" />GitHub
       </a>
       <slot name="actions" />
-      <ThemeToggle />
+      {themeToggle && <ThemeToggle />}
     </div>
   </div>
 </header>

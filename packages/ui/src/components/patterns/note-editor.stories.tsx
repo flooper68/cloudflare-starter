@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { Card } from "../card";
 import { NoteEditor } from "./note-editor";
@@ -22,6 +22,15 @@ type Story = StoryObj<typeof meta>;
 
 /** A new note. */
 export const NewNote: Story = { args: { submitLabel: "Create note" } };
+
+/** A form the user just opened (New note) puts the cursor in Title. */
+export const FocusesTitle: Story = {
+  args: { submitLabel: "Create note", autoFocus: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(canvas.getByLabelText("Title")).toHaveFocus());
+  },
+};
 
 /** Editing an existing note. */
 export const Editing: Story = {

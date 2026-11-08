@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
 import { settingsSections } from "./sections";
 
@@ -22,14 +22,15 @@ export function SettingsLayout() {
               })
             )
             .map((item) => (
-              <a
+              // A router Link: switching sections routes client-side, no page reload.
+              <Link
                 key={item.id}
-                href={item.to}
+                to={item.to}
                 aria-current={pathname === item.to ? "page" : undefined}
                 className={`rounded-md px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent ${pathname === item.to ? "bg-active text-fg" : "text-fg-muted hover:bg-hover hover:text-fg"}`}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
         </nav>
         <div className="min-w-0">
