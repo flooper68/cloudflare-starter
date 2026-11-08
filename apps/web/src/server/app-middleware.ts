@@ -30,6 +30,19 @@ import {
 
 const PROTECTED_PREFIX = "/app";
 
+/** Appends Set-Cookie headers (copying a response whose headers are immutable). */
+function withSetCookies(response: Response, cookies: readonly string[]) {
+  const append = (target: Response) => {
+    for (const cookie of cookies) target.headers.append("set-cookie", cookie);
+    return target;
+  };
+  try {
+    return append(response);
+  } catch {
+    return append(new Response(response.body, response));
+  }
+}
+
 function isProtected(pathname: string) {
   return (
     pathname === PROTECTED_PREFIX || pathname.startsWith(`${PROTECTED_PREFIX}/`)
@@ -164,15 +177,24 @@ async function routeAppRequest(
         return next();
       }
 
-      const result = await getAuth(env).api.getSession({
+      // A stale session (erased or suspended account, revoked session) comes back as
+      // signed out, with Set-Cookie headers that expire its cookies (auth-security.ts).
+      // Only those are passed on: a live session's cookie cache is left as it was.
+      const { response: result, headers: sessionHeaders } = await getAuth(
+        env
+      ).api.getSession({
         headers: context.request.headers,
+        returnHeaders: true,
       });
+      const expired = result ? [] : sessionHeaders.getSetCookie();
+      const respond = (response: Response) =>
+        expired.length === 0 ? response : withSetCookies(response, expired);
       context.locals.user = result?.user ?? null;
       context.locals.session = result?.session ?? null;
       context.locals.requestContext = scope.setUserId(result?.user.id ?? null);
 
       if (isProtected(pathname) && !result) {
-        return context.redirect("/sign-in");
+        return respond(context.redirect("/sign-in"));
       }
 
       if (
@@ -190,20 +212,25 @@ async function routeAppRequest(
             settings: buildRequiredConfig(env).security,
           }
         );
-        if (!security.sessionValid) return context.redirect("/sign-in");
+        if (!security.sessionValid)
+          return respond(context.redirect("/sign-in"));
         if (security.decision !== "allowed") {
           if (pathname.startsWith("/api/"))
-            return domainErrorResponse(
-              new SecondFactorRequiredError(
-                security.decision === "enrollment_required"
+            return respond(
+              domainErrorResponse(
+                new SecondFactorRequiredError(
+                  security.decision === "enrollment_required"
+                )
               )
             );
-          return context.redirect(
-            `/two-factor?next=${encodeURIComponent(pathname + context.url.search)}`
+          return respond(
+            context.redirect(
+              `/two-factor?next=${encodeURIComponent(pathname + context.url.search)}`
+            )
           );
         }
       }
-      return next();
+      return respond(await next());
     },
     { route: context.routePattern }
   );
