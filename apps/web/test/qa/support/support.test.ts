@@ -3,8 +3,8 @@
 import { describe, expect, it } from "vitest";
 
 import { isQaAddress, newRunId, qaAddress } from "./address";
+import { qaAdmin } from "./admin";
 import { missingQaEnv, qaEnv, qaSkipReason } from "./env";
-import { onlyQaMembers, selectLeftovers } from "./leftovers";
 import { extractLinks, linkTo } from "./links";
 import { qaPassword } from "./password";
 import { isAppRequest } from "./routing";
@@ -136,66 +136,12 @@ describe("QA routing", () => {
   });
 });
 
-describe("nightly leftovers", () => {
-  const now = new Date("2026-11-09T03:00:00Z");
-  const old = "2026-11-08T12:00:00.000Z";
-  const rows = [
-    {
-      id: "1",
-      email: "qa+20261108kqzt-a@qa.flooper.me",
-      role: "user",
-      createdAt: old,
-    },
-    {
-      id: "2",
-      email: "qa+20261109abcd-a@qa.flooper.me",
-      role: "user",
-      createdAt: "2026-11-09T02:30:00.000Z",
-    },
-    { id: "3", email: "qa+admin@qa.flooper.me", role: "admin", createdAt: old },
-    {
-      id: "4",
-      email: "qa+20261108kqzt-b@qa.flooper.me",
-      role: "user,admin",
-      createdAt: old,
-    },
-    { id: "5", email: "premysl@example.com", role: "user", createdAt: old },
-    {
-      id: "6",
-      email: "qa+20261108kqzt-c@notqa.flooper.me",
-      role: "user",
-      createdAt: old,
-    },
-  ];
-
-  it("selects QA suite accounts older than two hours, never admins or anyone else", () => {
-    expect(
-      selectLeftovers(rows, {
-        domain: "qa.flooper.me",
-        adminEmail: "qa+admin@qa.flooper.me",
-        now,
-      }).map((row) => row.id)
-    ).toEqual(["1"]);
-  });
-
-  it("deletes a shared workspace only when every member is a QA suite account", () => {
-    expect(
-      onlyQaMembers(
-        [
-          { email: "qa+20261108kqzt-a@qa.flooper.me" },
-          { email: "qa+20261108kqzt-b@qa.flooper.me" },
-        ],
-        "qa.flooper.me"
-      )
-    ).toBe(true);
-    expect(
-      onlyQaMembers(
-        [
-          { email: "qa+20261108kqzt-a@qa.flooper.me" },
-          { email: "real@example.com" },
-        ],
-        "qa.flooper.me"
-      )
-    ).toBe(false);
+describe("the QA admin", () => {
+  it("is qa+admin@ in the QA domain, with a password derived from the token", () => {
+    const env = qaEnv(ENV);
+    const admin = qaAdmin(env);
+    expect(admin.email).toBe("qa+admin@qa.flooper.me");
+    expect(admin.password).toBe(qaPassword(admin.email, ENV.QA_TOKEN));
+    expect(isQaAddress(admin.email)).toBe(false);
   });
 });

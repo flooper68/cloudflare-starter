@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 
+import { isAnyQaAdminEmail } from "../abuse";
 import { session, user } from "../accounts";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
@@ -23,10 +24,18 @@ export interface AdminAccess {
  */
 export async function findAdminAccess(
   deps: { readonly db: Database; readonly clock: Clock },
-  input: { readonly userId: string }
+  input: {
+    readonly userId: string;
+    /**
+     * QA_BYPASS is off: a QA admin account (`qa+admin@…`) is no admin whatever its
+     * stored role (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin).
+     */
+    readonly qaBypassOff?: boolean;
+  }
 ): Promise<AdminAccess> {
   const [row] = await deps.db
     .select({
+      email: user.email,
       role: user.role,
       banned: user.banned,
       banExpires: user.banExpires,
@@ -35,6 +44,9 @@ export async function findAdminAccess(
     .where(eq(user.id, input.userId))
     .limit(1);
   if (!row || !hasAdminRole(row.role)) {
+    return { isAdmin: false, lastSignInAt: null };
+  }
+  if (input.qaBypassOff && isAnyQaAdminEmail(row.email)) {
     return { isAdmin: false, lastSignInAt: null };
   }
   const suspended = isBanActive(

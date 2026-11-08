@@ -1,5 +1,8 @@
 export {
   isQaRunAddress,
+  type Mailbox,
+  QA_CLEANUP_BATCH,
+  QA_LEFTOVER_MIN_AGE_MS,
   QA_OUTBOX_PAGE_SIZE,
   QA_OUTBOX_RETENTION_MS,
   qaOutboxCutoff,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { fixedClock, testDb } from "../../test/fixtures";
-import { message, OWNER, storeAt } from "../../test/qa-outbox-fixtures";
+import { message, OWNER, storeAt } from "../../test/qa-fixtures";
 import { listQaMail } from "./list-qa-mail";
 
 describe("storeQaMail", () => {

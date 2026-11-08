@@ -3,7 +3,7 @@ import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
 import { QA_OUTBOX_PAGE_SIZE, qaOutboxCutoff } from "./domain";
-import { qaOutbox } from "./qa-outbox.schema";
+import { qaOutbox } from "./qa.schema";
 
 /** One stored message, as GET /api/qa/outbox returns it. */
 export interface QaMail {

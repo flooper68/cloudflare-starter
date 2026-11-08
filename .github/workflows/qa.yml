@@ -8,9 +8,9 @@ name: QA
 #   admin through the admin portal's API (never SQL).
 # - job `delivery`: weekly, one real mail through the real sender to QA_DELIVERY_ADDRESS
 #   (the outbox never tests delivery, the sender domain or its DNS).
-# Secrets live in the GitHub environment `qa` (deployment branches: main only, no required
-# reviewers): QA_TOKEN; for the cleanup and the delivery check QA_ADMIN_EMAIL and
-# QA_ADMIN_PASSWORD; for the delivery check QA_DELIVERY_ADDRESS. GitHub-hosted runners
+# The one secret is QA_TOKEN, in the GitHub environment `qa` (deployment branches: main
+# only, no required reviewers). The QA admin provisions itself and its password, like every
+# QA account's, is derived from QA_TOKEN; nothing else comes from the owner. GitHub-hosted runners
 # only: the suite talks to production with a token that skips the human check, so it never
 # runs on a self-hosted machine, and only from the repository itself (no pull_request
 # trigger at all).
@@ -114,32 +114,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
       - run: bun scripts/ci-playwright-install.ts
-      - name: QA secrets are set
+      - name: QA secret is set
         env:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
-          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
-          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
         run: |
-          missing=""
-          for name in QA_TOKEN QA_ADMIN_EMAIL QA_ADMIN_PASSWORD; do
-            [ -n "${!name}" ] || missing="$missing $name"
-          done
-          if [ -n "$missing" ]; then
-            echo "::error::Missing secrets in the GitHub environment qa:$missing (docs/guides/how-to-qa-a-deployment.md#nightly-cleanup)"
+          if [ -z "$QA_TOKEN" ]; then
+            echo "::error::Missing secret QA_TOKEN in the GitHub environment qa (docs/guides/how-to-qa-a-deployment.md#nightly-cleanup)"
             exit 1
           fi
       - name: Erase leftovers
         env:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
-          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
-          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
         run: bun run test:qa -- --env "$QA_ENV" --project qa-cleanup
       - name: Scrub secrets from the report
         id: scrub
         if: always()
         env:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
-          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
         run: python3 -I scripts/qa-scrub-artifacts.py apps/web/playwright-report/qa apps/web/test-results/qa
       - name: Upload the cleanup report
         if: failure() && steps.scrub.outcome == 'success'
@@ -153,8 +144,8 @@ jobs:
           retention-days: 14
 
   # Asserts only that the app sent the mail; inbox placement (not spam, links intact) is
-  # checked by a person in that mailbox when needed. Skipped, with the reason, while its
-  # secrets are not set.
+  # checked by a person in that mailbox when needed. Skipped, with the reason, without
+  # QA_TOKEN.
   delivery:
     name: Real-delivery check
     if: (github.event_name == 'schedule' && github.event.schedule == '47 7 * * 1') || (github.event_name == 'workflow_dispatch' && inputs.delivery)
@@ -163,21 +154,17 @@ jobs:
     environment: qa
     env:
       QA_ENV: ${{ inputs.environment || 'production' }}
+      # Production's real-delivery target: the owner's own address, not a secret (the
+      # owner's address is already in wrangler.jsonc as BOOTSTRAP_ADMIN_EMAIL).
+      QA_DELIVERY_ADDRESS: premysl.ciompa+qa-delivery@gmail.com
     steps:
-      - name: Secrets are set
+      - name: Secret is set
         id: secrets
         env:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
-          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
-          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
-          QA_DELIVERY_ADDRESS: ${{ secrets.QA_DELIVERY_ADDRESS }}
         run: |
-          missing=""
-          for name in QA_TOKEN QA_ADMIN_EMAIL QA_ADMIN_PASSWORD QA_DELIVERY_ADDRESS; do
-            [ -n "${!name}" ] || missing="$missing $name"
-          done
-          if [ -n "$missing" ]; then
-            echo "::warning::Real-delivery check skipped: missing secrets in the GitHub environment qa:$missing (docs/guides/how-to-qa-a-deployment.md#weekly-delivery-check)"
+          if [ -z "$QA_TOKEN" ]; then
+            echo "::warning::Real-delivery check skipped: missing secret QA_TOKEN in the GitHub environment qa (docs/guides/how-to-qa-a-deployment.md#weekly-delivery-check)"
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -192,17 +179,12 @@ jobs:
         if: steps.secrets.outputs.ready == 'true'
         env:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
-          QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
-          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
-          QA_DELIVERY_ADDRESS: ${{ secrets.QA_DELIVERY_ADDRESS }}
         run: bun run test:qa -- --env "$QA_ENV" --project qa-delivery
       - name: Scrub secrets from the report
         id: scrub
         if: always() && steps.secrets.outputs.ready == 'true'
         env:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
-          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
-          QA_DELIVERY_ADDRESS: ${{ secrets.QA_DELIVERY_ADDRESS }}
         run: python3 -I scripts/qa-scrub-artifacts.py apps/web/playwright-report/qa apps/web/test-results/qa
       - name: Upload the delivery report
         if: failure() && steps.scrub.outcome == 'success'

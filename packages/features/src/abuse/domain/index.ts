@@ -20,9 +20,12 @@ export {
   ROUTE_POLICIES,
 } from "./policies";
 export {
+  isAnyQaAdminEmail,
+  isQaAdminEmail,
   isQaEmail,
   QA_TOKEN_HEADER,
   type QaBypassRejection,
   type QaBypassSettings,
+  qaAdminEmail,
 } from "./qa-bypass";
 export { timingSafeEqual } from "./timing-safe-equal";

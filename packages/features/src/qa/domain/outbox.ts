@@ -7,6 +7,12 @@ export interface Mailbox {
 /** Mail in the QA outbox is kept this long; reads never return older mail. */
 export const QA_OUTBOX_RETENTION_MS = 24 * 60 * 60 * 1000;
 
+/** The nightly cleanup erases only run accounts at least this old (never a running suite's). */
+export const QA_LEFTOVER_MIN_AGE_MS = 2 * 60 * 60 * 1000;
+
+/** At most this many accounts per cleanup call. */
+export const QA_CLEANUP_BATCH = 20;
+
 /** At most this many messages per read, newest first. */
 export const QA_OUTBOX_PAGE_SIZE = 50;
 

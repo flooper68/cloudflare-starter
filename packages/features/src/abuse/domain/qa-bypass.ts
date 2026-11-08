@@ -19,13 +19,13 @@ export type QaBypassRejection = "wrong_token" | "wrong_domain";
 export const MAX_EMAIL_LENGTH = 254;
 
 /**
- * The local part of a QA address: the QA inbox's mailbox `qa`, with an optional
- * subaddress (`qa+<tag>`, RFC 5233), which Email Routing delivers to the `qa@` rule.
+ * The local part of a QA address: `qa`, with an optional subaddress (`qa+<tag>`,
+ * RFC 5233).
  */
 const QA_LOCAL_PART = /^qa(?:\+[a-z0-9][a-z0-9._-]{0,63})?$/;
 
 /**
- * Whether `email` is an address the QA inbox receives: `qa@<domain>` or
+ * Whether `email` is a QA address: `qa@<domain>` or
  * `qa+<tag>@<domain>` directly in `domain` (not `qa@x.qa.example.com`, not
  * `someone@qa.example.com`, not `qa.example.com@elsewhere`). Case-insensitive. Pass the
  * address exactly as the request names it, never a shortened copy: a truncated
@@ -41,4 +41,26 @@ export function isQaEmail(email: string | null, domain: string): boolean {
     QA_LOCAL_PART.test(address.slice(0, at)) &&
     address.slice(at + 1) === domain.toLowerCase()
   );
+}
+
+/**
+ * The QA admin's address, `qa+admin@<domain>`: with QA_BYPASS=on the app promotes exactly
+ * this account to platform admin once its address is verified, and demotes it when the
+ * bypass is off (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin).
+ */
+export function qaAdminEmail(domain: string): string {
+  return `qa+admin@${domain.toLowerCase()}`;
+}
+
+/** Whether `email` is the QA admin's address in `domain`. */
+export function isQaAdminEmail(email: string | null, domain: string): boolean {
+  return email !== null && email.trim().toLowerCase() === qaAdminEmail(domain);
+}
+
+/**
+ * Whether `email` is a QA admin address of any domain (local part exactly `qa+admin`).
+ * With QA_BYPASS=off such an account is never an admin, whatever its stored role.
+ */
+export function isAnyQaAdminEmail(email: string | null): boolean {
+  return email !== null && email.trim().toLowerCase().startsWith("qa+admin@");
 }

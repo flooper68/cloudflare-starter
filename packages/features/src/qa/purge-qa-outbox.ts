@@ -3,7 +3,7 @@ import { lt } from "drizzle-orm";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
 import { qaOutboxCutoff } from "./domain";
-import { qaOutbox } from "./qa-outbox.schema";
+import { qaOutbox } from "./qa.schema";
 
 /**
  * Deletes QA outbox mail older than 24 hours. Run daily by the `qa-outbox.purge` job

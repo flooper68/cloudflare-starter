@@ -1,6 +1,6 @@
 # How to QA a deployment
 
-The automated QA suite of a deployed environment (production: <https://starter.flooper.me>) and the checklist it implements. Use when you release to production or staging, after a change to auth, email, workspaces, billing, notifications, storage, privacy or the admin portal, when you add or debug a QA journey, or when you set up the QA inbox, the QA bypass or the QA workflow.
+The automated QA suite of a deployed environment (production: <https://starter.flooper.me>) and the checklist it implements. Use when you release to production or staging, after a change to auth, email, workspaces, billing, notifications, storage, privacy or the admin portal, when you add or debug a QA journey, or when you change the QA bypass, the QA outbox, the QA admin, the QA cleanup or the QA workflow.
 
 Quality on a deployment has three layers:
 
@@ -8,30 +8,33 @@ Quality on a deployment has three layers:
 | ---------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | Automated E2E    | Every critical journey against `astro dev` with local bindings                                    | `bun run test:e2e` locally and in CI ([testing.md](../architecture/testing.md#e2e-tests))                     | CI                                             |
 | Production smoke | What a signed-out visitor sees: pages, redirects, endpoints, headers, axe in both themes, console | `bun run test:smoke -- --base-url https://starter.flooper.me`; the Deploy workflow runs it after every deploy | CI, anyone                                     |
-| QA suite         | [The checklist](#the-checklist) below: every feature with real accounts and real mail             | `bun run test:qa -- --base-url https://starter.flooper.me`; the Deploy workflow runs it after the smoke suite | CI, with no human; two optional checks by hand |
+| QA suite         | [The checklist](#the-checklist) below: every feature with real accounts and the app's real mail   | `bun run test:qa -- --env production`; the Deploy workflow runs it after the smoke suite                      | CI, with no human; two optional checks by hand |
 
 The smoke suite never signs up and never writes (it aborts any non-GET request to the app). Everything that needs an account is the QA suite's.
 
 ## The automated suite
 
-Playwright journeys in [apps/web/test/qa/](../../apps/web/test/qa/) (`*.qa.ts`, project `qa` of [apps/web/playwright.qa.config.ts](../../apps/web/playwright.qa.config.ts)) drive the deployed app in Chromium like a person: the real forms, the real mail, the real erasure. Nothing reads or writes the database directly.
+Playwright journeys in [apps/web/test/qa/](../../apps/web/test/qa/) (`*.qa.ts`, project `qa` of [apps/web/playwright.qa.config.ts](../../apps/web/playwright.qa.config.ts)) drive the deployed app in Chromium like a person: the real forms, the real mail the app renders, the real erasure. Nothing reads or writes the database directly.
+
+The only input is the QA token. From a laptop, with nothing else set up:
 
 ```bash
-QA_TOKEN=… QA_INBOX_URL=https://cloudflare-starter-qa-inbox.<account>.workers.dev QA_INBOX_TOKEN=… \
-  bun run test:qa -- --base-url https://starter.flooper.me
+QA_TOKEN=… bun run test:qa -- --env production   # the URL comes from env.production's route in wrangler.jsonc
+QA_TOKEN=… bun run test:qa -- --base-url https://starter.flooper.me   # the same, by URL
 ```
 
-Without `QA_TOKEN`, `QA_INBOX_URL` or `QA_INBOX_TOKEN` every journey skips and says which variable is missing (CI fails instead). The HTML report, traces, screenshots and videos of failures land in `apps/web/playwright-report/qa` and `apps/web/test-results/qa`.
+`QA_TOKEN` is the production Worker secret of the same name (also the GitHub secret of the environment `qa`). Without it every journey skips and says so (CI fails instead). The HTML report, traces, screenshots and videos of failures land in `apps/web/playwright-report/qa` and `apps/web/test-results/qa`.
 
 How a run works:
 
 - **Accounts.** Every account is `qa+<runId>-<role>@qa.flooper.me` (`QA_EMAIL_DOMAIN`): `<runId>` is the date and four random letters (`20261108kqzt`), one per `playwright test`, set by the global setup (`QA_RUN_ID`). Never the owner's own account.
-- **Passwords** are generated in code from the address and the QA token (`support/password.ts`), so a later process can sign in again without storing them. They are never logged; CI scrubs them, and the token, from the report before uploading it.
-- **Mail** goes to the [QA inbox](#the-qa-inbox); `inbox.waitFor` polls it. Links in a mail must point at the environment's origin, or the journey fails without following them.
+- **Passwords** are generated in code from the address and the QA token (`support/password.ts`), the QA admin's too, so any later process can sign in again without a password ever being stored. They are never logged; CI scrubs them, and the token, from the report before uploading it.
+- **Mail** to a QA address is not sent: the app keeps it in its [QA outbox](#the-qa-outbox), and `inbox.waitFor` reads it there. Links in a mail must point at the environment's origin, or the journey fails without following them.
 - **Turnstile.** The browser loads a stub instead of Cloudflare's widget script, and every request to the app's origin (only that origin) carries `X-QA-Token`. For a QA address the server skips the Turnstile check and records `qa.bypass.used`; for any other address the check runs as for everyone ([the QA bypass](how-to-configure-abuse-protection.md#qa-bypass)).
+- **The QA admin** (`qa+admin@qa.flooper.me`) provisions itself: the global setup signs it up through the bypass when it does not exist, verifies it through the outbox and signs in; the app makes exactly that account a platform admin ([the QA admin](how-to-configure-abuse-protection.md#the-qa-admin)). Journeys that need the admin portal sign in as `qaAdmin()`.
 - **One journey at a time, no retries.** Production is shared and limited per IP: sign-up allows 5 a minute, sign-in 10 a minute and account erasure 3 an hour. Do not load-test or trip limits on purpose.
 - **Production is shared.** Journeys change feature flags, settings and plans of their own QA workspaces only.
-- **Cleanup.** The global teardown erases every account the run created, whatever happened (`cleanupRun`): it signs in as each one, deletes the shared workspaces it owns, and deletes the account through Settings › Privacy. What it cannot erase (the erasure limit, a killed runner) the [nightly cleanup](#nightly-cleanup) erases.
+- **Cleanup.** The global teardown erases every account of the run, whatever happened (`cleanupRun`), through the app's [QA cleanup endpoint](#the-qa-cleanup): the real erasure, no admin, no browser. What it cannot erase now (a killed runner) the [nightly cleanup](#nightly-cleanup) erases.
 
 Optional checks a person does by hand, because a headless browser cannot: _(human-only, optional)_
 
@@ -44,87 +47,68 @@ Before a release: the Deploy workflow's smoke job passed (or run `bun run test:s
 
 A journey is a `*.qa.ts` file in `apps/web/test/qa/` that imports from [support/](../../apps/web/test/qa/support/index.ts):
 
-| Helper                                                                          | What it does                                                                                                                                                                                                              |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `qaTest`, `expect`                                                              | Playwright's `test` with the E2E CSP guard; every context sends `X-QA-Token` to the app's origin only and loads the Turnstile stub. Fixture `runId`.                                                                      |
-| `qaEnv()`                                                                       | `{ baseURL, token, inboxURL, inboxToken, emailDomain }` from `QA_BASE_URL`, `QA_TOKEN`, `QA_INBOX_URL`, `QA_INBOX_TOKEN` (and `QA_EMAIL_DOMAIN`); one error naming every missing one. `qaSkipReason()` for `qaTest.skip`. |
-| `qaAddress(runId, role)`                                                        | `qa+<runId>-<role>@<QA_EMAIL_DOMAIN>`; `role` is lowercase letters and digits.                                                                                                                                            |
-| `inbox.waitFor({ to, subject?, since, timeoutMs? })`                            | The newest mail to `to` since `since`: `{ subject, from, text, html, headers, links }`; `headers` has lowercase names (`list-unsubscribe`, `list-unsubscribe-post`). `inbox.clear(to)` deletes them.                      |
-| `createVerifiedAccount(page, { role })`                                         | Signs up through the form, opens the verification mail's link, ends on the dashboard; returns `{ email, password }` and records the account for cleanup.                                                                  |
-| `eraseQaAccount(browser, account)`, `cleanupRun(runId)`                         | Erasure through the real privacy flow, for one account or the whole run.                                                                                                                                                  |
-| `open(page, path)`, `signIn(page, account)`, `callApp(page, kind, path, input)` | Navigation that waits for hydration, the sign-in form, and a tRPC call as the signed-in page makes it.                                                                                                                    |
+| Helper                                                                          | What it does                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `qaTest`, `expect`                                                              | Playwright's `test` with the E2E CSP guard; every context sends `X-QA-Token` to the app's origin only and loads the Turnstile stub. Fixture `runId`.                                                                                  |
+| `qaEnv()`                                                                       | `{ baseURL, token, emailDomain }` from `QA_BASE_URL` and `QA_TOKEN` (and the optional `QA_EMAIL_DOMAIN`); one error naming every missing one. `qaSkipReason()` for `qaTest.skip`.                                                     |
+| `qaAddress(runId, role)`                                                        | `qa+<runId>-<role>@<QA_EMAIL_DOMAIN>`; `role` is lowercase letters and digits.                                                                                                                                                        |
+| `inbox.waitFor({ to, subject?, since, timeoutMs? })`                            | The newest mail to `to` since `since` from the QA outbox: `{ subject, from, text, html, headers, links }`; `headers` has lowercase names (`message-id`, `list-unsubscribe`, `list-unsubscribe-post`). `inbox.clear(to)` deletes them. |
+| `createVerifiedAccount(page, { role })`                                         | Signs up through the form, opens the verification mail's link, ends on the dashboard; returns `{ email, password }` and records the account for cleanup.                                                                              |
+| `qaAdmin()`                                                                     | The QA admin's `{ email, password }` (the global setup made sure it exists and is verified).                                                                                                                                          |
+| `eraseQaAccount(browser, account)`, `cleanupRun(runId)`                         | Erasure: one account through Settings › Privacy, or the whole run through the QA cleanup endpoint.                                                                                                                                    |
+| `open(page, path)`, `signIn(page, account)`, `callApp(page, kind, path, input)` | Navigation that waits for hydration, the sign-in form, and a tRPC call as the signed-in page makes it.                                                                                                                                |
 
 Start every file with `qaTest.skip(qaSkipReason() !== null, qaSkipReason() ?? "")`, take `since` just before the action that sends mail, and never log a password or put one in an assertion message. [account-lifecycle.qa.ts](../../apps/web/test/qa/account-lifecycle.qa.ts) is the worked example (sign up → verify → dashboard → erase).
 
-## The QA inbox
+## The QA outbox
 
-A small Worker of its own, `cloudflare-starter-qa-inbox` ([apps/qa-inbox/](../../apps/qa-inbox/src/index.ts)), receives the QA suite's mail. It has one mailbox, `qa@qa.flooper.me`, and every QA address is a subaddress of it (`qa+<runId>-<role>@qa.flooper.me`, RFC 5233):
+With `QA_BYPASS=on`, mail the app would send to a QA address (`qa@` or `qa+<tag>@` in `QA_EMAIL_DOMAIN`) is not sent: the email adapter keeps it in the app's own table `qa_outbox` instead (`withQaOutbox`, wired once in `apps/web/src/lib/env.ts`, so every mail of every feature is covered). Mail to anyone else is sent as always; the port sends one recipient per call, so a mail to a QA address and a real one still reaches the real one.
 
-- **Receiving.** One literal Email Routing rule, `qa@qa.flooper.me` → the Worker, with subaddressing on for the zone: Email Routing then matches `qa+<anything>@qa.flooper.me` to that rule and keeps the full address in `message.to`. The zone's catch-all is not used and not changed, so no other address of `flooper.me` behaves differently. The `email()` handler parses each mail (postal-mime) and stores recipient (with its `+tag`), sender, subject, date, text, HTML and every header in its own D1 database `cloudflare-starter-qa-inbox` (D1, not KV: reads are consistent a second after the write, from any location). Mail to another domain, over 1 MB or unparsable is rejected. It never forwards or replies.
-- **Retention.** 24 hours: reads never return older mail, and an hourly cron deletes it.
-- **API.** Bearer token `QA_INBOX_TOKEN` (its secret, compared in constant time), JSON, no CORS, no other routes: `GET /messages?to=<address>&since=<iso>&subject=<substring>` (newest first, at most 50) and `DELETE /messages?to=<address>`. `to` must be a run address `qa+<runId>-<role>@qa.flooper.me` (URL-encode the `+` as `%2B`); mail to any other address it receives (the QA admin's `qa+admin@`, plain `qa@`) is stored but never served.
-- **Tests.** `bun run test` runs its project (`apps/qa-inbox/test`, Workers pool with its own wrangler.jsonc); `cd apps/qa-inbox && bunx wrangler deploy --dry-run` packages it.
+- **What is kept:** recipient, sender, subject, the text and HTML bodies and every header the message would have had, lowercase: `from`, `to`, `subject`, `date`, a `message-id` on the sender's domain (Cloudflare sets its own when it sends), `mime-version`, and the message's own (`list-unsubscribe`, `list-unsubscribe-post`).
+- **Retention:** 24 hours. Reads never return older mail; the daily `qa-outbox.purge` job (cron 03:17 UTC) deletes it.
+- **Reading:** `GET /api/qa/outbox?to=<address>&since=<iso>&subject=<substring>` (newest first, at most 50) and `DELETE /api/qa/outbox?to=<address>`, with `X-QA-Token`. Only with `QA_BYPASS=on` (404 otherwise); every request counts against `qa.bypass` (30 a minute per IP) before the token is compared; `to` must be a run address `qa+<runId>-<role>@…` or the QA admin's `qa+admin@…` (URL-encode the `+` as `%2B`).
+- **Its limits:** nothing leaves the app, so the outbox tests what the app renders and sends to the port, not delivery: Cloudflare Email Service, the sender domain, SPF/DKIM/DMARC and spam placement. The [weekly delivery check](#weekly-delivery-check) covers that path with one real mail.
 
-Setup, once, by the owner (account changes):
+## The QA cleanup
 
-```bash
-bun run setup:qa-inbox --preflight # GET requests only: the zone's Email Routing as it is
-bun run setup:qa-inbox --dry-run   # prints every command and API call; calls nothing
-bun run setup:qa-inbox             # does it
-```
+`POST /api/qa/cleanup` with `X-QA-Token` (same gate as the outbox: `QA_BYPASS=on`, `qa.bypass`) erases the suite's own run accounts through the real erasure (the same preparation, auth deletion and completion as a person's own account deletion, recorded as `user.deleted` by the system), at most 20 per call:
 
-It is idempotent. It starts with the read-only preflight (Email Routing on or off for the zone, subaddressing, the catch-all, every rule, the subdomain's records, the apex's MX records) and stops before changing anything when `qa@qa.flooper.me` is already routed somewhere else, or when Email Routing is off for the zone and the subdomain has no records yet (see below). Then:
+- `{ "runId": "20261108kqzt" }`: that run's `qa+20261108kqzt-<role>@` accounts, of any age (the global teardown);
+- `{}`: every run account older than two hours (the nightly cleanup).
 
-| Step                     | How                                                                                                                                                                                                     |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1                       | `wrangler d1 list --json`, else `wrangler d1 create cloudflare-starter-qa-inbox`; `wrangler d1 migrations apply INBOX --remote`                                                                         |
-| Worker                   | `wrangler deploy` (in `apps/qa-inbox`)                                                                                                                                                                  |
-| Secret                   | `wrangler secret put QA_INBOX_TOKEN` (value on stdin)                                                                                                                                                   |
-| Email Routing, subdomain | Wrangler has no command for a subdomain: `POST /zones/<zone>/email/routing/dns {"name":"qa.flooper.me"}` with Wrangler's login (`wrangler auth token`) or `CLOUDFLARE_API_TOKEN`                        |
-| Subaddressing            | No Wrangler command either: `PUT /zones/<zone>/email/routing {"support_subaddress":true}` (the dashboard's Email Routing > Settings > Subaddressing)                                                    |
-| Rule                     | `wrangler email routing rules create flooper.me --name "QA inbox" --match-type literal --match-field to --match-value qa@qa.flooper.me --action-type worker --action-value cloudflare-starter-qa-inbox` |
-
-DNS records it creates on `qa.flooper.me` (Cloudflare picks the MX priorities; `GET /zones/<zone>/email/routing/dns?subdomain=qa.flooper.me` shows them): MX `route1.mx.cloudflare.net`, MX `route2.mx.cloudflare.net`, MX `route3.mx.cloudflare.net`, and TXT `v=spf1 include:_spf.mx.cloudflare.net ~all`.
-
-What it changes for the rest of `flooper.me`:
-
-- **Subaddressing is a setting of the whole zone** (`support_subaddress` on `/zones/<zone>/email/routing`). With it on, every existing literal rule `name@flooper.me` also receives `name+anything@flooper.me`, which until then went to the catch-all. The preflight lists the rules that would gain subaddresses; when this was written the zone had none (Email Routing unconfigured, catch-all disabled).
-- **The apex's MX records are never touched by default.** If Email Routing is off for the zone and `qa.flooper.me` has no records yet, the script stops: add the subdomain in the dashboard (Email > Email Routing > Settings > Subdomains) and run it again, or pass `--enable-zone-routing` only if replacing the MX records of `flooper.me` itself is fine.
-
-Check it end to end by sending a mail to `qa+20260101test-check@qa.flooper.me` and reading it with `curl -H "Authorization: Bearer $QA_INBOX_TOKEN" "$QA_INBOX_URL/messages?to=qa%2B20260101test-check%40qa.flooper.me"`.
+Never the QA admin, never `qa+<other tag>@`, never any other address. Shared workspaces that only the erased accounts use go with them; an account that is the last manager of a workspace someone else still uses is answered in `remaining`. Answer: `{ "erased": [...], "remaining": [...] }`.
 
 ## CI
 
-The workflow **QA** ([.github/workflows/qa.yml](../../.github/workflows/qa.yml)) has two jobs, on GitHub-hosted runners only:
+The workflow **QA** ([.github/workflows/qa.yml](../../.github/workflows/qa.yml)) has three jobs, on GitHub-hosted runners only, and takes an environment, never a URL (`bun run test:qa -- --env production` resolves the route in `apps/web/wrangler.jsonc`, so the QA token only goes to the repository's own routes):
 
-- **`qa`** runs `bun run test:qa` against the deployed app. The Deploy workflow calls it after a production deploy whose smoke suite passed; Actions › QA › Run workflow runs it by hand. It takes an environment, never a URL: `bun run test:qa -- --env production` resolves the route in `apps/web/wrangler.jsonc`, so the QA token only goes to the repository's own routes. It fails when a secret is missing or any journey fails, scrubs the QA token and passwords from the report (`scripts/qa-scrub-artifacts.py`, which fails if anything is left) and uploads it as the artifact `qa-report-<run id>`.
-- **`cleanup`** runs nightly at 03:37 UTC (and by hand with `cleanup` ticked): the [nightly cleanup](#nightly-cleanup).
+- **`qa`** runs the suite. The Deploy workflow calls it after a production deploy whose smoke suite passed; Actions › QA › Run workflow runs it by hand. It fails when `QA_TOKEN` is missing or any journey fails, scrubs the token and the QA passwords from the report (`scripts/qa-scrub-artifacts.py`, which fails if anything is left) and uploads it as `qa-report-<run id>`.
+- **`cleanup`**, nightly at 03:37 UTC (and by hand with `cleanup` ticked): the [nightly cleanup](#nightly-cleanup).
+- **`delivery`**, weekly on Mondays at 07:47 UTC (and by hand with `delivery` ticked): the [weekly delivery check](#weekly-delivery-check).
 
-Secrets, in the GitHub environment `qa` (Settings › Environments › New environment `qa`; deployment branches: `main` only; no required reviewers, so it runs unattended):
-
-| Secret              | Value                                                                                    |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| `QA_TOKEN`          | The same value as the production Worker secret `QA_TOKEN` (`openssl rand -hex 32`)       |
-| `QA_INBOX_URL`      | The inbox Worker's URL, e.g. `https://cloudflare-starter-qa-inbox.<account>.workers.dev` |
-| `QA_INBOX_TOKEN`    | The same value as the inbox Worker secret `QA_INBOX_TOKEN`                               |
-| `QA_ADMIN_EMAIL`    | The QA admin's address (cleanup only), e.g. `qa+admin@qa.flooper.me`                     |
-| `QA_ADMIN_PASSWORD` | The QA admin's password (cleanup only)                                                   |
+The one secret is `QA_TOKEN` in the GitHub environment `qa` (deployment branches: `main` only; no required reviewers, so it runs unattended), the same value as the production Worker secret. Nothing else is set up by the owner: no QA admin password, no inbox, no account.
 
 ### Nightly cleanup
 
-`cleanup/leftovers.cleanup.ts` (project `qa-cleanup`) erases QA accounts that aborted runs left behind, through the admin portal's own API, never SQL: it signs in as the QA admin through the form (the bypass covers it: the address is in the QA domain), lists users matching `@qa.flooper.me` (`admin.users.list`), keeps only `qa+<runId>-<role>@…` addresses older than two hours that are not admins, deletes the shared workspaces each owns when every member is a QA account (`admin.workspaces.delete`), and erases each account (`admin.users.remove`, the same erasure as the portal's Delete account). It refuses to erase more than 50 in one night.
+`cleanup/leftovers.cleanup.ts` (project `qa-cleanup`) calls the [QA cleanup endpoint](#the-qa-cleanup) without a run id until nothing more goes: every run account older than two hours, so never a run in progress. No admin and no browser, never SQL. It fails if an account cannot be erased.
 
-It needs a **QA admin**, set up once by the owner:
+### Weekly delivery check
 
-1. Sign up `qa+admin@qa.flooper.me` on production in a normal browser (the real Turnstile), with a long generated password kept in the password manager and the `QA_ADMIN_PASSWORD` secret. The inbox stores its verification mail but its API never serves it (only `qa+<runId>-<role>@` addresses), so read the link with your Cloudflare login: `cd apps/qa-inbox && bunx wrangler d1 execute cloudflare-starter-qa-inbox --remote --command "SELECT received_at, subject, text_body FROM messages WHERE recipient = 'qa+admin@qa.flooper.me' ORDER BY received_at DESC LIMIT 1"`.
-2. As the owner, `/admin/users` → the QA admin → make them a platform admin. Do not enroll a second factor for it: destructive admin actions would then need one the job cannot give (and `TWO_FACTOR=required-for-admins` would stop the job; production runs `optional`).
-3. It is a platform admin: whoever has its password can do what the admin portal does, so treat `QA_ADMIN_PASSWORD` as an admin credential. The job only ever erases `qa+<runId>-<role>@qa.flooper.me` accounts, and nobody can reset its password through the inbox API. Rotate the password, or remove the admin role, if the secret may have leaked.
+`delivery/real-delivery.delivery.ts` (project `qa-delivery`) signs in as the QA admin and calls the admin portal's **send test email** (`admin.email.sendTest`) for `QA_DELIVERY_ADDRESS`, a plain variable of the workflow's `delivery` job (`premysl.ciompa+qa-delivery@gmail.com`, the owner's own address, not a secret; production only). It asserts only that the app accepted and sent the mail. Whether it arrived, and not in spam, a person checks in that mailbox when needed: the outbox model never tests delivery or DNS.
+
+### Starter-only values
+
+These are the starter's own production's, set for the starter's maintainer; a project built from the starter changes them or turns the bypass off:
+
+- `QA_BYPASS: "on"` in production and develop and `QA_EMAIL_DOMAIN: "qa.flooper.me"` (`apps/web/wrangler.jsonc`). The domain needs no mail servers: QA mail never leaves the app. Pick a subdomain of your own that nobody else can receive mail for, or set `QA_BYPASS` to `off` until you run the suite.
+- `QA_DELIVERY_ADDRESS` of the `delivery` job (`.github/workflows/qa.yml`): an inbox you read.
+- The starter's own production holds only test data; when `0000_init` changes (it gained `qa_outbox` with the outbox) its database is reset rather than migrated ([how-to-setup-d1.md](how-to-setup-d1.md)). A project with real data adds numbered migrations instead.
 
 ## The checklist
 
 The spec the journeys implement: each section is a journey (or part of one), with what it does, the expected result and the mail it checks. Steps marked _(human-only, optional)_ are not automated. Record a manual check, or a failed automated one, in the [run record](#run-record) as pass, fail (with the screenshot and the reference/trace id shown in the error) or N/A (with the reason).
 
-For every mail: it arrived in the QA inbox, the sender is `starter@flooper.me` ("Cloudflare Starter"), the subject, links point at the environment's origin, and (for notifications) the `List-Unsubscribe` and `List-Unsubscribe-Post` headers. Accounts below: A (`qa+<runId>-a@qa.flooper.me`, owner), B (`qa+<runId>-b@qa.flooper.me`, invitee) in a separate browser context.
+For every mail: it is in the QA outbox, the sender is `starter@flooper.me` ("Cloudflare Starter"), the subject, links point at the environment's origin, and (for notifications) the `List-Unsubscribe` and `List-Unsubscribe-Post` headers. Accounts below: A (`qa+<runId>-a@qa.flooper.me`, owner), B (`qa+<runId>-b@qa.flooper.me`, invitee) in a separate browser context.
 
 ### Sign-up and email verification
 
@@ -269,7 +253,7 @@ Mail: **Your data export is ready** (one per export).
 
 ### Admin portal
 
-Guides: [how-to-use-admin-portal.md](how-to-use-admin-portal.md), [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md), [how-to-use-feature-flags.md](how-to-use-feature-flags.md), [how-to-monitor-health.md](how-to-monitor-health.md). As the QA admin (the account of the [nightly cleanup](#nightly-cleanup)); act only on the QA accounts and workspaces of the run.
+Guides: [how-to-use-admin-portal.md](how-to-use-admin-portal.md), [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md), [how-to-use-feature-flags.md](how-to-use-feature-flags.md), [how-to-monitor-health.md](how-to-monitor-health.md). As the QA admin (`qaAdmin()`, [self-provisioned](#the-automated-suite)); act only on the QA accounts and workspaces of the run.
 
 1. `/admin/overview`: counts include the QA accounts; the Health card shows every check passing (or warn, with a reason).
 2. Users: search `qa+<runId>`, open B: sign-in methods, workspaces, sessions (no tokens).
@@ -396,22 +380,22 @@ Mail: none.
 
 ### Cleanup
 
-Every run ends by erasing its accounts, automatically (the global teardown, `cleanupRun`):
+Every run ends by erasing its accounts, automatically (the global teardown, `cleanupRun`, through the [QA cleanup endpoint](#the-qa-cleanup)):
 
-1. As each account of the run (B, then A): delete the shared workspaces it owns (erasure refuses while it is the last owner of one with other members), then Settings → Privacy → **Delete account** with its password.
-2. The mail **Your account was deleted** arrives, and sign-in with the old credentials is refused.
-3. What could not be erased now (account erasure allows 3 an hour per IP) is erased by the [nightly cleanup](#nightly-cleanup).
+1. Each account of the run (`qa+<runId>-<role>@`), with the shared workspaces only run accounts use: the real erasure.
+2. The mail **Your account was deleted** is in the outbox, and sign-in with the old credentials is refused (the example journey checks both for its own account, erased through Settings → Privacy → **Delete account**).
+3. Accounts a killed run left are erased by the [nightly cleanup](#nightly-cleanup).
 
 To look for leftovers by hand, use the admin portal (`/admin/users`, search `@qa.flooper.me`) or a read-only query:
 
 ```bash
 cd apps/web && bunx wrangler d1 execute cloudflare-starter-production --remote --env production \
-  --command "SELECT id, email, created_at FROM user WHERE email LIKE 'qa-%@qa.flooper.me'"
+  --command "SELECT id, email, created_at FROM user WHERE email LIKE 'qa+%@qa.flooper.me'"
 ```
 
 Never delete users with SQL: it skips the erasure of their files, exports and avatars ([how-to-handle-data-privacy.md](how-to-handle-data-privacy.md#erasure-and-retained-data)).
 
-Mail: **Your account was deleted** (to each account).
+Mail: **Your account was deleted** (to each account, in the outbox).
 
 ## Run record
 

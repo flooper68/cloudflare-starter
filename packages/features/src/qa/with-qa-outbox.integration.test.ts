@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { fixedClock, sequentialIds, testDb } from "../../test/fixtures";
-import { FROM, message, OWNER } from "../../test/qa-outbox-fixtures";
+import { FROM, message, OWNER } from "../../test/qa-fixtures";
 import { createMemoryEmail, noopEmail } from "../platform";
 import { listQaMail } from "./list-qa-mail";
 import { withQaOutbox } from "./with-qa-outbox";

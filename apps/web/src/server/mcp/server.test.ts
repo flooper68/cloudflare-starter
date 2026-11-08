@@ -74,6 +74,7 @@ function context(overrides: Partial<Context> = {}): Context {
     flags: noopFeatureFlags,
     flagStore: null,
     rateLimiter: noopRateLimiter,
+    qaBypassOff: true,
     analytics: noopProductAnalytics,
     billing: {
       requireFeature: async () => {},

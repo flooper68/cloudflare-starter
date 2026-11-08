@@ -3,12 +3,12 @@
     python3 -I scripts/qa-scrub-artifacts.py <dir>...
 
 Playwright traces (zip files, also embedded in the HTML report) record request headers
-and the text typed into forms: the X-QA-Token header, the QA admin's password and the QA
-accounts' generated passwords would otherwise be readable by anyone who can download the
+and the text typed into forms: the X-QA-Token header and the QA accounts' generated
+passwords (the QA admin's included) would otherwise be readable by anyone who can download the
 artifact of a public repository. Replaces, in every file under the given directories and
 inside every zip (recursively):
-- the values of the environment variables QA_TOKEN, QA_ADMIN_PASSWORD and
-  QA_DELIVERY_ADDRESS (read from the environment, never from arguments);
+- the value of the environment variable QA_TOKEN (read from the environment, never from
+  arguments);
 - every generated QA password (apps/web/test/qa/support/password.ts: "Qa1!" + 43
   base64url characters).
 The same inside the zip the HTML report embeds as base64. Then checks again and exits 1
@@ -23,7 +23,7 @@ import re
 import sys
 import zipfile
 
-SECRET_VARIABLES = ("QA_TOKEN", "QA_ADMIN_PASSWORD", "QA_DELIVERY_ADDRESS")
+SECRET_VARIABLES = ("QA_TOKEN",)
 PASSWORD = re.compile(rb"Qa1!(?:[A-Za-z0-9_-]{43})")
 REDACTED = b"[redacted]"
 # The HTML report embeds its data (with the traces' step titles) as a base64 zip.

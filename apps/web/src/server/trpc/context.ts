@@ -91,6 +91,7 @@ export function createAppContext(
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
+    qaBypassOff: platform.qaBypass === null,
     notify: notifier,
     emailOut: platform.email,
     analytics: platform.productAnalytics(),

@@ -1,13 +1,13 @@
-import { type Browser, chromium, expect, type Page } from "@playwright/test";
+import { type Browser, expect, type Page } from "@playwright/test";
 
 import { currentRunId, qaAddress } from "./address";
 import { callApp, open, signIn } from "./app";
-import { qaEnv } from "./env";
+import { type QaEnv, qaEnv } from "./env";
 import { inbox } from "./inbox";
 import { linkTo } from "./links";
 import { qaPassword } from "./password";
 import { registerAccount, runAccounts } from "./registry";
-import { installQaRouting } from "./routing";
+import { installQaRouting, QA_TOKEN_HEADER } from "./routing";
 
 export interface QaAccount {
   readonly email: string;
@@ -17,12 +17,12 @@ export interface QaAccount {
 
 /** The subject of Better Auth's verification mail (server/auth.ts). */
 const VERIFY_SUBJECT = "Verify your email";
-/** Clock skew allowance between this machine and the inbox Worker. */
+/** Clock skew allowance between this machine and the app. */
 const SKEW_MS = 30_000;
 
 /**
  * Signs up `qa+<runId>-<role>@<QA_EMAIL_DOMAIN>` through the real sign-up form with a
- * generated password, waits for the verification mail in the QA inbox, opens its link
+ * generated password, waits for the verification mail in the QA outbox, opens its link
  * (which must point at QA_BASE_URL) and ends signed in on the dashboard. The account is
  * recorded for `cleanupRun`. The page's context gets the QA routing (X-QA-Token to the app
  * only, the Turnstile stub) if it has not yet.
@@ -152,11 +152,14 @@ export async function eraseQaAccount(
 }
 
 /**
- * Erases every account `runId` created (all workers, recorded by createVerifiedAccount)
- * through the real privacy erasure flow, after deleting the shared workspaces each owns.
- * Accounts already gone are skipped. Erasure is limited to 3 an hour per IP
- * (auth.delete-user): what this cannot erase now, the nightly cleanup job erases later,
- * so a refusal is reported and does not fail the run. Any other failure throws.
+ * Erases every account `runId` created, of any worker or an earlier process, through the
+ * app's QA cleanup endpoint (POST /api/qa/cleanup with the QA token): the real erasure,
+ * no admin and no browser. It erases only that run's `qa+<runId>-<role>@` accounts (shared
+ * workspaces that only they use go with them) and clears their QA outbox mail. Accounts
+ * a journey erased already count as `gone`; what the endpoint could not erase now (a
+ * workspace someone else still uses, or more than one batch) is reported in
+ * `leftForNightly`, for the nightly cleanup, and does not fail the run. Any other failure
+ * throws.
  */
 export async function cleanupRun(runId: string): Promise<{
   readonly erased: readonly string[];
@@ -166,38 +169,49 @@ export async function cleanupRun(runId: string): Promise<{
   const env = qaEnv();
   const emails = runAccounts(runId);
   const erased: string[] = [];
-  const gone: string[] = [];
-  const leftForNightly: string[] = [];
-  const failures: string[] = [];
-  if (emails.length === 0) return { erased, gone, leftForNightly };
-  const browser = await chromium.launch();
-  try {
-    for (const email of emails) {
-      try {
-        const done = await eraseQaAccount(browser, {
-          email,
-          password: qaPassword(email, env.token),
-        });
-        (done ? erased : gone).push(email);
-        // The inbox would delete it within 24 hours anyway.
-        await inbox.clear(email).catch(() => 0);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (/429|too many|RATE_LIMITED/i.test(message))
-          leftForNightly.push(email);
-        else failures.push(`${email}: ${message.split("\n")[0]}`);
-      }
-    }
-  } finally {
-    await browser.close();
+  let remaining: readonly string[] = [];
+  // The endpoint erases at most a batch per call: call until it is done or stuck.
+  for (let call = 0; call < 10; call++) {
+    const result = await qaCleanup(env, { runId });
+    erased.push(...result.erased);
+    remaining = result.remaining;
+    if (result.erased.length === 0) break;
   }
-  if (leftForNightly.length > 0) {
+  for (const email of emails) await inbox.clear(email).catch(() => 0);
+  const gone = emails.filter(
+    (email) => !erased.includes(email) && !remaining.includes(email)
+  );
+  if (remaining.length > 0) {
     console.warn(
-      `QA cleanup: ${leftForNightly.length} account(s) left for the nightly cleanup (erasure rate limit): ${leftForNightly.join(", ")}`
+      `QA cleanup: ${remaining.length} account(s) left for the nightly cleanup: ${remaining.join(", ")}`
     );
   }
-  if (failures.length > 0) {
-    throw new Error(`QA cleanup failed for:\n${failures.join("\n")}`);
+  return { erased, gone, leftForNightly: remaining };
+}
+
+/** POST /api/qa/cleanup: `{ runId }` for one run, `{}` for every run account over 2 h old. */
+export async function qaCleanup(
+  env: QaEnv,
+  body: { readonly runId?: string }
+): Promise<{
+  readonly erased: readonly string[];
+  readonly remaining: readonly string[];
+}> {
+  const response = await fetch(`${env.baseURL}/api/qa/cleanup`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      [QA_TOKEN_HEADER]: env.token,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(
+      `QA cleanup answered ${response.status}${response.status === 404 ? " (QA_BYPASS is off for this environment)" : ""}`
+    );
   }
-  return { erased, gone, leftForNightly };
+  return response.json() as Promise<{
+    erased: readonly string[];
+    remaining: readonly string[];
+  }>;
 }

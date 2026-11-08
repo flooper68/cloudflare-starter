@@ -14,6 +14,7 @@ import { buildRequiredConfig } from "@/lib/env";
 import { getAuthMethods } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
+import { buildPlatform } from "@/server/platform";
 
 export interface SpaBootstrap {
   readonly user: {
@@ -63,7 +64,10 @@ export async function spaBootstrap(
       ? (
           await findAdminAccess(
             { db: getDb(env), clock: systemClock },
-            { userId: user.id }
+            {
+              userId: user.id,
+              qaBypassOff: buildPlatform(env).qaBypass === null,
+            }
           )
         ).isAdmin
       : false;

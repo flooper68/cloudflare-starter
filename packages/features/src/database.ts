@@ -12,7 +12,7 @@ import * as notesSchema from "./notes/notes.schema";
 import * as notificationsSchema from "./notifications/notifications.schema";
 import { createDb, type Db } from "./platform";
 import * as privacySchema from "./privacy/privacy.schema";
-import * as qaOutboxSchema from "./qa-outbox/qa-outbox.schema";
+import * as qaSchema from "./qa/qa.schema";
 import * as workspacesSchema from "./workspaces/workspaces.schema";
 
 export const schema = {
@@ -25,7 +25,7 @@ export const schema = {
   ...jobsSchema,
   ...notesSchema,
   ...notificationsSchema,
-  ...qaOutboxSchema,
+  ...qaSchema,
   ...workspacesSchema,
 };
 

@@ -255,6 +255,8 @@ export const PROCEDURE_POLICIES: Readonly<Record<string, RateLimitPolicyId>> = {
   "storage.createUpload": "upload.user",
   // Mails a link to a typed-in address.
   "workspace.invitations.create": "invitation.send",
+  // Mails a typed-in address, like an invitation.
+  "admin.email.sendTest": "invitation.send",
   // Client telemetry: frequent, cheap, its own budget.
   "analytics.track": "analytics.client",
 };
@@ -284,6 +286,7 @@ export const ROUTE_POLICIES: Readonly<
   "health/ready.ts": ["health.ip"],
   "api/csp-report.ts": ["csp.report"],
   "api/qa/outbox.ts": ["qa.bypass"],
+  "api/qa/cleanup.ts": ["qa.bypass"],
 };
 
 /**

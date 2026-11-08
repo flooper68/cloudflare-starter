@@ -40,7 +40,7 @@ import {
   purgeDataExports,
   purgeDataExportsJob,
 } from "./privacy";
-import { purgeQaOutbox, purgeQaOutboxJob } from "./qa-outbox";
+import { purgeQaOutbox, purgeQaOutboxJob } from "./qa";
 import {
   reconcileStorage,
   reconcileStorageJob,

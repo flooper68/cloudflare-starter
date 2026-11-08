@@ -69,6 +69,11 @@ export interface Context {
   readonly emailOut: EmailService;
   /** Edge rate limits; every mutation counts against its policy (limitMutations). */
   readonly rateLimiter: RateLimiter;
+  /**
+   * QA_BYPASS is off: a QA admin account (`qa+admin@…`) is never an admin
+   * (server/qa-admin.ts).
+   */
+  readonly qaBypassOff: boolean;
   /** Product analytics of this request; use cases track with `trackEvent`. */
   readonly analytics: ProductAnalytics;
   /** Entitlement checks and usage counting for use cases (BILLING). */
@@ -319,7 +324,10 @@ function notFound(): TRPCError {
  */
 export const requireAdmin = t.middleware(async ({ ctx, next }) => {
   if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user) throw notFound();
-  const access = await findAdminAccess(ctx, { userId: ctx.user.id });
+  const access = await findAdminAccess(ctx, {
+    userId: ctx.user.id,
+    qaBypassOff: ctx.qaBypassOff,
+  });
   if (!access.isAdmin) throw notFound();
   const state = await getSecurityState(ctx, {
     userId: ctx.user.id,
@@ -395,7 +403,10 @@ export const requireImpersonator = t.middleware(async ({ ctx, next }) => {
   if (ctx.config.ADMIN_PORTAL !== "on" || !ctx.user || !impersonatedBy) {
     throw notFound();
   }
-  const access = await findAdminAccess(ctx, { userId: impersonatedBy });
+  const access = await findAdminAccess(ctx, {
+    userId: impersonatedBy,
+    qaBypassOff: ctx.qaBypassOff,
+  });
   if (!access.isAdmin) throw notFound();
   return next({ ctx: { ...ctx, user: ctx.user, impersonatedBy } });
 });

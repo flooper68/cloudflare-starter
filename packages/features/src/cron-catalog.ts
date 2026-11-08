@@ -16,7 +16,7 @@ import {
 } from "./notifications";
 import type { JobQueue, Logger } from "./platform";
 import { purgeDataExportsJob } from "./privacy";
-import { purgeQaOutboxJob } from "./qa-outbox";
+import { purgeQaOutboxJob } from "./qa";
 import {
   reconcileStorageJob,
   type StorageReconcileMode,

@@ -1,7 +1,7 @@
 // Fixtures of the QA outbox integration tests (packages/features/src/qa-outbox).
 
 import type { SendEmailInput } from "../src/platform";
-import { storeQaMail } from "../src/qa-outbox/store-qa-mail";
+import { storeQaMail } from "../src/qa/store-qa-mail";
 import { fixedClock, sequentialIds, testDb } from "./fixtures";
 
 export const FROM = { email: "starter@flooper.me", name: "Cloudflare Starter" };

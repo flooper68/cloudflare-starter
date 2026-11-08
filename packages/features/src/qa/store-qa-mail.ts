@@ -2,7 +2,7 @@ import type { Database } from "../database";
 import type { Clock, Ids } from "../kernel";
 import type { EmailRecipient, SendEmailInput } from "../platform";
 import { renderedHeaders } from "./domain";
-import { qaOutbox } from "./qa-outbox.schema";
+import { qaOutbox } from "./qa.schema";
 
 /**
  * Stores one message to a QA address in the QA outbox instead of sending it: recipient,
