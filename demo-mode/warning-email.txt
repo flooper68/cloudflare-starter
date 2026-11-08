@@ -1,0 +1,11 @@
+Subject: Your demo account will be deleted tomorrow
+
+This is a demo instance: your account, its workspaces and everything in them will be deleted tomorrow (due 2026-11-09 03:17 UTC).
+
+Export your data first: https://starter.flooper.me/app/settings/privacy
+
+Get the starter on GitHub: https://github.com/flooper68/cloudflare-starter
+
+--
+This is a security notice about your Starter account and is always sent.
+Your notification settings: https://starter.flooper.me/app/notifications/preferences
