@@ -41,7 +41,8 @@
     "test:components": "bun run --filter @cloudflare-starter/storybook test",
     "test:e2e": "bun run --filter @cloudflare-starter/web test:e2e",
     "test:e2e:build": "bun run --filter @cloudflare-starter/web test:e2e:build",
-    "test:smoke": "bun scripts/smoke.ts"
+    "test:smoke": "bun scripts/smoke.ts",
+    "test:qa": "bun scripts/qa.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
