@@ -84,7 +84,7 @@ describe("cron handler", () => {
         });
     }
   });
-  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials notifications.purge, trash.purge-expired and container-runs.purge, each in a new trace", async () => {
+  it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials, notifications.purge, qa-outbox.purge, trash.purge-expired and container-runs.purge, each in a new trace", async () => {
     const { platform, logger, jobQueue } = memoryPlatform();
     expect(
       cronCatalog.filter((e) => e.schedule === "17 3 * * *").map((e) => e.name)
@@ -93,6 +93,7 @@ describe("cron handler", () => {
       "jobs.purge-idempotency-keys",
       "billing.expire-trials",
       "notifications.purge",
+      "qa-outbox.purge",
       "trash.purge-expired",
       "storage.reconcile",
       "container-runs.purge",
@@ -123,6 +124,11 @@ describe("cron handler", () => {
         data: { asOf: "2026-10-28T03:17:00.000Z" },
       }),
       expect.objectContaining({
+        type: "qa-outbox.purge",
+        source: "/staging/cron",
+        data: { asOf: "2026-10-28T03:17:00.000Z" },
+      }),
+      expect.objectContaining({
         type: "trash.purge-expired",
         data: { asOf: "2026-10-28T03:17:00.000Z" },
       }),
@@ -134,13 +140,14 @@ describe("cron handler", () => {
       expect.objectContaining({ type: "jobs.purge-idempotency-keys" }),
       expect.objectContaining({ type: "billing.expire-trials" }),
       expect.objectContaining({ type: "notifications.purge" }),
+      expect.objectContaining({ type: "qa-outbox.purge" }),
       expect.objectContaining({ type: "trash.purge-expired" }),
       expect.objectContaining({ type: "container-runs.purge" }),
     ]);
     const traces = jobQueue.sent.map(
       (sent) => sent.envelope.traceparent?.split("-")[1]
     );
-    expect(new Set(traces).size).toBe(12);
+    expect(new Set(traces).size).toBe(14);
     expect(logger.records[1]).toMatchObject({
       body: "cron.completed",
       trace_id: traces[1],
@@ -230,6 +237,7 @@ describe("cron handler", () => {
       "cron jobs.purge-idempotency-keys",
       "cron billing.expire-trials",
       "cron notifications.purge",
+      "cron qa-outbox.purge",
       "cron trash.purge-expired",
       "cron storage.reconcile",
       "cron container-runs.purge",
@@ -268,6 +276,12 @@ describe("cron handler", () => {
       expect.objectContaining({
         attributes: {
           "app.cron.name": "notifications.purge",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "qa-outbox.purge",
           "app.cron.schedule": "17 3 * * *",
         },
       }),

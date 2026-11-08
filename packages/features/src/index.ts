@@ -25,6 +25,7 @@ export * from "./notifications";
 export * from "./platform";
 export * from "./privacy";
 export * from "./product-analytics";
+export * from "./qa";
 export * from "./storage-reconciliation";
 export { storageReferenceCatalog } from "./storage-reference-catalog";
 export * from "./trash";

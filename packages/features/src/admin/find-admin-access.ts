@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 
+import { isAnyQaAdminEmail, QA_ADMIN_SESSION_MS } from "../abuse";
 import { session, user } from "../accounts";
 import type { Database } from "../database";
 import type { Clock } from "../kernel";
@@ -23,10 +24,25 @@ export interface AdminAccess {
  */
 export async function findAdminAccess(
   deps: { readonly db: Database; readonly clock: Clock },
-  input: { readonly userId: string }
+  input: {
+    readonly userId: string;
+    /**
+     * The QA admin's address while QA_BYPASS=on, else null. Any other `qa+admin@` account
+     * (the bypass off, or an old QA_EMAIL_DOMAIN) is no admin whatever its stored role
+     * (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin). Required, so no
+     * caller can forget it.
+     */
+    readonly qaAdminEmail: string | null;
+    /**
+     * When the caller's browser session signed in; null without one (MCP). The QA admin is
+     * an admin only within QA_ADMIN_SESSION_MS of it.
+     */
+    readonly sessionCreatedAt: Date | null;
+  }
 ): Promise<AdminAccess> {
   const [row] = await deps.db
     .select({
+      email: user.email,
       role: user.role,
       banned: user.banned,
       banExpires: user.banExpires,
@@ -36,6 +52,16 @@ export async function findAdminAccess(
     .limit(1);
   if (!row || !hasAdminRole(row.role)) {
     return { isAdmin: false, lastSignInAt: null };
+  }
+  if (isAnyQaAdminEmail(row.email)) {
+    const current =
+      input.qaAdminEmail !== null &&
+      row.email.trim().toLowerCase() === input.qaAdminEmail.toLowerCase();
+    const fresh =
+      input.sessionCreatedAt !== null &&
+      deps.clock.now().getTime() - input.sessionCreatedAt.getTime() <=
+        QA_ADMIN_SESSION_MS;
+    if (!current || !fresh) return { isAdmin: false, lastSignInAt: null };
   }
   const suspended = isBanActive(
     { banned: row.banned ?? false, banExpires: row.banExpires ?? null },

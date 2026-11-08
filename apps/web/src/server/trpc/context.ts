@@ -3,6 +3,7 @@ import {
   type BillingProvider,
   type Notify,
   notify,
+  qaAdminEmail,
   type RequestContext,
   randomIds,
   systemClock,
@@ -92,6 +93,9 @@ export function createAppContext(
     flags: platform.flags,
     flagStore: platform.flagStore,
     rateLimiter: platform.rateLimiter,
+    qaAdminEmail: platform.qaBypass
+      ? qaAdminEmail(platform.qaBypass.emailDomain)
+      : null,
     notify: notifier,
     containerRunWorkflows: containerRunWorkflowsFor(env),
     emailOut: platform.email,

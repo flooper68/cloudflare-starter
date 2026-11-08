@@ -101,7 +101,7 @@ jobs:
           retention-days: 14
 
   # The automated QA suite (.github/workflows/qa.yml) after a production deploy whose smoke
-  # suite passed: real journeys with QA accounts, real mail through the QA inbox, every
+  # suite passed: real journeys with QA accounts, their mail kept in the app's QA outbox, every
   # account erased afterwards. Its secrets are in the GitHub environment `qa`.
   # docs/guides/how-to-qa-a-deployment.md
   qa:
