@@ -1,0 +1,44 @@
+---
+/**
+ * A prompt to paste into a coding agent, with a Copy button. The text is real, selectable
+ * text, so it works without JavaScript; copy-prompt.ts (the <copy-prompt> element) copies
+ * it with navigator.clipboard and, where that is unavailable or refused, selects the text
+ * and asks the visitor to press Ctrl+C / ⌘C. The outcome is announced in a live region.
+ */
+import { buttonVariants, cn } from "@cloudflare-starter/ui";
+import { Copy } from "lucide-react";
+
+interface Props {
+  prompt: string;
+  /** Accessible name of the prompt block. */
+  label: string;
+}
+
+const { prompt, label } = Astro.props;
+---
+
+<copy-prompt class="block">
+  <figure
+    class="m-0 overflow-hidden rounded-xl border border-line bg-surface-raised shadow-raised"
+  >
+    <figcaption
+      class="flex items-center justify-between gap-3 border-b border-line bg-surface px-3.5 py-2"
+    >
+      <span class="text-xs font-medium text-fg-muted">{label}</span>
+      <button
+        type="button"
+        data-copy=""
+        class={cn(buttonVariants({ variant: "secondary", size: "sm" }), "h-8")}
+      >
+        <Copy aria-hidden="true" /><span data-copy-label="">Copy prompt</span>
+      </button>
+    </figcaption>
+    <pre
+      class="m-0 px-4 py-4 font-mono text-sm leading-6 break-words whitespace-pre-wrap text-fg"><code data-copy-text="">{prompt}</code></pre>
+  </figure>
+  <p data-copy-status="" role="status" aria-live="polite" class="mt-2 min-h-5 text-xs text-fg-subtle"></p>
+</copy-prompt>
+
+<script>
+  import "./copy-prompt";
+</script>
