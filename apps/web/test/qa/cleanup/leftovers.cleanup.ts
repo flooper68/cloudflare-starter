@@ -2,7 +2,7 @@
  * Nightly: erases QA accounts that aborted runs left on the deployed app (CI workflow
  * `QA`, job `cleanup`). Signs in as the QA admin (QA_ADMIN_EMAIL, an address in the QA
  * domain with the platform admin role and no second factor) through the real form, then
- * uses the admin portal's own API: `admin.users.list` to find `qa-<runId>-<role>@<domain>`
+ * uses the admin portal's own API: `admin.users.list` to find `qa+<runId>-<role>@<domain>`
  * accounts older than two hours, `admin.workspaces.delete` for shared workspaces they own
  * whose members are all QA accounts, and `admin.users.remove` (the same erasure as the
  * portal's Delete account). Never SQL. docs/guides/how-to-qa-a-deployment.md#nightly-cleanup
@@ -52,9 +52,12 @@ interface WorkspaceDetail {
 
 qaTest("erase QA accounts left by aborted runs", async ({ page }) => {
   const env = qaEnv();
-  if (!adminEmail.endsWith(`@${env.emailDomain}`)) {
+  if (
+    !/^qa\+[a-z0-9][a-z0-9._-]{0,63}@/.test(adminEmail) ||
+    !adminEmail.endsWith(`@${env.emailDomain}`)
+  ) {
     throw new Error(
-      `QA_ADMIN_EMAIL must be an address @${env.emailDomain} (the QA bypass covers only that domain)`
+      `QA_ADMIN_EMAIL must be a QA inbox address like qa+admin@${env.emailDomain} (the QA bypass covers only those)`
     );
   }
   await signIn(page, { email: adminEmail, password: adminPassword });

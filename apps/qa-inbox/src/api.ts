@@ -7,12 +7,12 @@ const MESSAGES_PATH = "/messages";
 
 /**
  * The only addresses the API serves: the QA suite's per-run accounts
- * (`qa-<yyyymmdd><4 letters>-<role>@…`, apps/web/test/qa/support/address.ts). Mail to any
- * other address of the domain (the QA admin's, `qa-setup-check@`) is stored but never
+ * (`qa+<yyyymmdd><4 letters>-<role>@…`, apps/web/test/qa/support/address.ts). Mail to any
+ * other address the inbox receives (the QA admin's `qa+admin@`, plain `qa@`) is stored but never
  * served, so the API token alone cannot read a password reset for the QA admin; the owner
  * reads such mail with `wrangler d1 execute` (docs/guides/how-to-qa-a-deployment.md).
  */
-const RUN_ADDRESS = /^qa-\d{8}[a-z]{4}-[a-z0-9]{1,20}@/;
+const RUN_ADDRESS = /^qa\+\d{8}[a-z]{4}-[a-z0-9]{1,20}@/;
 
 function json(status: number, body: unknown, headers: HeadersInit = {}) {
   return new Response(JSON.stringify(body), {
@@ -63,7 +63,7 @@ export async function handleApi(
   ) {
     return json(400, {
       error: "invalid_to",
-      detail: `to must be a QA run address qa-<runId>-<role>@${env.QA_EMAIL_DOMAIN ?? "the QA domain"}`,
+      detail: `to must be a QA run address qa+<runId>-<role>@${env.QA_EMAIL_DOMAIN ?? "the QA domain"}`,
     });
   }
   if (request.method === "DELETE") {

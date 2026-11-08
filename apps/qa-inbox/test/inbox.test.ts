@@ -11,7 +11,7 @@ import type { InboxMessage } from "../src/store";
 
 const TOKEN = env.QA_INBOX_TOKEN;
 const BASE = "https://qa-inbox.example.workers.dev";
-const OWNER = "qa-20261108abcd-owner@qa.flooper.me";
+const OWNER = "qa+20261108abcd-owner@qa.flooper.me";
 
 /** A notification-like mail as the app sends it, with the RFC 8058 headers. */
 function mime(input: {
@@ -145,7 +145,7 @@ describe("receiving", () => {
       ""
     );
     await receiveEmail(incoming(OWNER, raw, "envelope@flooper.me"), env);
-    const [stored] = await messages(`to=${OWNER}`);
+    const [stored] = await messages(`to=${encodeURIComponent(OWNER)}`);
     expect(stored?.from).toBe("envelope@flooper.me");
   });
 });
@@ -157,9 +157,13 @@ describe("the API", () => {
 
   it("refuses requests without the bearer token, with a wrong one, or with another scheme", async () => {
     for (const response of [
-      await api("GET", `/messages?to=${OWNER}`, null),
-      await api("GET", `/messages?to=${OWNER}`, `${TOKEN}x`),
-      await api("GET", `/messages?to=${OWNER}`, null, {
+      await api("GET", `/messages?to=${encodeURIComponent(OWNER)}`, null),
+      await api(
+        "GET",
+        `/messages?to=${encodeURIComponent(OWNER)}`,
+        `${TOKEN}x`
+      ),
+      await api("GET", `/messages?to=${encodeURIComponent(OWNER)}`, null, {
         authorization: `Basic ${TOKEN}`,
       }),
     ]) {
@@ -171,7 +175,7 @@ describe("the API", () => {
   it("refuses everyone when QA_INBOX_TOKEN is missing or too short", async () => {
     for (const QA_INBOX_TOKEN of [undefined, "", "short"]) {
       const response = await handleApi(
-        new Request(`${BASE}/messages?to=${OWNER}`, {
+        new Request(`${BASE}/messages?to=${encodeURIComponent(OWNER)}`, {
           headers: { authorization: `Bearer ${QA_INBOX_TOKEN}` },
         }),
         { ...env, QA_INBOX_TOKEN }
@@ -190,17 +194,27 @@ describe("the API", () => {
   it("serves no other route, no other method and no CORS", async () => {
     expect((await api("GET", "/")).status).toBe(404);
     expect((await api("GET", "/messages/1")).status).toBe(404);
-    const post = await api("POST", `/messages?to=${OWNER}`);
+    const post = await api("POST", `/messages?to=${encodeURIComponent(OWNER)}`);
     expect(post.status).toBe(405);
     expect(post.headers.get("allow")).toBe("GET, DELETE");
-    const preflight = await api("OPTIONS", `/messages?to=${OWNER}`, null, {
-      origin: "https://evil.example",
-      "access-control-request-method": "GET",
-    });
+    const preflight = await api(
+      "OPTIONS",
+      `/messages?to=${encodeURIComponent(OWNER)}`,
+      null,
+      {
+        origin: "https://evil.example",
+        "access-control-request-method": "GET",
+      }
+    );
     expect(preflight.status).toBe(401);
-    const allowed = await api("GET", `/messages?to=${OWNER}`, TOKEN, {
-      origin: "https://evil.example",
-    });
+    const allowed = await api(
+      "GET",
+      `/messages?to=${encodeURIComponent(OWNER)}`,
+      TOKEN,
+      {
+        origin: "https://evil.example",
+      }
+    );
     for (const response of [preflight, allowed]) {
       expect(
         [...response.headers.keys()].filter((name) =>
@@ -213,8 +227,8 @@ describe("the API", () => {
   it("needs a QA run address in to", async () => {
     await receiveEmail(
       incoming(
-        "qa-admin@qa.flooper.me",
-        mime({ to: "qa-admin@qa.flooper.me", subject: "Reset your password" })
+        "qa+admin@qa.flooper.me",
+        mime({ to: "qa+admin@qa.flooper.me", subject: "Reset your password" })
       ),
       env
     );
@@ -223,7 +237,7 @@ describe("the API", () => {
       "to=",
       "to=someone%40example.com",
       // In the domain but not a run address: the QA admin's mail is never served.
-      "to=qa-admin%40qa.flooper.me",
+      "to=qa%2Badmin%40qa.flooper.me",
     ]) {
       expect((await api("GET", `/messages?${query}`)).status).toBe(400);
       expect((await api("DELETE", `/messages?${query}`)).status).toBe(400);
@@ -236,12 +250,12 @@ describe("the API", () => {
     await deliver(OWNER, "Reset your password", t0 + 1_000);
     await deliver(OWNER, "Verify your email", t0 + 2_000);
     await deliver(
-      "qa-20261108abcd-other@qa.flooper.me",
+      "qa+20261108abcd-other@qa.flooper.me",
       "Verify your email",
       t0 + 3_000
     );
 
-    const all = await messages(`to=${OWNER}`);
+    const all = await messages(`to=${encodeURIComponent(OWNER)}`);
     expect(all.map((message) => message.subject)).toEqual([
       "Verify your email",
       "Reset your password",
@@ -249,17 +263,24 @@ describe("the API", () => {
     ]);
     expect(all[0]?.receivedAt).toBe(new Date(t0 + 2_000).toISOString());
 
-    const verify = await messages(`to=${OWNER}&subject=verify`);
+    const verify = await messages(
+      `to=${encodeURIComponent(OWNER)}&subject=verify`
+    );
     expect(verify).toHaveLength(2);
 
     const since = new Date(t0 + 500).toISOString();
     const recent = await messages(
-      `to=${OWNER}&since=${encodeURIComponent(since)}`
+      `to=${encodeURIComponent(OWNER)}&since=${encodeURIComponent(since)}`
     );
     expect(recent).toHaveLength(2);
 
     expect(
-      (await api("GET", `/messages?to=${OWNER}&since=yesterday`)).status
+      (
+        await api(
+          "GET",
+          `/messages?to=${encodeURIComponent(OWNER)}&since=yesterday`
+        )
+      ).status
     ).toBe(400);
   });
 
@@ -267,20 +288,25 @@ describe("the API", () => {
     await deliver(OWNER, "Old", Date.now() - RETENTION_MS - 1_000);
     await deliver(OWNER, "New", Date.now());
     expect(
-      (await messages(`to=${OWNER}&since=1970-01-01T00:00:00Z`)).map(
-        (m) => m.subject
-      )
+      (
+        await messages(
+          `to=${encodeURIComponent(OWNER)}&since=1970-01-01T00:00:00Z`
+        )
+      ).map((m) => m.subject)
     ).toEqual(["New"]);
   });
 
   it("clears one recipient's messages", async () => {
     await deliver(OWNER, "One", Date.now());
-    await deliver("qa-20261108abcd-other@qa.flooper.me", "Two", Date.now());
-    const response = await api("DELETE", `/messages?to=${OWNER}`);
+    await deliver("qa+20261108abcd-other@qa.flooper.me", "Two", Date.now());
+    const response = await api(
+      "DELETE",
+      `/messages?to=${encodeURIComponent(OWNER)}`
+    );
     expect(await response.json()).toEqual({ deleted: 1 });
-    expect(await messages(`to=${OWNER}`)).toEqual([]);
+    expect(await messages(`to=${encodeURIComponent(OWNER)}`)).toEqual([]);
     expect(
-      await messages("to=qa-20261108abcd-other@qa.flooper.me")
+      await messages("to=qa%2B20261108abcd-other%40qa.flooper.me")
     ).toHaveLength(1);
   });
 });

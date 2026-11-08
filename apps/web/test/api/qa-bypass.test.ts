@@ -85,7 +85,7 @@ describe("QA bypass of the human check", () => {
   });
 
   it("skips Turnstile for a QA address with the right token, and records qa.bypass.used without the token", async () => {
-    const email = `qa-api-accepted@${DOMAIN}`;
+    const email = `qa+api-accepted@${DOMAIN}`;
     const response = await getAuth(env).handler(
       signUpRequest(email, {
         [QA_TOKEN_HEADER]: TOKEN,
@@ -107,12 +107,12 @@ describe("QA bypass of the human check", () => {
     [
       "/sign-in/email",
       "sign-in",
-      { email: `qa-api-accepted@${DOMAIN}`, password: "qa-test-password-1234" },
+      { email: `qa+api-accepted@${DOMAIN}`, password: "qa-test-password-1234" },
     ],
     [
       "/request-password-reset",
       "password-reset",
-      { email: `qa-api-accepted@${DOMAIN}` },
+      { email: `qa+api-accepted@${DOMAIN}` },
     ],
   ])("skips Turnstile on %s too", async (path, form, body) => {
     const before = (await eventsFor("qa.bypass.used", body.email)).length;
@@ -130,7 +130,7 @@ describe("QA bypass of the human check", () => {
 
   it("falls back to Turnstile for a wrong token and logs a warning without it", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const email = `qa-api-wrong-token@${DOMAIN}`;
+    const email = `qa+api-wrong-token@${DOMAIN}`;
     const wrong = `${TOKEN.slice(0, -1)}x`;
     const response = await getAuth(env).handler(
       signUpRequest(email, {
@@ -154,9 +154,10 @@ describe("QA bypass of the human check", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     for (const email of [
       "robot@example.test",
-      `robot@sub.${DOMAIN}`,
+      `robot@${DOMAIN}`,
+      `qa+robot@sub.${DOMAIN}`,
       // Its first 320 characters end in the QA domain; Better Auth would use all of it.
-      `${"a".repeat(306)}@${DOMAIN}.attacker.example`,
+      `qa+${"a".repeat(302)}@${DOMAIN}.attacker.example`,
     ]) {
       const response = await getAuth(env).handler(
         signUpRequest(email, {
@@ -172,7 +173,7 @@ describe("QA bypass of the human check", () => {
     }
     expect(
       warnings(warn).filter((line) => line.includes("wrong_domain"))
-    ).toHaveLength(3);
+    ).toHaveLength(4);
   });
 
   it("keeps Turnstile working for everyone else (a real token, no QA header)", async () => {
@@ -185,7 +186,7 @@ describe("QA bypass of the human check", () => {
   it("ignores the header entirely with QA_BYPASS=off", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const off = { ...env, QA_BYPASS: "off" } as AppEnv;
-    const email = `qa-api-off@${DOMAIN}`;
+    const email = `qa+api-off@${DOMAIN}`;
     const response = await getAuth(off).handler(
       signUpRequest(email, {
         [QA_TOKEN_HEADER]: TOKEN,
@@ -212,7 +213,7 @@ describe("QA bypass of the human check", () => {
     for (let call = 0; call <= limit * 2; call++) {
       if (!(await binding.limit({ key })).success) break;
     }
-    const email = `qa-api-limited@${DOMAIN}`;
+    const email = `qa+api-limited@${DOMAIN}`;
     const request = signUpRequest(email, {
       [QA_TOKEN_HEADER]: TOKEN,
       "cf-connecting-ip": ip,

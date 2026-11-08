@@ -21,7 +21,7 @@ const VERIFY_SUBJECT = "Verify your email";
 const SKEW_MS = 30_000;
 
 /**
- * Signs up `qa-<runId>-<role>@<QA_EMAIL_DOMAIN>` through the real sign-up form with a
+ * Signs up `qa+<runId>-<role>@<QA_EMAIL_DOMAIN>` through the real sign-up form with a
  * generated password, waits for the verification mail in the QA inbox, opens its link
  * (which must point at QA_BASE_URL) and ends signed in on the dashboard. The account is
  * recorded for `cleanupRun`. The page's context gets the QA routing (X-QA-Token to the app

@@ -59,9 +59,9 @@ describe("qaEnv", () => {
 });
 
 describe("QA addresses", () => {
-  it("builds qa-<runId>-<role>@<domain>", () => {
+  it("builds qa+<runId>-<role>@<domain>", () => {
     expect(qaAddress("20261108kqzt", "owner", "qa.flooper.me")).toBe(
-      "qa-20261108kqzt-owner@qa.flooper.me"
+      "qa+20261108kqzt-owner@qa.flooper.me"
     );
     expect(() => qaAddress("nope", "owner")).toThrow(/runId/);
     expect(() => qaAddress("20261108kqzt", "Owner A")).toThrow(/role/);
@@ -73,9 +73,9 @@ describe("QA addresses", () => {
   });
 
   it("recognises QA suite addresses only", () => {
-    expect(isQaAddress("qa-20261108kqzt-owner@qa.flooper.me")).toBe(true);
-    expect(isQaAddress("qa-admin@qa.flooper.me")).toBe(false);
-    expect(isQaAddress("qa-20261108kqzt-owner@flooper.me")).toBe(false);
+    expect(isQaAddress("qa+20261108kqzt-owner@qa.flooper.me")).toBe(true);
+    expect(isQaAddress("qa+admin@qa.flooper.me")).toBe(false);
+    expect(isQaAddress("qa+20261108kqzt-owner@flooper.me")).toBe(false);
     expect(isQaAddress("someone@qa.flooper.me")).toBe(false);
   });
 });
@@ -112,10 +112,10 @@ describe("mail links", () => {
 
 describe("passwords", () => {
   it("are derived per address, stable, and never the token", () => {
-    const a = qaPassword("qa-20261108kqzt-a@qa.flooper.me", ENV.QA_TOKEN);
-    expect(qaPassword("QA-20261108kqzt-A@qa.flooper.me", ENV.QA_TOKEN)).toBe(a);
+    const a = qaPassword("qa+20261108kqzt-a@qa.flooper.me", ENV.QA_TOKEN);
+    expect(qaPassword("QA+20261108kqzt-A@qa.flooper.me", ENV.QA_TOKEN)).toBe(a);
     expect(
-      qaPassword("qa-20261108kqzt-b@qa.flooper.me", ENV.QA_TOKEN)
+      qaPassword("qa+20261108kqzt-b@qa.flooper.me", ENV.QA_TOKEN)
     ).not.toBe(a);
     expect(a).not.toContain(ENV.QA_TOKEN);
     expect(a.length).toBeGreaterThanOrEqual(40);
@@ -147,27 +147,27 @@ describe("nightly leftovers", () => {
   const rows = [
     {
       id: "1",
-      email: "qa-20261108kqzt-a@qa.flooper.me",
+      email: "qa+20261108kqzt-a@qa.flooper.me",
       role: "user",
       createdAt: old,
     },
     {
       id: "2",
-      email: "qa-20261109abcd-a@qa.flooper.me",
+      email: "qa+20261109abcd-a@qa.flooper.me",
       role: "user",
       createdAt: "2026-11-09T02:30:00.000Z",
     },
-    { id: "3", email: "qa-admin@qa.flooper.me", role: "admin", createdAt: old },
+    { id: "3", email: "qa+admin@qa.flooper.me", role: "admin", createdAt: old },
     {
       id: "4",
-      email: "qa-20261108kqzt-b@qa.flooper.me",
+      email: "qa+20261108kqzt-b@qa.flooper.me",
       role: "user,admin",
       createdAt: old,
     },
     { id: "5", email: "premysl@example.com", role: "user", createdAt: old },
     {
       id: "6",
-      email: "qa-20261108kqzt-c@notqa.flooper.me",
+      email: "qa+20261108kqzt-c@notqa.flooper.me",
       role: "user",
       createdAt: old,
     },
@@ -177,7 +177,7 @@ describe("nightly leftovers", () => {
     expect(
       selectLeftovers(rows, {
         domain: "qa.flooper.me",
-        adminEmail: "qa-admin@qa.flooper.me",
+        adminEmail: "qa+admin@qa.flooper.me",
         now,
       }).map((row) => row.id)
     ).toEqual(["1"]);
@@ -187,8 +187,8 @@ describe("nightly leftovers", () => {
     expect(
       onlyQaMembers(
         [
-          { email: "qa-20261108kqzt-a@qa.flooper.me" },
-          { email: "qa-20261108kqzt-b@qa.flooper.me" },
+          { email: "qa+20261108kqzt-a@qa.flooper.me" },
+          { email: "qa+20261108kqzt-b@qa.flooper.me" },
         ],
         "qa.flooper.me"
       )
@@ -196,7 +196,7 @@ describe("nightly leftovers", () => {
     expect(
       onlyQaMembers(
         [
-          { email: "qa-20261108kqzt-a@qa.flooper.me" },
+          { email: "qa+20261108kqzt-a@qa.flooper.me" },
           { email: "real@example.com" },
         ],
         "qa.flooper.me"

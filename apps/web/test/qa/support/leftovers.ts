@@ -14,7 +14,7 @@ export interface UserRow {
 
 /**
  * The accounts the nightly cleanup may erase: QA suite addresses only
- * (`qa-<runId>-<role>@<domain>`), never an admin, never the QA admin itself, and only
+ * (`qa+<runId>-<role>@<domain>`), never an admin, never the QA admin itself, and only
  * those older than LEFTOVER_MIN_AGE_MS.
  */
 export function selectLeftovers(

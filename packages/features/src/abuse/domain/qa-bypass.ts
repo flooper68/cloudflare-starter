@@ -19,8 +19,15 @@ export type QaBypassRejection = "wrong_token" | "wrong_domain";
 export const MAX_EMAIL_LENGTH = 254;
 
 /**
- * Whether `email` is an address directly in `domain` (`someone@qa.example.com`, not
- * `someone@x.qa.example.com` or `qa.example.com@elsewhere`). Case-insensitive. Pass the
+ * The local part of a QA address: the QA inbox's mailbox `qa`, with an optional
+ * subaddress (`qa+<tag>`, RFC 5233), which Email Routing delivers to the `qa@` rule.
+ */
+const QA_LOCAL_PART = /^qa(?:\+[a-z0-9][a-z0-9._-]{0,63})?$/;
+
+/**
+ * Whether `email` is an address the QA inbox receives: `qa@<domain>` or
+ * `qa+<tag>@<domain>` directly in `domain` (not `qa@x.qa.example.com`, not
+ * `someone@qa.example.com`, not `qa.example.com@elsewhere`). Case-insensitive. Pass the
  * address exactly as the request names it, never a shortened copy: a truncated
  * `…@qa.example.com.attacker.example` would look like a QA address.
  */
@@ -30,5 +37,8 @@ export function isQaEmail(email: string | null, domain: string): boolean {
   if (address.length > MAX_EMAIL_LENGTH) return false;
   const at = address.lastIndexOf("@");
   if (at <= 0 || address.indexOf("@") !== at) return false;
-  return address.slice(at + 1) === domain.toLowerCase();
+  return (
+    QA_LOCAL_PART.test(address.slice(0, at)) &&
+    address.slice(at + 1) === domain.toLowerCase()
+  );
 }

@@ -1,22 +1,29 @@
 /**
- * `bun run setup:qa-inbox [--domain qa.flooper.me] [--zone flooper.me] [--dry-run]
- *                         [--replace-catch-all] [--enable-zone-routing]`
+ * `bun run setup:qa-inbox [--domain qa.flooper.me] [--zone flooper.me]
+ *                         [--preflight | --dry-run] [--enable-zone-routing]`
  *
- * Sets up the automated QA suite's test inbox (apps/qa-inbox), idempotently:
+ * Sets up the automated QA suite's test inbox (apps/qa-inbox), idempotently, without
+ * touching how the zone handles any other address:
+ * 0. a read-only preflight of the zone's Email Routing: on or off, subaddressing, the
+ *    catch-all and every rule. `--preflight` prints it and stops (GET requests only);
+ *    otherwise it runs first and stops before changing anything if the zone's routing is
+ *    off (unless `--enable-zone-routing`) or `qa@<domain>` is already routed elsewhere;
  * 1. the D1 database `cloudflare-starter-qa-inbox` (created once; its id is written into
  *    apps/qa-inbox/wrangler.jsonc) and its migrations;
  * 2. deploys the `cloudflare-starter-qa-inbox` Worker;
  * 3. the QA_INBOX_TOKEN secret, when it is not set yet (asked for, sent on stdin);
  * 4. Email Routing on the subdomain (`--domain`, default QA_EMAIL_DOMAIN of production):
- *    its MX and SPF records. Wrangler has no command for a subdomain, so this one step
- *    calls the Email Routing API with Wrangler's own login (`wrangler auth token`) or
- *    CLOUDFLARE_API_TOKEN;
- * 5. the zone's catch-all rule → the Worker (`wrangler email routing rules update`), only
- *    when the catch-all is off or drops mail, or with `--replace-catch-all`.
+ *    its MX and SPF records;
+ * 5. subaddressing on for the zone (`support_subaddress`), so `qa+<tag>@<domain>` reaches
+ *    the `qa@` rule; the preflight lists the zone's other literal rules, which then also
+ *    receive their own `+<tag>` addresses;
+ * 6. one literal rule `qa@<domain>` → the Worker (`wrangler email routing rules create`).
+ *    The zone's catch-all is never read for writing, never changed.
  *
- * It never enables Email Routing for the whole zone (that takes over the apex's MX
- * records) unless `--enable-zone-routing` says so. `--dry-run` calls nothing and changes
- * no file: it prints every command and API call. Guide: docs/guides/how-to-qa-a-deployment.md#the-qa-inbox
+ * Wrangler has no command for steps 4, 5 and the preflight's reads, so they call the Email
+ * Routing API with Wrangler's own login (`wrangler auth token`) or CLOUDFLARE_API_TOKEN.
+ * `--dry-run` calls nothing and changes no file: it prints every command and API call.
+ * Guide: docs/guides/how-to-qa-a-deployment.md#the-qa-inbox
  */
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -33,14 +40,18 @@ import {
   readWranglerConfig,
 } from "./lib";
 import {
-  type CatchAllRule,
-  catchAllPlan,
   databaseIdFrom,
   databaseIdFromCreate,
+  describeRouting,
   expectedRecords,
+  inboxMailbox,
   isSubdomainOf,
   QA_INBOX_DATABASE,
   QA_INBOX_WORKER,
+  type RoutingRule,
+  type RoutingSettings,
+  rulePlan,
+  rulesGainingSubaddresses,
   subdomainRoutingReady,
   zoneOf,
 } from "./qa-inbox-plan";
@@ -53,12 +64,13 @@ const { values } = parseArgs({
   options: {
     domain: { type: "string" },
     zone: { type: "string" },
+    preflight: { type: "boolean", default: false },
     "dry-run": { type: "boolean", default: false },
-    "replace-catch-all": { type: "boolean", default: false },
     "enable-zone-routing": { type: "boolean", default: false },
   },
 });
-const dryRun = values["dry-run"] ?? false;
+const preflightOnly = values.preflight ?? false;
+const dryRun = (values["dry-run"] ?? false) && !preflightOnly;
 const productionVars = (envBlock(readWranglerConfig(), "production").vars ??
   {}) as Record<string, string>;
 const domain = (values.domain ?? productionVars.QA_EMAIL_DOMAIN ?? "")
@@ -79,6 +91,7 @@ if (inboxVars.QA_EMAIL_DOMAIN !== domain) {
     `apps/qa-inbox/wrangler.jsonc vars.QA_EMAIL_DOMAIN is "${inboxVars.QA_EMAIL_DOMAIN}", not ${domain}: set it first`
   );
 }
+const mailbox = inboxMailbox(domain);
 
 interface Run {
   readonly ok: boolean;
@@ -131,9 +144,9 @@ function readApiToken(): string {
   return token;
 }
 
-/** One Email Routing API call; with --dry-run it only prints it. */
+/** One Email Routing API call; with --dry-run it only prints it (and calls nothing). */
 async function api(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PUT",
   path: string,
   body?: unknown
 ): Promise<{ ok: boolean; json: Record<string, unknown> }> {
@@ -160,12 +173,125 @@ function apiErrors(json: Record<string, unknown>): string {
   return JSON.stringify(json.errors ?? json);
 }
 
+interface ZoneState {
+  readonly zoneId: string;
+  readonly settings: RoutingSettings | null;
+  readonly rules: RoutingRule[];
+  readonly subdomainReady: boolean;
+}
+
+/** Every rule of the zone (the API pages them, 50 at a time). */
+async function listRules(zoneId: string): Promise<RoutingRule[]> {
+  const rules: RoutingRule[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const listed = await api(
+      "GET",
+      `/zones/${zoneId}/email/routing/rules?per_page=50&page=${page}`
+    );
+    if (!listed.ok) fail(`could not list the rules: ${apiErrors(listed.json)}`);
+    const batch = (listed.json.result as RoutingRule[] | undefined) ?? [];
+    rules.push(...batch);
+    if (batch.length < 50) break;
+  }
+  return rules;
+}
+
+/** Step 0: the zone's Email Routing as it is, from GET requests only. */
+async function readZoneState(): Promise<ZoneState> {
+  const zones = await api("GET", `/zones?name=${encodeURIComponent(zone)}`);
+  const zoneId =
+    (zones.json.result as { id: string }[] | undefined)?.[0]?.id ??
+    fail(`zone ${zone} not found in this account: ${apiErrors(zones.json)}`);
+  const settings = await api("GET", `/zones/${zoneId}/email/routing`);
+  const catchAll = await api(
+    "GET",
+    `/zones/${zoneId}/email/routing/rules/catch_all`
+  );
+  const rules = await listRules(zoneId);
+  const dns = await api(
+    "GET",
+    `/zones/${zoneId}/email/routing/dns?subdomain=${encodeURIComponent(domain)}`
+  );
+  // Where the apex's mail goes today: what turning on zone-wide routing would replace.
+  const apexMx = await api(
+    "GET",
+    `/zones/${zoneId}/dns_records?type=MX&name=${encodeURIComponent(zone)}`
+  );
+  const state: ZoneState = {
+    zoneId,
+    settings: settings.ok
+      ? ((settings.json.result as RoutingSettings | undefined) ?? null)
+      : null,
+    rules,
+    subdomainReady: subdomainRoutingReady(dns.json),
+  };
+  console.log("");
+  for (const line of describeRouting({
+    zone,
+    settings: state.settings,
+    catchAll: catchAll.ok
+      ? ((catchAll.json.result as RoutingRule | undefined) ?? null)
+      : null,
+    rules,
+    subdomain: domain,
+    subdomainReady: state.subdomainReady,
+  }))
+    console.log(`  ${line}`);
+  const mx = apexMx.ok
+    ? ((apexMx.json.result as { content?: string; priority?: number }[]) ?? [])
+    : null;
+  console.log(
+    `  ${zone} MX records: ${mx === null ? "not readable with this login" : mx.length ? mx.map((record) => `${record.priority ?? "?"} ${record.content ?? "?"}`).join(", ") : "none"}`
+  );
+  const plan = rulePlan(rules, mailbox, QA_INBOX_WORKER);
+  console.log(`  Rule ${mailbox}: ${plan.action} (${plan.reason})`);
+  if (state.settings?.support_subaddress !== true) {
+    const gaining = rulesGainingSubaddresses(rules, mailbox);
+    console.log(
+      gaining.length
+        ? `  Turning subaddressing on also delivers <local>+<tag>@ to these existing rules (until now such mail went to the catch-all): ${gaining.join(", ")}`
+        : "  Turning subaddressing on changes no existing rule (none is a literal address)."
+    );
+  }
+  return state;
+}
+
 console.log(
-  `QA inbox: ${QA_INBOX_WORKER}, mail to *@${domain} (zone ${zone})${dryRun ? " — dry run, nothing is called or changed" : ""}\n`
+  `QA inbox: ${QA_INBOX_WORKER}, mail to ${mailbox} and qa+<tag>@${domain} (zone ${zone})${dryRun ? " — dry run, nothing is called or changed" : preflightOnly ? " — preflight, read-only" : ""}`
 );
 
+// 0. Read-only preflight.
+console.log("\n0. Preflight (read-only)");
+let state: ZoneState | null = null;
+if (dryRun) {
+  console.log(
+    `  (dry run) GET /zones?name=${zone}, /email/routing, /email/routing/rules/catch_all, /email/routing/rules, /email/routing/dns?subdomain=${domain}: prints routing on/off, subaddressing, the catch-all and every rule`
+  );
+} else {
+  state = await readZoneState();
+  if (preflightOnly) {
+    console.log("\nPreflight only: nothing was changed.");
+    process.exit(0);
+  }
+  // Off for the zone and the subdomain not set up yet: enabling it here could add MX
+  // records to the apex. The owner decides: the dashboard's Settings > Subdomains adds the
+  // subdomain alone (then re-run: its records are found and nothing at the apex changes),
+  // or --enable-zone-routing.
+  if (
+    !state.settings?.enabled &&
+    !state.subdomainReady &&
+    !values["enable-zone-routing"]
+  ) {
+    fail(
+      `Email Routing is off for the zone ${zone} and ${domain} has no Email Routing records yet. Nothing was changed. Either add ${domain} in the dashboard (Email > Email Routing > Settings > Subdomains) and re-run, or, if replacing the MX records of ${zone} itself is fine, re-run with --enable-zone-routing.`
+    );
+  }
+  const plan = rulePlan(state.rules, mailbox, QA_INBOX_WORKER);
+  if (plan.action === "conflict") fail(plan.reason);
+}
+
 // 1. D1 database and migrations.
-console.log("1. D1 database");
+console.log("\n1. D1 database");
 const configText = readFileSync(INBOX_CONFIG, "utf8");
 const configured = (
   parse(configText).d1_databases as { database_id: string }[]
@@ -246,34 +372,17 @@ if (!dryRun && secrets.stdout.includes('"QA_INBOX_TOKEN"')) {
 
 // 4. Email Routing on the subdomain.
 console.log(`\n4. Email Routing for ${domain}`);
-const zones = await api("GET", `/zones?name=${encodeURIComponent(zone)}`);
-const zoneId = dryRun
-  ? "<zone id>"
-  : ((zones.json.result as { id: string }[] | undefined)?.[0]?.id ??
-    fail(`zone ${zone} not found in this account: ${apiErrors(zones.json)}`));
-const settings = await api("GET", `/zones/${zoneId}/email/routing`);
-const zoneEnabled = Boolean(
-  (settings.json.result as { enabled?: boolean } | undefined)?.enabled
-);
-if (!dryRun && !zoneEnabled) {
-  if (!values["enable-zone-routing"]) {
-    fail(
-      `Email Routing is off for the zone ${zone}. Turning it on adds Cloudflare's MX records to ${zone} itself, which takes over any mail the apex receives elsewhere. If that is fine, re-run with --enable-zone-routing; otherwise enable only the subdomain in the dashboard (Email > Email Routing > Settings > Subdomains) and re-run.`
-    );
-  }
-  const enabled = inboxWrangler(["email", "routing", "enable", zone]);
-  if (!enabled.ok)
-    fail(enabled.stderr.trim() || "enabling Email Routing failed");
-} else if (dryRun) {
+const zoneId = state?.zoneId ?? "<zone id>";
+if (dryRun) {
   console.log(
     `  (dry run) if Email Routing is off for ${zone}: stop, unless --enable-zone-routing (then: wrangler email routing enable ${zone})`
   );
+} else if (!state?.settings?.enabled && !state?.subdomainReady) {
+  const enabled = inboxWrangler(["email", "routing", "enable", zone]);
+  if (!enabled.ok)
+    fail(enabled.stderr.trim() || "enabling Email Routing failed");
 }
-const dns = await api(
-  "GET",
-  `/zones/${zoneId}/email/routing/dns?subdomain=${encodeURIComponent(domain)}`
-);
-if (!dryRun && subdomainRoutingReady(dns.json)) {
+if (state?.subdomainReady) {
   console.log(`  ✓ MX and SPF records for ${domain} are in place`);
 } else {
   const added = await api("POST", `/zones/${zoneId}/email/routing/dns`, {
@@ -284,47 +393,50 @@ if (!dryRun && subdomainRoutingReady(dns.json)) {
   for (const record of expectedRecords(domain)) console.log(`    ${record}`);
 }
 
-// 5. The catch-all rule.
-console.log("\n5. Catch-all rule");
-const current = await api(
-  "GET",
-  `/zones/${zoneId}/email/routing/rules/catch_all`
-);
-const plan = dryRun
-  ? {
-      action: "set" as const,
-      reason:
-        "if it is off or drops mail (else it stops, unless --replace-catch-all)",
-    }
-  : catchAllPlan(
-      (current.json.result as CatchAllRule | undefined) ?? null,
-      QA_INBOX_WORKER,
-      values["replace-catch-all"] ?? false
-    );
-if (plan.action === "conflict") fail(plan.reason);
+// 5. Subaddressing, so qa+<tag>@ reaches the qa@ rule.
+console.log("\n5. Subaddressing");
+if (state?.settings?.support_subaddress === true) {
+  console.log("  ✓ already on for the zone");
+} else {
+  const set = await api("PUT", `/zones/${zoneId}/email/routing`, {
+    support_subaddress: true,
+  });
+  if (!set.ok) fail(`could not turn subaddressing on: ${apiErrors(set.json)}`);
+  if (!dryRun) console.log("  ✓ on for the zone");
+}
+
+// 6. The one rule: qa@<domain> → the Worker. The catch-all is left as it is.
+console.log(`\n6. Rule ${mailbox}`);
+const plan = state
+  ? rulePlan(state.rules, mailbox, QA_INBOX_WORKER)
+  : { action: "create" as const, reason: "unless it exists already" };
 if (plan.action === "keep") {
   console.log(`  ✓ ${plan.reason}`);
 } else {
-  console.log(`  ${plan.reason}`);
   const rule = inboxWrangler([
     "email",
     "routing",
     "rules",
-    "update",
+    "create",
     zone,
-    "catch-all",
+    "--name",
+    "QA inbox",
+    "--match-type",
+    "literal",
+    "--match-field",
+    "to",
+    "--match-value",
+    mailbox,
     "--action-type",
     "worker",
     "--action-value",
     QA_INBOX_WORKER,
-    "--enabled",
-    "true",
   ]);
-  if (!rule.ok) fail(rule.stderr.trim() || "updating the catch-all failed");
+  if (!rule.ok) fail(rule.stderr.trim() || "creating the rule failed");
 }
 
 console.log(
   dryRun
     ? "\nDry run: nothing was called or changed."
-    : `\nDone. Send a test mail to qa-20260101test-check@${domain} and read it with:\n  curl -H "Authorization: Bearer $QA_INBOX_TOKEN" "${url ?? "<QA_INBOX_URL>"}/messages?to=qa-20260101test-check@${domain}"`
+    : `\nDone. Send a test mail to qa+20260101test-check@${domain} and read it with:\n  curl -H "Authorization: Bearer $QA_INBOX_TOKEN" "${url ?? "<QA_INBOX_URL>"}/messages?to=qa%2B20260101test-check%40${domain}"`
 );

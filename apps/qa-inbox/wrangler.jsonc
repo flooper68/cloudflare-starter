@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // The automated QA suite's test inbox: Email Routing's catch-all of the QA mail domain
-  // delivers here (email() handler), messages are kept 24 hours in its own D1 database,
+  // The automated QA suite's test inbox: Email Routing's rule qa@<QA mail domain>, with
+  // subaddressing on so qa+<tag>@ matches it too, delivers here (email() handler), messages are kept 24 hours in its own D1 database,
   // and a bearer-token API lets the suite read and clear them. Never forwards anything.
   // Its own Worker: it is deployed and scaled apart from the app, and holds no app data.
   // Set up with `bun run setup:qa-inbox` (docs/guides/how-to-qa-a-deployment.md#the-qa-inbox).
