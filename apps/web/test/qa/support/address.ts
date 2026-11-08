@@ -33,8 +33,9 @@ export function currentRunId(
 }
 
 /**
- * The QA address of one role in one run: `qa-<runId>-<role>@<QA_EMAIL_DOMAIN>`, e.g.
- * `qa-20261108kqzt-owner@qa.flooper.me`. Mail to it lands in the QA inbox.
+ * The QA address of one role in one run: `qa+<runId>-<role>@<QA_EMAIL_DOMAIN>`, e.g.
+ * `qa+20261108kqzt-owner@qa.flooper.me`: a subaddress of the inbox's one mailbox
+ * `qa@`, which Email Routing delivers to the QA inbox Worker.
  */
 export function qaAddress(
   runId: string,
@@ -48,7 +49,7 @@ export function qaAddress(
   if (!ROLE_PATTERN.test(role)) {
     throw new Error(`role must be lowercase letters and digits, got "${role}"`);
   }
-  return `qa-${runId}-${role}@${domain}`;
+  return `qa+${runId}-${role}@${domain}`;
 }
 
 /** Whether an address is one of the QA suite's (any run), for cleanup. */
@@ -56,7 +57,7 @@ export function isQaAddress(
   email: string,
   domain: string = DEFAULT_QA_EMAIL_DOMAIN
 ): boolean {
-  const match = /^qa-(\d{8}[a-z]{4})-([a-z0-9]{1,20})@(.+)$/.exec(
+  const match = /^qa\+(\d{8}[a-z]{4})-([a-z0-9]{1,20})@(.+)$/.exec(
     email.trim().toLowerCase()
   );
   return Boolean(match && match[3] === domain.toLowerCase());

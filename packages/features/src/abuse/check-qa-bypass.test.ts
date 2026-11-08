@@ -41,7 +41,7 @@ function harness() {
 const request = {
   bypass,
   presentedToken: TOKEN,
-  email: "qa-run-owner@qa.example.com",
+  email: "qa+20261108abcd-owner@qa.example.com",
   ip: "203.0.113.50",
 };
 
@@ -85,7 +85,7 @@ describe("checkQaBypass", () => {
 
   it("falls back to the human check for an address outside the QA domain, even with the right token", async () => {
     const { deps, accepted, rejected } = harness();
-    for (const email of ["someone@example.com", "a@x.qa.example.com", null]) {
+    for (const email of ["qa+x@example.com", "someone@qa.example.com", null]) {
       await expect(checkQaBypass(deps, { ...request, email })).resolves.toBe(
         false
       );

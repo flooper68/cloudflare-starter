@@ -49,57 +49,145 @@ export function databaseIdFromCreate(output: string): string | null {
   );
 }
 
-/** The zone's catch-all rule, as the Email Routing API returns it. */
-export interface CatchAllRule {
+/** The inbox's one mailbox: QA addresses are its subaddresses (`qa+<tag>@<domain>`). */
+export function inboxMailbox(domain: string): string {
+  return `qa@${domain}`;
+}
+
+/** An Email Routing rule, as `GET /zones/<zone>/email/routing/rules` returns it. */
+export interface RoutingRule {
+  readonly id?: string;
+  readonly name?: string;
   readonly enabled?: boolean;
+  readonly priority?: number;
+  readonly matchers?: readonly {
+    readonly type?: string;
+    readonly field?: string;
+    readonly value?: string;
+  }[];
   readonly actions?: readonly {
     readonly type?: string;
     readonly value?: readonly string[];
   }[];
 }
 
-export type CatchAllPlan =
+/** The zone's Email Routing settings (`GET /zones/<zone>/email/routing`). */
+export interface RoutingSettings {
+  readonly enabled?: boolean;
+  readonly status?: string;
+  readonly name?: string;
+  readonly support_subaddress?: boolean;
+}
+
+export type RulePlan =
   | { readonly action: "keep"; readonly reason: string }
-  | { readonly action: "set"; readonly reason: string }
+  | { readonly action: "create"; readonly reason: string }
   | { readonly action: "conflict"; readonly reason: string };
 
+function describeAction(rule: RoutingRule): string {
+  return (rule.actions ?? [])
+    .map(
+      (action) =>
+        `${action.type ?? "?"}${action.value?.length ? ` ${action.value.join(", ")}` : ""}`
+    )
+    .join("; ");
+}
+
+function describeMatch(rule: RoutingRule): string {
+  return (rule.matchers ?? [])
+    .map((matcher) =>
+      matcher.type === "all"
+        ? "everything else"
+        : `${matcher.field ?? "to"} = ${matcher.value ?? "?"}`
+    )
+    .join(", ");
+}
+
 /**
- * What to do with the zone's catch-all rule. Email Routing has one catch-all per zone (a
- * subdomain has none of its own), so it also catches unmatched mail to the zone's other
- * routed addresses. It is pointed at the inbox only when it is off or drops mail, or when
- * `--replace-catch-all` says so; an existing forward or another Worker is never replaced
- * silently.
+ * What to do about the one rule the inbox needs: `qa@<domain>` → the Worker. Kept when it
+ * exists as such and is enabled; created when no rule names the address; anything else
+ * (the address routed elsewhere, or the rule disabled) is the owner's call, never
+ * overwritten.
  */
-export function catchAllPlan(
-  current: CatchAllRule | null,
-  worker: string,
-  replace: boolean
-): CatchAllPlan {
-  const action = current?.actions?.[0];
-  if (
-    current?.enabled &&
-    action?.type === "worker" &&
-    action.value?.includes(worker)
-  ) {
-    return { action: "keep", reason: `already sends to ${worker}` };
+export function rulePlan(
+  rules: readonly RoutingRule[],
+  address: string,
+  worker: string
+): RulePlan {
+  const matching = rules.filter((rule) =>
+    (rule.matchers ?? []).some(
+      (matcher) =>
+        matcher.type === "literal" &&
+        matcher.value?.toLowerCase() === address.toLowerCase()
+    )
+  );
+  if (matching.length === 0) {
+    return { action: "create", reason: `no rule routes ${address} yet` };
   }
-  if (!current?.enabled || !action || action.type === "drop") {
-    return {
-      action: "set",
-      reason: current?.enabled ? "it drops mail today" : "it is off today",
-    };
-  }
-  const target = `${action.type}${action.value?.length ? ` ${action.value.join(", ")}` : ""}`;
-  if (replace) {
-    return {
-      action: "set",
-      reason: `--replace-catch-all: it was ${target}`,
-    };
+  const ours = matching.find(
+    (rule) =>
+      rule.enabled !== false &&
+      rule.actions?.length === 1 &&
+      rule.actions[0]?.type === "worker" &&
+      rule.actions[0].value?.includes(worker)
+  );
+  if (ours && matching.length === 1) {
+    return { action: "keep", reason: `${address} → ${worker} already` };
   }
   return {
     action: "conflict",
-    reason: `the zone's catch-all is enabled and goes to ${target}; pointing it at ${worker} would take that mail too. Re-run with --replace-catch-all if that is what you want (the inbox rejects mail outside the QA domain).`,
+    reason: `${address} already has a rule (${matching.map((rule) => `${rule.enabled === false ? "disabled: " : ""}${describeAction(rule)}`).join(" | ")}); change or delete it in the dashboard, then re-run`,
   };
+}
+
+/**
+ * The zone's current Email Routing state in plain lines, for the read-only preflight:
+ * whether it is on, subaddressing, the catch-all, and every rule.
+ */
+export function describeRouting(input: {
+  readonly zone: string;
+  readonly settings: RoutingSettings | null;
+  readonly catchAll: RoutingRule | null;
+  readonly rules: readonly RoutingRule[];
+  readonly subdomain: string;
+  readonly subdomainReady: boolean;
+}): string[] {
+  const { settings, catchAll } = input;
+  const lines = [
+    `Email Routing on ${input.zone}: ${settings ? `${settings.enabled ? "enabled" : "disabled"} (status ${settings.status ?? "unknown"})` : "not set up"}`,
+    `Subaddressing (support_subaddress): ${settings?.support_subaddress === true ? "on" : settings?.support_subaddress === false ? "off" : "unknown"}`,
+    `Catch-all: ${catchAll ? `${catchAll.enabled ? "enabled" : "disabled"}, ${describeAction(catchAll) || "no action"}` : "none"}`,
+    `${input.subdomain} MX/SPF records: ${input.subdomainReady ? "in place" : "missing"}`,
+    "Rules (the catch-all aside):",
+  ];
+  for (const rule of input.rules.filter(
+    (rule) => !(rule.matchers ?? []).some((matcher) => matcher.type === "all")
+  )) {
+    lines.push(
+      `  - ${rule.enabled === false ? "[disabled] " : ""}${describeMatch(rule)} → ${describeAction(rule)}${rule.name ? ` (${rule.name})` : ""}`
+    );
+  }
+  return lines;
+}
+
+/**
+ * The literal `to` rules of the zone other than the inbox's: with subaddressing on, each
+ * also receives `<local>+<anything>@` (until now those went to the catch-all).
+ */
+export function rulesGainingSubaddresses(
+  rules: readonly RoutingRule[],
+  address: string
+): string[] {
+  return rules.flatMap((rule) =>
+    (rule.matchers ?? []).flatMap((matcher) =>
+      matcher.type === "literal" &&
+      matcher.value &&
+      matcher.value.toLowerCase() !== address.toLowerCase() &&
+      !matcher.value.split("@")[0]?.includes("+")
+        ? [matcher.value]
+        : []
+    )
+  );
 }
 
 /** One DNS record Email Routing needs, as `GET …/email/routing/dns` lists it. */
