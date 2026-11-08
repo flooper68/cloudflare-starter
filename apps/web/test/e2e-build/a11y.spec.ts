@@ -23,6 +23,8 @@ for (const colorScheme of ["dark", "light"] as const) {
       "/docs/",
       "/docs/guides/how-to-configure-workspaces/",
       "/docs/processes/agentic-workflow/",
+      // A walkthrough player from <!-- walkthrough: agents -->.
+      "/docs/guides/how-to-setup-mcp/",
     ])
       test(`${path} passes axe`, async ({ page }) => {
         await page.goto(path);

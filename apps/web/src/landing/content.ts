@@ -55,6 +55,12 @@ export const SECTIONS = {
     title: "Everything in the box, and how it connects",
     lead: "Every part of the starter, grouped by what it does for you, and the main ways the parts work together.",
   },
+  tour: {
+    kicker: "Feature tour",
+    title: "Watch each part work",
+    lead: "Recorded from the app itself with sample data, captions on, no sound.",
+    more: "More walkthroughs are in the docs:",
+  },
   costs: {
     kicker: "What it costs",
     title: "One platform, one bill.",

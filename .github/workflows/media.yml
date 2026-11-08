@@ -1,0 +1,126 @@
+name: Walkthrough videos
+
+# Re-records the feature walkthrough videos after the UI changed, by hand only:
+# Actions → Walkthrough videos → Run workflow. Three jobs, so the deploy credentials are
+# only in the one that needs them:
+# 1. record: `bun run media:record` against a local astro dev with the seed data
+#    (no secrets); the videos are kept as a workflow artifact for review.
+# 2. upload: `bun run media:upload --env production` in the GitHub environment
+#    `production` (its protection rules apply), with the deploy workflow's secrets.
+#    Idempotent: unchanged videos are skipped.
+# 3. pull request: commits the new src/content/media-manifest.json on a branch and opens
+#    a PR. The site shows the new videos once that PR is merged and deployed; until then
+#    it keeps the old ones, which stay in R2 under their own hashes.
+# docs/guides/how-to-record-walkthrough-videos.md#in-ci
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Video ids to record, comma-separated (empty = all)
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media
+  cancel-in-progress: false
+
+jobs:
+  record:
+    name: Record
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 45
+    env:
+      ONLY: ${{ inputs.only }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+      - run: bun scripts/ci-playwright-install.ts
+      # ffmpeg for MP4 (H.264), WebM and trimming. The recorder stops in CI without it,
+      # so a self-hosted runner without ffmpeg fails here instead of uploading WebM only.
+      - name: ffmpeg
+        if: runner.environment == 'github-hosted'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Local env
+        run: cp apps/web/.dev.vars.example apps/web/.dev.vars
+      - name: Record
+        timeout-minutes: 35
+        run: |
+          if [ -n "$ONLY" ]; then
+            bun scripts/ci-reap.ts bun run media:record --only "$ONLY"
+          else
+            bun scripts/ci-reap.ts bun run media:record
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: walkthrough-videos
+          path: |
+            apps/web/tmp/media/out
+            apps/web/src/content/media-manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+  upload:
+    name: Upload to production R2
+    needs: record
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: walkthrough-videos
+          path: apps/web/_artifact
+      - name: Place the recordings
+        run: |
+          mkdir -p apps/web/tmp/media
+          cp -R apps/web/_artifact/tmp/media/out apps/web/tmp/media/out
+          cp apps/web/_artifact/src/content/media-manifest.json apps/web/src/content/media-manifest.json
+      - name: Upload
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bun run media:upload --env production
+
+  pull-request:
+    name: Open the manifest PR
+    needs: upload
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.MEDIA_PR_TOKEN || github.token }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ secrets.MEDIA_PR_TOKEN || github.token }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: walkthrough-videos
+          path: _artifact
+      - name: Commit the manifest and open a PR
+        run: |
+          cp _artifact/src/content/media-manifest.json apps/web/src/content/media-manifest.json
+          rm -rf _artifact
+          if git diff --quiet -- apps/web/src/content/media-manifest.json; then
+            echo "The manifest did not change: nothing to open."
+            exit 0
+          fi
+          branch="media/re-record-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add apps/web/src/content/media-manifest.json
+          git commit -m "Update the walkthrough video manifest" -m "Recorded and uploaded to production R2 by $RUN_URL."
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "Update the walkthrough video manifest" \
+            --body "Re-recorded by $RUN_URL and uploaded to production R2 under media/<hash>/. The videos are the run's walkthrough-videos artifact. Merge, then deploy, to show them on the site."

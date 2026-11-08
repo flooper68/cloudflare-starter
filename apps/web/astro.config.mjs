@@ -23,7 +23,14 @@ export default defineConfig({
   devToolbar: { enabled: false },
   // No Cloudflare Images binding: images are served as they are. Switch to the
   // adapter's default to resize with Cloudflare Images (a paid feature).
-  adapter: cloudflare({ imageService: "passthrough" }),
+  // MEDIA_STATE_DIR: the walkthrough recorder (media/record.ts) runs `astro dev` on its
+  // own throwaway local state (D1, R2, queues), so its seed never touches yours.
+  adapter: cloudflare({
+    imageService: "passthrough",
+    ...(process.env.MEDIA_STATE_DIR
+      ? { persistState: { path: process.env.MEDIA_STATE_DIR } }
+      : {}),
+  }),
   // Better Auth owns sessions; an in-memory driver keeps Astro from
   // provisioning its default SESSION KV namespace.
   session: { driver: sessionDrivers.lruCache() },

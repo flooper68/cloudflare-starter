@@ -5,7 +5,9 @@ Two workflows live in `.github/workflows/`:
 - `ci.yml` runs on every pull request and on pushes to `main`.
 - `deploy.yml` deploys the web app to one environment when you start it by hand.
 
-Both use the local composite action `.github/actions/setup`, which installs Bun (the version from `packageManager` in `package.json`), restores Bun's install cache (`~/.bun/install/cache`, keyed on `bun.lock`; on GitHub-hosted runners only, see [Self-hosted runners](#self-hosted-runners)) and runs `bun install --frozen-lockfile`. All third-party actions are pinned to a full commit SHA with the version in a comment.
+Beside them, `qa.yml` runs the QA suite ([below](#4-the-qa-environment)) and `media.yml` re-records the walkthrough videos by hand, uploads them to production R2 with the deploy secrets and opens the manifest PR ([how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md#in-ci)).
+
+They use the local composite action `.github/actions/setup`, which installs Bun (the version from `packageManager` in `package.json`), restores Bun's install cache (`~/.bun/install/cache`, keyed on `bun.lock`; on GitHub-hosted runners only, see [Self-hosted runners](#self-hosted-runners)) and runs `bun install --frozen-lockfile`. All third-party actions are pinned to a full commit SHA with the version in a comment.
 
 ## CI jobs
 

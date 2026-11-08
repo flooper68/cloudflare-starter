@@ -362,6 +362,7 @@ Guide: [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md).
 5. `/docs/no-such-page/`: the 404 page with "Go home" and "Read the docs".
 6. Search: ⌘K (Ctrl+K) or the header's "Search docs" opens the dialog; "workspace" lists results; ↓ and Enter open one; Esc closes. Also from the 404 page.
 7. `GET /robots.txt` lists the disallowed paths and the sitemap in production, `Disallow: /` elsewhere; `GET /sitemap-index.xml` answers 200 in production.
+8. Videos ([how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md)): each pillar card's clip plays muted while in view, and its pause button stops it; under "Watch each part work" Play starts the tour with captions, a chapter jumps to its time, "Read the transcript" opens; `/docs/guides/how-to-setup-mcp/` opens with the Agents & MCP video. A clip or video that shows its stand-in and "This video is not available yet" was not uploaded to this environment.
 
 Expected: no console errors; `/` is the same page signed in and out.
 Mail: none.

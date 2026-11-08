@@ -1,0 +1,311 @@
+{
+  "version": 1,
+  "videos": {
+    "agents": {
+      "id": "agents",
+      "title": "Agents & MCP",
+      "kind": "walkthrough",
+      "hash": "049b652e3f6a",
+      "duration": 75,
+      "width": 1440,
+      "height": 900,
+      "audio": false,
+      "poster": {
+        "src": "/media/049b652e3f6a/agents.jpg",
+        "bytes": 92076
+      },
+      "captions": {
+        "src": "/media/049b652e3f6a/agents.vtt",
+        "bytes": 569
+      },
+      "chapters": [
+        {
+          "start": 0,
+          "title": "No agents connected yet",
+          "caption": "No agents connected yet."
+        },
+        {
+          "start": 8,
+          "title": "An agent asks to connect",
+          "caption": "An agent asks to connect."
+        },
+        {
+          "start": 16,
+          "title": "Sign in and allow",
+          "caption": "You see what it may do, then allow it."
+        },
+        {
+          "start": 26,
+          "title": "It reads your notes",
+          "caption": "It reads your notes."
+        },
+        {
+          "start": 34,
+          "title": "It writes a note",
+          "caption": "It writes one; you see it at once."
+        },
+        {
+          "start": 44,
+          "title": "Same permissions as you",
+          "caption": "Same permissions as you, nothing more."
+        },
+        {
+          "start": 52,
+          "title": "Settings › Connected agents",
+          "caption": "Every agent you allowed, in one place."
+        },
+        {
+          "start": 62,
+          "title": "Disconnect it",
+          "caption": "Disconnect it."
+        },
+        {
+          "start": 69,
+          "title": "Its next call is refused",
+          "caption": "Its next call is refused."
+        }
+      ],
+      "sources": [
+        {
+          "src": "/media/049b652e3f6a/agents.mp4",
+          "type": "video/mp4",
+          "bytes": 841849
+        },
+        {
+          "src": "/media/049b652e3f6a/agents.webm",
+          "type": "video/webm",
+          "bytes": 993386
+        }
+      ],
+      "encoder": "ffmpeg"
+    },
+    "loop-agent-note": {
+      "id": "loop-agent-note",
+      "title": "An agent adds a note",
+      "kind": "loop",
+      "hash": "e77ff125a647",
+      "duration": 8,
+      "width": 960,
+      "height": 600,
+      "audio": false,
+      "poster": {
+        "src": "/media/e77ff125a647/loop-agent-note.jpg",
+        "bytes": 64571
+      },
+      "captions": null,
+      "chapters": [],
+      "sources": [
+        {
+          "src": "/media/e77ff125a647/loop-agent-note.mp4",
+          "type": "video/mp4",
+          "bytes": 120930
+        },
+        {
+          "src": "/media/e77ff125a647/loop-agent-note.webm",
+          "type": "video/webm",
+          "bytes": 110734
+        }
+      ],
+      "encoder": "ffmpeg"
+    },
+    "loop-consent": {
+      "id": "loop-consent",
+      "title": "Consent, then Allow",
+      "kind": "loop",
+      "hash": "8b1f8c5cde10",
+      "duration": 5.7,
+      "width": 960,
+      "height": 600,
+      "audio": false,
+      "poster": {
+        "src": "/media/8b1f8c5cde10/loop-consent.jpg",
+        "bytes": 10712
+      },
+      "captions": null,
+      "chapters": [],
+      "sources": [
+        {
+          "src": "/media/8b1f8c5cde10/loop-consent.mp4",
+          "type": "video/mp4",
+          "bytes": 25813
+        },
+        {
+          "src": "/media/8b1f8c5cde10/loop-consent.webm",
+          "type": "video/webm",
+          "bytes": 28176
+        }
+      ],
+      "encoder": "ffmpeg"
+    },
+    "loop-health": {
+      "id": "loop-health",
+      "title": "A health check goes green",
+      "kind": "loop",
+      "hash": "bc4aa78c33a3",
+      "duration": 6,
+      "width": 960,
+      "height": 600,
+      "audio": false,
+      "poster": {
+        "src": "/media/bc4aa78c33a3/loop-health.jpg",
+        "bytes": 45270
+      },
+      "captions": null,
+      "chapters": [],
+      "sources": [
+        {
+          "src": "/media/bc4aa78c33a3/loop-health.mp4",
+          "type": "video/mp4",
+          "bytes": 36900
+        },
+        {
+          "src": "/media/bc4aa78c33a3/loop-health.webm",
+          "type": "video/webm",
+          "bytes": 56072
+        }
+      ],
+      "encoder": "ffmpeg"
+    },
+    "loop-invite": {
+      "id": "loop-invite",
+      "title": "Invite a teammate",
+      "kind": "loop",
+      "hash": "9dafacfa71a3",
+      "duration": 8,
+      "width": 960,
+      "height": 600,
+      "audio": false,
+      "poster": {
+        "src": "/media/9dafacfa71a3/loop-invite.jpg",
+        "bytes": 43603
+      },
+      "captions": null,
+      "chapters": [],
+      "sources": [
+        {
+          "src": "/media/9dafacfa71a3/loop-invite.mp4",
+          "type": "video/mp4",
+          "bytes": 89414
+        },
+        {
+          "src": "/media/9dafacfa71a3/loop-invite.webm",
+          "type": "video/webm",
+          "bytes": 80846
+        }
+      ],
+      "encoder": "ffmpeg"
+    },
+    "loop-job-mail": {
+      "id": "loop-job-mail",
+      "title": "A job runs, the mail arrives",
+      "kind": "loop",
+      "hash": "5932f0e254ad",
+      "duration": 10,
+      "width": 960,
+      "height": 600,
+      "audio": false,
+      "poster": {
+        "src": "/media/5932f0e254ad/loop-job-mail.jpg",
+        "bytes": 47668
+      },
+      "captions": null,
+      "chapters": [],
+      "sources": [
+        {
+          "src": "/media/5932f0e254ad/loop-job-mail.mp4",
+          "type": "video/mp4",
+          "bytes": 60568
+        },
+        {
+          "src": "/media/5932f0e254ad/loop-job-mail.webm",
+          "type": "video/webm",
+          "bytes": 83410
+        }
+      ],
+      "encoder": "ffmpeg"
+    },
+    "tour": {
+      "id": "tour",
+      "title": "The starter in 90 seconds",
+      "kind": "walkthrough",
+      "hash": "9ecf4902977e",
+      "duration": 90,
+      "width": 1440,
+      "height": 900,
+      "audio": false,
+      "poster": {
+        "src": "/media/9ecf4902977e/tour.jpg",
+        "bytes": 91729
+      },
+      "captions": {
+        "src": "/media/9ecf4902977e/tour.vtt",
+        "bytes": 690
+      },
+      "chapters": [
+        {
+          "start": 0,
+          "title": "A small app your agents can use",
+          "caption": "This is Cloudflare Starter: a small app your agents can use."
+        },
+        {
+          "start": 8,
+          "title": "The demo is the starter",
+          "caption": "The demo is the starter itself."
+        },
+        {
+          "start": 18,
+          "title": "Already done for you",
+          "caption": "Sign-in, workspaces and billing are already done."
+        },
+        {
+          "start": 28,
+          "title": "An agent asks for access",
+          "caption": "An agent asks for access. You allow it."
+        },
+        {
+          "start": 38,
+          "title": "It works as you",
+          "caption": "It works in your app, as you."
+        },
+        {
+          "start": 48,
+          "title": "Invite your team",
+          "caption": "Invite your team."
+        },
+        {
+          "start": 58,
+          "title": "Plans and limits",
+          "caption": "Plans and limits are built in."
+        },
+        {
+          "start": 68,
+          "title": "Admin, health and logs",
+          "caption": "Admin, health and logs: solved."
+        },
+        {
+          "start": 78,
+          "title": "The $5 plan",
+          "caption": "It all runs on the $5 Cloudflare plan."
+        },
+        {
+          "start": 85,
+          "title": "Clone it and ship",
+          "caption": "Clone it and ship."
+        }
+      ],
+      "sources": [
+        {
+          "src": "/media/9ecf4902977e/tour.mp4",
+          "type": "video/mp4",
+          "bytes": 1346817
+        },
+        {
+          "src": "/media/9ecf4902977e/tour.webm",
+          "type": "video/webm",
+          "bytes": 1545632
+        }
+      ],
+      "encoder": "ffmpeg"
+    }
+  }
+}

@@ -27,6 +27,7 @@
       "!**/public/_storybook",
       "!**/playwright-report",
       "!**/test-results",
+      "!**/tmp",
       "!.claude/worktrees"
     ]
   },

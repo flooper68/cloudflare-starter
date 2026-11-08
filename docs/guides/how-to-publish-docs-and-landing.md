@@ -25,7 +25,7 @@ Write links as you always do: relative paths between files (`[testing.md](../arc
 - any other file becomes its GitHub page (`…/blob/main/apps/web/wrangler.jsonc`), a folder (`../.claude/skills/`) its GitHub tree;
 - absolute URLs, site paths (`/app`) and `#fragments` stay as they are.
 
-Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks are shown as code; for a diagram on the site, use an SVG ([Diagrams](#diagrams)).
+Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). Mermaid blocks are shown as code; for a diagram on the site, use an SVG ([Diagrams](#diagrams)). A line `<!-- walkthrough: <id> -->` shows a recorded video there, and nothing on GitHub ([videos in the docs](how-to-record-walkthrough-videos.md#in-the-docs)).
 
 ### Diagrams
 
@@ -61,8 +61,9 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 | Section          | What it is                                                                                                                                                                                                               |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Hero             | The hook, the lead, **Try the demo app** and **View on GitHub**, and `HeroScene.astro`: the app in CSS 3D with requests flowing to the database, files, jobs and email, plain labels, one `role="img"` with a text label |
-| Pillars          | The four pillars from the feature data, each with a clip slot: a designed poster ("Clip coming soon"), no player until the videos exist                                                                                  |
+| Pillars          | The four pillars from the feature data, each with its muted loop (`HOME_CLIPS` in `src/content/videos.ts`), or the "Clip coming soon" poster while it is not recorded                                                    |
 | Feature map      | `FeatureMap.astro`, [below](#the-feature-map)                                                                                                                                                                            |
+| Feature tour     | "Watch each part work": the `tour` walkthrough (`HOME_WALKTHROUGH`) with its chapters and transcript, and links to the other recorded walkthroughs in the docs                                                           |
 | What it costs    | "$5/month, plus usage above the included allowances", a receipt of what the plan covers and the allowances that matter first, with the date the prices were checked                                                      |
 | Start in minutes | The four commands of [how-to-setup-web-app.md](how-to-setup-web-app.md#run-locally) and the time they took from a fresh clone                                                                                            |
 | What's new       | The three newest titled entries of `CHANGELOG.md` (`src/landing/whats-new.ts`, read at build time), with the release notes and the feed                                                                                  |
@@ -70,7 +71,11 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 
 What the starter does is data ([feature data](#feature-data)); the page's own words and links are in `apps/web/src/landing/content.ts`. Keep the copy honest: the hook says "today" because a local app was measured (about 45 s from a fresh clone with Bun's cache warm, 80 s cold) and a deploy was not; the costs come from Cloudflare's pricing pages with the date checked; Containers is a demo, never "built".
 
-The page reads no session, so it is the same for everyone. It ships no React. Its scripts are the theme file, the header menu (`site-menu.ts`), the hero (`hero-scene.ts`) and the feature map (`feature-map.ts`), about 3 KB gzip together ([bundle budget](#bundle-budget)).
+The page reads no session, so it is the same for everyone. It ships no React. Its scripts are the theme file, the header menu (`site-menu.ts`), the hero (`hero-scene.ts`), the feature map (`feature-map.ts`) and the video player (`video-player.ts`), about 4 KB gzip together ([bundle budget](#bundle-budget)).
+
+### Videos
+
+The clips and the walkthrough are recorded by script from the app and served from R2 at `/media/` through the Worker, so the page's policy (`media-src 'self'`) needed no change. Recording, uploading, the player and putting a video in a doc (`<!-- walkthrough: <id> -->`): [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md). The page names the videos from the committed `src/content/media-manifest.json` at build time; deploy it only after `bun run media:upload` put its videos into that environment's R2, or the player shows the poster's stand-in.
 
 ### Motion
 
@@ -90,7 +95,7 @@ No WebGL: a particle layer behind a CSS 3D scene would add a chunk and GPU work 
 A product built from the starter replaces this page with its own:
 
 1. Rewrite `apps/web/src/landing/content.ts` (or delete it), `src/content/features.ts` (or keep it for the docs) and the sections of `index.astro`. Keep `export const prerender = true` and `PublicLayout` unless the page must know who is signed in; a page that reads the session is rendered per request, and its `Cache-Control` must then not be `public` (remove `/` from `PRERENDERED_PAGE_PATHS` in `apps/web/src/server/security-headers.ts` and from `STATIC_CACHE_RULES` in `static-cache.ts`, then regenerate `_headers`).
-2. Set `DOCS.siteName` (`apps/web/src/docs/docs.config.ts`) to the product's name; it is the header and the page titles.
+2. Set `DOCS.siteName` (`apps/web/src/docs/docs.config.ts`) to the product's name; it is the header and the page titles. For videos of the product, script them as in [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md); otherwise drop the `VideoPlayer` uses.
 3. Decide whether the product publishes the repository's docs. To publish product docs instead, point `DOCS.sources`, `navSource` and `start` at them. To drop the docs site:
    - delete `src/pages/docs/`, `src/content.config.ts`, `components/site/DocsSearch.astro` and its uses, and in `src/docs/` the docs-only modules (`links.ts`, `nav.ts`, `meta.ts`, `markdown-plugins.ts`, `search*.ts` and their tests); keep `docs.config.ts` (`siteName` and `repoUrl` are used by the header, the layout, the landing and the 404; drop its other fields), `robots.ts` and `site-integrations.ts` without `docsSearch()` (the sitemap);
    - remove `markdown` and the Pagefind import from `apps/web/astro.config.mjs`, the `/pagefind/*` and `/docs/*` entries of `PRERENDERED_PAGE_PATHS`, `PAGEFIND_CSP` and `STATIC_CACHE_RULES` (then regenerate `_headers`), and the Pagefind budget from `scripts/check-bundle-budget.ts`;
@@ -165,6 +170,7 @@ The header's "Search docs" button (or ⌘K / Ctrl+K) opens a dialog that searche
 | `/pagefind/pagefind.js`, `/pagefind/pagefind-*` (entry, worker, UI), `wasm.*` | `public, max-age=300`                              | fixed names that change with every build                                                                                                                     |
 | `/`, `/docs/*`, `/404`, `/_storybook/`, `/_storybook/iframe` (static HTML)    | `public, max-age=0, must-revalidate, no-transform` | a deploy shows at once; the ETag makes it cheap; the edge may not rewrite the HTML ([why](how-to-configure-security-headers.md#edge-injected-web-analytics)) |
 | `/docs/changelog.xml`                                                         | `public, max-age=0, must-revalidate`               | the feed is not HTML                                                                                                                                         |
+| `/media/*` (served by the Worker from R2, not a static asset)                 | `public, max-age=31536000, immutable`              | each video's files are in a folder named by their content hash ([videos](#videos))                                                                           |
 
 The rules apply only to responses served from the static assets, not to pages the Worker renders on request (sign-in, `/app`, the API); those get `no-transform` from the middleware. Check them with `curl -I` against `bunx astro preview` (it serves the build like Cloudflare does) or a deployment.
 

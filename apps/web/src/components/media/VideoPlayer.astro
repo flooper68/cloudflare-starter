@@ -1,0 +1,33 @@
+---
+/**
+ * A recorded walkthrough or loop by id (src/content/videos.ts), from the media manifest:
+ * the walkthrough player (poster, Play, chapters, captions, transcript) or a muted loop.
+ * Not recorded yet: the designed "Clip coming soon" poster. The markup is
+ * player-markup.ts (shared with the docs' `<!-- walkthrough: <id> -->`), the behaviour
+ * video-player.ts. docs/guides/how-to-record-walkthrough-videos.md#the-player
+ */
+import "./video-player.css";
+
+import { mediaEntry } from "@/content/media";
+import { video } from "@/content/videos";
+
+import MarkupNode from "./MarkupNode.astro";
+import { playerTree } from "./player-markup";
+
+interface Props {
+  id: string;
+  class?: string;
+}
+
+const { id, class: className } = Astro.props;
+const meta = video(id);
+if (!meta)
+  throw new Error(`VideoPlayer: no video "${id}" in src/content/videos.ts`);
+const tree = playerTree(mediaEntry(id), meta.title);
+---
+
+<div class={className}><MarkupNode node={tree} /></div>
+
+<script>
+  import "./video-player.ts";
+</script>
