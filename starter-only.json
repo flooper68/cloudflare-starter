@@ -281,6 +281,11 @@
           "file": "scripts/cloudflare-plan.test.ts",
           "find": "\"= 9001–9013 kept\"",
           "replace": "\"= 9001–9012 kept\""
+        },
+        {
+          "file": "CHANGELOG.md",
+          "find": "[apps/web/test/qa/README.md](apps/web/test/qa/README.md)",
+          "replace": "`apps/web/test/qa/README.md`"
         }
       ]
     },
@@ -312,6 +317,11 @@
           "find": "[apps/web/test/qa/README.md](../../apps/web/test/qa/README.md)",
           "replace": "",
           "line": true
+        },
+        {
+          "file": "CHANGELOG.md",
+          "find": "[apps/web/test/qa/README.md](apps/web/test/qa/README.md)",
+          "replace": "`apps/web/test/qa/README.md`"
         }
       ]
     },
