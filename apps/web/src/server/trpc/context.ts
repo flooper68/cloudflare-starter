@@ -22,6 +22,7 @@ import {
 import { getAuth } from "@/server/auth";
 import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
+import { demoRuntimeFor } from "@/server/demo";
 import type { AppEnv } from "@/server/env";
 import { readinessReport } from "@/server/health";
 import { buildPlatform, loggerFor, tracerFor } from "@/server/platform";
@@ -106,6 +107,7 @@ export function createAppContext(
     adminAuth: createAdminAuthGateway(() => getAuth(env), browser.exchange),
     accountAuth: createAccountAuthGateway(() => getAuth(env), browser.exchange),
     readiness: () => readinessReport(env, scoped, { detail: true }),
+    demo: demoRuntimeFor(env),
   };
 }
 

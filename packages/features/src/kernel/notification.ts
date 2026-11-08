@@ -69,6 +69,12 @@ export interface NotifyInput<TData> {
   /** User ids. The actor (`requestContext.userId`) is dropped unless security-critical. */
   readonly recipients: readonly string[];
   readonly data: TData;
+  /**
+   * A stable event id, for a producer that may send the same notification twice (a job
+   * retried after it was sent): the dispatch job is keyed by it, so the repeat is a no-op.
+   * Omitted: a new id per call.
+   */
+  readonly eventId?: string;
   readonly context: {
     /** The workspace it is about; the inbox rows cascade with it. Null for account events. */
     readonly workspaceId: string | null;

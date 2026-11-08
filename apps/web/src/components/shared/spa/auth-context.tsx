@@ -27,6 +27,8 @@ export interface AuthContextValue {
   readonly admin: boolean;
   /** The impersonating admin's id while an admin acts as this user (the banner). */
   readonly impersonatedBy: string | null;
+  /** DEMO_MODE=on: the demo banner with the retention; null (or absent) with off. */
+  readonly demo?: { readonly retentionDays: number } | null;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);

@@ -244,6 +244,9 @@ packages/features/src/
 │                                job privacy.purge-exports) and account erasure (preflight, erasure lock,
 │                                erasure records); tables in privacy.schema.ts
 ├── storage-reconciliation/      optional orphan R2 cleanup (job storage.reconcile, STORAGE_RECONCILE)
+├── demo/                        starter-only demo mode (DEMO_MODE): sample notes for new workspaces
+│                                (job demo.seed-workspace), the daily retention (jobs demo.enforce-retention,
+│                                demo.warn-account) erasing expired accounts through the privacy erasure
 ├── notifications/               notify, dispatch, inbox (list, unread count, read, archive), preferences,
 │                                digest, RFC 8058 unsubscribe tokens, retention purge; tables in notifications.schema.ts
 ├── trash/                       soft delete: liveIn/trashedIn, the TrashableEntity contract, list, restore,

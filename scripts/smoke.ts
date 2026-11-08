@@ -25,6 +25,8 @@ const envIndex = argv.indexOf("--env");
 let fromEnvironment: string | undefined;
 // The environment named with --env, for checks that differ by environment (robots.txt).
 let smokeEnvironment: string | undefined;
+// Its DEMO_MODE (the sign-up page's demo notice), from its vars in wrangler.jsonc.
+let smokeDemoMode: string | undefined;
 if (envIndex !== -1) {
   const env = argv[envIndex + 1];
   if (!ENVIRONMENTS.includes(env as Environment)) {
@@ -32,9 +34,9 @@ if (envIndex !== -1) {
   }
   argv.splice(envIndex, 2);
   smokeEnvironment = env;
-  fromEnvironment = deployedURL(
-    envBlock(readWranglerConfig(), env as Environment)
-  );
+  const block = envBlock(readWranglerConfig(), env as Environment);
+  fromEnvironment = deployedURL(block);
+  smokeDemoMode = (block.vars as Record<string, string> | undefined)?.DEMO_MODE;
   if (
     !fromEnvironment &&
     !process.env.E2E_BASE_URL &&
@@ -62,6 +64,7 @@ const result = spawnSync(
       ...process.env,
       E2E_BASE_URL: args.baseURL,
       ...(smokeEnvironment ? { SMOKE_ENV: smokeEnvironment } : {}),
+      ...(smokeDemoMode ? { SMOKE_DEMO_MODE: smokeDemoMode } : {}),
     },
   }
 );

@@ -7,7 +7,7 @@ import {
   type Ids,
   type RequestContext,
 } from "../kernel";
-import { prepareUserErasure } from "./prepare-user-erasure";
+import { eraseAccount } from "./erase-account";
 /** Administrator path shares the same preflight/erasers as self-service deletion. */
 export async function eraseUserData(
   deps: {
@@ -34,13 +34,10 @@ export async function eraseUserData(
       "Use account settings to delete your own account",
       "CANNOT_ERASE_SELF_AS_ADMIN"
     );
-  const operationId = deps.ids.uuid();
-  const plan = await prepareUserErasure(deps, {
+  const plan = await eraseAccount(deps, {
     userId: input.userId,
-    operationId,
     actor: { kind: "admin", userId: admin.userId },
   });
-  await deps.gateway.deleteUser(input.userId, operationId);
   await recordAuditEvent(deps, deps.requestContext, {
     action: "user.deleted",
     actor: { kind: "admin", userId: admin.userId },

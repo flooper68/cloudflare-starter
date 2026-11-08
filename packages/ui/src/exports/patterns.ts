@@ -144,6 +144,10 @@ export {
   type DataExportListProps,
 } from "../components/patterns/data-export-list";
 export {
+  DemoBanner,
+  type DemoBannerProps,
+} from "../components/patterns/demo-banner";
+export {
   type Filter,
   FilterBar,
   type FilterBarProps,

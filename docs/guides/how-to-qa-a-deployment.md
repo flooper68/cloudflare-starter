@@ -253,6 +253,19 @@ Guide: [how-to-handle-data-privacy.md](how-to-handle-data-privacy.md).
 Expected: each download is the same archive; the signed link opened signed out (or as B) answers 404.
 Mail: **Your data export is ready** (one per export).
 
+### Demo mode: notice, sample notes, retention
+
+Guide: [how-to-run-a-public-demo.md](how-to-run-a-public-demo.md). Production and staging run with `DEMO_MODE=on`; skip this section on an environment with `off`.
+
+1. Signed out, open `/sign-up`: above the form, "Demo instance: your account and data are deleted after 7 days." and **Get the starter on GitHub** (opens the repository in a new tab).
+2. As A (just signed up), every app page shows the same banner. Dismiss it: it stays hidden after a reload and in the same tab; a new tab or a new browser session shows it again.
+3. Notes: within a few seconds of sign-up, three notes titled `Sample: …`; **Sample: Welcome to the demo** has one comment. Editing, trashing and restoring them works like any note.
+4. As the QA admin, `/admin/overview`: the **Demo instance** card with active demo accounts, deletions scheduled today and deleted in the last 7 days; `/admin/settings` → **Demo mode** shows the retention, sample data, protected accounts and the QA domain.
+5. The QA accounts of the run are in `QA_EMAIL_DOMAIN`: the retention never warns or erases them (their own [cleanup](#cleanup) does). The warning and the erasure of a real demo account take a week; check them on the audit log instead: `demo.deletion_warned`, then `demo.account_erased` a day later, both by the system.
+
+Expected: no demo notice anywhere with `DEMO_MODE=off`.
+Mail: none for the QA accounts. A demo account gets **Your demo account will be deleted tomorrow** (links to Settings › Privacy and to GitHub) a day before **Your account was deleted**.
+
 ### Admin portal
 
 Guides: [how-to-use-admin-portal.md](how-to-use-admin-portal.md), [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md), [how-to-use-feature-flags.md](how-to-use-feature-flags.md), [how-to-monitor-health.md](how-to-monitor-health.md). As the QA admin (`qaAdmin()`, [self-provisioned](#the-automated-suite)); act only on the QA accounts and workspaces of the run.

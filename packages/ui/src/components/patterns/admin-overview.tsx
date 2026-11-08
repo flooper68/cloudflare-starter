@@ -2,6 +2,7 @@ import {
   Activity,
   Building2,
   CreditCard,
+  FlaskConical,
   ShieldCheck,
   UserPlus,
   Users,
@@ -52,6 +53,13 @@ export interface AdminOverviewData {
       readonly unit: "bytes" | "count";
       readonly total: number;
     }[];
+  } | null;
+  /** DEMO_MODE=on: the demo retention's counters; null or absent with off. */
+  readonly demo?: {
+    readonly retentionDays: number;
+    readonly activeAccounts: number;
+    readonly scheduledToday: number;
+    readonly erasedLast7Days: number;
   } | null;
 }
 
@@ -144,6 +152,34 @@ export function AdminOverview({ data }: AdminOverviewProps) {
               })}
             </ul>
           </div>
+        </Card>
+      ) : null}
+      {data.demo ? (
+        <Card className="flex flex-col gap-4 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-sm font-medium text-fg">
+              <FlaskConical aria-hidden className="size-4 text-fg-muted" />
+              Demo instance
+            </p>
+            <p className="text-xs text-fg-muted">
+              Accounts are erased {number.format(data.demo.retentionDays)} days
+              after sign-up; admins, protected and QA accounts never.
+            </p>
+          </div>
+          <dl className="grid gap-4 sm:grid-cols-3">
+            {[
+              ["Active demo accounts", data.demo.activeAccounts],
+              ["Deletions scheduled today", data.demo.scheduledToday],
+              ["Deleted, last 7 days", data.demo.erasedLast7Days],
+            ].map(([label, value]) => (
+              <div key={label} className="flex flex-col gap-1">
+                <dt className="text-xs text-fg-muted">{label}</dt>
+                <dd className="text-xl font-semibold tabular-nums text-fg">
+                  {number.format(Number(value))}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </Card>
       ) : null}
       {data.plans ? (
