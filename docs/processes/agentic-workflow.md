@@ -146,12 +146,12 @@ In this workflow, Critical, High and Medium findings are fixed before the PR is 
 
 A PR is done when the [definition of done](development.md#definition-of-done) holds. A request is done when, in addition:
 
-- [ ] every PR of the request is merged with a merge commit, CI green on `main`;
-- [ ] the deploy the owner asked for ran, with its smoke suite and, for production, the QA suite passing;
-- [ ] each user- or adopter-visible change has its line under `## [Unreleased]` in `CHANGELOG.md`;
-- [ ] the docs, and any knowledge pages and design canvas kept outside the repository, describe the new state;
-- [ ] worktrees, dev servers and scratch files the agents started are gone ([machine hygiene](development.md#machine-hygiene));
-- [ ] the owner has a short report: what shipped, where, and what is still open.
+- every PR of the request is merged with a merge commit, CI green on `main`;
+- the deploy the owner asked for ran, with its smoke suite and, for production, the QA suite passing;
+- each user- or adopter-visible change has its line under `## [Unreleased]` in `CHANGELOG.md`;
+- the docs, and any knowledge pages and design canvas kept outside the repository, describe the new state;
+- worktrees, dev servers and scratch files the agents started are gone ([machine hygiene](development.md#machine-hygiene));
+- the owner has a short report: what shipped, where, and what is still open.
 
 ## Enforced or convention
 
