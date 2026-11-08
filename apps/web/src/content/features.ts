@@ -31,8 +31,9 @@ export type GroupId =
   | "observability-ops";
 
 /**
- * `built`: in the starter and used by the app. `demo`: in the repository and runnable,
- * but not wired into the app (Containers). `planned`: designed, not built yet.
+ * `built`: in the starter and used by the app. `demo`: runnable, but only as a developer
+ * demo, not used by the product (Containers: the container workflow demo). `planned`:
+ * designed, not built yet.
  */
 export type FeatureStatus = "built" | "demo" | "planned";
 
@@ -133,7 +134,7 @@ export const PILLARS: readonly Pillar[] = [
       "Email, simulated locally",
       "File storage with a 30-day trash",
       "Feature flags and a command palette",
-      "Containers: a demo today, not yet wired in",
+      "Containers: a workflow demo you can run in the app",
     ],
   },
   {
@@ -660,8 +661,8 @@ const RAW = [
     "containers",
     "app-platform",
     "Containers",
-    "Run a Docker container beside the app; a separate demo, not used by the app yet.",
-    "guides/how-to-setup-container",
+    "A Workflow runs a Docker container task and keeps each step; a capped demo in the app.",
+    "guides/how-to-run-container-workflows",
     "demo"
   ),
   f(
@@ -669,7 +670,7 @@ const RAW = [
     "app-platform",
     "Container tasks from jobs",
     "Send a bounded task to a container through the queue and keep the result.",
-    "guides/how-to-setup-container",
+    "guides/how-to-run-container-workflows",
     "planned"
   ),
   // Observability & ops
