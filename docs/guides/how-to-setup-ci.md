@@ -59,12 +59,12 @@ done
 
 In the Cloudflare dashboard: **My Profile → API Tokens → Create Token → Create Custom Token**. Give it these account permissions, limited to your account:
 
-| Permission                          | Why                                          |
-| ----------------------------------- | -------------------------------------------- |
-| Account · Workers Scripts · Edit    | upload the Worker (`wrangler deploy`)        |
-| Account · D1 · Edit                 | apply remote migrations                      |
-| Account · Workers R2 Storage · Edit | the Worker's R2 binding (`FILES`)            |
-| Account · Account Settings · Read   | Wrangler reads account details during deploy |
+| Permission                          | Why                                                                                                                                                                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Account · Workers Scripts · Edit    | upload the Worker (`wrangler deploy`)                                                                                                                                         |
+| Account · D1 · Edit                 | apply remote migrations                                                                                                                                                       |
+| Account · Workers R2 Storage · Edit | the Worker's R2 binding (`FILES`)                                                                                                                                             |
+| Account · Account Settings · Read   | Wrangler reads account details during deploy                                                                                                                                  |
 | Account · Containers · Edit         | push the pi container's image and update its application (`apps/container`; Wrangler's `containers:write` scope). The Workflow of the web Worker deploys with Workers Scripts |
 
 Add **Zone · Workers Routes · Edit** for the zone if you deploy to a route or custom domain. Some dashboards show `Write` instead of `Edit`; they are the same thing. One token per environment is safer than one shared token, but one token works.

@@ -24,6 +24,8 @@ describe("getNotificationPreferences", () => {
       ["auth.factor-changed", true, true, true],
 
       ["privacy.export-ready", true, true, true],
+
+      ["container-runs.finished", false, true, false],
     ]);
   });
 
