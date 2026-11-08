@@ -44,9 +44,12 @@ const profileRoute = createRoute({
   },
 });
 
+/** `?invite=true` opens the invite dialog (the command palette's "Invite member"). */
 const membersRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/app/members",
+  validateSearch: (search: Record<string, unknown>): { invite?: true } =>
+    search.invite === true ? { invite: true } : {},
   component: MembersPage,
 });
 
@@ -63,9 +66,12 @@ const trashRoute = createRoute({
 });
 
 // Placeholder apps: where a project's product goes (Notes is a real feature, Tasks sample data).
+/** `?new=true` opens the new-note form (the command palette's "New note"). */
 const notesRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/app/notes",
+  validateSearch: (search: Record<string, unknown>): { new?: true } =>
+    search.new === true ? { new: true } : {},
   component: NotesPage,
 });
 

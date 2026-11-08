@@ -19,29 +19,10 @@ import { connectivity } from "@/lib/connectivity";
 import { trpc } from "@/lib/trpc/client";
 
 import { TrialBanner } from "../billing/TrialBanner";
+import { AppCommandMenu } from "../command-palette/AppCommandMenu";
+import { destinationTitle } from "../navigation";
 import { NotificationBellMenu } from "../notifications/NotificationBellMenu";
 import { AppSidebar } from "./AppSidebar";
-
-const titles: Record<string, string> = {
-  "/app/dashboard": "Dashboard",
-  "/app/profile": "Profile",
-  "/app/settings/account": "Account settings",
-  "/app/settings/appearance": "Appearance & language",
-  "/app/settings/security": "Security",
-  "/app/settings/workspace": "Workspace settings",
-  "/app/settings/privacy": "Privacy",
-  "/app/members": "Members",
-  "/app/billing": "Billing",
-  "/app/trash": "Trash",
-  "/app/notes": "Notes",
-  "/app/tasks": "Tasks",
-  "/app/demos": "Developer demos",
-  "/app/upload-demo": "Upload demo",
-  "/app/queue-demo": "Queue demo",
-  "/app/email-demo": "Email demo",
-  "/app/notifications": "Notifications",
-  "/app/notifications/preferences": "Notification settings",
-};
 
 /** Pages act in the active workspace: wait for it, and say so when there is none. */
 function WorkspaceGate() {
@@ -133,11 +114,15 @@ export function AppLayout() {
       <AppTopBar
         title={
           <span className="truncate text-sm font-medium text-fg">
-            {titles[pathname] ??
-              (pathname.startsWith("/app/notes/") ? "Note" : "Not found")}
+            {destinationTitle(pathname) ?? "Not found"}
           </span>
         }
-        actions={<NotificationBellMenu />}
+        actions={
+          <>
+            <AppCommandMenu />
+            <NotificationBellMenu />
+          </>
+        }
       />
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">

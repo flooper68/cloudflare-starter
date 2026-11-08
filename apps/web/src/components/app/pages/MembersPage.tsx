@@ -7,8 +7,9 @@ import {
   MembersTableSkeleton,
   toast,
 } from "@cloudflare-starter/ui";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BillingLimitPrompt } from "@/components/app/billing/BillingLimitPrompt";
 
@@ -36,6 +37,15 @@ export function MembersPage() {
   const canManage = active?.role === "owner";
   // No free seat: the invite dialog closes and the upgrade dialog opens.
   const [seatRefusal, setSeatRefusal] = useState<LimitRefusal | null>(null);
+  // `?invite=true` (the command palette's "Invite member"): open the dialog, drop the flag.
+  const navigate = useNavigate();
+  const { invite: requestedInvite } = useSearch({ strict: false });
+  const [inviteRequests, setInviteRequests] = useState(0);
+  useEffect(() => {
+    if (!requestedInvite) return;
+    setInviteRequests((count) => count + 1);
+    void navigate({ to: "/app/members", search: {}, replace: true });
+  }, [requestedInvite, navigate]);
 
   const data = useAsync(async () => {
     const [members, invitations] = await Promise.all([
@@ -72,6 +82,8 @@ export function MembersPage() {
         </div>
         {canManage ? (
           <InviteDialog
+            key={inviteRequests}
+            defaultOpen={inviteRequests > 0}
             roles={ROLES}
             defaultRole="member"
             workspaceName={active?.name}

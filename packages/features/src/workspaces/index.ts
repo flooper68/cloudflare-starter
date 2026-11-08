@@ -30,6 +30,7 @@ export {
   type Role,
   requirePermission,
   roleChangedNotification,
+  rolesAllowedTo,
   SIGN_UP_POLICIES,
   SINGLE_WORKSPACE_ID,
   SignUpNotAllowedError,

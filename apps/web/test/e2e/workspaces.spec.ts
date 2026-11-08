@@ -102,6 +102,35 @@ test("the invitee signs up from the link, joins and opens the shared file", asyn
     page.getByRole("button", { name: `${team} workspace menu` })
   ).toBeVisible();
 
+  // A member's command palette: account settings, but no workspace settings, no invite
+  // and no admin portal (the sidebar has no Admin either).
+  await page.keyboard.press("ControlOrMeta+k");
+  const palette = page.getByRole("dialog", { name: "Search and jump" });
+  const search = palette.getByRole("combobox");
+  await search.fill("settings");
+  await expect(
+    palette.getByRole("option", { name: "Settings: Account" })
+  ).toBeVisible();
+  await expect(
+    palette.getByRole("option", { name: "Settings: Workspace" })
+  ).toHaveCount(0);
+  if (process.env.COMMAND_PALETTE_EVIDENCE_DIR) {
+    await page.screenshot({
+      animations: "disabled",
+      path: `${process.env.COMMAND_PALETTE_EVIDENCE_DIR}/member-settings.png`,
+    });
+  }
+  await search.fill("admin");
+  await expect(palette.getByText(/No results for/)).toBeVisible();
+  await expect(palette.getByRole("option", { name: "Admin" })).toHaveCount(0);
+  await search.fill("invite");
+  await expect(
+    palette.getByRole("option", { name: "Invite member" })
+  ).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(palette).toBeHidden();
+  await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
+
   await page.getByRole("link", { name: "Upload" }).click();
   const file = page
     .getByRole("list", { name: "Workspace files" })

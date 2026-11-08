@@ -13,48 +13,54 @@ import {
   WorkspaceSwitcher,
 } from "@cloudflare-starter/ui";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import {
-  BookOpen,
-  CreditCard,
-  LayoutDashboard,
-  ListTodo,
-  LogOut,
-  Mail,
-  NotebookPen,
-  ShieldCheck,
-  SquareKanban,
-  Trash2,
-  Upload,
-  UserRound,
-  Users,
-} from "lucide-react";
+import { BookOpen, LogOut, UserRound } from "lucide-react";
 
 import { useAuth } from "@/components/shared/spa/auth-context";
 import { useWorkspace } from "@/components/shared/spa/workspace-context";
-import { authClient } from "@/lib/auth-client";
 
-const demos = [
-  { to: "/app/upload-demo", label: "Upload", icon: <Upload /> },
-  { to: "/app/queue-demo", label: "Queue", icon: <ListTodo /> },
-  { to: "/app/email-demo", label: "Email", icon: <Mail /> },
-] as const;
-
-async function signOut() {
-  await authClient.signOut();
-  window.location.href = "/";
-}
+import { navIcons } from "../nav-icons";
+import {
+  isActiveDestination,
+  type SidebarGroup,
+  sidebarDestinations,
+} from "../navigation";
+import { signOut, useNavContext } from "../use-nav-context";
 
 /**
  * The app's navigation: workspace menu (switch and create in multi mode), pages, demos,
- * and the signed-in user. "Members" shows in modes with shared workspaces; "Trash" is the
- * active workspace's deleted files and notes.
+ * and the signed-in user. The entries come from navigation.ts (the source the command
+ * palette and the top bar read too): "Members" shows in modes with shared workspaces,
+ * "Admin" for platform admins, "Trash" is the active workspace's deleted files and notes.
  */
 export function AppSidebar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, admin, billing } = useAuth();
+  const { user } = useAuth();
   const { mode, list, active, switchTo, create } = useWorkspace();
+  const navContext = useNavContext();
   const multi = mode === "multi";
+
+  /** One sidebar section's entries, from the app's navigation source (navigation.ts). */
+  const items = (section: SidebarGroup) =>
+    sidebarDestinations(navContext, section).map((destination) => (
+      <SidebarItem
+        key={destination.id}
+        asChild
+        icon={navIcons[destination.icon]}
+        active={
+          destination.document
+            ? undefined
+            : isActiveDestination(destination, pathname)
+        }
+      >
+        {destination.document ? (
+          // A full load: the server checks access (the admin portal) before serving it.
+          <a href={destination.to}>{destination.label}</a>
+        ) : (
+          <Link to={destination.to}>{destination.label}</Link>
+        )}
+      </SidebarItem>
+    ));
 
   async function onSwitch(workspaceId: string) {
     try {
@@ -93,83 +99,16 @@ export function AppSidebar() {
         </WorkspaceSwitcher>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarSection>
-          <SidebarItem
-            asChild
-            icon={<LayoutDashboard />}
-            active={pathname === "/app/dashboard"}
-          >
-            <Link to="/app/dashboard">Dashboard</Link>
-          </SidebarItem>
-          {mode !== "personal" && active?.kind === "shared" ? (
-            <SidebarItem
-              asChild
-              icon={<Users />}
-              active={pathname === "/app/members"}
-            >
-              <Link to="/app/members">Members</Link>
-            </SidebarItem>
-          ) : null}
-          {billing.mode !== "off" ? (
-            <SidebarItem
-              asChild
-              icon={<CreditCard />}
-              active={pathname === "/app/billing"}
-            >
-              <Link to="/app/billing">Billing</Link>
-            </SidebarItem>
-          ) : null}
-          <SidebarItem
-            asChild
-            icon={<Trash2 />}
-            active={pathname === "/app/trash"}
-          >
-            <Link to="/app/trash">Trash</Link>
-          </SidebarItem>
-          <SidebarItem
-            asChild
-            icon={<UserRound />}
-            active={pathname.startsWith("/app/settings")}
-          >
-            <Link to="/app/settings/account">Settings</Link>
-          </SidebarItem>
-        </SidebarSection>
+        <SidebarSection>{items("main")}</SidebarSection>
         {/* Placeholder apps: where a project's own product goes. */}
         <SidebarSection label="Product · placeholder">
-          <SidebarItem
-            asChild
-            icon={<NotebookPen />}
-            active={pathname.startsWith("/app/notes")}
-          >
-            <Link to="/app/notes">Notes</Link>
-          </SidebarItem>
-          <SidebarItem
-            asChild
-            icon={<SquareKanban />}
-            active={pathname === "/app/tasks"}
-          >
-            <Link to="/app/tasks">Tasks</Link>
-          </SidebarItem>
+          {items("product")}
         </SidebarSection>
-        {admin ? (
-          <SidebarSection>
-            {/* A full load: the server checks the portal before serving /admin. */}
-            <SidebarItem asChild icon={<ShieldCheck />}>
-              <a href="/admin/overview">Admin</a>
-            </SidebarItem>
-          </SidebarSection>
+        {sidebarDestinations(navContext, "admin").length > 0 ? (
+          <SidebarSection>{items("admin")}</SidebarSection>
         ) : null}
         <SidebarSection label="Demos" collapsible>
-          {demos.map((demo) => (
-            <SidebarItem
-              key={demo.to}
-              asChild
-              icon={demo.icon}
-              active={pathname === demo.to}
-            >
-              <Link to={demo.to}>{demo.label}</Link>
-            </SidebarItem>
-          ))}
+          {items("demos")}
         </SidebarSection>
       </SidebarContent>
       {user ? (

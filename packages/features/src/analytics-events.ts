@@ -6,7 +6,12 @@
 import { signedUpEvent } from "./accounts";
 import { fileUploadedEvent } from "./files";
 import { noteCreatedEvent } from "./notes";
-import { createEventCatalog, pageViewedEvent } from "./product-analytics";
+import {
+  commandPaletteItemSelectedEvent,
+  commandPaletteOpenedEvent,
+  createEventCatalog,
+  pageViewedEvent,
+} from "./product-analytics";
 import { memberJoinedEvent, workspaceCreatedEvent } from "./workspaces";
 
 export const analyticsEvents = createEventCatalog([
@@ -16,4 +21,6 @@ export const analyticsEvents = createEventCatalog([
   workspaceCreatedEvent,
   memberJoinedEvent,
   pageViewedEvent,
+  commandPaletteOpenedEvent,
+  commandPaletteItemSelectedEvent,
 ]);

@@ -4,6 +4,10 @@ What changed in each release of the starter, for people evaluating it or buildin
 
 ## [Unreleased]
 
+### Added
+
+- **Command palette in the app.** ⌘K (Ctrl+K), or **Search** in the top bar, opens a search-and-jump palette (full screen on phones): every page you may open, your workspace's notes by title or body, workspace switching in multi mode, and actions (new note, invite member, theme, docs, changelog, sign out). The sidebar, top bar titles and palette now share one navigation list, and a feature adds its own search group with a provider ([how-to-add-a-feature.md](docs/guides/how-to-add-a-feature.md#navigation-and-the-command-palette)).
+
 ### Changed
 
 - **The starter has its own brand.** The mock brand Acme is replaced by Starter ("Everything a new app needs on day one."): a deep teal accent that passes WCAG AA as text and on buttons in both themes, a stacked-layers logo mark and favicon, Instrument Sans with JetBrains Mono (self-hosted), and 8px corners. Notification emails show the app's name as a header. A new project still replaces it in `packages/ui/src/brand/` ([how-to-define-branding.md](docs/guides/how-to-define-branding.md)).

@@ -6,6 +6,8 @@ import {
   getNote,
   listNotes,
   listNotesInputSchema,
+  searchNotes,
+  searchNotesInputSchema,
   trashNote,
   updateNote,
   updateNoteInputSchema,
@@ -26,6 +28,11 @@ export const notesRouter = router({
   list: workspaceProcedure
     .input(listNotesInputSchema)
     .query(({ ctx, input }) => listNotes(ctx, ctx.actor, input)),
+
+  // The command palette's notes search: title and body, live notes only, a few hits.
+  search: workspaceProcedure
+    .input(searchNotesInputSchema)
+    .query(({ ctx, input }) => searchNotes(ctx, ctx.actor, input)),
 
   get: workspaceProcedure
     .input(noteRef)

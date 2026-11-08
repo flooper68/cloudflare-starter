@@ -81,6 +81,15 @@ export {
   type AdminWorkspacesTableProps,
 } from "../components/patterns/admin-workspaces";
 export {
+  AppCommandPalette,
+  type AppCommandPaletteProps,
+  filterPaletteCommands,
+  type PaletteCommand,
+  type PaletteCommandGroup,
+  type PaletteGroup,
+  type PaletteSearchGroup,
+} from "../components/patterns/app-command-palette";
+export {
   AppBreadcrumb,
   AppShell,
   type AppShellProps,

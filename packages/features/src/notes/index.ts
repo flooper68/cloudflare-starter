@@ -10,18 +10,23 @@ export {
   listNotesInputSchema,
   NOTE_BODY_MAX,
   NOTE_COMMENT_MAX,
+  NOTE_SEARCH_LIMIT_MAX,
   NOTE_TITLE_MAX,
   NOTE_TRASH_RETENTION_DAYS,
   NoteNotFoundError,
   type NotePerson,
+  type NoteSearchHit,
   type NoteSummary,
   noteCreatedEvent,
+  type SearchNotesInput,
+  searchNotesInputSchema,
   type UpdateNoteInput,
   updateNoteInputSchema,
 } from "./domain";
 export { getNote, type NoteComment, type NoteDetail } from "./get-note";
 export { listNotes } from "./list-notes";
 export { noteComments, notes } from "./notes.schema";
+export { searchNotes } from "./search-notes";
 export { noteTrash } from "./trash";
 export { trashNote } from "./trash-note";
 export { updateNote } from "./update-note";
