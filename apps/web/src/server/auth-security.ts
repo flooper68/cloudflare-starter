@@ -17,7 +17,11 @@ import {
   getSessionFromCtx,
   isAPIError,
 } from "better-auth/api";
-import { setSessionCookie } from "better-auth/cookies";
+import {
+  deleteSessionCookie,
+  parseCookies,
+  setSessionCookie,
+} from "better-auth/cookies";
 import { twoFactor } from "better-auth/plugins";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
 import { auditCompletedSignIn, contextFor } from "./auth-audit";
@@ -135,11 +139,47 @@ export function securityPlugins(env: AppEnv, settings: SecuritySettings) {
   return { factors: guardedFactors, keys };
 }
 
+/**
+ * Marks a `/get-session` whose stale session the before hook removed, so the after hook
+ * expires the browser's session cookies (Better Auth keeps only the endpoint's own
+ * response headers after a before hook lets the request continue).
+ */
+const STALE_SESSION_HEADER = "x-starter-stale-session";
+
+/**
+ * The request's headers without the session cookies: what a signed-out browser sends.
+ * Better Auth then finds no session, cached or stored.
+ */
+function withoutSessionCookies(ctx: GenericEndpointContext): Headers {
+  const { sessionToken, sessionData, dontRememberToken } =
+    ctx.context.authCookies;
+  const session = [sessionToken.name, sessionData.name, dontRememberToken.name];
+  const headers = new Headers(ctx.headers ?? undefined);
+  const kept = [...parseCookies(headers.get("cookie") ?? "")]
+    .filter(
+      ([name]) =>
+        !session.some(
+          (cookie) => name === cookie || name.startsWith(`${cookie}.`)
+        )
+    )
+    .map(([name, value]) => `${name}=${value}`);
+  headers.set("cookie", kept.join("; "));
+  return headers;
+}
+
+/**
+ * A stale session (its row deleted: account erased, suspended, signed out elsewhere) is
+ * signed out, the same way whether the browser still has the one-minute cookie cache or
+ * not: `/get-session` answers null and expires the session cookies, `/sign-out` succeeds.
+ * Any other endpoint refuses it (401).
+ */
+type SecurityOutcome = { readonly context: { readonly headers: Headers } };
+
 /** No factor removal, account mutation or OAuth grant can bypass an incomplete session. */
 export async function enforceAuthSecurity(
   env: AppEnv,
   ctx: GenericEndpointContext
-): Promise<void> {
+): Promise<SecurityOutcome | undefined> {
   const settings = buildRequiredConfig(env).security;
   if (ctx.path.startsWith("/two-factor/")) {
     if (settings.mode === "off")
@@ -251,12 +291,21 @@ export async function enforceAuthSecurity(
       message: "Your account requires a second factor.",
     });
   }
-  if (!state.sessionValid)
+  if (!state.sessionValid) {
+    // Signing out needs no live session: it deletes what is left and the cookies.
+    if (ctx.path === "/sign-out") return undefined;
+    if (ctx.path === "/get-session") {
+      const headers = withoutSessionCookies(ctx);
+      headers.set(STALE_SESSION_HEADER, "1");
+      return { context: { headers } };
+    }
     throw new APIError("UNAUTHORIZED", {
       message: "Session expired. Sign in again.",
     });
+  }
   if (state.decision !== "allowed" && !RECOVERY.includes(ctx.path))
     throw securityError(state.decision);
+  return undefined;
 }
 
 /** Runs LAST: native factor hooks have removed incomplete sign-in sessions by now. */
@@ -268,6 +317,14 @@ export function authAssurance(env: AppEnv): BetterAuthPlugin {
         {
           matcher: () => true,
           handler: createAuthMiddleware(async (ctx) => {
+            if (
+              ctx.path === "/get-session" &&
+              ctx.headers?.get(STALE_SESSION_HEADER) &&
+              ctx.context.returned === null
+            ) {
+              deleteSessionCookie(ctx);
+              return;
+            }
             const returned = ctx.context.returned;
             // Native lockout covers anonymous sign-in challenges. Cover signed-in step-up too.
             if (VERIFY.includes(ctx.path) && ctx.context.session) {
