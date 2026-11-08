@@ -279,7 +279,9 @@ test.describe("docs", () => {
     async ({ page }) => {
       const response = await page.goto("/docs/");
       expect(response?.status()).toBe(200);
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Docs");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        "What do you want to do?"
+      );
       await expect(
         page
           .getByRole("navigation", { name: "Docs", exact: true })
