@@ -1,22 +1,20 @@
 /**
- * The walkthrough videos the docs can play, as `docs/media/media-manifest.json`. The
- * video recording pipeline writes it (a separate change, not on main yet); until a video
- * is in it, `::video{id="…"}` shows a designed poster with "Video coming soon".
+ * The walkthrough videos the docs can play: the one media manifest the home page uses too,
+ * `apps/web/src/content/media-manifest.json`, written by `bun run media:record`
+ * (docs/guides/how-to-record-walkthrough-videos.md). Until a video is in it,
+ * `::video{id="…"}` shows its poster screenshot with "Video coming soon".
  *
- * The contract both sides keep:
- * - `::video{id="agents" poster="<screenshot id>" title="…"}` in a doc; `id` is the
- *   video's id in the recording plan (tour, agents, accounts, …).
- * - The manifest: `{ "version": 1, "videos": { "<id>": { "src", "poster"?, "captions"?,
- *   "chapters"?, "title"?, "duration"? } } }`, URLs as the site serves them.
+ * - `::video{id="agents" poster="<screenshot id>" title="…"}` in a doc; `id` is a video
+ *   of `VIDEOS` (src/content/videos.ts), `poster` and `title` serve the coming-soon state.
+ * - A recorded video renders the walkthrough player (components/media/player-markup.ts),
+ *   with the manifest's title, chapters and captions.
  */
-import type { MediaEntry } from "./render";
+import type { MediaManifest } from "../../content/media";
 
-export const MEDIA_MANIFEST = "docs/media/media-manifest.json";
+export type { MediaEntry, MediaManifest } from "../../content/media";
 
-export interface MediaManifest {
-  readonly version: 1;
-  readonly videos: Readonly<Record<string, MediaEntry>>;
-}
+/** The manifest, from the repository root (the plugin reads it per document). */
+export const MEDIA_MANIFEST = "apps/web/src/content/media-manifest.json";
 
 export const EMPTY_MEDIA: MediaManifest = { version: 1, videos: {} };
 

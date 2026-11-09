@@ -17,17 +17,19 @@ import {
   Check,
   GitBranch,
   Layers,
-  Play,
   Rss,
   ShieldCheck,
 } from "lucide-react";
 
+import VideoPlayer from "@/components/media/VideoPlayer.astro";
 import CopyPrompt from "@/components/site/CopyPrompt.astro";
 import FeatureMap from "@/components/site/FeatureMap.astro";
 import HeroScene from "@/components/site/HeroScene.astro";
 import SiteFooter from "@/components/site/SiteFooter.astro";
 import SiteHeader from "@/components/site/SiteHeader.astro";
-import { PILLARS, type PillarId } from "@/content/features";
+import { docsHref, PILLARS, type PillarId } from "@/content/features";
+import { formatDuration, mediaEntry } from "@/content/media";
+import { HOME_CLIPS, HOME_WALKTHROUGH, VIDEOS } from "@/content/videos";
 import { CHANGELOG_PATH, parseChangelog } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import {
@@ -49,12 +51,17 @@ const PILLAR_ICONS: Record<PillarId, typeof Bot> = {
   platform: Boxes,
   infra: ShieldCheck,
 };
-const CLIPS: Record<PillarId, string> = {
-  agents: "An agent adds a note",
-  scaffold: "Invite a teammate",
-  platform: "A job runs, the mail arrives",
-  infra: "A health check goes green",
+// Walkthroughs recorded so far, besides the tour, and the docs page each opens on.
+const DOCS_WALKTHROUGHS: Record<string, string> = {
+  agents: "guides/how-to-setup-mcp",
 };
+const moreWalkthroughs = VIDEOS.filter(
+  (entry) =>
+    entry.kind === "walkthrough" &&
+    entry.id !== HOME_WALKTHROUGH &&
+    mediaEntry(entry.id) &&
+    DOCS_WALKTHROUGHS[entry.id]
+);
 
 const entries = await getCollection("docs");
 const changelog = parseChangelog(
@@ -155,17 +162,9 @@ const inlineLink =
                     </li>
                   ))}
                 </ul>
-                <div class="poster mt-auto">
-                  <span class="poster-title">{CLIPS[pillar.id]}</span>
-                  <span class="poster-bars" aria-hidden="true">
-                    <i class="on" style="width:88%" />
-                    <i style="width:60%" />
-                  </span>
-                  <span class="poster-chip">
-                    <Play className="size-3" aria-hidden="true" />
-                    Clip coming soon
-                  </span>
-                </div>
+                {HOME_CLIPS[pillar.id] && (
+                  <VideoPlayer id={HOME_CLIPS[pillar.id] as string} class="mt-auto" />
+                )}
               </li>
             );
           })
@@ -185,6 +184,36 @@ const inlineLink =
       </div>
       <FeatureMap />
     </section>
+
+    {HOME_WALKTHROUGH && (
+    <section
+      id="feature-tour"
+      aria-labelledby="tour-title"
+      class="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 pt-16 sm:px-6"
+    >
+      <div class="flex max-w-2xl flex-col gap-2">
+        <span class={kicker}>{SECTIONS.tour.kicker}</span>
+        <h2 id="tour-title" class={h2}>{SECTIONS.tour.title}</h2>
+        <p class="text-sm text-fg-muted">{SECTIONS.tour.lead}</p>
+      </div>
+      <VideoPlayer id={HOME_WALKTHROUGH} />
+      {
+        moreWalkthroughs.length > 0 && (
+          <p class="text-sm text-fg-muted">
+            {SECTIONS.tour.more}{" "}
+            {moreWalkthroughs.map((entry, index) => (
+              <>
+                {index > 0 && ", "}
+                <a class={inlineLink} href={docsHref(DOCS_WALKTHROUGHS[entry.id] as string)}>
+                  {entry.title} ({formatDuration(mediaEntry(entry.id)?.duration ?? 0)})
+                </a>
+              </>
+            ))}
+          </p>
+        )
+      }
+    </section>
+    )}
 
     <section
       aria-labelledby="costs-title"
@@ -321,57 +350,6 @@ const inlineLink =
 </PublicLayout>
 
 <style>
-  .poster {
-    position: relative;
-    height: 96px;
-    overflow: hidden;
-    border: 1px solid var(--ui-line);
-    border-radius: 8px;
-    background: var(--ui-canvas);
-  }
-  .poster-title {
-    display: block;
-    overflow: hidden;
-    padding: 10px 12px 0;
-    color: var(--ui-fg-muted);
-    font-size: 12px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .poster-bars {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px 12px;
-  }
-  .poster-bars i {
-    display: block;
-    height: 8px;
-    border-radius: 4px;
-    background: var(--ui-active);
-  }
-  .poster-bars i.on {
-    background: color-mix(in oklab, var(--ui-accent) 75%, transparent);
-  }
-  .poster-chip {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    display: inline-flex;
-    max-width: calc(100% - 16px);
-    align-items: center;
-    gap: 6px;
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 6px;
-    background: var(--ui-overlay);
-    color: var(--ui-fg);
-    font-size: 11px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-shadow: var(--ui-shadow-raised);
-  }
 
   .receipt {
     margin: 0;

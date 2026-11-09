@@ -326,6 +326,8 @@ export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
     "prerendered at build time and served as a static asset; the Worker never runs for it",
   "robots.txt.ts":
     "prerendered at build time and served as a static asset; the Worker never runs for it",
+  "media/[...path].ts":
+    "public read-only walkthrough videos from R2, no state or user data behind them, immutable and cached by browsers; video seeking makes many range requests by design",
   "reset-password.astro":
     "only hands the token to the form; Better Auth checks it under auth.ip",
 };

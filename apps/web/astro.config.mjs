@@ -30,6 +30,11 @@ export default defineConfig({
     imageService: "passthrough",
     // The demo-mode E2E server only (test/e2e/demo-vite.mjs): its own local state.
     ...demoAdapterOptions(process.env.E2E_DEMO_PORT),
+    // MEDIA_STATE_DIR: the walkthrough recorder (media/record.ts) runs `astro dev` on its
+    // own throwaway local state (D1, R2, queues), so its seed never touches yours.
+    ...(process.env.MEDIA_STATE_DIR
+      ? { persistState: { path: process.env.MEDIA_STATE_DIR } }
+      : {}),
   }),
   // Better Auth owns sessions; an in-memory driver keeps Astro from
   // provisioning its default SESSION KV namespace.

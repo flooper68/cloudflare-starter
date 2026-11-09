@@ -4,6 +4,8 @@
 
 The detail behind [the guide](../guides/how-to-setup-ci.md) on CI, the deploy workflow and self-hosted runners: read it when the guide is not enough.
 
+Beside `ci.yml` and `deploy.yml`, `qa.yml` runs the QA suite ([below](#4-the-qa-environment)) and `media.yml` re-records the walkthrough videos by hand, uploads them to production R2 with the deploy secrets and opens the manifest PR ([how-to-record-walkthrough-videos.md](../guides/how-to-record-walkthrough-videos.md#in-ci)).
+
 ## CI jobs
 
 The jobs run in parallel. A new push to the same branch or pull request cancels the run it replaces. The workflow token is read-only (`permissions: contents: read`).

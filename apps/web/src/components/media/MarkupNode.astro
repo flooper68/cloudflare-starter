@@ -1,0 +1,26 @@
+---
+/**
+ * Renders one node of a player-markup.ts tree, and its children, as Astro elements.
+ * Text is escaped by Astro; no `set:html`.
+ */
+import type { MarkupChild } from "./player-markup";
+
+interface Props {
+  node: MarkupChild;
+}
+
+const { node } = Astro.props;
+const Tag = typeof node === "string" ? "span" : node.tag;
+---
+
+{
+  typeof node === "string" ? (
+    node
+  ) : (
+    <Tag {...node.attrs}>
+      {node.children.map((child) => (
+        <Astro.self node={child} />
+      ))}
+    </Tag>
+  )
+}

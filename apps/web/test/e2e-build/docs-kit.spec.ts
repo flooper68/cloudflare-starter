@@ -92,8 +92,22 @@ test("tabbed code works from the keyboard", async ({ page }) => {
 test("the video slot shows a poster until the video exists", async ({
   page,
 }) => {
-  await page.goto("/docs/features/agents/");
+  // privacy is planned, not recorded (src/content/videos.ts).
+  await page.goto("/docs/features/privacy/");
   const video = page.locator(".dk-video").first();
   await expect(video).toContainText("Video coming soon");
   await expect(video.locator("video")).toHaveCount(0);
+});
+
+test("the video slot plays a recorded video with the site's player", async ({
+  page,
+}) => {
+  // agents is in the media manifest (src/content/media-manifest.json).
+  await page.goto("/docs/features/agents/");
+  await expect(page.locator(".dk-video")).toHaveCount(0);
+  const player = page.getByRole("group", { name: "Video: Agents & MCP" });
+  await expect(player).toBeVisible();
+  await expect(
+    player.getByRole("button", { name: /^Play Agents & MCP/ })
+  ).toBeVisible();
 });

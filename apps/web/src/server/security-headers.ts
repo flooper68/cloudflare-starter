@@ -327,7 +327,13 @@ export function pagePolicyHeaders(
 }
 
 /** Paths that answer data, never an app page, whatever their content type. */
-const NON_PAGE_PREFIXES = ["/api/", "/mcp", "/.well-known/", "/health"];
+const NON_PAGE_PREFIXES = [
+  "/api/",
+  "/mcp",
+  "/.well-known/",
+  "/health",
+  "/media/",
+];
 
 /** Whether a response is HTML, wherever it is served (gets `no-transform`). */
 export function isHtml(response: Response): boolean {

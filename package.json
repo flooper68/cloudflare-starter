@@ -47,7 +47,9 @@
     "docs:screenshots": "bun run --filter @cloudflare-starter/web docs:screenshots",
     "docs:reference": "UPDATE_REFERENCE=1 vitest run --project unit apps/web/src/docs/reference && biome format --write docs/reference docs/start",
     "test:smoke": "bun scripts/smoke.ts",
-    "test:qa": "bun scripts/qa.ts"
+    "test:qa": "bun scripts/qa.ts",
+    "media:record": "bun apps/web/media/record.ts",
+    "media:upload": "bun apps/web/media/upload.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

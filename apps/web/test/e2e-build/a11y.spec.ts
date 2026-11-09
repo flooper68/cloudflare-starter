@@ -23,6 +23,8 @@ for (const colorScheme of ["dark", "light"] as const) {
       "/docs/",
       "/docs/guides/how-to-configure-workspaces/",
       "/docs/processes/agentic-workflow/",
+      // A walkthrough player from the docs kit's ::video{id="agents"}.
+      "/docs/features/agents/",
     ])
       test(`${path} passes axe`, async ({ page }) => {
         await page.goto(path);

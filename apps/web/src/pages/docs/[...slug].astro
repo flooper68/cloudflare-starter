@@ -3,16 +3,19 @@
  * The docs site: one prerendered page per published repository file (DOCS.sources),
  * in the docs shell (layouts/DocsLayout.astro: navigation from docs/README.md, "On this
  * page", edit link, search). The rendered Markdown is what Pagefind indexes. The
- * changelog has its own page (changelog.astro). docs/guides/how-to-publish-docs-and-landing.md
+ * changelog has its own page (changelog.astro). A doc with a recorded `::video`
+ * (src/docs/walkthroughs.ts) also loads the video player's script. docs/guides/how-to-publish-docs-and-landing.md
  */
 import { getCollection, render } from "astro:content";
 import { Prose } from "@cloudflare-starter/ui";
+import PlayerAssets from "@/components/media/PlayerAssets.astro";
 import DocsHome from "@/components/site/DocsHome.astro";
 import { CHANGELOG_PATH } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import { slugFor } from "@/docs/links";
 import { docDescription } from "@/docs/meta";
 import { buildNav, docTitle } from "@/docs/nav";
+import { hasRecordedVideo } from "@/docs/walkthroughs";
 import DocsLayout from "@/layouts/DocsLayout.astro";
 
 export const prerender = true;
@@ -49,4 +52,5 @@ const isHome = entry.id === DOCS.navSource;
   <Prose className={isHome ? "docs-index" : undefined}>
     <Content />
   </Prose>
+  {hasRecordedVideo(entry.body ?? "") && <PlayerAssets />}
 </DocsLayout>
