@@ -42,7 +42,14 @@ export function replaceBlock(
 
 // ---------------------------------------------------------------------------------------
 
-export function settingsMarkdown(settings: readonly Setting[]): string {
+/**
+ * `docExists`: whether a setting's doc is in the repository (a project that stripped a
+ * starter-only part has no guide for it; the row then has no link).
+ */
+export function settingsMarkdown(
+  settings: readonly Setting[],
+  docExists: (path: string) => boolean = () => true
+): string {
   const groups = [...new Set(settings.map((setting) => setting.group))];
   return groups
     .map((group) => {
@@ -52,7 +59,9 @@ export function settingsMarkdown(settings: readonly Setting[]): string {
           code(setting.name),
           setting.kind,
           setting.values ? setting.values.map(code).join(", ") : "text",
-          `${setting.description} [Docs](${docLink(setting.doc)})`,
+          docExists(setting.doc)
+            ? `${setting.description} [Docs](${docLink(setting.doc)})`
+            : setting.description,
         ]);
       return `### ${group}\n\n${table(["Setting", "Kind", "Values", "What it does"], rows)}`;
     })

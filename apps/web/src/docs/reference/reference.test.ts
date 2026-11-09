@@ -3,7 +3,7 @@
  * catalogs and costs. `bun run docs:reference` (UPDATE_REFERENCE=1) rewrites them. Also:
  * every setting the app reads is listed in settings.ts, and nothing there is unused.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -77,7 +77,8 @@ const BLOCKS: readonly { file: string; name: string; render: () => string }[] =
     {
       file: "docs/reference/settings.md",
       name: "settings",
-      render: () => settingsMarkdown(SETTINGS),
+      render: () =>
+        settingsMarkdown(SETTINGS, (path) => existsSync(join(ROOT, path))),
     },
     {
       file: "docs/reference/agent-tools.md",
