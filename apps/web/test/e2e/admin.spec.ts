@@ -71,8 +71,8 @@ test("an admin suspends a member; the member cannot sign in; the audit log shows
   await expect(page).toHaveURL(/\/admin\/analytics$/);
   await expect(page.getByRole("heading", { name: "Analytics" })).toBeVisible();
   const funnel = page.getByRole("list", { name: "Funnel" });
-  await expect(funnel.getByText("Visits")).toBeVisible();
-  await expect(funnel.getByText("820")).toBeVisible();
+  await expect(funnel.getByText("Visits", { exact: true })).toBeVisible();
+  await expect(funnel.getByText("820", { exact: true })).toBeVisible();
   await expect(funnel.getByText("Came back within 7 days")).toBeVisible();
   await expect(
     page
