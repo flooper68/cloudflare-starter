@@ -5,12 +5,15 @@ export {
   type AnalyticsEngineProductAnalyticsOptions,
   type CapturedError,
   type CloudflareEmailConfig,
+  chudnovskyPi,
   createAnalyticsEngineMetrics,
   createAnalyticsEngineProductAnalytics,
   createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
+  createContainerPiComputer,
   createD1FeatureFlags,
+  createFakePiComputer,
   createFflateZip,
   createMemoryBillingProvider,
   createMemoryEmail,
@@ -124,6 +127,9 @@ export type {
   Logger,
   LogLevel,
   Metrics,
+  PiComputation,
+  PiComputer,
+  PiComputerFailure,
   PortalInput,
   ProductAnalytics,
   RateLimiter,
@@ -143,6 +149,7 @@ export type {
   Zip,
   ZipWriter,
 } from "./ports";
+export { PiComputerError } from "./ports/pi-computer";
 export { mathRandom } from "./random";
 export {
   type CreateRequestContextInput,

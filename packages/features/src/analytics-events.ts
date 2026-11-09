@@ -4,6 +4,7 @@
 // checks that every declared event is registered and tracked, and that every tracked or
 // client-sent name is here. Guide: docs/guides/how-to-setup-product-analytics.md
 import { signedUpEvent } from "./accounts";
+import { containerRunStartedEvent } from "./container-runs";
 import { fileUploadedEvent } from "./files";
 import { noteCreatedEvent } from "./notes";
 import {
@@ -18,6 +19,7 @@ export const analyticsEvents = createEventCatalog([
   signedUpEvent,
   fileUploadedEvent,
   noteCreatedEvent,
+  containerRunStartedEvent,
   workspaceCreatedEvent,
   memberJoinedEvent,
   pageViewedEvent,

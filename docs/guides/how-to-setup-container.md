@@ -4,7 +4,7 @@ This guide explains how to run and deploy the Cloudflare Container demo in this 
 
 > **Starter-only, removed by `starter:strip`** (`containers`): the demo and this guide are stripped by default; keep them with `--keep containers` ([how-to-start-a-project.md](how-to-start-a-project.md)).
 
-The demo lives in [apps/container](../../apps/container) and exposes a Worker that forwards requests into a Dockerized Python container. The container starts a child process on each request, computes digits of pi, and returns JSON.
+The demo lives in [apps/container](../../apps/container) and exposes a Worker that forwards requests into a Dockerized Python container. The container starts a child process on each request, computes digits of pi, and returns JSON. The web app's container workflow demo calls it through a service binding; how that works, its limits and cost are in [how-to-run-container-workflows.md](how-to-run-container-workflows.md).
 
 ## What You Need
 
@@ -70,7 +70,9 @@ The deployable Worker is configured here:
 
 Important values in `wrangler.jsonc`:
 
-- Worker name: `cloudflare-starter-container`
+- Worker name: `cloudflare-starter-container` (develop), `cloudflare-starter-container-staging`, `cloudflare-starter-container-production`: the services the web app's `PI_CONTAINER_SERVICE` binding names
+- No public URL: `workers_dev: false` and `preview_urls: false`, so only the web app can start a container
+- Instance type `lite` (1/16 vCPU, 256 MiB), `max_instances: 2`, `sleepAfter: "30s"` (`src/index.ts`)
 - Container Durable Object binding: `PI_CONTAINER`
 - Container class: `PiContainer`
 - Docker image source: local `./Dockerfile`
@@ -89,7 +91,7 @@ In another terminal:
 curl 'http://127.0.0.1:8790/pi?digits=20'
 ```
 
-Expected shape of the response:
+`/pi` takes `digits` (1 to 100,000) and `instance` (0 or 1, the container instance). Expected shape of the response:
 
 ```json
 {
@@ -112,8 +114,11 @@ The package `build` script is a dry run. For a real deployment, run Wrangler dir
 
 ```bash
 cd apps/container
-bunx wrangler deploy
+bun run deploy              # develop (the top level)
+bun run deploy:production   # or deploy:staging
 ```
+
+The web app's deploy scripts (`bun run deploy`, `deploy:staging`, `deploy:production` in `apps/web`, which the Deploy workflow runs) run these first, so the service binding always has a target.
 
 What happens during deploy:
 
@@ -140,13 +145,7 @@ These commands help confirm that the container image and deployment are present 
 
 ## Step 8: Test The Deployed Worker
 
-Use the `workers.dev` URL printed by `wrangler deploy`, then call it with a query like this:
-
-```bash
-curl 'https://cloudflare-starter-container.<your-subdomain>.workers.dev/pi?digits=20'
-```
-
-If deployment is ready, you should get the same JSON structure as local development.
+The Worker has no public URL. Start a run of the container workflow demo on the deployed app (Developer demos › Containers, with `CONTAINER_DEMO=on` and `CONTAINER_DEMO_RUNNER=container` in that environment): it succeeds when the container answers. `bunx wrangler tail cloudflare-starter-container-production` shows its requests.
 
 ## Step 9: Deploy Future Changes
 
@@ -159,7 +158,7 @@ redeploy with:
 
 ```bash
 cd apps/container
-bunx wrangler deploy
+bun run deploy:production   # or deploy, deploy:staging
 ```
 
 ## Common Problems
@@ -209,4 +208,4 @@ Fix:
 6. `cd apps/container`
 7. `bunx wrangler deploy`
 8. `bunx wrangler containers list`
-9. `curl 'https://<your-worker-url>/pi?digits=20'`
+9. Start a run at `/app/container-demo` on the deployed app

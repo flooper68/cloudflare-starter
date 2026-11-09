@@ -33,6 +33,7 @@ From `abuse/domain/policies.ts`. Every mutation has a policy (the default is `mu
 | `notifications.unsubscribe` | 20 / 60 s  | ip   | edge        | One-click unsubscribe POSTs from mail links (RFC 8058), per IP: anonymous, authorized by a signed token                                                                                                                                                                                    |
 | `billing.webhook`           | 300 / 60 s | ip   | edge        | The billing provider's webhook (POST /api/billing/webhook), per IP, before the signature is checked                                                                                                                                                                                        |
 | `invitation.send`           | 10 / 60 s  | user | edge        | Invitations a user sends (mail to other people)                                                                                                                                                                                                                                            |
+| `container.run`             | 3 / 60 s   | user | edge        | Container workflow demo runs a user starts (containerRuns.start): each starts a billed container                                                                                                                                                                                           |
 | `analytics.client`          | 120 / 60 s | user | edge        | Client analytics batches (analytics.track), per user; kept apart from mutation.user so telemetry never uses up a user's mutations                                                                                                                                                          |
 | `health.ip`                 | 120 / 60 s | ip   | edge        | The public health endpoints (/health, /health/live, /health/ready), per IP: anonymous, and readiness queries D1 and R2 on each call                                                                                                                                                        |
 | `csp.report`                | 30 / 60 s  | ip   | edge        | Content-Security-Policy violation reports (/api/csp-report), per IP: anonymous and each report is a log line                                                                                                                                                                               |
@@ -52,6 +53,7 @@ From `audit/domain/audit-event.ts`. Every state-changing use case records one: [
 | `admin`         | `admin.test_email_sent`                                                                                                                                                                                                                                                                                                                                                                            |
 | `auth`          | `auth.factor_changed`, `auth.human_check_failed`, `auth.password_changed`, `auth.password_reset_requested`, `auth.second_factor_verified`, `auth.sign_in`, `auth.sign_in_failed`, `auth.sign_up`                                                                                                                                                                                                   |
 | `billing`       | `billing.addons_set`, `billing.override_set`, `billing.plan_assigned`, `billing.plan_lapsed`, `billing.subscription_changed`, `billing.trial_started`                                                                                                                                                                                                                                              |
+| `container_run` | `container_run.finished`, `container_run.started`                                                                                                                                                                                                                                                                                                                                                  |
 | `demo`          | `demo.account_erased`, `demo.deletion_warned`                                                                                                                                                                                                                                                                                                                                                      |
 | `feature_flag`  | `feature_flag.rules_changed`, `feature_flag.updated`                                                                                                                                                                                                                                                                                                                                               |
 | `impersonation` | `impersonation.oauth_refused`, `impersonation.started`, `impersonation.stopped`                                                                                                                                                                                                                                                                                                                    |
@@ -75,6 +77,7 @@ From `notification-catalog.ts`, in the order of the preferences screen: [notific
 
 | Type                       | Shown as                                      | In the app | Email | Security notice |
 | -------------------------- | --------------------------------------------- | ---------- | ----- | --------------- |
+| `container-runs.finished`  | A container run you started finishes          | yes        | no    | no              |
 | `workspaces.member-joined` | Someone joins a workspace you manage          | yes        | yes   | no              |
 | `workspaces.role-changed`  | Your role in a workspace changes              | yes        | yes   | no              |
 | `auth.password-changed`    | Your password changes                         | yes        | yes   | yes             |
@@ -103,16 +106,17 @@ From `analytics-events.ts`. Pseudonymous ids only, no personal data: [product an
 
 <!-- generated:events -->
 
-| Event                               | Sent from | What happened                                                                       |
-| ----------------------------------- | --------- | ----------------------------------------------------------------------------------- |
-| `auth.signed_up`                    | server    | An account was created; how (password, social provider)                             |
-| `files.uploaded`                    | server    | A file was stored in a workspace through the Worker; its category and size          |
-| `notes.created`                     | server    | A note was created in a workspace; the bucket of its body length                    |
-| `workspaces.created`                | server    | A workspace was created (personal at sign-up, or shared)                            |
-| `workspaces.member_joined`          | server    | A user joined a workspace: by accepting an invitation, or at sign-up in single mode |
-| `app.page_viewed`                   | browser   | A page of the /app SPA was shown (route pattern only)                               |
-| `app.command_palette_opened`        | browser   | The command palette opened (shortcut or trigger)                                    |
-| `app.command_palette_item_selected` | browser   | A command palette item was picked (its kind only)                                   |
+| Event                               | Sent from | What happened                                                                                    |
+| ----------------------------------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `auth.signed_up`                    | server    | An account was created; how (password, social provider)                                          |
+| `files.uploaded`                    | server    | A file was stored in a workspace through the Worker; its category and size                       |
+| `notes.created`                     | server    | A note was created in a workspace; the bucket of its body length                                 |
+| `container_runs.started`            | server    | A container workflow demo run was started; its digits preset and whether it retries a failed run |
+| `workspaces.created`                | server    | A workspace was created (personal at sign-up, or shared)                                         |
+| `workspaces.member_joined`          | server    | A user joined a workspace: by accepting an invitation, or at sign-up in single mode              |
+| `app.page_viewed`                   | browser   | A page of the /app SPA was shown (route pattern only)                                            |
+| `app.command_palette_opened`        | browser   | The command palette opened (shortcut or trigger)                                                 |
+| `app.command_palette_item_selected` | browser   | A command palette item was picked (its kind only)                                                |
 
 <!-- /generated:events -->
 
@@ -128,6 +132,7 @@ From `job-catalog.ts` and `cron-catalog.ts`: [background jobs](../guides/how-to-
 | ----------------------------- |
 | `audit.purge-events`          |
 | `billing.expire-trials`       |
+| `container-runs.purge`        |
 | `demo.enforce-retention`      |
 | `demo.seed-workspace`         |
 | `demo.warn-account`           |
@@ -161,5 +166,6 @@ From `job-catalog.ts` and `cron-catalog.ts`: [background jobs](../guides/how-to-
 | `trash.purge-expired`         | `17 3 * * *` |
 | `demo.enforce-retention`      | `17 3 * * *` |
 | `storage.reconcile`           | `17 3 * * *` |
+| `container-runs.purge`        | `17 3 * * *` |
 
 <!-- /generated:jobs -->

@@ -162,7 +162,7 @@ A job is one retryable step, finished within one consumer invocation (15 minutes
 - waiting for an outside event or a person (`step.waitForEvent`, e.g. an approval);
 - longer than 15 minutes in total.
 
-A job can start a Workflow instance; the starter does not include one. Adding it is a new binding ([overview.md](../architecture/overview.md#extension-checklists)) and an ADR, since it is a second pattern for background work.
+A job can start a Workflow instance, and so can a use case. The starter includes one, the container workflow demo: [how-to-run-container-workflows.md](../guides/how-to-run-container-workflows.md) is the worked example (a binding per environment, the class exported from `src/worker.ts`, each step recording its own state, a stable error per step, the Workflows test utilities) and compares the two in detail.
 
 ## Common problems
 

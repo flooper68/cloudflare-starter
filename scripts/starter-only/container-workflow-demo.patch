@@ -1,0 +1,855 @@
+diff --git a/apps/web/.dev.vars.example b/apps/web/.dev.vars.example
+index e5e71f8..2ca89cc 100644
+--- a/apps/web/.dev.vars.example
++++ b/apps/web/.dev.vars.example
+@@ -108,12 +108,2 @@ QA_BYPASS=off
+ 
+-# The container workflow demo (/app/container-demo;
+-# docs/guides/how-to-run-container-workflows.md). CONTAINER_DEMO (on | off),
+-# CONTAINER_DEMO_DAILY_CAP (runs per UTC day) and CONTAINER_DEMO_RUNNER (container | fake)
+-# are required vars in apps/web/wrangler.jsonc; local dev gets the develop values: on, with
+-# the fake runner (pi computed in the Worker, no Docker). To run the real container
+-# locally, start both apps with `bun run dev` (needs Docker) and uncomment the runner line.
+-# Same rule: uncomment to override, never leave blank.
+-# CONTAINER_DEMO_RUNNER=container
+-# CONTAINER_DEMO=off
+-
+ # Metrics and tracing. METRICS (analytics-engine | none) and TRACING (workers | none) are
+diff --git a/apps/web/src/lib/config.test.ts b/apps/web/src/lib/config.test.ts
+index 70fc013..aaeacfc 100644
+--- a/apps/web/src/lib/config.test.ts
++++ b/apps/web/src/lib/config.test.ts
+@@ -24,5 +24,2 @@ const core = {
+   AUTH_REQUIRE_EMAIL_VERIFICATION: "false",
+-  CONTAINER_DEMO: "on",
+-  CONTAINER_DEMO_DAILY_CAP: "50",
+-  CONTAINER_DEMO_RUNNER: "fake",
+ };
+@@ -30,33 +27,2 @@ const core = {
+ describe("web config", () => {
+-  it("requires the container demo settings, without defaults", () => {
+-    const workspaces = {
+-      WORKSPACE_MODE: "multi",
+-      SIGN_UP: "open",
+-      ADMIN_PORTAL: "on",
+-      BILLING: "off",
+-    };
+-    expect(parseAppConfig({ ...core, ...workspaces }).containerDemo).toEqual({
+-      mode: "on",
+-      dailyCap: 50,
+-      runner: "fake",
+-    });
+-    for (const [name, value, message] of [
+-      ["CONTAINER_DEMO", undefined, /CONTAINER_DEMO must be on or off/],
+-      ["CONTAINER_DEMO", "yes", /CONTAINER_DEMO must be on or off/],
+-      [
+-        "CONTAINER_DEMO_DAILY_CAP",
+-        undefined,
+-        /CONTAINER_DEMO_DAILY_CAP is not set/,
+-      ],
+-      ["CONTAINER_DEMO_DAILY_CAP", "0", /whole number/],
+-      ["CONTAINER_DEMO_DAILY_CAP", "-5", /whole number/],
+-      ["CONTAINER_DEMO_DAILY_CAP", "10001", /at most 10000/],
+-      ["CONTAINER_DEMO_RUNNER", "docker", /container or fake/],
+-    ] as const) {
+-      expect(() =>
+-        parseAppConfig({ ...core, ...workspaces, [name]: value })
+-      ).toThrow(message);
+-    }
+-  });
+-
+   it("requires an explicit storage reconciliation mode", () => {
+diff --git a/apps/web/src/lib/config.ts b/apps/web/src/lib/config.ts
+index ddc2006..3bde9b2 100644
+--- a/apps/web/src/lib/config.ts
++++ b/apps/web/src/lib/config.ts
+@@ -18,9 +18,2 @@ import { z } from "zod";
+ 
+-// The container workflow demo (starter-only: container-workflow-demo).
+-
+-import {
+-  type ContainerDemoSettings,
+-  containerDemoSettingsSchema,
+-} from "@cloudflare-starter/features";
+-
+ const envSchema = z.object({
+@@ -60,4 +53,2 @@ export type AppConfig = z.infer<typeof envSchema> & {
+   readonly security: SecuritySettings;
+-  /** CONTAINER_DEMO, CONTAINER_DEMO_DAILY_CAP, CONTAINER_DEMO_RUNNER: required, no defaults. */
+-  readonly containerDemo: ContainerDemoSettings;
+   readonly ADMIN_PORTAL: AdminPortalSetting;
+@@ -97,3 +88,2 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
+     workspaces: workspaceSettingsSchema.parse(env),
+-    containerDemo: containerDemoSettingsSchema.parse(env),
+     ADMIN_PORTAL: requiredChoice(
+diff --git a/apps/web/src/server/cron.test.ts b/apps/web/src/server/cron.test.ts
+index f4500de..8a78157 100644
+--- a/apps/web/src/server/cron.test.ts
++++ b/apps/web/src/server/cron.test.ts
+@@ -122,3 +122,2 @@ describe("cron handler", () => {
+       "storage.reconcile",
+-      "container-runs.purge",
+     ]);
+@@ -158,6 +157,2 @@ describe("cron handler", () => {
+       }),
+-      expect.objectContaining({
+-        type: "container-runs.purge",
+-        data: { asOf: "2026-10-28T03:17:00.000Z" },
+-      }),
+       expect.objectContaining({ type: "audit.purge-events" }),
+@@ -168,3 +163,2 @@ describe("cron handler", () => {
+       expect.objectContaining({ type: "trash.purge-expired" }),
+-      expect.objectContaining({ type: "container-runs.purge" }),
+     ]);
+@@ -268,3 +262,2 @@ describe("cron handler", () => {
+       "cron storage.reconcile",
+-      "cron container-runs.purge",
+     ]);
+@@ -331,8 +324,2 @@ describe("cron handler", () => {
+       }),
+-      expect.objectContaining({
+-        attributes: {
+-          "app.cron.name": "container-runs.purge",
+-          "app.cron.schedule": "17 3 * * *",
+-        },
+-      }),
+     ]);
+diff --git a/apps/web/src/server/env.ts b/apps/web/src/server/env.ts
+index 85a05e8..cb03aea 100644
+--- a/apps/web/src/server/env.ts
++++ b/apps/web/src/server/env.ts
+@@ -61,15 +61,2 @@ export interface AppEnv {
+   readonly BILLING?: string;
+-  // The container workflow demo (starter-only: container-workflow-demo).
+-  readonly RL_CONTAINER_RUN?: RateLimit;
+-  /**
+-   * The container workflow demo (docs/guides/how-to-run-container-workflows.md): the
+-   * Workflow that runs each container run, and the pi container Worker (apps/container)
+-   * as a service binding (CONTAINER_DEMO_RUNNER=container).
+-   */
+-  readonly CONTAINER_RUN_WORKFLOW?: Workflow<{ readonly runId: string }>;
+-  readonly PI_CONTAINER_SERVICE?: Fetcher;
+-  /** Required vars, validated by `parseAppConfig`: on | off, a positive integer, container | fake. */
+-  readonly CONTAINER_DEMO?: string;
+-  readonly CONTAINER_DEMO_DAILY_CAP?: string;
+-  readonly CONTAINER_DEMO_RUNNER?: string;
+   readonly [key: string]: unknown;
+diff --git a/apps/web/src/server/mcp/server.test.ts b/apps/web/src/server/mcp/server.test.ts
+index e8add38..7020744 100644
+--- a/apps/web/src/server/mcp/server.test.ts
++++ b/apps/web/src/server/mcp/server.test.ts
+@@ -64,3 +64,2 @@ function context(overrides: Partial<Context> = {}): Context {
+       billing: { mode: "off" },
+-      containerDemo: { mode: "off", dailyCap: 1, runner: "fake" },
+     },
+@@ -70,3 +69,2 @@ function context(overrides: Partial<Context> = {}): Context {
+     notify: async () => ({ status: "nobody" }),
+-    containerRunWorkflows: { start: async () => {} },
+     emailOut: noopEmail,
+diff --git a/apps/web/src/server/mcp/tools.ts b/apps/web/src/server/mcp/tools.ts
+index 58489fa..ee34671 100644
+--- a/apps/web/src/server/mcp/tools.ts
++++ b/apps/web/src/server/mcp/tools.ts
+@@ -578,23 +578,2 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
+   ),
+-  direct(
+-    "start_container_run",
+-    "write",
+-    "containerRuns.start",
+-    "Start a container run",
+-    "Starts the container workflow demo: a Cloudflare Workflow that computes digits of pi (1000, 10000 or 50000) in a Cloudflare Container, stores the result in R2 and notifies the user. Pass retryOf (a failed run's id) instead of digits to retry it. Returns the runId at once; poll get_container_run every few seconds until status is succeeded or failed (usually under a minute). Limited to a few runs per hour per user and a daily cap for the deployment; refused while the demo is off."
+-  ),
+-  direct(
+-    "get_container_run",
+-    "read",
+-    "containerRuns.get",
+-    "Get a container run",
+-    "Reads one container workflow run: status (queued, running, succeeded, failed), the step timeline with start and end times (queued, starting, computing, storing, notifying, done), the error code of a failed run, and the result: the first 100 digits, size and a download path for the signed-in browser."
+-  ),
+-  direct(
+-    "list_container_runs",
+-    "read",
+-    "containerRuns.list",
+-    "List container runs",
+-    "Lists the workspace's container workflow runs, newest first (they expire after 7 days), and whether the demo takes a new run now: on, off, daily_cap_reached or hourly_limit_reached, with the daily cap and the user's hourly limit."
+-  ),
+   direct(
+@@ -797,4 +776,2 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
+     "binary upload through the Worker; MCP clients use create_upload_url",
+-  "api/container-runs/[id]/result.ts":
+-    "text download of a container run result through the Worker; MCP clients read the preview and size with get_container_run",
+   "api/files/[id].ts":
+diff --git a/apps/web/src/server/trpc/context.ts b/apps/web/src/server/trpc/context.ts
+index ddb41a8..5b27b0d 100644
+--- a/apps/web/src/server/trpc/context.ts
++++ b/apps/web/src/server/trpc/context.ts
+@@ -23,3 +23,2 @@ import { getAuth } from "@/server/auth";
+ import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
+-import { containerRunWorkflowsFor } from "@/server/container-runs";
+ import { getDb } from "@/server/db";
+@@ -100,3 +99,2 @@ export function createAppContext(
+     notify: notifier,
+-    containerRunWorkflows: containerRunWorkflowsFor(env),
+     emailOut: platform.email,
+diff --git a/apps/web/src/server/trpc/init.ts b/apps/web/src/server/trpc/init.ts
+index 89f3847..2ed69c3 100644
+--- a/apps/web/src/server/trpc/init.ts
++++ b/apps/web/src/server/trpc/init.ts
+@@ -8,3 +8,2 @@ import {
+   type Clock,
+-  type ContainerRunWorkflows,
+   type Database,
+@@ -67,4 +66,2 @@ export interface Context {
+   readonly flagStore: FeatureFlagStore | null;
+-  /** Starts a container run's Workflow (the container workflow demo). */
+-  readonly containerRunWorkflows: ContainerRunWorkflows;
+   /** Sends a notification (the notifications feature's `notify` on the job queue). */
+diff --git a/apps/web/src/server/trpc/router.ts b/apps/web/src/server/trpc/router.ts
+index 25b4699..65d3ff3 100644
+--- a/apps/web/src/server/trpc/router.ts
++++ b/apps/web/src/server/trpc/router.ts
+@@ -19,3 +19,2 @@ import { accountRouter } from "./account-router";
+ import { adminRouter } from "./admin-router";
+-import { containerRunsRouter } from "./container-runs-router";
+ import {
+@@ -93,5 +92,2 @@ export const appRouter = router({
+ 
+-  // The container workflow demo (Developer demos).
+-  containerRuns: containerRunsRouter,
+-
+   queue: router({
+diff --git a/apps/web/src/server/trpc/workspace-router.ts b/apps/web/src/server/trpc/workspace-router.ts
+index e3508c3..d31f91a 100644
+--- a/apps/web/src/server/trpc/workspace-router.ts
++++ b/apps/web/src/server/trpc/workspace-router.ts
+@@ -9,3 +9,2 @@ import {
+   deleteOwnWorkspace,
+-  deleteWorkspaceContainerRuns,
+   deleteWorkspaceFiles,
+@@ -68,4 +67,2 @@ export const workspaceRouter = router({
+             await purgeWorkspaceLogos(ctx, { workspaceIds });
+-            // The container demo's results in R2 (the rows cascade with the workspace).
+-            await deleteWorkspaceContainerRuns(ctx, { workspaceIds });
+           },
+diff --git a/apps/web/src/worker.ts b/apps/web/src/worker.ts
+index 54eaaee..d9574b8 100644
+--- a/apps/web/src/worker.ts
++++ b/apps/web/src/worker.ts
+@@ -1,4 +1,4 @@
+ /**
+- * Custom Worker entry: Astro handles HTTP; the queue consumer, Cron Triggers and the
+- * container demo's Workflow (ContainerRunWorkflow) run in the same Worker, so they share its bindings (D1, R2, secrets) and deploy
++ * Custom Worker entry: Astro handles HTTP; the queue consumer and Cron Triggers
++ * run in the same Worker, so they share its bindings (D1, R2, secrets) and deploy
+  * together with the code that produces their work.
+@@ -7,3 +7,2 @@ import { handle } from "@astrojs/cloudflare/handler";
+ import type { JobEnvelope } from "@cloudflare-starter/features";
+-import { ContainerRunWorkflow } from "@/server/container-run-workflow";
+ import { runScheduled } from "@/server/cron";
+@@ -13,5 +12,2 @@ import { handleQueueBatch, queueDeps } from "@/server/queue";
+ 
+-// The container workflow demo's Workflow class (the CONTAINER_RUN_WORKFLOW binding).
+-export { ContainerRunWorkflow };
+-
+ export default {
+diff --git a/apps/web/test/api-bindings.ts b/apps/web/test/api-bindings.ts
+index 91072f6..3d9282c 100644
+--- a/apps/web/test/api-bindings.ts
++++ b/apps/web/test/api-bindings.ts
+@@ -64,7 +64,2 @@ export const API_TEST_BINDINGS = {
+   PASSKEYS: "on",
+-  // The container workflow demo, as in the develop vars: on, with the fake pi computer (no
+-  // Docker; the Workflow runs in Miniflare). Tests of off or the cap override them.
+-  CONTAINER_DEMO: "on",
+-  CONTAINER_DEMO_DAILY_CAP: "50",
+-  CONTAINER_DEMO_RUNNER: "fake",
+ } as const satisfies Readonly<Record<string, string>>;
+diff --git a/apps/web/test/worker.ts b/apps/web/test/worker.ts
+index d09653b..f718664 100644
+--- a/apps/web/test/worker.ts
++++ b/apps/web/test/worker.ts
+@@ -1,3 +1,2 @@
+-// Test entry for the API tests: the real queue and cron handlers and the
+-// container run Workflow, no Astro (tests call
++// Test entry for the API tests: the real queue and cron handlers, no Astro (tests call
+ // procedures, routes and handlers directly).
+@@ -5,3 +4,2 @@ import type { JobEnvelope } from "@cloudflare-starter/features";
+ 
+-import { ContainerRunWorkflow } from "@/server/container-run-workflow";
+ import { runScheduled } from "@/server/cron";
+@@ -11,5 +9,2 @@ import { handleQueueBatch, queueDeps } from "@/server/queue";
+ 
+-// The container workflow demo's Workflow, bound as CONTAINER_RUN_WORKFLOW (wrangler.jsonc).
+-export { ContainerRunWorkflow };
+-
+ export default {
+diff --git a/apps/web/vitest.config.ts b/apps/web/vitest.config.ts
+index c34691b..61b9716 100644
+--- a/apps/web/vitest.config.ts
++++ b/apps/web/vitest.config.ts
+@@ -7,10 +7,2 @@ import { outbound } from "./test/outbound";
+ 
+-/** The pi container's "not ready" answer: the API tests run without it. */
+-function noPiContainer(): Response {
+-  return Response.json(
+-    { ok: false, error: "no pi container in the API tests" },
+-    { status: 503 }
+-  );
+-}
+-
+ // API tests: tRPC procedures, HTTP routes, auth and /mcp as a signed-in user, inside
+@@ -37,6 +29,2 @@ export default defineConfig(async () => {
+           outboundService: outbound,
+-          // The pi container Worker (apps/container) is not part of this run: the tests use
+-          // CONTAINER_DEMO_RUNNER=fake, and its adapter has a contract test. A call that
+-          // reaches the binding anyway gets the container's "not ready" answer.
+-          serviceBindings: { PI_CONTAINER_SERVICE: noPiContainer },
+         },
+diff --git a/packages/features/src/abuse/domain/policies.ts b/packages/features/src/abuse/domain/policies.ts
+index 2b344b8..cf84cfe 100644
+--- a/packages/features/src/abuse/domain/policies.ts
++++ b/packages/features/src/abuse/domain/policies.ts
+@@ -208,14 +208,2 @@ export const RATE_LIMIT_POLICIES = {
+   },
+-  "container.run": {
+-    // Bursts only: the hourly limit (CONTAINER_RUN_USER_HOURLY_LIMIT) and the daily cap
+-    // (CONTAINER_DEMO_DAILY_CAP) are counted in D1 by startContainerRun, since edge
+-    // periods stop at 60 s.
+-    limit: 3,
+-    periodSeconds: 60,
+-    scope: "user",
+-    enforcer: "edge",
+-    binding: "RL_CONTAINER_RUN",
+-    description:
+-      "Container workflow demo runs a user starts (containerRuns.start): each starts a billed container",
+-  },
+   "analytics.client": {
+@@ -273,4 +261,2 @@ export const PROCEDURE_POLICIES: Readonly<Record<string, RateLimitPolicyId>> = {
+   "analytics.track": "analytics.client",
+-  // Starts a billed container (the container workflow demo).
+-  "containerRuns.start": "container.run",
+ };
+@@ -319,4 +305,2 @@ export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
+   "api/hello.ts": "public read-only example with no state or cost behind it",
+-  "api/container-runs/[id]/result.ts":
+-    "authenticated read of a container run result of the user's own workspace; reads are not limited",
+   "api/files/[id].ts":
+diff --git a/packages/features/src/analytics-events.ts b/packages/features/src/analytics-events.ts
+index c028ef6..ae7e12f 100644
+--- a/packages/features/src/analytics-events.ts
++++ b/packages/features/src/analytics-events.ts
+@@ -6,3 +6,2 @@
+ import { signedUpEvent } from "./accounts";
+-import { containerRunStartedEvent } from "./container-runs";
+ import { fileUploadedEvent } from "./files";
+@@ -21,3 +20,2 @@ export const analyticsEvents = createEventCatalog([
+   noteCreatedEvent,
+-  containerRunStartedEvent,
+   workspaceCreatedEvent,
+diff --git a/packages/features/src/audit/domain/audit-event.test.ts b/packages/features/src/audit/domain/audit-event.test.ts
+index 3014175..953bf9c 100644
+--- a/packages/features/src/audit/domain/audit-event.test.ts
++++ b/packages/features/src/audit/domain/audit-event.test.ts
+@@ -334,16 +334,2 @@ const VALID: Record<AuditAction, AuditEventInput> = {
+   },
+-  "container_run.started": {
+-    action: "container_run.started",
+-    workspaceId: workspace,
+-    target: { type: "container_run", id: "run-1" },
+-    metadata: { digits: 10000, retryOf: null },
+-  },
+-  "container_run.finished": {
+-    action: "container_run.finished",
+-    outcome: "failure",
+-    actor: { kind: "system" },
+-    workspaceId: workspace,
+-    target: { type: "container_run", id: "run-1" },
+-    metadata: { digits: 10000, durationMs: 4200, failure: "compute_failed" },
+-  },
+   "trash.item_trashed": {
+diff --git a/packages/features/src/audit/domain/audit-event.ts b/packages/features/src/audit/domain/audit-event.ts
+index be371ec..6c87d50 100644
+--- a/packages/features/src/audit/domain/audit-event.ts
++++ b/packages/features/src/audit/domain/audit-event.ts
+@@ -28,3 +28,2 @@ export const AUDIT_TARGET_TYPES = [
+   "data_request",
+-  "container_run",
+ ] as const;
+@@ -563,28 +562,2 @@ export const auditEventSchema = z.discriminatedUnion("action", [
+ 
+-  // The container workflow demo (Developer demos): a run started by a member, finished
+-  // by its workflow (the system). Outcome failure carries the run's error code as `failure`.
+-  z.object({
+-    ...inWorkspace,
+-    action: z.literal("container_run.started"),
+-    target: target("container_run"),
+-    metadata: z
+-      .object({
+-        digits: z.number().int().positive(),
+-        retryOf: id.nullable(),
+-      })
+-      .strict(),
+-  }),
+-  z.object({
+-    ...inWorkspace,
+-    action: z.literal("container_run.finished"),
+-    target: target("container_run"),
+-    metadata: z
+-      .object({
+-        digits: z.number().int().positive(),
+-        durationMs: z.number().int().nonnegative(),
+-        failure: z.string().min(1).max(64).nullable(),
+-      })
+-      .strict(),
+-  }),
+-
+   // Trash (recorded by the entities' "move to trash" use cases and the trash use cases).
+diff --git a/packages/features/src/cron-catalog.ts b/packages/features/src/cron-catalog.ts
+index 8044c24..0f0b293 100644
+--- a/packages/features/src/cron-catalog.ts
++++ b/packages/features/src/cron-catalog.ts
+@@ -26,6 +26,2 @@ import { purgeExpiredTrashJob } from "./trash";
+ 
+-// The container workflow demo (starter-only: container-workflow-demo).
+-
+-import { purgeContainerRunsJob } from "./container-runs";
+-
+ /** What a cron entry may use. */
+@@ -170,14 +166,2 @@ export const cronCatalog = createCronCatalog<CronDeps>([
+   },
+-  {
+-    // The container workflow demo's retention: runs and results older than 7 days.
+-    name: "container-runs.purge",
+-    schedule: DAILY,
+-    run: (deps, { scheduledTime, context }) =>
+-      enqueueJob(
+-        deps,
+-        purgeContainerRunsJob,
+-        { asOf: new Date(scheduledTime).toISOString() },
+-        { context }
+-      ),
+-  },
+ ]);
+diff --git a/packages/features/src/data-catalog.ts b/packages/features/src/data-catalog.ts
+index 91442ce..b93777b 100644
+--- a/packages/features/src/data-catalog.ts
++++ b/packages/features/src/data-catalog.ts
+@@ -171,45 +171,2 @@ export const DATA_CATALOG: readonly DataEntity[] = [
+   },
+-  {
+-    table: "container_runs",
+-    scope: "workspace",
+-    columns: [
+-      "id",
+-      "workspace_id",
+-      "created_by",
+-      "digits",
+-      "status",
+-      "steps",
+-      "error_code",
+-      "retry_of",
+-      "result_key",
+-      "result_preview",
+-      "result_bytes",
+-      "compute_ms",
+-      "created_at",
+-      "finished_at",
+-      "expires_at",
+-    ],
+-    workspaceColumn: "workspace_id",
+-    userMode: "own-files",
+-    erase: "workspace-cascade",
+-    reason:
+-      "Container workflow demo runs the person started and every run of their personal workspace: digits of pi and timings, no personal content. Expire 7 days after they start; deleting a workspace deletes its runs and their R2 results, erasure keeps shared runs with attribution nulled.",
+-  },
+-  {
+-    table: "container_run_user_quota",
+-    scope: "user",
+-    columns: ["hour", "count"],
+-    userColumn: "user_id",
+-    erase: "user-cascade",
+-    reason:
+-      "How many container demo runs the person started per UTC hour (the hourly limit); kept a day, deleted with the account.",
+-  },
+-  {
+-    table: "container_run_quota",
+-    scope: "platform",
+-    columns: [],
+-    erase: "retain-platform",
+-    reason:
+-      "One counter of container demo runs per UTC day for the whole deployment (the daily cap); no user or workspace data.",
+-  },
+   ...[
+diff --git a/packages/features/src/database.ts b/packages/features/src/database.ts
+index 3a48bbe..4679af8 100644
+--- a/packages/features/src/database.ts
++++ b/packages/features/src/database.ts
+@@ -8,3 +8,2 @@ import * as auditSchema from "./audit/audit.schema";
+ import * as billingSchema from "./billing/billing.schema";
+-import * as containerRunsSchema from "./container-runs/container-runs.schema";
+ import * as filesSchema from "./files/files.schema";
+@@ -24,3 +23,2 @@ export const schema = {
+   ...billingSchema,
+-  ...containerRunsSchema,
+   ...filesSchema,
+diff --git a/packages/features/src/erasure-catalog.ts b/packages/features/src/erasure-catalog.ts
+index f4527ee..86decf2 100644
+--- a/packages/features/src/erasure-catalog.ts
++++ b/packages/features/src/erasure-catalog.ts
+@@ -3,3 +3,2 @@ import { purgeAccountImages } from "./accounts";
+ import { redactAuditSubject } from "./audit";
+-import { deleteWorkspaceContainerRuns } from "./container-runs";
+ import type { Database } from "./database";
+@@ -22,3 +21,2 @@ export function buildErasureHandlers(deps: {
+       await deleteWorkspaceFiles(deps, { workspaceIds });
+-      await deleteWorkspaceContainerRuns(deps, { workspaceIds });
+       await purgeWorkspaceLogos(deps, { workspaceIds });
+diff --git a/packages/features/src/index.ts b/packages/features/src/index.ts
+index 69b8e58..8011405 100644
+--- a/packages/features/src/index.ts
++++ b/packages/features/src/index.ts
+@@ -9,3 +9,2 @@ export * from "./audit";
+ export * from "./billing";
+-export * from "./container-runs";
+ export { type CronDeps, cronCatalog } from "./cron-catalog";
+diff --git a/packages/features/src/job-catalog.ts b/packages/features/src/job-catalog.ts
+index de0e7c1..1874514 100644
+--- a/packages/features/src/job-catalog.ts
++++ b/packages/features/src/job-catalog.ts
+@@ -6,3 +6,2 @@ import { purgeAuditEvents, purgeAuditEventsJob } from "./audit";
+ import { expireTrials, expireTrialsJob } from "./billing";
+-import { purgeContainerRuns, purgeContainerRunsJob } from "./container-runs";
+ import { DATA_CATALOG } from "./data-catalog";
+@@ -62,5 +61,2 @@ import { TRASH_CATALOG } from "./trash-catalog";
+ export const jobCatalog = createJobCatalog<JobDeps>([
+-  registerJob(purgeContainerRunsJob, (deps: JobDeps, payload) =>
+-    purgeContainerRuns(deps, payload)
+-  ),
+   registerJob(cleanupStorageJob, (deps: JobDeps, payload, job) =>
+diff --git a/packages/features/src/notification-catalog.ts b/packages/features/src/notification-catalog.ts
+index f2405f6..7d75f0c 100644
+--- a/packages/features/src/notification-catalog.ts
++++ b/packages/features/src/notification-catalog.ts
+@@ -18,9 +18,3 @@ import {
+ 
+-// The container workflow demo (starter-only: container-workflow-demo).
+-
+-import { containerRunFinishedNotification } from "./container-runs";
+-
+ export const notificationCatalog = createNotificationCatalog([
+-  containerRunFinishedNotification,
+-
+   memberJoinedNotification,
+diff --git a/packages/features/src/notifications/domain/catalog.test.ts b/packages/features/src/notifications/domain/catalog.test.ts
+index 8e1b764..dbb7911 100644
+--- a/packages/features/src/notifications/domain/catalog.test.ts
++++ b/packages/features/src/notifications/domain/catalog.test.ts
+@@ -63,4 +63,2 @@ describe("notification catalog", () => {
+     expect(types).toEqual([
+-      "container-runs.finished",
+-
+       "workspaces.member-joined",
+diff --git a/packages/features/src/notifications/get-notification-preferences.integration.test.ts b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
+index 897a387..6bae831 100644
+--- a/packages/features/src/notifications/get-notification-preferences.integration.test.ts
++++ b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
+@@ -22,4 +22,2 @@ describe("getNotificationPreferences", () => {
+     ).toEqual([
+-      ["container-runs.finished", false, true, false],
+-
+       ["workspaces.member-joined", false, true, true],
+diff --git a/packages/features/src/notifications/unsubscribe.integration.test.ts b/packages/features/src/notifications/unsubscribe.integration.test.ts
+index fe5ff78..7fe6413 100644
+--- a/packages/features/src/notifications/unsubscribe.integration.test.ts
++++ b/packages/features/src/notifications/unsubscribe.integration.test.ts
+@@ -89,3 +89,2 @@ describe("unsubscribe", () => {
+     expect(result.types).toEqual([
+-      "container-runs.finished",
+       "workspaces.member-joined",
+diff --git a/packages/features/src/platform/adapters/cloudflare/index.ts b/packages/features/src/platform/adapters/cloudflare/index.ts
+index 7d30c1b..b6b51fd 100644
+--- a/packages/features/src/platform/adapters/cloudflare/index.ts
++++ b/packages/features/src/platform/adapters/cloudflare/index.ts
+@@ -24,3 +24,2 @@ export {
+ export { createCloudflareJobQueue } from "./cloudflare-job-queue";
+-export { createContainerPiComputer } from "./container-pi-computer";
+ export {
+diff --git a/packages/features/src/platform/adapters/index.ts b/packages/features/src/platform/adapters/index.ts
+index f6f8423..11de9c9 100644
+--- a/packages/features/src/platform/adapters/index.ts
++++ b/packages/features/src/platform/adapters/index.ts
+@@ -15,3 +15,2 @@ export {
+   createCloudflareRateLimiter,
+-  createContainerPiComputer,
+   createD1FeatureFlags,
+@@ -39,4 +38,2 @@ export {
+   type CapturedError,
+-  chudnovskyPi,
+-  createFakePiComputer,
+   createMemoryBillingProvider,
+diff --git a/packages/features/src/platform/adapters/memory/index.ts b/packages/features/src/platform/adapters/memory/index.ts
+index b0d422d..f85ef8f 100644
+--- a/packages/features/src/platform/adapters/memory/index.ts
++++ b/packages/features/src/platform/adapters/memory/index.ts
+@@ -2,3 +2,2 @@
+ 
+-export { chudnovskyPi, createFakePiComputer } from "./fake-pi-computer";
+ export {
+diff --git a/packages/features/src/platform/index.ts b/packages/features/src/platform/index.ts
+index 0164dff..0a07245 100644
+--- a/packages/features/src/platform/index.ts
++++ b/packages/features/src/platform/index.ts
+@@ -7,3 +7,2 @@ export {
+   type CloudflareEmailConfig,
+-  chudnovskyPi,
+   createAnalyticsEngineMetrics,
+@@ -13,5 +12,3 @@ export {
+   createCloudflareRateLimiter,
+-  createContainerPiComputer,
+   createD1FeatureFlags,
+-  createFakePiComputer,
+   createFflateZip,
+@@ -129,5 +126,2 @@ export type {
+   Metrics,
+-  PiComputation,
+-  PiComputer,
+-  PiComputerFailure,
+   PortalInput,
+@@ -151,3 +145,2 @@ export type {
+ } from "./ports";
+-export { PiComputerError } from "./ports/pi-computer";
+ export { mathRandom } from "./random";
+diff --git a/packages/features/src/platform/ports/index.ts b/packages/features/src/platform/ports/index.ts
+index 50a7c98..8359c29 100644
+--- a/packages/features/src/platform/ports/index.ts
++++ b/packages/features/src/platform/ports/index.ts
+@@ -44,7 +44,2 @@ export type {
+ } from "./metrics";
+-export type {
+-  PiComputation,
+-  PiComputer,
+-  PiComputerFailure,
+-} from "./pi-computer";
+ export type {
+diff --git a/packages/features/src/storage-reference-catalog.ts b/packages/features/src/storage-reference-catalog.ts
+index 856eecd..745ea5f 100644
+--- a/packages/features/src/storage-reference-catalog.ts
++++ b/packages/features/src/storage-reference-catalog.ts
+@@ -2,6 +2,2 @@
+ import { findReferencedAvatarKeys } from "./accounts";
+-import {
+-  CONTAINER_RUN_RESULT_KEY,
+-  findReferencedContainerRunKeys,
+-} from "./container-runs";
+ import type { Database } from "./database";
+@@ -28,6 +24,2 @@ export function storageReferenceCatalog(deps: {
+     },
+-    {
+-      matches: (key) => CONTAINER_RUN_RESULT_KEY.test(key),
+-      referenced: (keys) => findReferencedContainerRunKeys(deps, keys),
+-    },
+   ];
+diff --git a/packages/features/src/workspaces/domain/permissions.test.ts b/packages/features/src/workspaces/domain/permissions.test.ts
+index ce695da..03f5000 100644
+--- a/packages/features/src/workspaces/domain/permissions.test.ts
++++ b/packages/features/src/workspaces/domain/permissions.test.ts
+@@ -44,7 +44,2 @@ describe("permissions", () => {
+ 
+-  it("lets every member run the container demo and read its runs", () => {
+-    for (const action of ["containers.read", "containers.run"] as const)
+-      expect(rolesAllowedTo(action)).toEqual(["owner", "member"]);
+-  });
+-
+   it("keeps someone able to manage members: the creator's role can, and transfer ownership", () => {
+diff --git a/packages/features/src/workspaces/domain/permissions.ts b/packages/features/src/workspaces/domain/permissions.ts
+index 2892cf2..7cd1713 100644
+--- a/packages/features/src/workspaces/domain/permissions.ts
++++ b/packages/features/src/workspaces/domain/permissions.ts
+@@ -32,5 +32,2 @@ export const ACTIONS = {
+   "notes.delete": ["owner", "member"],
+-  // The container workflow demo (Developer demos): every member runs and reads runs.
+-  "containers.read": ["owner", "member"],
+-  "containers.run": ["owner", "member"],
+   "trash.read": ["owner", "member"],
+diff --git a/packages/ui/src/exports/patterns.ts b/packages/ui/src/exports/patterns.ts
+index adc525b..2340594 100644
+--- a/packages/ui/src/exports/patterns.ts
++++ b/packages/ui/src/exports/patterns.ts
+@@ -140,17 +140,2 @@ export {
+ } from "../components/patterns/connected-agents";
+-export {
+-  ContainerRunList,
+-  type ContainerRunListProps,
+-  ContainerRunListSkeleton,
+-  type ContainerRunStatus,
+-  ContainerRunStatusBadge,
+-  type ContainerRunStatusBadgeProps,
+-  type ContainerRunStepName,
+-  type ContainerRunStepStatus,
+-  type ContainerRunStepView,
+-  ContainerRunTimeline,
+-  type ContainerRunTimelineProps,
+-  type ContainerRunView,
+-  formatRunDuration,
+-} from "../components/patterns/container-run";
+ export {
+diff --git a/scripts/doctor.ts b/scripts/doctor.ts
+index 0b35c76..72a4419 100644
+--- a/scripts/doctor.ts
++++ b/scripts/doctor.ts
+@@ -418,3 +418,2 @@ for (const env of ENVIRONMENTS) {
+   checkStorageVar(env, vars.STORAGE_RECONCILE);
+-  checkContainerDemo(env, vars, block);
+   checkDemoVars(env, (key) => vars[key]);
+@@ -514,46 +513,2 @@ function checkQaBypass(
+ 
+-/**
+- * The container workflow demo's required settings (docs/guides/how-to-run-container-workflows.md#settings)
+- * and, with it on, its Workflow binding and (for the real container) the service binding.
+- */
+-function checkContainerDemo(
+-  label: string,
+-  vars: Record<string, string | undefined>,
+-  block: Record<string, unknown>
+-) {
+-  const mode = vars.CONTAINER_DEMO;
+-  const cap = vars.CONTAINER_DEMO_DAILY_CAP ?? "";
+-  const runner = vars.CONTAINER_DEMO_RUNNER;
+-  if (mode !== "on" && mode !== "off")
+-    error(`${label}: CONTAINER_DEMO must be on or off (required, no default)`);
+-  if (!/^[1-9]\d*$/.test(cap) || Number(cap) > 10_000)
+-    error(
+-      `${label}: CONTAINER_DEMO_DAILY_CAP must be a whole number of runs per day, 1 to 10000`
+-    );
+-  if (runner !== "container" && runner !== "fake")
+-    error(`${label}: CONTAINER_DEMO_RUNNER must be container or fake`);
+-  if (mode !== "on") {
+-    if (mode === "off") ok(`${label}: CONTAINER_DEMO=off`);
+-    return;
+-  }
+-  const workflows =
+-    (block.workflows as { binding?: string }[] | undefined) ?? [];
+-  if (!workflows.some((entry) => entry.binding === "CONTAINER_RUN_WORKFLOW"))
+-    error(
+-      `${label}: CONTAINER_DEMO=on needs the CONTAINER_RUN_WORKFLOW workflows binding`
+-    );
+-  const services = (block.services as { binding?: string }[] | undefined) ?? [];
+-  if (
+-    runner === "container" &&
+-    !services.some((entry) => entry.binding === "PI_CONTAINER_SERVICE")
+-  )
+-    error(
+-      `${label}: CONTAINER_DEMO_RUNNER=container needs the PI_CONTAINER_SERVICE service binding`
+-    );
+-  else
+-    ok(
+-      `${label}: CONTAINER_DEMO=on, ${runner} runner, at most ${cap} runs a day`
+-    );
+-}
+-
+ /**
+diff --git a/test/architecture/workspace-scope.test.ts b/test/architecture/workspace-scope.test.ts
+index ed4bb07..8397026 100644
+--- a/test/architecture/workspace-scope.test.ts
++++ b/test/architecture/workspace-scope.test.ts
+@@ -21,6 +21,2 @@ import { filesUnder, read } from "./repo";
+ const TABLES_WITHOUT_WORKSPACE: Readonly<Record<string, string>> = {
+-  container_run_quota:
+-    "the container demo's daily cap for the whole deployment: one counter per UTC day, no tenant data; deleting a workspace must not give its runs back",
+-  container_run_user_quota:
+-    "the container demo's per-person hourly limit across workspaces; must survive deleting a workspace, cascades with the user",
+   pending_file_cleanup:
+@@ -60,3 +56,2 @@ const WORKSPACE_ROUTERS = [
+   "notes",
+-  "containerRuns",
+ ] as const;
+@@ -76,3 +71,2 @@ const WORKSPACE_SCOPED_FEATURES = [
+   "billing",
+-  "container-runs",
+   "files",
+@@ -135,16 +129,2 @@ const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
+   "files/r2-presign.ts": "S3 signing helper, not a use case",
+-  "container-runs/begin-container-run-step.ts":
+-    "a step of the run's Workflow, which runs as the system after startContainerRun authorized the actor",
+-  "container-runs/store-container-run-result.ts":
+-    "a step of the run's Workflow, which runs as the system after startContainerRun authorized the actor",
+-  "container-runs/notify-container-run-finished.ts":
+-    "a step of the run's Workflow: notifies the person who started the run",
+-  "container-runs/finish-container-run.ts":
+-    "a step of the run's Workflow, recorded as the system",
+-  "container-runs/purge-container-runs.ts":
+-    "daily retention job over all workspaces; no actor",
+-  "container-runs/delete-workspace-container-runs.ts":
+-    "runs during account deletion for workspaces being deleted; no actor exists",
+-  "container-runs/find-referenced-container-run-keys.ts":
+-    "system orphan reconciliation protects result keys across every workspace; not a user-facing read",
+   "files/delete-workspace-files.ts":
+diff --git a/test/architecture/wrangler.test.ts b/test/architecture/wrangler.test.ts
+index 6168d70..5ae6122 100644
+--- a/test/architecture/wrangler.test.ts
++++ b/test/architecture/wrangler.test.ts
+@@ -113,64 +113 @@ describe("wrangler.jsonc", () => {
+ 
+-/**
+- * The container workflow demo: a Workflow per environment (names are account-wide) and a
+- * service binding to the pi container Worker of the same environment, which has no public
+- * URL and the demo's cost limits (docs/guides/how-to-run-container-workflows.md).
+- */
+-describe("container workflow demo wiring", () => {
+-  const container = parse(read("apps/container/wrangler.jsonc")) as Block & {
+-    env?: Record<string, Block>;
+-  };
+-  const web: [string, Block][] = [
+-    ["develop", config],
+-    ...Object.entries(config.env ?? {}),
+-  ];
+-  const containerOf = (env: string): Block =>
+-    env === "develop" ? container : (container.env?.[env] ?? {});
+-  const containerName = (env: string) =>
+-    env === "develop"
+-      ? String(container.name)
+-      : `${String(container.name)}-${env}`;
+-
+-  it("names one Workflow per environment, bound as CONTAINER_RUN_WORKFLOW to ContainerRunWorkflow", () => {
+-    const names = web.map(([, block]) => {
+-      const [workflow] = (block.workflows as Block[] | undefined) ?? [];
+-      expect(workflow).toMatchObject({
+-        binding: "CONTAINER_RUN_WORKFLOW",
+-        class_name: "ContainerRunWorkflow",
+-      });
+-      return workflow?.name;
+-    });
+-    expect(new Set(names).size).toBe(web.length);
+-  });
+-
+-  it.each(web)(
+-    "%s binds PI_CONTAINER_SERVICE to the container Worker of the same environment",
+-    (env, block) => {
+-      expect(block.services).toEqual([
+-        { binding: "PI_CONTAINER_SERVICE", service: containerName(env) },
+-      ]);
+-    }
+-  );
+-
+-  it.each(web.map(([env]) => env))(
+-    "the %s container Worker has no public URL, the smallest instance and at most two instances",
+-    (env) => {
+-      const block = containerOf(env);
+-      expect(block.workers_dev).toBe(false);
+-      expect(block.preview_urls).toBe(false);
+-      expect(block.containers).toEqual([
+-        expect.objectContaining({
+-          class_name: "PiContainer",
+-          instance_type: "lite",
+-          max_instances: 2,
+-        }),
+-      ]);
+-    }
+-  );
+-
+-  it("keeps PI_INSTANCES equal to max_instances", () => {
+-    expect(read("apps/container/src/index.ts")).toContain(
+-      "export const PI_INSTANCES = 2;"
+-    );
+-  });
+-});

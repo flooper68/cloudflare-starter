@@ -17,6 +17,7 @@ const KIND_OF_SOURCE: Readonly<Record<RequestContext["source"], SpanKind>> = {
   http: "server",
   queue: "consumer",
   cron: "internal",
+  workflow: "internal",
   // An operator script (bun run setup:admin) writes D1 through Wrangler; no Worker span.
   script: "internal",
 };

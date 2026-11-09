@@ -25,10 +25,17 @@ const demos = [
     description:
       "Send a test email to your own address through Cloudflare Email Service.",
   },
+  {
+    to: "/app/container-demo",
+    title: "Containers",
+    description:
+      "Run a Cloudflare Workflow that computes digits of pi in a Cloudflare Container, stores the result in R2 and notifies you, and watch each step.",
+  },
 ] as const;
 
 /**
- * `/app/demos`: the developer demos of the platform's bindings (R2, Queues, Email),
+ * `/app/demos`: the developer demos of the platform's bindings (R2, Queues, Email,
+ * Workflows with Containers),
  * moved off the dashboard. They stay in the sidebar's Demos section too.
  */
 export function DemosPage() {
@@ -41,7 +48,7 @@ export function DemosPage() {
           up. A project usually removes them.
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Card className="flex flex-col gap-3">
           <CardTitle>API hello</CardTitle>
           <CardDescription className="grow">

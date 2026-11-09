@@ -332,6 +332,20 @@ const VALID: Record<AuditAction, AuditEventInput> = {
     target: { type: "note", id: "note-q3" },
     metadata: { commentId: "comment-1" },
   },
+  "container_run.started": {
+    action: "container_run.started",
+    workspaceId: workspace,
+    target: { type: "container_run", id: "run-1" },
+    metadata: { digits: 10000, retryOf: null },
+  },
+  "container_run.finished": {
+    action: "container_run.finished",
+    outcome: "failure",
+    actor: { kind: "system" },
+    workspaceId: workspace,
+    target: { type: "container_run", id: "run-1" },
+    metadata: { digits: 10000, durationMs: 4200, failure: "compute_failed" },
+  },
   "trash.item_trashed": {
     action: "trash.item_trashed",
     workspaceId: workspace,

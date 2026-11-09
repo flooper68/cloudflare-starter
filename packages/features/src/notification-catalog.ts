@@ -16,7 +16,13 @@ import {
   roleChangedNotification,
 } from "./workspaces";
 
+// The container workflow demo (starter-only: container-workflow-demo).
+
+import { containerRunFinishedNotification } from "./container-runs";
+
 export const notificationCatalog = createNotificationCatalog([
+  containerRunFinishedNotification,
+
   memberJoinedNotification,
   roleChangedNotification,
   passwordChangedNotification,

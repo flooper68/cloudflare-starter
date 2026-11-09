@@ -22,6 +22,7 @@ export {
   createCloudflareEmail,
 } from "./cloudflare-email";
 export { createCloudflareJobQueue } from "./cloudflare-job-queue";
+export { createContainerPiComputer } from "./container-pi-computer";
 export {
   createD1FeatureFlags,
   D1_FLAGS_TTL_MS,

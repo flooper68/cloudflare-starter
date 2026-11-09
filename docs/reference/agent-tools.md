@@ -29,6 +29,7 @@ Every tool an agent can call at `<APP_URL>/mcp`, generated from the tool registr
 | `get_billing_summary`             | Get billing summary             | read               | `workspace.billing.summary`                       |
 | `get_checkout_url`                | Get checkout URL                | write, outward     | `workspace.billing.checkoutUrl`                   |
 | `get_client_flags`                | Get client feature flags        | read               | `flags.client`                                    |
+| `get_container_run`               | Get a container run             | read               | `containerRuns.get`                               |
 | `get_data_export_download`        | Get export download link        | read               | `privacy.download`                                |
 | `get_download_url`                | Get download URL                | read               | `storage.getDownloadUrl`                          |
 | `get_note`                        | Get note                        | read               | `notes.get`                                       |
@@ -38,6 +39,7 @@ Every tool an agent can call at `<APP_URL>/mcp`, generated from the tool registr
 | `invite_member`                   | Invite member                   | write, outward     | `workspace.invitations.create`                    |
 | `leave_workspace`                 | Leave workspace                 | write, destructive | `workspace.leave`                                 |
 | `list_connected_agents`           | List connected agents           | read               | `account.agents.list`                             |
+| `list_container_runs`             | List container runs             | read               | `containerRuns.list`                              |
 | `list_data_exports`               | List your data exports          | read               | `privacy.list`                                    |
 | `list_files`                      | List files                      | read               | `storage.listFiles`                               |
 | `list_invitations`                | List invitations                | read               | `workspace.invitations.list`                      |
@@ -59,6 +61,7 @@ Every tool an agent can call at `<APP_URL>/mcp`, generated from the tool registr
 | `revoke_session`                  | Sign out a session              | write, destructive | `account.sessions.revoke`                         |
 | `search_notes`                    | Search notes                    | read               | `notes.search`                                    |
 | `send_test_email`                 | Send test email                 | write, outward     | `email.sendTest`                                  |
+| `start_container_run`             | Start a container run           | write              | `containerRuns.start`                             |
 | `switch_workspace`                | Switch workspace                | write              | `workspace.switch`                                |
 | `transfer_ownership`              | Transfer ownership              | write              | `workspace.transferOwnership`                     |
 | `update_account_settings`         | Update account settings         | write              | `account.settings.update`                         |

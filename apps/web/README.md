@@ -52,7 +52,7 @@ Authenticated, client-routed SPA (`src/pages/app/[...path].astro`):
 
 - `/app/dashboard`, `/app/members` (single and multi mode), `/app/billing`, `/app/trash`
 - `/app/settings/account`, `/app/settings/appearance`, `/app/settings/security`, `/app/settings/workspace`, `/app/settings/privacy` (`/app/profile` redirects to the first)
-- `/app/demos` (developer demos index), `/app/upload-demo`, `/app/queue-demo`, `/app/email-demo`
+- `/app/demos` (developer demos index), `/app/upload-demo`, `/app/queue-demo`, `/app/email-demo`, `/app/container-demo` (a Workflow running a container task: [how-to-run-container-workflows.md](../../docs/guides/how-to-run-container-workflows.md))
 - Any other `/app/*` path: the in-app 404 inside the shell
 - `/app/notifications`, `/app/notifications/preferences` (inbox and notification settings; the bell in the top bar opens the inbox)
 

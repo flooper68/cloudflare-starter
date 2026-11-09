@@ -83,14 +83,17 @@ This page is generated from `apps/web/src/docs/reference/settings.ts`; a test fa
 
 ### Demo and QA
 
-| Setting                 | Kind   | Values      | What it does                                                                                                      |
-| ----------------------- | ------ | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| `DEMO_MODE`             | var    | `off`, `on` | The starter's public demo; apps built from it keep off. [Docs](../guides/how-to-run-a-public-demo.md)             |
-| `DEMO_RETENTION_DAYS`   | var    | text        | With the demo on: days before a demo account is erased, 2 to 365. [Docs](../guides/how-to-run-a-public-demo.md)   |
-| `DEMO_SAMPLE_DATA`      | var    | `on`, `off` | With the demo on: new demo workspaces start with sample data. [Docs](../guides/how-to-run-a-public-demo.md)       |
-| `DEMO_PROTECTED_EMAILS` | var    | text        | With the demo on: addresses the demo never erases, comma separated. [Docs](../guides/how-to-run-a-public-demo.md) |
-| `QA_BYPASS`             | var    | `on`, `off` | Lets the automated QA suite skip the bot check, with QA_TOKEN. [Docs](../guides/how-to-qa-a-deployment.md)        |
-| `QA_TOKEN`              | secret | text        | The QA suite's token; 32+ characters. [Docs](../guides/how-to-qa-a-deployment.md)                                 |
-| `QA_EMAIL_DOMAIN`       | var    | text        | The email domain of QA accounts. [Docs](../guides/how-to-qa-a-deployment.md)                                      |
+| Setting                    | Kind   | Values              | What it does                                                                                                                         |
+| -------------------------- | ------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `DEMO_MODE`                | var    | `off`, `on`         | The starter's public demo; apps built from it keep off. [Docs](../guides/how-to-run-a-public-demo.md)                                |
+| `DEMO_RETENTION_DAYS`      | var    | text                | With the demo on: days before a demo account is erased, 2 to 365. [Docs](../guides/how-to-run-a-public-demo.md)                      |
+| `DEMO_SAMPLE_DATA`         | var    | `on`, `off`         | With the demo on: new demo workspaces start with sample data. [Docs](../guides/how-to-run-a-public-demo.md)                          |
+| `DEMO_PROTECTED_EMAILS`    | var    | text                | With the demo on: addresses the demo never erases, comma separated. [Docs](../guides/how-to-run-a-public-demo.md)                    |
+| `QA_BYPASS`                | var    | `on`, `off`         | Lets the automated QA suite skip the bot check, with QA_TOKEN. [Docs](../guides/how-to-qa-a-deployment.md)                           |
+| `QA_TOKEN`                 | secret | text                | The QA suite's token; 32+ characters. [Docs](../guides/how-to-qa-a-deployment.md)                                                    |
+| `QA_EMAIL_DOMAIN`          | var    | text                | The email domain of QA accounts. [Docs](../guides/how-to-qa-a-deployment.md)                                                         |
+| `CONTAINER_DEMO`           | var    | `on`, `off`         | The container workflow demo (Developer demos › Containers). [Docs](../guides/how-to-run-container-workflows.md)                      |
+| `CONTAINER_DEMO_DAILY_CAP` | var    | text                | Container demo runs per UTC day for the whole deployment, 1 to 10,000. [Docs](../guides/how-to-run-container-workflows.md)           |
+| `CONTAINER_DEMO_RUNNER`    | var    | `container`, `fake` | Where the container demo computes pi: the pi container, or fake (in the Worker). [Docs](../guides/how-to-run-container-workflows.md) |
 
 <!-- /generated:settings -->

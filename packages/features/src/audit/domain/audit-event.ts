@@ -26,6 +26,7 @@ export const AUDIT_TARGET_TYPES = [
   "note",
   "storage",
   "data_request",
+  "container_run",
 ] as const;
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
 
@@ -558,6 +559,32 @@ export const auditEventSchema = z.discriminatedUnion("action", [
     action: z.literal("note.commented"),
     target: target("note"),
     metadata: z.object({ commentId: id }).strict(),
+  }),
+
+  // The container workflow demo (Developer demos): a run started by a member, finished
+  // by its workflow (the system). Outcome failure carries the run's error code as `failure`.
+  z.object({
+    ...inWorkspace,
+    action: z.literal("container_run.started"),
+    target: target("container_run"),
+    metadata: z
+      .object({
+        digits: z.number().int().positive(),
+        retryOf: id.nullable(),
+      })
+      .strict(),
+  }),
+  z.object({
+    ...inWorkspace,
+    action: z.literal("container_run.finished"),
+    target: target("container_run"),
+    metadata: z
+      .object({
+        digits: z.number().int().positive(),
+        durationMs: z.number().int().nonnegative(),
+        failure: z.string().min(1).max(64).nullable(),
+      })
+      .strict(),
   }),
 
   // Trash (recorded by the entities' "move to trash" use cases and the trash use cases).

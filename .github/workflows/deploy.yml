@@ -28,7 +28,9 @@ concurrency:
 jobs:
   deploy:
     name: Deploy ${{ inputs.environment }}
-    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '"ubuntu-latest"') }}
+    # Always GitHub-hosted: the deploy builds the pi container's Docker image
+    # (apps/container), and the self-hosted runners (CI_RUNS_ON) have no Docker engine.
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ${{ inputs.environment }}
     env:
@@ -52,7 +54,9 @@ jobs:
             bunx wrangler d1 migrations apply DB --remote --env "$DEPLOY_ENV"
           fi
 
-      # deploy / deploy:staging / deploy:production pick the environment at build time.
+      # deploy / deploy:staging / deploy:production pick the environment at build time. They
+      # deploy the pi container Worker (apps/container) first, which builds its Docker image
+      # (the reason this job runs on ubuntu-latest).
       - name: Deploy
         working-directory: apps/web
         env:

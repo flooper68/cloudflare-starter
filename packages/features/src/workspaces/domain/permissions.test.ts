@@ -42,6 +42,11 @@ describe("permissions", () => {
       expect(rolesAllowedTo(action)).toEqual(["owner", "member"]);
   });
 
+  it("lets every member run the container demo and read its runs", () => {
+    for (const action of ["containers.read", "containers.run"] as const)
+      expect(rolesAllowedTo(action)).toEqual(["owner", "member"]);
+  });
+
   it("keeps someone able to manage members: the creator's role can, and transfer ownership", () => {
     expect(ACTIONS["members.manage"].length).toBeGreaterThan(0);
     expect(can(CREATOR_ROLE, "members.manage")).toBe(true);

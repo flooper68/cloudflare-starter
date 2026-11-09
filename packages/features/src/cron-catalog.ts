@@ -24,6 +24,10 @@ import {
 } from "./storage-reconciliation";
 import { purgeExpiredTrashJob } from "./trash";
 
+// The container workflow demo (starter-only: container-workflow-demo).
+
+import { purgeContainerRunsJob } from "./container-runs";
+
 /** What a cron entry may use. */
 export interface CronDeps {
   readonly storageReconcile: StorageReconcileMode;
@@ -163,5 +167,17 @@ export const cronCatalog = createCronCatalog<CronDeps>([
         { context }
       );
     },
+  },
+  {
+    // The container workflow demo's retention: runs and results older than 7 days.
+    name: "container-runs.purge",
+    schedule: DAILY,
+    run: (deps, { scheduledTime, context }) =>
+      enqueueJob(
+        deps,
+        purgeContainerRunsJob,
+        { asOf: new Date(scheduledTime).toISOString() },
+        { context }
+      ),
   },
 ]);

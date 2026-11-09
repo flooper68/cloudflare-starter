@@ -30,6 +30,9 @@ export const ACTIONS = {
   "notes.read": ["owner", "member"],
   "notes.write": ["owner", "member"],
   "notes.delete": ["owner", "member"],
+  // The container workflow demo (Developer demos): every member runs and reads runs.
+  "containers.read": ["owner", "member"],
+  "containers.run": ["owner", "member"],
   "trash.read": ["owner", "member"],
   "trash.restore": ["owner", "member"],
   "trash.purge": ["owner"],
