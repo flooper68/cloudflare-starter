@@ -1,7 +1,14 @@
 // Accounts domain: the security notifications, the new-sign-in rule and connected agents.
 
 export { AgentNotFoundError } from "./agent-errors";
-export { SIGN_UP_METHODS, signedUpEvent } from "./analytics-events";
+export {
+  SIGN_UP_ATTEMPT_METHODS,
+  SIGN_UP_FAILURE_REASONS,
+  SIGN_UP_METHODS,
+  signedUpEvent,
+  signUpFailedEvent,
+  signUpStartedEvent,
+} from "./analytics-events";
 export {
   type AgentGrantRow,
   type AgentRefreshTokenRow,

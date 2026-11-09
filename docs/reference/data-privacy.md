@@ -53,7 +53,20 @@ The pipeline deletes the person's personal/sole-member workspaces and their live
 
 The retained `erasure_records` row contains only user id, requested time and completion time, with no FK to the erased account, no email and no payload. Preserve an up-to-date copy outside a rollback target before D1 Time Travel/backup restoration; reapply erasure for those ids through the same pipeline before reopening service. Restoring an older database without this post-restore step can resurrect deleted data. The starter does not silently restore or erase a remote database for you.
 
-Residual copies: D1 Time Travel and provider backups follow the account's configured retention; logs follow deployment retention; existing shared-workspace content belongs to that workspace; redacted audit history follows the configured audit retention; pseudonymous product analytics follows its provider retention. Consuming products must document their actual retention windows and legal policy. The minimal erasure ledger is retained to make the restoration procedure possible.
+Residual copies: D1 Time Travel and provider backups follow the account's configured retention; logs follow deployment retention; existing shared-workspace content belongs to that workspace; redacted audit history follows the configured audit retention; pseudonymous product analytics follows its provider retention (Workers Analytics Engine: 3 months). Consuming products must document their actual retention windows and legal policy. The minimal erasure ledger is retained to make the restoration procedure possible.
+
+## Analytics
+
+What product analytics collect ([product-analytics.md](product-analytics.md#privacy-and-erasure)):
+
+| Data                                                                                           | Where                               | Who it is about                                                                                   | Retention                            | On erasure                                         |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------- |
+| Product events of signed-in people (`auth.signed_up`, `notes.created`, `app.feature_tried`, …) | Analytics Engine `ANALYTICS_EVENTS` | a pseudonymous key (HMAC of the user id under `ANALYTICS_ID_SECRET`), never the id, name or email | 3 months (Analytics Engine)          | the key can no longer be tied to anyone; ages out  |
+| Site events of the public pages (`site.*`, `docs.page_viewed`, sign-up attempts)               | the same dataset                    | nobody: no cookie, no browser storage, no visitor id, no IP; the referrer's host only             | 3 months                             | nothing to erase                                   |
+| Funnel milestones (`analytics_milestones`: a feature id or `returned`, when)                   | D1                                  | the account                                                                                       | while the account exists             | deleted with it (cascade); in the account's export |
+| Web Analytics page views (`WEB_ANALYTICS=cloudflare`)                                          | Cloudflare Web Analytics            | nobody: cookieless, no query strings                                                              | Cloudflare's Web Analytics retention | nothing to erase                                   |
+
+The QA suite's accounts, demo mode's protected accounts, the bootstrap admin and impersonated sessions write no product events. No consent banner is needed for any of these: nothing is stored on the visitor's device and nothing identifies them.
 
 ## Demo retention
 

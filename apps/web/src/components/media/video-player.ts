@@ -7,7 +7,19 @@
  *   screen; the pause button is always there. Under prefers-reduced-motion it waits on
  *   its poster until the visitor presses Play.
  * - Missing media (not uploaded yet): the poster's designed stand-in stays, with a note.
+ * - Analytics (src/lib/site-analytics.ts): pressing Play on a walkthrough (or on a loop)
+ *   is `site.video_played` and a sign of interest, playing a walkthrough to its end
+ *   `site.video_completed`, once each per video and page view. A loop that plays on its
+ *   own counts nothing.
  */
+import { markEngaged, trackSiteEvent } from "@/lib/site-analytics";
+
+/** A visitor pressed Play on the video with this id. */
+function played(id: string | undefined): void {
+  if (!id) return;
+  trackSiteEvent("site.video_played", { video: id }, { once: `play:${id}` });
+  markEngaged("video");
+}
 
 class WalkthroughVideo extends HTMLElement {
   private video!: HTMLVideoElement;
@@ -43,6 +55,7 @@ class WalkthroughVideo extends HTMLElement {
     const chapters = [...this.querySelectorAll<HTMLButtonElement>(".wv-chap")];
     const start = (at: number) => {
       if (this.classList.contains("wv-unavailable")) return;
+      played(this.dataset.video);
       this.classList.add("wv-started");
       video.hidden = false;
       video.controls = true;
@@ -67,6 +80,15 @@ class WalkthroughVideo extends HTMLElement {
         start(Number(chapter.dataset.start))
       );
     }
+    video.addEventListener("ended", () => {
+      const id = this.dataset.video;
+      if (id)
+        trackSiteEvent(
+          "site.video_completed",
+          { video: id },
+          { once: `ended:${id}` }
+        );
+    });
     video.addEventListener("timeupdate", () => {
       let current: HTMLButtonElement | undefined;
       for (const chapter of chapters) {
@@ -105,6 +127,7 @@ class WalkthroughVideo extends HTMLElement {
     video.addEventListener("pause", label);
     toggle?.addEventListener("click", () => {
       chosen = video.paused;
+      if (chosen) played(this.dataset.video);
       if (chosen) void video.play().catch(() => {});
       else video.pause();
     });

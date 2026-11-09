@@ -12,6 +12,7 @@ import {
   flagRulesSchema,
   flagUpdateSchema,
   getAdminOverview,
+  getAnalyticsReport,
   getDemoStats,
   getUserDetail,
   getWorkspaceDetail,
@@ -21,6 +22,7 @@ import {
   listFlags,
   listUsers,
   PLATFORM_ROLES,
+  REPORT_PERIODS,
   requestDataExport,
   requestStorageReconciliation,
   resetSecondFactor,
@@ -122,6 +124,25 @@ export const adminRouter = router({
           ? await getDemoStats(ctx, ctx.admin, ctx.demo.policy)
           : null,
     })),
+  }),
+
+  analytics: router({
+    // The product funnel and its breakdowns, read from Analytics Engine with the
+    // analytics read token (status not_configured without it); nothing is stored.
+    get: adminProcedure
+      .input(
+        z.object({
+          days: z
+            .union([z.literal(1), z.literal(7), z.literal(30)])
+            .default(7)
+            .describe(
+              `The period in days: ${REPORT_PERIODS.join(", ")}. Default 7.`
+            ),
+        })
+      )
+      .query(({ ctx, input }) =>
+        getAnalyticsReport(ctx, ctx.analyticsRead(), { days: input.days })
+      ),
   }),
 
   health: router({

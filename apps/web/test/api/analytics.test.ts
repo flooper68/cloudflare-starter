@@ -210,7 +210,9 @@ describe("server events", () => {
     points.length = 0;
     const team = await callerFor(grace).workspace.create({ name: "Acme" });
     expect(
-      decoded().map((point) => [point.event, point.workspace, point.properties])
+      decoded()
+        .slice(0, 2)
+        .map((point) => [point.event, point.workspace, point.properties])
     ).toEqual([
       ["workspaces.created", key(team.id), { kind: "shared" }],
       [
@@ -218,6 +220,14 @@ describe("server events", () => {
         key(team.id),
         { role: "owner", workspace_size: "1", plan: NEW_WORKSPACE_PLAN_ID },
       ],
+    ]);
+    // The funnel: the first workspace created is the workspaces feature tried.
+    expect(
+      decoded()
+        .slice(2)
+        .map((point) => [point.event, point.user, point.properties])
+    ).toEqual([
+      ["app.feature_tried", key(grace.id), { feature: "workspaces" }],
     ]);
   });
 
@@ -252,6 +262,8 @@ describe("server events", () => {
         key(alan.id),
         { content_category: "text", size_bytes: 10 },
       ],
+      // The funnel: the first upload is the files feature tried.
+      ["app.feature_tried", key(alan.id), { feature: "files" }],
     ]);
     expect(JSON.stringify(points)).not.toContain("salaries");
   });

@@ -36,6 +36,7 @@ From `abuse/domain/policies.ts`. Every mutation has a policy (the default is `mu
 | `container.run`             | 3 / 60 s   | user | edge        | Container workflow demo runs a user starts (containerRuns.start): each starts a billed container                                                                                                                                                                                           |
 | `analytics.client`          | 120 / 60 s | user | edge        | Client analytics batches (analytics.track), per user; kept apart from mutation.user so telemetry never uses up a user's mutations                                                                                                                                                          |
 | `health.ip`                 | 120 / 60 s | ip   | edge        | The public health endpoints (/health, /health/live, /health/ready), per IP: anonymous, and readiness queries D1 and R2 on each call                                                                                                                                                        |
+| `site.events`               | 60 / 60 s  | ip   | edge        | Anonymous analytics batches of the public pages (POST /api/site-events), per IP: no account, so no per-user budget                                                                                                                                                                         |
 | `csp.report`                | 30 / 60 s  | ip   | edge        | Content-Security-Policy violation reports (/api/csp-report), per IP: anonymous and each report is a log line                                                                                                                                                                               |
 | `qa.bypass`                 | 30 / 60 s  | ip   | edge        | Requests that carry the QA token (x-qa-token): on a human-checked auth endpoint, and every request to /api/qa/outbox and /api/qa/cleanup; per IP, counted before the token is compared (QA_BYPASS=on only)                                                                                 |
 
@@ -106,17 +107,29 @@ From `analytics-events.ts`. Pseudonymous ids only, no personal data: [product an
 
 <!-- generated:events -->
 
-| Event                               | Sent from | What happened                                                                                    |
-| ----------------------------------- | --------- | ------------------------------------------------------------------------------------------------ |
-| `auth.signed_up`                    | server    | An account was created; how (password, social provider)                                          |
-| `files.uploaded`                    | server    | A file was stored in a workspace through the Worker; its category and size                       |
-| `notes.created`                     | server    | A note was created in a workspace; the bucket of its body length                                 |
-| `container_runs.started`            | server    | A container workflow demo run was started; its digits preset and whether it retries a failed run |
-| `workspaces.created`                | server    | A workspace was created (personal at sign-up, or shared)                                         |
-| `workspaces.member_joined`          | server    | A user joined a workspace: by accepting an invitation, or at sign-up in single mode              |
-| `app.page_viewed`                   | browser   | A page of the /app SPA was shown (route pattern only)                                            |
-| `app.command_palette_opened`        | browser   | The command palette opened (shortcut or trigger)                                                 |
-| `app.command_palette_item_selected` | browser   | A command palette item was picked (its kind only)                                                |
+| Event                               | Sent from     | What happened                                                                                         |
+| ----------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
+| `auth.signed_up`                    | server        | An account was created; how (password, social provider)                                               |
+| `files.uploaded`                    | server        | A file was stored in a workspace through the Worker; its category and size                            |
+| `notes.created`                     | server        | A note was created in a workspace; the bucket of its body length                                      |
+| `container_runs.started`            | server        | A container workflow demo run was started; its digits preset and whether it retries a failed run      |
+| `workspaces.created`                | server        | A workspace was created (personal at sign-up, or shared)                                              |
+| `workspaces.member_joined`          | server        | A user joined a workspace: by accepting an invitation, or at sign-up in single mode                   |
+| `app.page_viewed`                   | app (browser) | A page of the /app SPA was shown (route pattern only)                                                 |
+| `app.command_palette_opened`        | app (browser) | The command palette opened (shortcut or trigger)                                                      |
+| `app.command_palette_item_selected` | app (browser) | A command palette item was picked (its kind only)                                                     |
+| `auth.sign_up_started`              | public pages  | The sign-up form was submitted (password) or Google chosen, before an account exists                  |
+| `auth.sign_up_failed`               | public pages  | A sign-up attempt failed: invalid form, bot check, existing account, not allowed, rate limited, error |
+| `app.feature_tried`                 | server        | A person used a feature for the first time (once per person and feature)                              |
+| `app.session_returned`              | server        | A person opened the app on a later day than their sign-up (once per person; whole days since)         |
+| `site.page_viewed`                  | public pages  | A public page was shown: its kind, whether it started a visit, and the referring host                 |
+| `site.page_scrolled`                | public pages  | A visitor scrolled past 25, 50, 75 or 100 % of a public page (once per mark and view)                 |
+| `site.page_engaged`                 | public pages  | A page view showed interest (scroll past half, video, feature map, docs), once per view               |
+| `site.cta_clicked`                  | public pages  | A call to action was clicked: which one and where on the page                                         |
+| `site.video_played`                 | public pages  | A video on a public page started playing (once per video and view)                                    |
+| `site.video_completed`              | public pages  | A video on a public page played to the end                                                            |
+| `site.feature_map_used`             | public pages  | The feature map was used: a group selected or the map filtered (once per action and view)             |
+| `docs.page_viewed`                  | public pages  | A docs page was shown: its section only (guides, reference, …)                                        |
 
 <!-- /generated:events -->
 

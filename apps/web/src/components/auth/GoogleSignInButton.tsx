@@ -5,15 +5,19 @@ import { authClient, authErrorMessage, nextPath } from "@/lib/auth-client";
 
 export function GoogleSignInButton({
   onError,
+  onStart,
   search = "",
 }: {
   readonly onError: (message: string) => void;
+  /** Called when the person chooses Google, before leaving for it (the sign-up funnel). */
+  readonly onStart?: () => void;
   /** The page query: `?next=` is where to land after signing in. */
   readonly search?: string;
 }) {
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
+    onStart?.();
     setLoading(true);
     const { error } = await authClient.signIn.social({
       provider: "google",

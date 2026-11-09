@@ -11,11 +11,15 @@ export {
   passwordChangedNotification,
   type SecurityDecision,
   type SecuritySettings,
+  SIGN_UP_ATTEMPT_METHODS,
+  SIGN_UP_FAILURE_REASONS,
   SIGN_UP_METHODS,
   securityDecision,
   securityFactorChangedNotification,
   securitySettingsSchema,
   signedUpEvent,
+  signUpFailedEvent,
+  signUpStartedEvent,
   TWO_FACTOR_MODES,
 } from "./domain";
 export { SecondFactorRequiredError } from "./domain/security-error";

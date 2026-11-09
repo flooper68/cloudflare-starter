@@ -1,0 +1,32 @@
+---
+/**
+ * The public pages' own analytics (src/lib/site-analytics.ts): a meta tag naming the
+ * endpoint and the page kind, and the script that sends the page view, scroll marks,
+ * calls to action and videos. Only with ANALYTICS=analytics-engine; a prerendered page
+ * decides at build time from the plain var, like WebAnalytics.astro. Pages whose URL
+ * carries a credential leave it out (`<Layout analytics={false}>`).
+ * docs/reference/product-analytics.md#site-events
+ */
+import { env } from "cloudflare:workers";
+
+import { sitePageOf } from "@/lib/site-analytics";
+
+const enabled =
+  (env as { ANALYTICS?: string }).ANALYTICS === "analytics-engine";
+const page = sitePageOf(Astro.url.pathname);
+---
+
+{
+  enabled && (
+    <meta name="app-site-events" content="/api/site-events" data-page={page} />
+  )
+}
+{
+  enabled && (
+    <script>
+      import { startSiteAnalytics } from "@/lib/site-analytics";
+
+      startSiteAnalytics();
+    </script>
+  )
+}

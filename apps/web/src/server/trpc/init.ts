@@ -3,6 +3,7 @@ import {
   type Actor,
   type AdminActor,
   type AdminAuthGateway,
+  type AnalyticsReadSettings,
   type BillingGate,
   type BillingProvider,
   type Clock,
@@ -13,6 +14,7 @@ import {
   type EmailService,
   type ErrorReporter,
   enforceRateLimit,
+  FEATURE_TRIAL_PROCEDURES,
   type FeatureFlagStore,
   type FeatureFlags,
   findAdminAccess,
@@ -30,9 +32,11 @@ import {
   type RateLimiter,
   ReauthRequiredError,
   type RequestContext,
+  recordFeatureTried,
   resolveActor,
   SecondFactorRequiredError,
   type Tracer,
+  type TriedFeature,
 } from "@cloudflare-starter/features";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -80,6 +84,8 @@ export interface Context {
   readonly qaAdminEmail: string | null;
   /** Product analytics of this request; use cases track with `trackEvent`. */
   readonly analytics: ProductAnalytics;
+  /** What the admin portal's analytics report reads from (server/analytics-read.ts). */
+  readonly analyticsRead: () => AnalyticsReadSettings;
   /** Entitlement checks and usage counting for use cases (BILLING). */
   readonly billing: BillingGate;
   /** Checkout, portal and webhooks; noop unless BILLING=provider. */
@@ -231,12 +237,35 @@ const limitMutations = t.middleware(async ({ ctx, type, path, next }) => {
   return next();
 });
 
+/**
+ * The funnel's "tried a feature" milestone (FEATURE_TRIAL_PROCEDURES): after a successful
+ * mutation of a signed-in person, and for any call from an MCP client (an agent is
+ * connected). Once per person and feature; never fails the call.
+ */
+const recordFeatureTrials = t.middleware(async ({ ctx, type, path, next }) => {
+  const result = await next();
+  if (!result.ok || !ctx.user) return result;
+  const features = new Set<TriedFeature>();
+  const feature = type === "mutation" ? FEATURE_TRIAL_PROCEDURES[path] : null;
+  if (feature) features.add(feature);
+  if (ctx.agentClientId) features.add("agents");
+  for (const tried of features) {
+    await recordFeatureTried(
+      ctx,
+      { ...ctx.requestContext, userId: ctx.user.id },
+      tried
+    );
+  }
+  return result;
+});
+
 export const router = t.router;
 export const publicProcedure = t.procedure
   .use(instrument)
   .use(reportInternalErrors)
   .use(mapDomainErrors)
-  .use(limitMutations);
+  .use(limitMutations)
+  .use(recordFeatureTrials);
 
 export const signedInProcedure = publicProcedure.use(({ ctx, next }) => {
   if (!ctx.user) {

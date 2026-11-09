@@ -13,6 +13,7 @@
 import {
   type AuditEventInput,
   createRequestContext,
+  FEATURE_TRIAL_AUTH_PATHS,
   type Notify,
   notify,
   notifyNewSignIn,
@@ -20,6 +21,7 @@ import {
   type RequestContext,
   randomIds,
   recordAuditEvent,
+  recordFeatureTried,
   signedUpEvent,
   systemClock,
   trackEvent,
@@ -27,6 +29,7 @@ import {
 import type { BetterAuthOptions, GenericEndpointContext } from "better-auth";
 import { isAPIError } from "better-auth/api";
 
+import { productAnalyticsFor } from "@/server/analytics-audience";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { buildPlatform } from "@/server/platform";
@@ -182,9 +185,11 @@ export function auditDatabaseHooks(
               : method === "social"
                 ? "social"
                 : "other";
-          // Product analytics: never throws, so it cannot fail the sign-up.
+          // Product analytics: never throws, so it cannot fail the sign-up. QA and
+          // protected accounts are left out (server/analytics-audience.ts).
+          const analytics = productAnalyticsFor(env, { email: user.email });
           trackEvent(
-            { analytics: buildPlatform(env).productAnalytics() },
+            { analytics },
             { ...contextFor(env, ctx), userId: user.id, workspaceId: null },
             signedUpEvent,
             { method: signUpMethod, provider: provider ?? null }
@@ -215,6 +220,7 @@ export async function auditAuthEndpoint(
 ): Promise<void> {
   // Set by Better Auth's dispatcher before after-hooks run; not in its public context type.
   const { returned } = ctx.context as { readonly returned?: unknown };
+  await recordAuthFeatureTrial(env, ctx, returned);
 
   if (ctx.path === "/change-password") {
     const userId = ctx.context.session?.user.id;
@@ -307,6 +313,37 @@ async function auditAgentAuthorized(
       ...(scopes.length ? { scopes } : {}),
     },
   });
+}
+
+/**
+ * The funnel's "tried a feature" milestone for Better Auth's own endpoints
+ * (FEATURE_TRIAL_AUTH_PATHS: a passkey added, two-factor turned on, an agent authorized):
+ * once per person, only when the endpoint succeeded. Never fails the request.
+ */
+async function recordAuthFeatureTrial(
+  env: AppEnv,
+  ctx: GenericEndpointContext,
+  returned: unknown
+): Promise<void> {
+  const feature = FEATURE_TRIAL_AUTH_PATHS[ctx.path];
+  const user = ctx.context.session?.user;
+  if (!feature || !user || isAPIError(returned)) return;
+  if (ctx.path === "/oauth2/consent") {
+    const accepted = (ctx.body as { accept?: unknown } | undefined)?.accept;
+    if (accepted !== true) return;
+  }
+  const platform = buildPlatform(env);
+  const context = { ...contextFor(env, ctx), userId: user.id };
+  await recordFeatureTried(
+    {
+      db: getDb(env),
+      clock: systemClock,
+      analytics: productAnalyticsFor(env, { email: user.email }),
+      logger: platform.logger.withContext(context),
+    },
+    context,
+    feature
+  );
 }
 
 /**

@@ -9,6 +9,7 @@ import { env } from "cloudflare:workers";
 
 import { prerenderedWebAnalytics } from "@/lib/web-analytics";
 import { buildPlatform } from "@/server/platform";
+import { WEB_ANALYTICS_SCRIPT } from "@/server/security-headers";
 
 interface Props {
   spa?: boolean;
@@ -27,7 +28,7 @@ const beacon = webAnalytics
     <script
       is:inline
       defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
+      src={WEB_ANALYTICS_SCRIPT}
       data-cf-beacon={beacon}
     />
   )

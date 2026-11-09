@@ -79,6 +79,7 @@ Every tool an agent can call at `<APP_URL>/mcp`, generated from the tool registr
 | `admin_ban_user`               | Admin: suspend user             | write, destructive | `admin.users.ban`               |
 | `admin_delete_storage_orphans` | Delete dangling storage         | write, destructive | `admin.storage.deleteOrphans`   |
 | `admin_delete_workspace`       | Admin: delete workspace         | write, destructive | `admin.workspaces.delete`       |
+| `admin_get_analytics`          | Admin: analytics                | read               | `admin.analytics.get`           |
 | `admin_get_health`             | Admin: health                   | read               | `admin.health.get`              |
 | `admin_get_overview`           | Admin: overview                 | read               | `admin.overview.get`            |
 | `admin_get_settings`           | Admin: deployment settings      | read               | `admin.settings.get`            |

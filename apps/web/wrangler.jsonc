@@ -54,6 +54,10 @@
     "FEATURE_FLAGS": "d1",
     "METRICS": "analytics-engine",
     "TRACING": "workers",
+    // The datasets the admin Analytics page reads with the SQL API: the same names as the
+    // ANALYTICS_EVENTS and METRICS_DATASET bindings below (test/architecture/product-analytics.test.ts).
+    "ANALYTICS_EVENTS_DATASET": "cloudflare_starter_develop_product_events",
+    "METRICS_DATASET_NAME": "cloudflare_starter_develop_metrics",
     // Required, no default: off | report | delete (the daily orphan check itself is optional).
     "STORAGE_RECONCILE": "off",
     // Demo mode (starter-only; docs/guides/how-to-run-a-public-demo.md): off | on, required,
@@ -155,7 +159,7 @@
   // (test/architecture/abuse.test.ts). Periods are 10 or 60 s. namespace_id is a positive
   // integer that must be unique in the whole Cloudflare ACCOUNT, not just this file: every
   // Worker binding the same id shares its counters. No resource to create. These ids
-  // (7001–7014 develop, 8001–8014 staging, 9001–9014 production) are the starter's own; a
+  // (7001–7015 develop, 8001–8015 staging, 9001–9015 production) are the starter's own; a
   // project built from it gets its own block from `bun run setup:cloudflare` (or
   // --namespace-base). Simulated locally.
   "ratelimits": [
@@ -220,6 +224,11 @@
       "simple": { "limit": 30, "period": 60 }
     },
     {
+      "name": "RL_SITE_EVENTS",
+      "namespace_id": "7015",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
       "name": "RL_QA_BYPASS",
       "namespace_id": "7013",
       "simple": { "limit": 30, "period": 60 }
@@ -265,6 +274,10 @@
         "FEATURE_FLAGS": "d1",
         "METRICS": "analytics-engine",
         "TRACING": "workers",
+        // The datasets the admin Analytics page reads with the SQL API: the same names as the
+        // ANALYTICS_EVENTS and METRICS_DATASET bindings below (test/architecture/product-analytics.test.ts).
+        "ANALYTICS_EVENTS_DATASET": "cloudflare_starter_staging_product_events",
+        "METRICS_DATASET_NAME": "cloudflare_starter_staging_metrics",
         // Required, no default: off | report | delete (the daily orphan check itself is optional).
         "STORAGE_RECONCILE": "off",
         // staging: on, exactly as production, so a release rehearses the demo retention
@@ -396,6 +409,11 @@
           "simple": { "limit": 30, "period": 60 }
         },
         {
+          "name": "RL_SITE_EVENTS",
+          "namespace_id": "8015",
+          "simple": { "limit": 60, "period": 60 }
+        },
+        {
           "name": "RL_QA_BYPASS",
           "namespace_id": "8013",
           "simple": { "limit": 30, "period": 60 }
@@ -444,6 +462,10 @@
         "FEATURE_FLAGS": "d1",
         "METRICS": "analytics-engine",
         "TRACING": "workers",
+        // The datasets the admin Analytics page reads with the SQL API: the same names as the
+        // ANALYTICS_EVENTS and METRICS_DATASET bindings below (test/architecture/product-analytics.test.ts).
+        "ANALYTICS_EVENTS_DATASET": "cloudflare_starter_production_product_events",
+        "METRICS_DATASET_NAME": "cloudflare_starter_production_metrics",
         // Required, no default: off | report | delete (the daily orphan check itself is optional).
         "STORAGE_RECONCILE": "report",
         // production: on (owner decision). The public site's "Try the demo app" points
@@ -596,6 +618,11 @@
           "name": "RL_CSP_REPORT",
           "namespace_id": "9012",
           "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "RL_SITE_EVENTS",
+          "namespace_id": "9015",
+          "simple": { "limit": 60, "period": 60 }
         },
         {
           "name": "RL_QA_BYPASS",

@@ -79,6 +79,13 @@ function context(overrides: Partial<Context> = {}): Context {
     rateLimiter: noopRateLimiter,
     qaAdminEmail: null,
     analytics: noopProductAnalytics,
+    analyticsRead: () => ({
+      reader: null,
+      accountId: null,
+      eventsDataset: null,
+      metricsDataset: null,
+      webAnalyticsSiteTag: null,
+    }),
     billing: {
       requireFeature: async () => {},
       requireLimit: async () => {},

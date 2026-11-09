@@ -52,11 +52,11 @@ report-to csp-endpoint
 - **Styles.** Our stylesheets and inline styles (`'self' 'unsafe-inline'`, no hashes, [an exception](#exceptions)): Radix's modal primitives (Dialog, Sheet, menus, Select) append a `<style>` computed from the measured scrollbar width at runtime, which no build-time hash can match, and sonner injects its toast stylesheet. A hash in `style-src` would switch `'unsafe-inline'` off, so Astro's style hashes are dropped. Injected CSS cannot run script.
 - **Third parties, only when their setting is on:**
 
-  | Setting                            | Adds                                                                                                                 |
-  | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-  | `TURNSTILE=on`                     | `https://challenges.cloudflare.com` to `script-src` and `frame-src` (the widget's script and its iframe)             |
-  | `WEB_ANALYTICS=cloudflare`         | `https://static.cloudflareinsights.com` to `script-src`, `https://cloudflareinsights.com` to `connect-src`           |
-  | presigned uploads (`R2_*` all set) | `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com/<R2_FILES_BUCKET_NAME>/` to `connect-src` (the browser PUTs there) |
+  | Setting                            | Adds                                                                                                                                                                                                              |
+  | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `TURNSTILE=on`                     | `https://challenges.cloudflare.com` to `script-src` and `frame-src` (the widget's script and its iframe)                                                                                                          |
+  | `WEB_ANALYTICS=cloudflare`         | exactly `https://static.cloudflareinsights.com/beacon.min.js` to `script-src` and `https://cloudflareinsights.com/cdn-cgi/rum` to `connect-src` (the manual beacon and where it reports; never the whole origins) |
+  | presigned uploads (`R2_*` all set) | `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com/<R2_FILES_BUCKET_NAME>/` to `connect-src` (the browser PUTs there)                                                                                              |
 
 - **Images.** `'self'` (avatars and logos come from `/api/account/avatar/*` and `/api/workspaces/*/logo/*`) and `data:` (the TOTP QR code).
 - **Forms** post only to the app (`form-action 'self'`): Google sign-in and the OAuth consent redirect with `window.location`, which `form-action` does not govern.
@@ -116,7 +116,7 @@ bun apps/web/scripts/write-static-headers.ts
 The pages Astro prerenders (the landing page `/`, `/docs/*`, and the 404 the Worker answers unknown paths with, served as `/404`; [how-to-publish-docs-and-landing.md](../guides/how-to-publish-docs-and-landing.md)) are static assets too, so they get their policy from `_headers`: `PRERENDERED_PAGE_PATHS` in `security-headers.ts` get `PRERENDERED_PAGE_CSP` (`default-src 'self'`, scripts from this origin only, `script-src-attr 'none'`, inline styles allowed, the Web Analytics origins, no plugins, no framing, `report-uri /api/csp-report`). Astro also writes its policy into each prerendered page as a `<meta http-equiv="content-security-policy">` (script hashes, and the `style-src` of `security.csp.styleDirective`); the browser enforces both. Differences from the per-request page policy, because a static file knows neither the origin nor the settings:
 
 - `script-src 'self'` instead of `<origin>/_astro/`: a source with a path needs the origin. The pages hold no user content, so nothing on them can point a script at `/api/files`.
-- The Web Analytics origins are always allowed (the rule is the same in every environment).
+- The Web Analytics beacon and its report endpoint are always allowed, those two URLs only (`WEB_ANALYTICS_SCRIPT`, `WEB_ANALYTICS_REPORT`; the rule is the same in every environment), in `_headers` and in Astro's `<meta>` (`security.csp.scriptDirective` in `astro.config.mjs`), since the browser enforces both. An edge-injected beacon (`/beacon.min.js/v…`) or any other script of the origin is blocked; `test/e2e-build/analytics.spec.ts` runs the beacon on the built landing and docs pages with no violation.
 - `style-src 'self' 'unsafe-inline'` also in the `<meta>`: Shiki colours code with `style` attributes, and a style hash in the policy would switch `'unsafe-inline'` off.
 - `'wasm-unsafe-eval'` in `script-src` (header and `<meta>`, through `security.csp.scriptDirective`): the docs search (Pagefind) compiles WebAssembly. It allows no JavaScript `eval`.
 

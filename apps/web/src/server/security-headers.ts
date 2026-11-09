@@ -30,10 +30,16 @@ export const CSP_REPORT_GROUP = "csp-endpoint";
 
 /** Cloudflare Turnstile: its script and its challenge iframe. */
 export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
-/** Cloudflare Web Analytics: the beacon script and where it sends page views. */
-export const WEB_ANALYTICS_SCRIPT_ORIGIN =
-  "https://static.cloudflareinsights.com";
-export const WEB_ANALYTICS_REPORT_ORIGIN = "https://cloudflareinsights.com";
+/**
+ * Cloudflare Web Analytics, the manual beacon (components/WebAnalytics.astro): exactly the
+ * beacon script and exactly the endpoint it reports page views to, nothing else of either
+ * origin. A source with a path but no trailing slash matches only that URL (CSP 3), so an
+ * edge-injected beacon (`/beacon.min.js/v…`) or another script of the origin stays blocked.
+ */
+export const WEB_ANALYTICS_SCRIPT =
+  "https://static.cloudflareinsights.com/beacon.min.js";
+export const WEB_ANALYTICS_REPORT =
+  "https://cloudflareinsights.com/cdn-cgi/rum";
 
 /** One year, as OWASP recommends. No `preload`: see the guide before adding it. */
 export const HSTS_VALUE = "max-age=31536000; includeSubDomains";
@@ -163,8 +169,9 @@ export const PAGE_STYLE_SRC = "'self' 'unsafe-inline'";
  * it), only files from this origin: no path can be pinned without knowing the origin,
  * so script-src is 'self' (the pages hold no user content that could point a script
  * at /api/files). Styles may be inline: Shiki colours code with `style` attributes.
- * The Web Analytics origins are always allowed here, because the rule is the same in
- * every environment while WEB_ANALYTICS differs.
+ * The Web Analytics beacon and its report endpoint (those two URLs only) are always
+ * allowed here, because the rule is the same in every environment while WEB_ANALYTICS
+ * differs; Astro's <meta> policy allows the same beacon URL (astro.config.mjs).
  */
 // /: the landing page. /404: the Worker answers an unknown path with this prerendered
 // asset and its headers.
@@ -214,12 +221,12 @@ export const PAGEFIND_CSP = [
 export const PRERENDERED_PAGE_CSP = [
   "default-src 'self'",
   // Pagefind (the docs search) runs WebAssembly.
-  `script-src 'self' 'wasm-unsafe-eval' ${WEB_ANALYTICS_SCRIPT_ORIGIN}`,
+  `script-src 'self' 'wasm-unsafe-eval' ${WEB_ANALYTICS_SCRIPT}`,
   "script-src-attr 'none'",
   `style-src ${PAGE_STYLE_SRC}`,
   "img-src 'self' data:",
   "font-src 'self'",
-  `connect-src 'self' ${WEB_ANALYTICS_REPORT_ORIGIN}`,
+  `connect-src 'self' ${WEB_ANALYTICS_REPORT}`,
   "frame-src 'none'",
   "worker-src 'self'",
   "manifest-src 'self'",
@@ -249,11 +256,11 @@ export function pagePolicy(input: PagePolicyInput): string {
         ...input.scriptHashes,
       ];
   if (input.turnstile) script.push(TURNSTILE_ORIGIN);
-  if (input.webAnalytics) script.push(WEB_ANALYTICS_SCRIPT_ORIGIN);
+  if (input.webAnalytics) script.push(WEB_ANALYTICS_SCRIPT);
 
   const connect = ["'self'"];
   if (input.uploadOrigin) connect.push(input.uploadOrigin);
-  if (input.webAnalytics) connect.push(WEB_ANALYTICS_REPORT_ORIGIN);
+  if (input.webAnalytics) connect.push(WEB_ANALYTICS_REPORT);
   // Vite's hot-reload socket.
   if (input.dev) connect.push(input.origin.replace(/^http/, "ws"));
 

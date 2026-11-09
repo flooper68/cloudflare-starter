@@ -3,8 +3,14 @@ import { z } from "zod";
 
 import { defineEvent } from "../../kernel";
 import { pageViewedEvent } from "./analytics-events";
-import { clientBatchSchema, parseClientBatch } from "./client-batch";
+import {
+  clientBatchSchema,
+  parseClientBatch,
+  parseSiteBatch,
+  siteBatchSchema,
+} from "./client-batch";
 import { createEventCatalog } from "./event-catalog";
+import { siteCtaClickedEvent } from "./site-events";
 
 const serverOnly = defineEvent(
   "files.uploaded",
@@ -73,5 +79,49 @@ describe("parseClientBatch", () => {
     expect(() =>
       parseClientBatch(catalog, { events: [view("https://a.test/?q=1")] })
     ).toThrow("events[0]: invalid properties for app.page_viewed");
+  });
+});
+
+describe("site batches", () => {
+  const siteCatalog = createEventCatalog([
+    pageViewedEvent,
+    serverOnly,
+    siteCtaClickedEvent,
+  ]);
+  const click = {
+    event: "site.cta_clicked",
+    properties: { cta: "demo", placement: "hero" },
+  };
+
+  it("accepts 1 to 10 events", () => {
+    expect(siteBatchSchema.safeParse({ events: [click] }).success).toBe(true);
+    expect(
+      siteBatchSchema.safeParse({
+        events: Array.from({ length: 11 }, () => click),
+      }).success
+    ).toBe(false);
+  });
+
+  it("parses site events with their properties", () => {
+    expect(
+      parseSiteBatch(siteCatalog, { events: [click] }).map((event) => [
+        event.definition.name,
+        event.properties,
+      ])
+    ).toEqual([["site.cta_clicked", { cta: "demo", placement: "hero" }]]);
+  });
+
+  it.each([
+    ["an app event", view("/app")],
+    ["a server event", { event: "files.uploaded", properties: {} }],
+    ["an unknown event", { event: "site.nope", properties: {} }],
+    [
+      "bad properties",
+      { event: "site.cta_clicked", properties: { cta: "Try it!" } },
+    ],
+  ])("refuses the whole batch for %s", (_, event) => {
+    expect(() =>
+      parseSiteBatch(siteCatalog, { events: [click, event] })
+    ).toThrow(/events\[1\]/);
   });
 });

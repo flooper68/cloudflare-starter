@@ -18,6 +18,11 @@ export {
   toAnalyticsEngineDataPoint,
 } from "./analytics-engine-product-analytics";
 export {
+  CLOUDFLARE_API,
+  type CloudflareAnalyticsReaderConfig,
+  createCloudflareAnalyticsReader,
+} from "./cloudflare-analytics-reader";
+export {
   type CloudflareEmailConfig,
   createCloudflareEmail,
 } from "./cloudflare-email";

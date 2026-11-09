@@ -9,9 +9,12 @@ import { brand } from "@cloudflare-starter/ui";
 import { AppSpa } from "@/components/app/AppSpa";
 import { destinationTitle, documentTitle } from "@/components/app/navigation";
 import WebAnalytics from "@/components/WebAnalytics.astro";
+import { recordReturnOf } from "@/server/return-visit";
 import { serializeBootstrap, spaBootstrap } from "@/server/spa-bootstrap";
 
 const bootstrap = await spaBootstrap(env, Astro.locals);
+// The funnel's return step: the first visit on a later day than the sign-up.
+await recordReturnOf(env, Astro.locals);
 // The tab's title before the SPA starts; the SPA keeps it current (AppLayout).
 const title = documentTitle(destinationTitle(Astro.url.pathname), brand);
 ---

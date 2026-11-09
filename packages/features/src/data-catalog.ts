@@ -409,4 +409,13 @@ export const DATA_CATALOG: readonly DataEntity[] = [
     reason:
       "Passkey metadata only, no public key, credential id, counter or secrets.",
   },
+  {
+    table: "analytics_milestones",
+    scope: "user",
+    columns: ["milestone", "reached_at"],
+    userColumn: "user_id",
+    erase: "user-cascade",
+    reason:
+      "Which funnel milestones the person reached (a feature first tried, a return on a later day) and when, so each analytics event is sent once; no content. Deleted with the account.",
+  },
 ];

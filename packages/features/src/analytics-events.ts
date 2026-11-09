@@ -3,7 +3,11 @@
 // with trackEvent; registering one here is what lets it in. test/architecture/product-analytics.test.ts
 // checks that every declared event is registered and tracked, and that every tracked or
 // client-sent name is here. Guide: docs/guides/how-to-setup-product-analytics.md
-import { signedUpEvent } from "./accounts";
+import {
+  signedUpEvent,
+  signUpFailedEvent,
+  signUpStartedEvent,
+} from "./accounts";
 import { containerRunStartedEvent } from "./container-runs";
 import { fileUploadedEvent } from "./files";
 import { noteCreatedEvent } from "./notes";
@@ -11,7 +15,17 @@ import {
   commandPaletteItemSelectedEvent,
   commandPaletteOpenedEvent,
   createEventCatalog,
+  docsPageViewedEvent,
+  featureTriedEvent,
   pageViewedEvent,
+  sessionReturnedEvent,
+  siteCtaClickedEvent,
+  siteFeatureMapUsedEvent,
+  sitePageEngagedEvent,
+  sitePageScrolledEvent,
+  sitePageViewedEvent,
+  siteVideoCompletedEvent,
+  siteVideoPlayedEvent,
 } from "./product-analytics";
 import { memberJoinedEvent, workspaceCreatedEvent } from "./workspaces";
 
@@ -25,4 +39,16 @@ export const analyticsEvents = createEventCatalog([
   pageViewedEvent,
   commandPaletteOpenedEvent,
   commandPaletteItemSelectedEvent,
+  signUpStartedEvent,
+  signUpFailedEvent,
+  featureTriedEvent,
+  sessionReturnedEvent,
+  sitePageViewedEvent,
+  sitePageScrolledEvent,
+  sitePageEngagedEvent,
+  siteCtaClickedEvent,
+  siteVideoPlayedEvent,
+  siteVideoCompletedEvent,
+  siteFeatureMapUsedEvent,
+  docsPageViewedEvent,
 ]);

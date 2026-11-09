@@ -11,6 +11,7 @@
 import "@cloudflare-starter/ui/globals.css";
 import "@/styles/globals.css";
 
+import SiteEvents from "@/components/SiteEvents.astro";
 import WebAnalytics from "@/components/WebAnalytics.astro";
 import { DOCS } from "@/docs/docs.config";
 
@@ -65,6 +66,7 @@ const canonical = Astro.site
       )
     }
     <script is:inline src="/site-theme.js"></script>
+    <SiteEvents />
   </head>
   <body class="flex min-h-screen flex-col bg-canvas text-fg">
     <a

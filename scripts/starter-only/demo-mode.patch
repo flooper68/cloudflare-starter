@@ -1,5 +1,5 @@
 diff --git a/apps/web/.dev.vars.example b/apps/web/.dev.vars.example
-index 2ca89cc..01c98de 100644
+index 738ee7b..56b66cc 100644
 --- a/apps/web/.dev.vars.example
 +++ b/apps/web/.dev.vars.example
 @@ -12,6 +12,2 @@ APP_ENV=local
@@ -10,24 +10,24 @@ index 2ca89cc..01c98de 100644
 -DEMO_MODE=off
  APP_URL=http://localhost:4321
 diff --git a/apps/web/astro.config.mjs b/apps/web/astro.config.mjs
-index 5063798..d103e65 100644
+index dba4469..e73b245 100644
 --- a/apps/web/astro.config.mjs
 +++ b/apps/web/astro.config.mjs
-@@ -13,3 +13,2 @@ import {
- import { siteIntegrations } from "./src/docs/site-integrations.ts";
+@@ -16,3 +16,2 @@ import { WEB_ANALYTICS_SCRIPT } from "./src/server/security-headers.ts";
+ import { localAnalyticsPlugins } from "./test/e2e/analytics-vite.mjs";
 -import { demoAdapterOptions, localDemoPlugins } from "./test/e2e/demo-vite.mjs";
  import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
-@@ -30,4 +29,2 @@ export default defineConfig({
+@@ -32,4 +31,2 @@ export default defineConfig({
      imageService: "passthrough",
 -    // The demo-mode E2E server only (test/e2e/demo-vite.mjs): its own local state.
 -    ...demoAdapterOptions(process.env.E2E_DEMO_PORT),
      // MEDIA_STATE_DIR: the walkthrough recorder (media/record.ts) runs `astro dev` on its
-@@ -110,3 +106,2 @@ export default defineConfig({
-       ...localTurnstilePlugins(process.env.E2E_LOCAL_TURNSTILE === "1"),
+@@ -117,3 +114,2 @@ export default defineConfig({
+       ...localAnalyticsPlugins(process.env.E2E_LOCAL_ANALYTICS === "1"),
 -      ...localDemoPlugins(process.env.E2E_DEMO_PORT),
      ],
 diff --git a/apps/web/playwright.config.ts b/apps/web/playwright.config.ts
-index 1f7345d..6fcec58 100644
+index 154ad80..954ba87 100644
 --- a/apps/web/playwright.config.ts
 +++ b/apps/web/playwright.config.ts
 @@ -3,3 +3,2 @@ import { defineConfig, devices } from "@playwright/test";
@@ -41,7 +41,7 @@ index 1f7345d..6fcec58 100644
 -const demoPort = port + 1;
 -const demoBaseURL = `http://localhost:${demoPort}`;
  const ci = Boolean(process.env.CI);
-@@ -78,38 +73,21 @@ const local = defineConfig({
+@@ -78,39 +73,22 @@ const local = defineConfig({
        // The production smoke specs run only against a deployed URL (`smoke` above).
 -      testIgnore: /\/(smoke|demo)\//,
 -    },
@@ -53,8 +53,9 @@ index 1f7345d..6fcec58 100644
 -  ],
 -  webServer: [
 -    {
--      // Local test keys, with no dependency on Cloudflare's live widget/Siteverify.
--      env: { E2E_LOCAL_TURNSTILE: "1" },
+-      // Local test keys, with no dependency on Cloudflare's live widget/Siteverify, and
+-      // canned answers of Cloudflare's analytics APIs (test/e2e/analytics-vite.mjs).
+-      env: { E2E_LOCAL_TURNSTILE: "1", E2E_LOCAL_ANALYTICS: "1" },
 -      // --ignore-lock keeps astro dev in the foreground (Astro backgrounds it when an AI agent
 -      // runs it), so Playwright owns the process and stops it after the run.
 -      command: `bun run dev --ignore-lock --port ${port}`,
@@ -81,8 +82,9 @@ index 1f7345d..6fcec58 100644
      },
    ],
 +  webServer: {
-+    // Local test keys, with no dependency on Cloudflare's live widget/Siteverify.
-+    env: { E2E_LOCAL_TURNSTILE: "1" },
++    // Local test keys, with no dependency on Cloudflare's live widget/Siteverify, and
++    // canned answers of Cloudflare's analytics APIs (test/e2e/analytics-vite.mjs).
++    env: { E2E_LOCAL_TURNSTILE: "1", E2E_LOCAL_ANALYTICS: "1" },
 +    // --ignore-lock keeps astro dev in the foreground (Astro backgrounds it when an AI agent
 +    // runs it), so Playwright owns the process and stops it after the run.
 +    command: `bun run dev --ignore-lock --port ${port}`,
@@ -147,7 +149,7 @@ index d30816e..6fdd72a 100644
 -  readonly demo?: { readonly retentionDays: number } | null;
  }
 diff --git a/apps/web/src/lib/config.test.ts b/apps/web/src/lib/config.test.ts
-index aaeacfc..21af203 100644
+index 70fc013..ca814cb 100644
 --- a/apps/web/src/lib/config.test.ts
 +++ b/apps/web/src/lib/config.test.ts
 @@ -7,3 +7,2 @@ import {
@@ -158,7 +160,7 @@ index aaeacfc..21af203 100644
  const core = {
 -  DEMO_MODE: "off",
    STORAGE_RECONCILE: "off",
-@@ -458,79 +456 @@ describe("analytics config", () => {
+@@ -492,79 +490 @@ describe("analytics config", () => {
  });
 -
 -describe("demo config", () => {
@@ -239,7 +241,7 @@ index aaeacfc..21af203 100644
 -  });
 -});
 diff --git a/apps/web/src/lib/config.ts b/apps/web/src/lib/config.ts
-index 3bde9b2..5e4d5af 100644
+index ddc2006..9dbb2d8 100644
 --- a/apps/web/src/lib/config.ts
 +++ b/apps/web/src/lib/config.ts
 @@ -3,8 +3,2 @@ import {
@@ -251,12 +253,12 @@ index 3bde9b2..5e4d5af 100644
 -  DEMO_SAMPLE_DATA_VALUES,
 -  type DemoSettings,
    type SecuritySettings,
-@@ -57,4 +51,2 @@ export type AppConfig = z.infer<typeof envSchema> & {
+@@ -66,4 +60,2 @@ export type AppConfig = z.infer<typeof envSchema> & {
    readonly AUTH_REQUIRE_EMAIL_VERIFICATION: boolean;
 -  /** DEMO_MODE and, with on, DEMO_RETENTION_DAYS, DEMO_SAMPLE_DATA, DEMO_PROTECTED_EMAILS. */
 -  readonly demo: DemoSettings;
  };
-@@ -101,61 +93,2 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
+@@ -111,61 +103,2 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
      security: securitySettingsSchema.parse(env),
 -    demo: parseDemoConfig(env),
 -  };
@@ -352,25 +354,25 @@ index 8c66f8b..a0e84c1 100644
 +  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
      <SignUpForm
 diff --git a/apps/web/src/server/auth.ts b/apps/web/src/server/auth.ts
-index add555a..f2c73b7 100644
+index c8be009..7fcd977 100644
 --- a/apps/web/src/server/auth.ts
 +++ b/apps/web/src/server/auth.ts
 @@ -19,3 +19,2 @@ import {
    SignUpNotAllowedError,
 -  scheduleDemoSeed,
    schema,
-@@ -61,3 +60,2 @@ import { billingGateFor } from "@/server/billing-provider";
+@@ -62,3 +61,2 @@ import { billingGateFor } from "@/server/billing-provider";
  import { getDb } from "@/server/db";
 -import { demoRuntimeFor } from "@/server/demo";
  import type { AppEnv } from "@/server/env";
-@@ -268,5 +266,4 @@ async function provisionNewUser(
+@@ -269,5 +267,4 @@ async function provisionNewUser(
    const requestContext = { ...contextFor(env, ctx), userId: user.id };
 -  let workspaceId: string | null = null;
    try {
 -    ({ workspaceId } = await provisionUser(
 +    await provisionUser(
        {
-@@ -284,21 +281,2 @@ async function provisionNewUser(
+@@ -285,21 +282,2 @@ async function provisionNewUser(
        }
 -    ));
 -  } catch (error) {
@@ -392,12 +394,12 @@ index add555a..f2c73b7 100644
 -      },
 -      { userId: user.id, workspaceId, context: requestContext }
      );
-@@ -307,3 +285,2 @@ async function provisionNewUser(
+@@ -308,3 +286,2 @@ async function provisionNewUser(
        "app.auth.hook": "user.create.after",
 -      "app.demo.operation": "schedule_seed",
      });
 diff --git a/apps/web/src/server/cron.test.ts b/apps/web/src/server/cron.test.ts
-index e6bfd60..26b6308 100644
+index f4500de..1299aba 100644
 --- a/apps/web/src/server/cron.test.ts
 +++ b/apps/web/src/server/cron.test.ts
 @@ -33,3 +33,2 @@ function memoryPlatform() {
@@ -433,11 +435,11 @@ index e6bfd60..26b6308 100644
        "trash.purge-expired",
 -      "demo.enforce-retention",
        "storage.reconcile",
-@@ -259,3 +235,2 @@ describe("cron handler", () => {
+@@ -266,3 +242,2 @@ describe("cron handler", () => {
        "cron trash.purge-expired",
 -      "cron demo.enforce-retention",
        "cron storage.reconcile",
-@@ -311,8 +286,2 @@ describe("cron handler", () => {
+@@ -319,8 +294,2 @@ describe("cron handler", () => {
        }),
 -      expect.objectContaining({
 -        attributes: {
@@ -455,27 +457,27 @@ index 39edfc7..13ca601 100644
 -              demo: platform.demo,
                jobQueue: platform.jobQueue,
 diff --git a/apps/web/src/server/mcp/server.test.ts b/apps/web/src/server/mcp/server.test.ts
-index 7020744..e1ede5e 100644
+index 3412414..8872e9e 100644
 --- a/apps/web/src/server/mcp/server.test.ts
 +++ b/apps/web/src/server/mcp/server.test.ts
 @@ -55,3 +55,2 @@ function context(overrides: Partial<Context> = {}): Context {
        STORAGE_RECONCILE: "off",
 -      demo: { mode: "off" },
        workspaces: {
-@@ -95,3 +94,2 @@ function context(overrides: Partial<Context> = {}): Context {
+@@ -104,3 +103,2 @@ function context(overrides: Partial<Context> = {}): Context {
      },
 -    demo: { mode: "off" },
      ...overrides,
 diff --git a/apps/web/src/server/mcp/tools.ts b/apps/web/src/server/mcp/tools.ts
-index ee34671..b4a8bb0 100644
+index 1795d15..516cd09 100644
 --- a/apps/web/src/server/mcp/tools.ts
 +++ b/apps/web/src/server/mcp/tools.ts
-@@ -623,3 +623,3 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
+@@ -644,3 +644,3 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
      "Admin: overview",
 -    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, workspace counts and sizes, and with DEMO_MODE=on the demo counters (active demo accounts, deletions scheduled today, accounts erased in the last 7 days; null otherwise)."
 +    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, and workspace counts and sizes."
    ),
-@@ -637,3 +637,3 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
+@@ -665,3 +665,3 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
      "Admin: deployment settings",
 -    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL, and DEMO_MODE with its retention days, sample data, protected emails and QA domain."
 +    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL."
@@ -558,14 +560,14 @@ index 0a3c16c..e2c78ba 100644
 -        : null,
    };
 diff --git a/apps/web/src/server/trpc/admin-router.ts b/apps/web/src/server/trpc/admin-router.ts
-index 63c1ce8..7babec1 100644
+index 95c808f..233fea6 100644
 --- a/apps/web/src/server/trpc/admin-router.ts
 +++ b/apps/web/src/server/trpc/admin-router.ts
-@@ -14,3 +14,2 @@ import {
-   getAdminOverview,
+@@ -15,3 +15,2 @@ import {
+   getAnalyticsReport,
 -  getDemoStats,
    getUserDetail,
-@@ -113,13 +112,5 @@ export const adminRouter = router({
+@@ -115,13 +114,5 @@ export const adminRouter = router({
    overview: router({
 -    get: adminProcedure.query(async ({ ctx }) => ({
 -      ...(await getAdminOverview(
@@ -582,7 +584,7 @@ index 63c1ce8..7babec1 100644
 +      getAdminOverview({ ...ctx, billing: ctx.config.billing }, ctx.admin)
 +    ),
    }),
-@@ -154,12 +145,2 @@ export const adminRouter = router({
+@@ -175,12 +166,2 @@ export const adminRouter = router({
          adminPortal: ctx.config.ADMIN_PORTAL,
 -        demo:
 -          ctx.demo.mode === "on"
@@ -596,26 +598,26 @@ index 63c1ce8..7babec1 100644
 -            : { mode: "off" },
          methods: authMethodsOf(ctx.config),
 diff --git a/apps/web/src/server/trpc/context.ts b/apps/web/src/server/trpc/context.ts
-index 5b27b0d..54f5bc8 100644
+index ad775e4..b8814c9 100644
 --- a/apps/web/src/server/trpc/context.ts
 +++ b/apps/web/src/server/trpc/context.ts
-@@ -24,3 +24,2 @@ import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
+@@ -27,3 +27,2 @@ import { containerRunWorkflowsFor } from "@/server/container-runs";
  import { getDb } from "@/server/db";
 -import { demoRuntimeFor } from "@/server/demo";
  import type { AppEnv } from "@/server/env";
-@@ -109,3 +108,2 @@ export function createAppContext(
+@@ -118,3 +117,2 @@ export function createAppContext(
      readiness: () => readinessReport(env, scoped, { detail: true }),
 -    demo: demoRuntimeFor(env),
    };
 diff --git a/apps/web/src/server/trpc/init.ts b/apps/web/src/server/trpc/init.ts
-index 2ed69c3..e0657ce 100644
+index 281706b..2df6254 100644
 --- a/apps/web/src/server/trpc/init.ts
 +++ b/apps/web/src/server/trpc/init.ts
-@@ -9,3 +9,2 @@ import {
+@@ -11,3 +11,2 @@ import {
    type Database,
 -  type DemoRuntime,
    DomainError,
-@@ -103,4 +102,2 @@ export interface Context {
+@@ -112,4 +111,2 @@ export interface Context {
    readonly readiness: () => Promise<HealthResponseBody>;
 -  /** DEMO_MODE with its retention policy (server/demo.ts). */
 -  readonly demo: DemoRuntime;
@@ -634,7 +636,7 @@ index 70bf9f1..737cbbe 100644
 +          catalog: notificationCatalog,
            emailEnabled: ctx.emailOut.enabled,
 diff --git a/apps/web/test/api-bindings.ts b/apps/web/test/api-bindings.ts
-index 3d9282c..48ed626 100644
+index a277ffe..5058559 100644
 --- a/apps/web/test/api-bindings.ts
 +++ b/apps/web/test/api-bindings.ts
 @@ -15,7 +15,2 @@ export const API_TEST_BINDINGS = {
@@ -646,7 +648,7 @@ index 3d9282c..48ed626 100644
 -  DEMO_PROTECTED_EMAILS: "",
    CSP_MODE: "enforce",
 diff --git a/apps/web/test/e2e/smoke/public.smoke.ts b/apps/web/test/e2e/smoke/public.smoke.ts
-index 8698818..ebc9057 100644
+index a1c4713..ba30c11 100644
 --- a/apps/web/test/e2e/smoke/public.smoke.ts
 +++ b/apps/web/test/e2e/smoke/public.smoke.ts
 @@ -67,30 +67,2 @@ test.describe("public pages", () => {
@@ -706,7 +708,7 @@ index 6b60d96..bdc5805 100644
 -    demo: { mode: "off" as const },
    };
 diff --git a/packages/features/src/audit/domain/audit-event.test.ts b/packages/features/src/audit/domain/audit-event.test.ts
-index 953bf9c..5e3a0e9 100644
+index 3014175..f07d570 100644
 --- a/packages/features/src/audit/domain/audit-event.test.ts
 +++ b/packages/features/src/audit/domain/audit-event.test.ts
 @@ -316,14 +316,2 @@ const VALID: Record<AuditAction, AuditEventInput> = {
@@ -725,10 +727,10 @@ index 953bf9c..5e3a0e9 100644
 -  },
    "note.commented": {
 diff --git a/packages/features/src/audit/domain/audit-event.ts b/packages/features/src/audit/domain/audit-event.ts
-index 6c87d50..bbcc716 100644
+index be371ec..88e349e 100644
 --- a/packages/features/src/audit/domain/audit-event.ts
 +++ b/packages/features/src/audit/domain/audit-event.ts
-@@ -118,17 +118,2 @@ export const auditEventSchema = z.discriminatedUnion("action", [
+@@ -119,17 +119,2 @@ export const auditEventSchema = z.discriminatedUnion("action", [
    }),
 -  // Demo mode (DEMO_MODE=on): the daily retention, actor `system`.
 -  z.object({
@@ -758,19 +760,19 @@ index 02a19c0..4dfa309 100644
 -export { findLatestAuditTimes } from "./find-latest-audit-times";
  export { type AuditEventPage, listAuditEvents } from "./list-audit-events";
 diff --git a/packages/features/src/cron-catalog.ts b/packages/features/src/cron-catalog.ts
-index 0f0b293..9f62bc6 100644
+index 8044c24..5b2d27e 100644
 --- a/packages/features/src/cron-catalog.ts
 +++ b/packages/features/src/cron-catalog.ts
 @@ -8,3 +8,2 @@ import { purgeAuditEventsJob } from "./audit";
  import { expireTrialsJob } from "./billing";
 -import { type DemoSettings, enforceDemoRetentionJob } from "./demo";
  import { retryFileCleanupsJob } from "./files";
-@@ -29,4 +28,2 @@ export interface CronDeps {
+@@ -33,4 +32,2 @@ export interface CronDeps {
    readonly storageReconcile: StorageReconcileMode;
 -  /** DEMO_MODE and its settings: the demo retention runs only with on. */
 -  readonly demo: DemoSettings;
    readonly jobQueue: JobQueue;
-@@ -132,17 +129,2 @@ export const cronCatalog = createCronCatalog<CronDeps>([
+@@ -136,17 +133,2 @@ export const cronCatalog = createCronCatalog<CronDeps>([
    },
 -  {
 -    // Demo mode only (DEMO_MODE=on; starter-only): warns accounts a day before
@@ -789,14 +791,14 @@ index 0f0b293..9f62bc6 100644
 -  },
    {
 diff --git a/packages/features/src/index.ts b/packages/features/src/index.ts
-index 8011405..78654a6 100644
+index 69b8e58..aacce92 100644
 --- a/packages/features/src/index.ts
 +++ b/packages/features/src/index.ts
-@@ -12,3 +12,2 @@ export { DATA_CATALOG } from "./data-catalog";
+@@ -13,3 +13,2 @@ export { DATA_CATALOG } from "./data-catalog";
  export { createDatabase, type Database, schema } from "./database";
 -export * from "./demo";
  export { buildErasureHandlers } from "./erasure-catalog";
-@@ -22,6 +21,3 @@ export * from "./kernel";
+@@ -23,6 +22,3 @@ export * from "./kernel";
  export * from "./notes";
 -export {
 -  notificationCatalog,
@@ -805,10 +807,10 @@ index 8011405..78654a6 100644
 +export { notificationCatalog } from "./notification-catalog";
  export * from "./notifications";
 diff --git a/packages/features/src/job-catalog.ts b/packages/features/src/job-catalog.ts
-index 1874514..f2a88cd 100644
+index de0e7c1..f9ce20b 100644
 --- a/packages/features/src/job-catalog.ts
 +++ b/packages/features/src/job-catalog.ts
-@@ -7,11 +7,2 @@ import { expireTrials, expireTrialsJob } from "./billing";
+@@ -8,11 +8,2 @@ import { purgeContainerRuns, purgeContainerRunsJob } from "./container-runs";
  import { DATA_CATALOG } from "./data-catalog";
 -import {
 -  enforceDemoRetention,
@@ -820,7 +822,7 @@ index 1874514..f2a88cd 100644
 -} from "./demo";
 -import { buildErasureHandlers } from "./erasure-catalog";
  import {
-@@ -156,34 +147,2 @@ export const jobCatalog = createJobCatalog<JobDeps>([
+@@ -160,34 +151,2 @@ export const jobCatalog = createJobCatalog<JobDeps>([
    ),
 -  // Demo mode (DEMO_MODE=on; starter-only). Each re-reads the settings when it runs.
 -  registerJob(seedDemoWorkspaceJob, (deps: JobDeps, payload, job) =>
@@ -913,14 +915,14 @@ index 9dc06a2..5f98716 100644
 -  readonly eventId?: string;
    readonly context: {
 diff --git a/packages/features/src/notification-catalog.ts b/packages/features/src/notification-catalog.ts
-index 7d75f0c..0b729fe 100644
+index f2405f6..f81b616 100644
 --- a/packages/features/src/notification-catalog.ts
 +++ b/packages/features/src/notification-catalog.ts
 @@ -9,3 +9,2 @@ import {
  } from "./accounts";
 -import { demoDeletionWarningNotification } from "./demo";
  import type { NotificationDefinition } from "./kernel";
-@@ -26,17 +25,2 @@ export const notificationCatalog = createNotificationCatalog([
+@@ -32,17 +31,2 @@ export const notificationCatalog = createNotificationCatalog([
    exportReadyNotification,
 -  // Demo mode only (DEMO_MODE=on); starter-only, removable with the demo feature.
 -  demoDeletionWarningNotification,
@@ -939,15 +941,15 @@ index 7d75f0c..0b729fe 100644
 -  );
 -}
 diff --git a/packages/features/src/notifications/domain/catalog.test.ts b/packages/features/src/notifications/domain/catalog.test.ts
-index dbb7911..15ae24f 100644
+index 8e1b764..f209b23 100644
 --- a/packages/features/src/notifications/domain/catalog.test.ts
 +++ b/packages/features/src/notifications/domain/catalog.test.ts
-@@ -70,3 +70,2 @@ describe("notification catalog", () => {
+@@ -72,3 +72,2 @@ describe("notification catalog", () => {
        "privacy.export-ready",
 -      "demo.deletion-warning",
      ]);
 diff --git a/packages/features/src/notifications/get-notification-preferences.integration.test.ts b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
-index 6bae831..c6f0463 100644
+index bf54dd2..960b25c 100644
 --- a/packages/features/src/notifications/get-notification-preferences.integration.test.ts
 +++ b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
 @@ -4,6 +4,3 @@ import { describe, expect, it } from "vitest";
@@ -958,11 +960,11 @@ index 6bae831..c6f0463 100644
 -} from "../notification-catalog";
 +import { notificationCatalog } from "../notification-catalog";
  import { getNotificationPreferences } from "./get-notification-preferences";
-@@ -29,3 +26,2 @@ describe("getNotificationPreferences", () => {
+@@ -31,3 +28,2 @@ describe("getNotificationPreferences", () => {
        ["privacy.export-ready", true, true, true],
 -      ["demo.deletion-warning", true, true, true],
      ]);
-@@ -33,20 +29,2 @@ describe("getNotificationPreferences", () => {
+@@ -35,20 +31,2 @@ describe("getNotificationPreferences", () => {
  
 -  it("lists the demo warning only for a demo deployment (preferenceCatalogFor)", async () => {
 -    const ada = await seedUser("Ada Prefs", "ada.prefs@example.test");
@@ -1237,10 +1239,10 @@ index ea45d90..115d762 100644
 -      ) : null}
        {queuesDashboardUrl ? (
 diff --git a/packages/ui/src/exports/patterns.ts b/packages/ui/src/exports/patterns.ts
-index 2340594..a9e736d 100644
+index b6cbb6f..3520a67 100644
 --- a/packages/ui/src/exports/patterns.ts
 +++ b/packages/ui/src/exports/patterns.ts
-@@ -145,6 +145,2 @@ export {
+@@ -170,6 +170,2 @@ export {
  } from "../components/patterns/data-export-list";
 -export {
 -  DemoBanner,

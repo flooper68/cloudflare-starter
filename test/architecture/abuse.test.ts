@@ -129,6 +129,8 @@ describe("abuse protection coverage", () => {
         source.push(read("apps/web/src/server/health.ts"));
       if (file === "api/csp-report.ts")
         source.push(read("apps/web/src/server/csp-report.ts"));
+      if (file === "api/site-events.ts")
+        source.push(read("apps/web/src/server/site-events.ts"));
       for (const id of ids) expect(source.join("\n")).toContain(`"${id}"`);
     }
   );

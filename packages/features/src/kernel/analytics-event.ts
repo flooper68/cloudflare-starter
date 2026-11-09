@@ -36,6 +36,11 @@ export interface AnalyticsEventDefinition<
   readonly properties: PayloadSchema<TProps>;
   /** True when the browser may send it through `analytics.track` (UI events). */
   readonly client: boolean;
+  /**
+   * True when the public pages may send it anonymously through `POST /api/site-events`
+   * (visits, clicks, sign-up attempts before there is an account). Never with `client`.
+   */
+  readonly site: boolean;
   /** What happened, for people reading the catalog and querying the data. */
   readonly description: string;
 }
@@ -58,6 +63,8 @@ export const ANALYTICS_LIMITS = {
   pointsPerInvocation: 250,
   /** Events in one client batch (`analytics.track`). */
   clientBatch: 20,
+  /** Events in one anonymous site batch (`POST /api/site-events`). */
+  siteBatch: 10,
 } as const;
 
 /** `<feature>.<object>_<verb>`: lowercase snake-case segments joined by dots. */
@@ -77,7 +84,11 @@ export function defineEvent<TProps extends AnalyticsProperties>(
     readonly numbers: readonly NoInfer<keyof TProps & string>[];
   },
   properties: PayloadSchema<TProps>,
-  options: { readonly client: boolean; readonly description: string }
+  options: {
+    readonly client: boolean;
+    readonly site?: boolean;
+    readonly description: string;
+  }
 ): AnalyticsEventDefinition<TProps> {
   return Object.freeze({
     name,
@@ -87,6 +98,7 @@ export function defineEvent<TProps extends AnalyticsProperties>(
     }),
     properties,
     client: options.client,
+    site: options.site ?? false,
     description: options.description,
   });
 }

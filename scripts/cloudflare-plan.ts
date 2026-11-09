@@ -15,16 +15,16 @@ export const STARTER_WORKER_NAME = "cloudflare-starter-web";
  */
 export const STARTER_SHIPPED_NAMESPACE_IDS: ReadonlySet<string> = new Set(
   // Earlier blocks of ten, then eleven (RL_HEALTH is 7011/8011/9011), twelve (RL_CSP_REPORT
-  // is 7012/8012/9012), thirteen (RL_QA_BYPASS is 7013/8013/9013), now fourteen (RL_CONTAINER_RUN is
-  // 7014/8014/9014).
+  // is 7012/8012/9012), thirteen (RL_QA_BYPASS is 7013/8013/9013), fourteen (RL_CONTAINER_RUN is
+  // 7014/8014/9014), now fifteen (RL_SITE_EVENTS is 7015/8015/9015).
   (
     [
       [1000, 10],
       [2000, 10],
       [3000, 10],
-      [7000, 14],
-      [8000, 14],
-      [9000, 14],
+      [7000, 15],
+      [8000, 15],
+      [9000, 15],
     ] as const
   ).flatMap(([base, count]) =>
     Array.from({ length: count }, (_, index) => String(base + index + 1))

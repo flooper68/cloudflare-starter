@@ -19,6 +19,8 @@ import {
   type BrowserExchange,
   createAdminAuthGateway,
 } from "@/server/admin-auth-gateway";
+import { productAnalyticsFor } from "@/server/analytics-audience";
+import { analyticsReadSettings } from "@/server/analytics-read";
 import { getAuth } from "@/server/auth";
 import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
 import { containerRunWorkflowsFor } from "@/server/container-runs";
@@ -100,7 +102,12 @@ export function createAppContext(
     notify: notifier,
     containerRunWorkflows: containerRunWorkflowsFor(env),
     emailOut: platform.email,
-    analytics: platform.productAnalytics(),
+    // Left out of analytics: the bootstrap admin, impersonations, QA and protected accounts.
+    analytics: productAnalyticsFor(env, {
+      email: user?.email ?? null,
+      impersonated: Boolean(browser.session?.impersonatedBy),
+    }),
+    analyticsRead: () => analyticsReadSettings(env),
     user,
     session: browser.session,
     authSessionId: options.authSessionId ?? browser.session?.id,

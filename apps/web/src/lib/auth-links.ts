@@ -57,3 +57,20 @@ export function verifiedCallbackURL(next: string | null): string {
 export function verificationFailed(search: string): boolean {
   return new URLSearchParams(search).has("error");
 }
+
+/**
+ * Why a sign-up attempt failed, for the `auth.sign_up_failed` site event: a category,
+ * never the message or the address.
+ */
+export function signUpFailureReason(error: {
+  readonly status?: number;
+  readonly code?: string;
+}): "bot_check" | "exists" | "not_allowed" | "rate_limited" | "error" {
+  const code = error.code ?? "";
+  if (error.status === 429) return "rate_limited";
+  if (code.startsWith("HUMAN_CHECK")) return "bot_check";
+  if (code.startsWith("USER_ALREADY_EXISTS")) return "exists";
+  if (code.startsWith("SIGN_UP_") || code === "LIMIT_REACHED")
+    return "not_allowed";
+  return "error";
+}

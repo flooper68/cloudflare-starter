@@ -237,6 +237,17 @@ export const RATE_LIMIT_POLICIES = {
     description:
       "The public health endpoints (/health, /health/live, /health/ready), per IP: anonymous, and readiness queries D1 and R2 on each call",
   },
+  "site.events": {
+    // A page view sends one or two batches (the view, a click, a scroll mark); a busy
+    // reader of the docs a few dozen a minute.
+    limit: 60,
+    periodSeconds: 60,
+    scope: "ip",
+    enforcer: "edge",
+    binding: "RL_SITE_EVENTS",
+    description:
+      "Anonymous analytics batches of the public pages (POST /api/site-events), per IP: no account, so no per-user budget",
+  },
   "csp.report": {
     // A page with a broken policy reports every blocked load; a few per page view is normal.
     limit: 30,
@@ -299,6 +310,7 @@ export const ROUTE_POLICIES: Readonly<
   "health/live.ts": ["health.ip"],
   "health/ready.ts": ["health.ip"],
   "api/csp-report.ts": ["csp.report"],
+  "api/site-events.ts": ["site.events"],
   "api/qa/outbox.ts": ["qa.bypass"],
   "api/qa/cleanup.ts": ["qa.bypass"],
 };

@@ -2,6 +2,10 @@
 
 export { chudnovskyPi, createFakePiComputer } from "./fake-pi-computer";
 export {
+  createMemoryAnalyticsReader,
+  type MemoryAnalyticsReader,
+} from "./memory-analytics-reader";
+export {
   createMemoryBillingProvider,
   type MemoryBillingProvider,
 } from "./memory-billing-provider";

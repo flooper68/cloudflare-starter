@@ -187,6 +187,7 @@ const BLOCKS: readonly { file: string; name: string; render: () => string }[] =
           [...analyticsEvents.values()].map((event) => ({
             name: event.name,
             client: event.client,
+            site: event.site,
             description: event.description,
           }))
         ),

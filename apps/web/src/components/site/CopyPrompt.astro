@@ -12,9 +12,11 @@ interface Props {
   prompt: string;
   /** Accessible name of the prompt block. */
   label: string;
+  /** The Copy button as a call to action of the site's analytics (site.cta_clicked). */
+  track?: { cta: string; placement: string };
 }
 
-const { prompt, label } = Astro.props;
+const { prompt, label, track } = Astro.props;
 ---
 
 <copy-prompt class="block">
@@ -28,6 +30,8 @@ const { prompt, label } = Astro.props;
       <button
         type="button"
         data-copy=""
+        data-track-cta={track?.cta}
+        data-track-placement={track?.placement}
         class={cn(buttonVariants({ variant: "secondary", size: "sm" }), "h-8")}
       >
         <Copy aria-hidden="true" /><span data-copy-label="">Copy prompt</span>

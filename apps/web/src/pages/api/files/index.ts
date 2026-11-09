@@ -4,6 +4,7 @@ import {
   DomainError,
   NotWorkspaceMemberError,
   randomIds,
+  recordFeatureTried,
   resolveActor,
   storeFile,
   systemClock,
@@ -13,6 +14,7 @@ import {
 import type { APIRoute } from "astro";
 
 import { buildRequiredConfig } from "@/lib/env";
+import { productAnalyticsFor } from "@/server/analytics-audience";
 import { billingGateFor } from "@/server/billing-provider";
 import { getDb } from "@/server/db";
 import {
@@ -69,7 +71,10 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
   }
 
   const db = getDb(env);
-  const analytics = platform.productAnalytics();
+  const analytics = productAnalyticsFor(env, {
+    email: locals.user.email,
+    impersonated: Boolean(locals.session?.impersonatedBy),
+  });
   const billing = billingGateFor(env, locals.requestContext);
   let actor: Actor;
   try {
@@ -121,6 +126,21 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       },
       actor,
       { ...input.data, body: await file.arrayBuffer() }
+    );
+    // The funnel: the first upload is the files feature tried.
+    await recordFeatureTried(
+      {
+        db,
+        clock: systemClock,
+        analytics,
+        logger: platform.logger.withContext(locals.requestContext),
+      },
+      {
+        ...locals.requestContext,
+        userId: actor.userId,
+        workspaceId: actor.workspaceId,
+      },
+      "files"
     );
 
     const query = new URLSearchParams({ workspaceId: actor.workspaceId });

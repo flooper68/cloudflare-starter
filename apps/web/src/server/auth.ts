@@ -35,6 +35,7 @@ import { SIGN_UP_SEATS_FULL_MESSAGE } from "@/lib/auth-links";
 import type { AppConfig } from "@/lib/config";
 import { buildEmailFeature, buildRequiredConfig } from "@/lib/env";
 import { createAdminAuthGateway } from "@/server/admin-auth-gateway";
+import { productAnalyticsFor } from "@/server/analytics-audience";
 import {
   auditAuthEndpoint,
   auditDatabaseHooks,
@@ -274,7 +275,7 @@ async function provisionNewUser(
         clock: systemClock,
         ids: randomIds,
         requestContext,
-        analytics: buildPlatform(env).productAnalytics(),
+        analytics: productAnalyticsFor(env, { email: user.email }),
         billing: billingGateFor(env, requestContext),
       },
       {

@@ -30,8 +30,6 @@ const EXEMPT: Readonly<Record<string, string>> = {
     "operations: error reports; the reference id shows in any error state",
   "how-to-setup-metrics-and-tracing.md":
     "operations: metrics and spans in Analytics Engine",
-  "how-to-setup-product-analytics.md":
-    "write-only analytics events; nothing visible in the app",
   "how-to-setup-container.md":
     "the Container demo is its own Worker, deployed separately",
   "how-to-use-storybook.md":

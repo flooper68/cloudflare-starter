@@ -75,5 +75,7 @@ export function eventDefinitionProblems(
       `layout lists ${listed.join(", ") || "nothing"} but the schema has ${keys.join(", ") || "nothing"}`
     );
   if (!definition.description.trim()) problems.push("description is empty");
+  if (definition.client && definition.site)
+    problems.push("an event is sent by the app (client) or the site, not both");
   return problems.map((problem) => `${definition.name}: ${problem}`);
 }

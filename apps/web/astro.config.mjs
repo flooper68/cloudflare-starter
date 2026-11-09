@@ -12,6 +12,8 @@ import {
   docsTaskListsPlugin,
 } from "./src/docs/markdown-plugins.ts";
 import { siteIntegrations } from "./src/docs/site-integrations.ts";
+import { WEB_ANALYTICS_SCRIPT } from "./src/server/security-headers.ts";
+import { localAnalyticsPlugins } from "./test/e2e/analytics-vite.mjs";
 import { demoAdapterOptions, localDemoPlugins } from "./test/e2e/demo-vite.mjs";
 import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
 
@@ -83,9 +85,13 @@ export default defineConfig({
     csp: {
       algorithm: "SHA-256",
       styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
-      // Pagefind's WebAssembly on the docs pages. Only the prerendered pages' <meta>
-      // keeps it: the per-request page policy takes only the hashes from Astro.
-      scriptDirective: { resources: ["'self'", "'wasm-unsafe-eval'"] },
+      // Pagefind's WebAssembly on the docs pages, and the Web Analytics beacon (that one
+      // URL; it runs only where WEB_ANALYTICS=cloudflare rendered it). Only the
+      // prerendered pages' <meta> keeps these: the per-request page policy takes only the
+      // hashes from Astro and adds the beacon itself with WEB_ANALYTICS=cloudflare.
+      scriptDirective: {
+        resources: ["'self'", "'wasm-unsafe-eval'", WEB_ANALYTICS_SCRIPT],
+      },
     },
   },
   // The port of APP_URL in .dev.vars (4321 by default): Better Auth trusts only that origin.
@@ -108,6 +114,7 @@ export default defineConfig({
     plugins: [
       tailwindcss(),
       ...localTurnstilePlugins(process.env.E2E_LOCAL_TURNSTILE === "1"),
+      ...localAnalyticsPlugins(process.env.E2E_LOCAL_ANALYTICS === "1"),
       ...localDemoPlugins(process.env.E2E_DEMO_PORT),
     ],
     resolve: {
