@@ -52,7 +52,7 @@
       <h3>03 · Everything a full app needs</h3>
       <p>Background work, email, files and flags without adding another service.</p>
       <p><sub>Scheduled tasks · a job queue with retries · email · file storage · feature flags · containers (demo)</sub></p>
-      <img src="docs/assets/readme/platform.webp" alt="A background job sends an email" width="100%">
+      <img src="docs/assets/readme/platform.webp" alt="A job is queued, the consumer runs it and the mail arrives" width="100%">
       <p><a href="https://starter.flooper.me/docs/features/jobs-and-email/">Jobs, schedules and email →</a></p>
     </td>
     <td width="50%" valign="top">
