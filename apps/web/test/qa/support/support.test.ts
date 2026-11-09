@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { isQaAddress, newRunId, qaAddress } from "./address";
 import { qaAdmin } from "./admin";
 import { missingQaEnv, qaEnv, qaSkipReason } from "./env";
+import { authPolicies, waitFor } from "./limits";
 import { extractLinks, linkTo } from "./links";
 import { qaPassword } from "./password";
 import { isAppRequest } from "./routing";
@@ -143,5 +144,35 @@ describe("the QA admin", () => {
     expect(admin.email).toBe("qa+admin@qa.flooper.me");
     expect(admin.password).toBe(qaPassword(admin.email, ENV.QA_TOKEN));
     expect(isQaAddress(admin.email)).toBe(false);
+  });
+});
+
+describe("rate-limit pacing", () => {
+  const minute = 60_000;
+
+  it("a sign-up counts against auth.ip, qa.bypass and auth.sign-up", () => {
+    expect(authPolicies("/sign-up/email")).toEqual([
+      "auth.ip",
+      "qa.bypass",
+      "auth.sign-up",
+    ]);
+  });
+
+  it("Better Auth's burst: 4 of 5 sign-ups, then a whole window of quiet, plus slack", () => {
+    const t0 = 1_000_000;
+    const burst = [t0, t0 + 20_000, t0 + 40_000];
+    expect(waitFor("auth.sign-up", burst, t0 + 50_000)).toBe(0);
+    const full = [...burst, t0 + 50_000];
+    // The production run: the next sign-up went exactly a window after the last slot and
+    // the server, whose clock saw that request a little later, still counted the burst.
+    expect(waitFor("auth.sign-up", full, t0 + 50_000 + minute)).toBe(2_000);
+    expect(waitFor("auth.sign-up", full, t0 + 52_000 + minute)).toBe(0);
+  });
+
+  it("a request within a window keeps a Better Auth burst going", () => {
+    const t0 = 1_000_000;
+    // Gaps under a window: one burst of four, however long it lasts.
+    const chained = [t0, t0 + 55_000, t0 + 110_000, t0 + 165_000];
+    expect(waitFor("auth.sign-up", chained, t0 + 200_000)).toBeGreaterThan(0);
   });
 });
