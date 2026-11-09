@@ -17,7 +17,7 @@ const INDEX = `# Docs
 
 | Doc | Use when … |
 | --- | --- |
-| [../README.md](../README.md) | you start |
+| [start/README.md](start/README.md) | you start |
 | [../AGENTS.md](../AGENTS.md) | you are an agent |
 | [../.claude/skills/](../.claude/skills/) | skills |
 
@@ -83,9 +83,9 @@ describe("buildNav", () => {
 
   it("skips unpublished files, folders and pages already listed", () => {
     expect(navPaths(nav)).not.toContain("AGENTS.md");
-    expect(navPaths(nav).filter((path) => path === "README.md")).toHaveLength(
-      1
-    );
+    expect(
+      navPaths(nav).filter((path) => path === "docs/start/README.md")
+    ).toHaveLength(1);
   });
 });
 

@@ -17,7 +17,7 @@ describe("isPublished", () => {
     "docs/README.md",
     "docs/guides/how-to-setup-d1.md",
     "docs/decisions/0000-template.md",
-    "README.md",
+    "docs/start/README.md",
     "apps/web/README.md",
     "packages/ui/README.md",
     "packages/ui/CONVENTIONS.md",
@@ -26,6 +26,8 @@ describe("isPublished", () => {
   });
 
   it.each([
+    // The repository's front page on GitHub, with HTML images the site would not serve.
+    "README.md",
     "AGENTS.md",
     ".claude/skills/setup-d1/SKILL.md",
     ".github/pull_request_template.md",
@@ -43,7 +45,7 @@ describe("routeFor", () => {
     ["docs/README.md", "/docs/"],
     ["docs/guides/how-to-setup-d1.md", "/docs/guides/how-to-setup-d1/"],
     ["docs/decisions/README.md", "/docs/decisions/"],
-    ["README.md", "/docs/start/"],
+    ["docs/start/README.md", "/docs/start/"],
     ["apps/web/README.md", "/docs/apps/web/"],
     ["packages/ui/CONVENTIONS.md", "/docs/packages/ui/conventions/"],
   ])("%s is served at %s", (path, route) => {
@@ -110,7 +112,9 @@ describe("rewriteHref", () => {
         "../architecture/overview.md#account-security"
       )
     ).toBe("/docs/architecture/overview/#account-security");
-    expect(rewriteHref("docs/README.md", "../README.md")).toBe("/docs/start/");
+    expect(rewriteHref("docs/README.md", "start/README.md")).toBe(
+      "/docs/start/"
+    );
     expect(rewriteHref("docs/README.md", "../packages/ui/CONVENTIONS.md")).toBe(
       "/docs/packages/ui/conventions/"
     );

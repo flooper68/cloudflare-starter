@@ -4,7 +4,7 @@ How dependencies are updated, audited for security and added: the commands, what
 
 ## Update
 
-Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true`, so `bun add` and `bun update` write no `^`/`~` (enforced by an architecture test). An update is therefore always an explicit diff in a `package.json` and `bun.lock`. A new project from the starter starts with the update in step 1 of [Starting a new project](../../README.md#starting-a-new-project-from-this-starter), then the steps below from 4 on, and an [audit](#security-audit).
+Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true`, so `bun add` and `bun update` write no `^`/`~` (enforced by an architecture test). An update is therefore always an explicit diff in a `package.json` and `bun.lock`. A new project from the starter starts with the update in step 1 of [Starting a new project](../start/README.md#starting-a-new-project-from-this-starter), then the steps below from 4 on, and an [audit](#security-audit).
 
 1. See what is behind, per workspace:
 
@@ -25,7 +25,7 @@ Versions are pinned exactly: [bunfig.toml](../../bunfig.toml) sets `exact = true
    bun update --interactive --recursive            # pick from a list
    ```
 
-   Keep the holds named in the [README](../../README.md#starting-a-new-project-from-this-starter) (TypeScript, `packages/ui` peer ranges) until their reason is gone, then remove the note there.
+   Keep the holds named in [Start a project](../start/README.md#starting-a-new-project-from-this-starter) (TypeScript, `packages/ui` peer ranges) until their reason is gone, then remove the note there.
 
 4. Read the changelog and, for a major, the migration guide of each risky update. Note in the PR any breaking change that affects this code and how it was handled.
 5. Regenerate what is derived from a dependency:

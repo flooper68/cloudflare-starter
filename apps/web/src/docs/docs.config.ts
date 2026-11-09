@@ -18,7 +18,6 @@ export const DOCS = {
    */
   sources: [
     "docs/**/*.md",
-    "README.md",
     "apps/*/README.md",
     "packages/*/README.md",
     "packages/ui/CONVENTIONS.md",
@@ -29,10 +28,7 @@ export const DOCS = {
    * URL segments (after /docs/) for files the default rule would map badly. The default:
    * the path without `.md`, without a leading `docs/` and a trailing `README`, lower case.
    */
-  routes: {
-    // `/docs/` itself is docs/README.md, the documentation index.
-    "README.md": "start",
-  } as Record<string, string>,
+  routes: {} as Record<string, string>,
   /** The file whose sections and tables become the navigation. */
   navSource: "docs/README.md",
   /** The first navigation section, before those of the navigation source. */
@@ -40,7 +36,7 @@ export const DOCS = {
     title: "Start",
     items: [
       { path: "docs/README.md", label: "Overview" },
-      { path: "README.md", label: "Start a project" },
+      { path: "docs/start/README.md", label: "Start a project" },
       { path: "docs/start/run-locally.md", label: "Run it locally" },
       { path: "docs/start/deploy.md", label: "Deploy" },
       { path: "docs/start/what-it-costs.md", label: "What it costs" },

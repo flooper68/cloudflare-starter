@@ -260,3 +260,53 @@ export function costsMarkdown(rows: readonly CostRow[], note: string): string {
     rows.map((row) => [row.item, row.included, row.above])
   )}\n\n${note}`;
 }
+
+export interface FeatureListPillar {
+  readonly id: string;
+  readonly title: string;
+}
+
+export interface FeatureListGroup {
+  readonly id: string;
+  readonly pillar: string;
+  readonly title: string;
+  /** The group's docs page, as a URL. */
+  readonly href: string;
+}
+
+export interface FeatureListEntry {
+  readonly name: string;
+  readonly group: string;
+  readonly status: "built" | "demo" | "planned";
+}
+
+/**
+ * The README's compact feature list (from apps/web/src/content/features.ts): the counts
+ * by status, then one line per group under its pillar, with demo and planned features
+ * marked.
+ */
+export function featureListMarkdown(
+  pillars: readonly FeatureListPillar[],
+  groups: readonly FeatureListGroup[],
+  features: readonly FeatureListEntry[]
+): string {
+  const count = (status: FeatureListEntry["status"]) =>
+    features.filter((feature) => feature.status === status).length;
+  const label = (feature: FeatureListEntry) =>
+    feature.status === "built"
+      ? feature.name
+      : `${feature.name} _(${feature.status})_`;
+  const lines = [
+    `${count("built")} built, ${count("demo")} demo, ${count("planned")} planned.`,
+  ];
+  for (const pillar of pillars) {
+    lines.push("", `**${pillar.title}**`, "");
+    for (const group of groups.filter((entry) => entry.pillar === pillar.id)) {
+      const names = features
+        .filter((feature) => feature.group === group.id)
+        .map(label);
+      lines.push(`- [${group.title}](${group.href}): ${names.join(" · ")}`);
+    }
+  }
+  return lines.join("\n");
+}
