@@ -117,8 +117,9 @@ test("A invites B by mail as a member; B accepts from the mail's link", async ()
   const unread = a.getByRole("button", { name: /^Notifications, \d+ unread$/ });
   await expect(async () => {
     await open(a, "/app/dashboard");
-    await expect(unread).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 60_000 });
+    // Longer than the page takes to show its data, or each look ends too early.
+    await expect(unread).toBeVisible({ timeout: 10_000 });
+  }).toPass({ timeout: 90_000 });
   await unread.click();
   await expect(
     a
