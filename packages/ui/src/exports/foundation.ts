@@ -44,6 +44,11 @@ export {
   type TextProps,
 } from "../components/typography";
 export {
+  HydrationGate,
+  hydrationGated,
+  useHydrating,
+} from "../lib/hydration";
+export {
   backdrop,
   controlBase,
   controlSize,

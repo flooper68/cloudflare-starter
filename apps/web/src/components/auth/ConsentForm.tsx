@@ -1,4 +1,4 @@
-import { OAuthConsentCard } from "@cloudflare-starter/ui";
+import { hydrationGated, OAuthConsentCard } from "@cloudflare-starter/ui";
 import { useEffect, useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
@@ -21,7 +21,7 @@ function hostOf(url: string | null): string {
  * query is the server-signed authorization request; the client plugin sends it
  * back with the decision.
  */
-export function ConsentForm({
+function ConsentFormView({
   clientId,
   redirectUri,
   scope,
@@ -70,3 +70,6 @@ export function ConsentForm({
     />
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const ConsentForm = hydrationGated(ConsentFormView);

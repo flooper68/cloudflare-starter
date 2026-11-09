@@ -2,6 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 
+import { useHydrating } from "../lib/hydration";
 import { focusRing } from "../lib/styles";
 import { cn } from "../lib/utils";
 import { Spinner } from "./spinner";
@@ -11,6 +12,8 @@ export const buttonVariants = cva(
     "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium",
     "transition-[background-color,border-color,color,box-shadow] duration-100 select-none",
     "disabled:pointer-events-none disabled:opacity-50 aria-busy:cursor-progress",
+    // Hydrating (lib/hydration.tsx): disabled at once, dimmed only if it takes a while.
+    "data-hydrating:opacity-100 data-hydrating:animate-hydrating",
     "[&_svg]:size-4 [&_svg]:shrink-0",
     focusRing,
   ],
@@ -72,6 +75,8 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = cn(buttonVariants({ variant, size }), className);
+  // Inside an island that has not hydrated yet: not clickable until it works.
+  const hydrating = useHydrating();
 
   if (asChild) {
     return (
@@ -85,8 +90,9 @@ export function Button({
     <button
       type={type}
       className={classes}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
+      disabled={disabled || loading || hydrating}
+      aria-busy={loading || hydrating || undefined}
+      data-hydrating={hydrating || undefined}
       {...props}
     >
       {loading ? <Spinner /> : icon}
