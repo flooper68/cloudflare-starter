@@ -86,7 +86,7 @@ Never the QA admin, never `qa+<other tag>@`, never any other address. Shared wor
 
 The workflow **QA** ([.github/workflows/qa.yml](../../.github/workflows/qa.yml)) has three jobs, on GitHub-hosted runners only, and takes an environment, never a URL (`bun run test:qa -- --env production` resolves the route in `apps/web/wrangler.jsonc`, so the QA token only goes to the repository's own routes):
 
-- **`qa`** runs the suite. The Deploy workflow calls it after a production deploy whose smoke suite passed; Actions › QA › Run workflow runs it by hand. It fails when `QA_TOKEN` is missing or any journey fails, scrubs the report and the traces (`scripts/qa-scrub-artifacts.py`: the token, the QA passwords, every cookie, `set-cookie`, `authorization` and `x-qa-token` header value, and token-shaped values such as session cookies, JWTs, `token=` query parameters and reset links; it fails if anything is left, and the upload then does not run) and uploads it as `qa-report-<run id>`, kept 3 days. The repository is public: the artifact is too.
+- **`qa`** runs the suite. The Deploy workflow calls it after a production deploy whose smoke suite passed; Actions › QA › Run workflow runs it by hand. It fails when `QA_TOKEN` is missing or any journey fails, scrubs the report and the traces (`scripts/qa-scrub-artifacts.py`: the token, the QA passwords, every cookie, `set-cookie`, `authorization` and `x-qa-token` header value, and token-shaped values such as session cookies, JWTs, `token=` query parameters and reset links; it fails if anything is left, and the upload then does not run) and uploads it as `qa-report-<run id>`, kept 3 days. The repository is public: the artifact is too. Then, whatever the suite did (failed, timed out or was cancelled), it erases the run's accounts and every leftover over two hours old: project `qa-cleanup` with the same `QA_RUN_ID`, fixed by the job before the suite starts, so the global teardown's `cleanupRun` and the [nightly cleanup](#nightly-cleanup) both run again.
 - **`cleanup`**, nightly at 03:37 UTC (and by hand with `cleanup` ticked): the [nightly cleanup](#nightly-cleanup).
 - **`delivery`**, weekly on Mondays at 07:47 UTC (and by hand with `delivery` ticked): the [weekly delivery check](#weekly-delivery-check).
 
@@ -403,7 +403,7 @@ Every run ends by erasing its accounts, automatically (the global teardown, `cle
 
 1. Each account of the run (`qa+<runId>-<role>@`), with the shared workspaces only run accounts use: the real erasure.
 2. The mail **Your account was deleted** is in the outbox, and sign-in with the old credentials is refused (the example journey checks both for its own account, erased through Settings → Privacy → **Delete account**).
-3. Accounts a killed run left are erased by the [nightly cleanup](#nightly-cleanup).
+3. In CI, the `qa` job erases them again in a step of its own that runs even when the suite failed or was killed ([CI](#ci)). Accounts a killed local run left are erased by the [nightly cleanup](#nightly-cleanup).
 
 To look for leftovers by hand, use the admin portal (`/admin/users`, search `@qa.flooper.me`) or a read-only query:
 
