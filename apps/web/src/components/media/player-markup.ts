@@ -118,6 +118,24 @@ const captionsIcon = () =>
     h("path", { d: "M7 15h4M14 15h3M7 11h2M12 11h5" })
   );
 
+const expandIcon = () =>
+  h(
+    "svg",
+    {
+      viewBox: "0 0 24 24",
+      width: 16,
+      height: 16,
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": 2,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+      "aria-hidden": "true",
+      focusable: "false",
+    },
+    h("path", { d: "M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" })
+  );
+
 /** The designed stand-in under the poster: shown when the poster cannot load. */
 function fallback(title: string): MarkupElement {
   return h(
@@ -263,7 +281,9 @@ export function walkthroughTree(entry: MediaEntry): MarkupElement {
 
 /**
  * A muted loop: plays while in view, pauses off screen, a pause button always there.
- * Under reduced motion it waits on its poster with a Play button.
+ * Under reduced motion it waits on its poster with a Play button. The expand button (and
+ * a click on the clip) opens it large: a lightbox on desktop, native full screen on
+ * touch screens (video-player.ts); hidden until the script runs.
  */
 export function loopTree(entry: MediaEntry): MarkupElement {
   return h(
@@ -289,6 +309,16 @@ export function loopTree(entry: MediaEntry): MarkupElement {
       ),
       poster(entry),
       h("span", { class: "wv-chip" }, entry.title),
+      h(
+        "button",
+        {
+          type: "button",
+          class: "wv-expand",
+          "aria-label": `Play full screen: ${entry.title}`,
+          title: "Play full screen",
+        },
+        expandIcon()
+      ),
       h(
         "button",
         {
