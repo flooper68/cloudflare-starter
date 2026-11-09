@@ -3,7 +3,7 @@
  * upgrade-prompt.tsx). A refusal reaches the browser as a tRPC error (`data.appCode`,
  * `data.domain = { kind: "limit_reached", details }`) or as a Problem Details body from an
  * HTTP route (`kind`, `code` and the details as members);
- * docs/guides/how-to-configure-plans-and-billing.md#what-a-refusal-looks-like.
+ * docs/reference/billing.md#what-a-refusal-looks-like.
  */
 import {
   formatBytes,

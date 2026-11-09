@@ -206,7 +206,7 @@ test.describe("security headers", () => {
  * Cloudflare's edge can inject its Web Analytics beacon into every HTML page of a zone
  * ("automatic setup", shared with the owner's other sites). Every HTML response says
  * `Cache-Control: no-transform` so it does not
- * (docs/guides/how-to-configure-security-headers.md#edge-injected-web-analytics). With
+ * (docs/reference/security-headers.md#edge-injected-web-analytics). With
  * WEB_ANALYTICS=none a page's HTML must hold no beacon at all; with cloudflare, only the
  * app's own one. Which is set is read from /sign-in's policy, rendered per request: it
  * allows the beacon only with WEB_ANALYTICS=cloudflare (the prerendered pages always do,
@@ -305,6 +305,19 @@ test.describe("docs", () => {
       await expect(page.locator("time[datetime]").first()).toBeVisible();
     }
   );
+
+  for (const { path, heading } of [
+    { path: "/docs/start/run-locally/", heading: "Run it locally" },
+    { path: "/docs/start/deploy/", heading: "Deploy" },
+    { path: "/docs/start/what-it-costs/", heading: "What it costs" },
+    { path: "/docs/reference/settings/", heading: "Settings" },
+    { path: "/docs/reference/agent-tools/", heading: "Agent tools" },
+  ])
+    test(`${path} renders`, smoke, async ({ page }) => {
+      const response = await page.goto(path);
+      expect(response?.status()).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
+    });
 
   test("search finds a page", smoke, async ({ page }) => {
     await page.goto("/docs/");

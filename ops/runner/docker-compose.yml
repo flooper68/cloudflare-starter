@@ -5,7 +5,7 @@
 #   bun run runner:down                # stop all workers (registrations are kept)
 #   bun run runner:logs
 #   bun run runner:remove -- --all     # unregister and delete the workers' volumes
-# Guide: docs/guides/how-to-setup-ci.md#self-hosted-runners.
+# Guide: docs/reference/ci.md#self-hosted-runners.
 #
 # Isolation: no Docker socket, no host paths, no host network. Each worker has its own network
 # namespace, so a dev server a job starts on :4321 never meets the host's or another worker's.

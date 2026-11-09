@@ -4,7 +4,7 @@
  * endpoints only, before Turnstile: a request with the right `x-qa-token` for an address in
  * QA_EMAIL_DOMAIN skips Turnstile and nothing else (Better Auth's limits, sign-up policy,
  * email verification and every later check still run). Security model:
- * docs/guides/how-to-configure-abuse-protection.md#qa-bypass
+ * docs/reference/abuse-protection.md#qa-bypass
  */
 import {
   checkQaBypass,

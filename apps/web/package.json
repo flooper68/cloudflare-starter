@@ -18,7 +18,7 @@
     "deploy:dry-run": "astro build && wrangler deploy --dry-run",
     "test:e2e": "playwright test",
     "test:e2e:build": "playwright test -c playwright.build.config.ts",
-    "docs:screenshots": "playwright test -c playwright.screens.config.ts"
+    "docs:screenshots": "playwright test -c playwright.screens.config.ts; status=$?; biome format --write ../../docs/images/screens/manifest.json > /dev/null; exit $status"
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.4.6",

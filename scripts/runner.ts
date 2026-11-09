@@ -14,7 +14,7 @@
  *
  * CI only uses the runners once the CI_RUNS_ON repository variable points at them; pull
  * requests from forks always stay on GitHub-hosted runners. Guide:
- * docs/guides/how-to-setup-ci.md#self-hosted-runners.
+ * docs/reference/ci.md#self-hosted-runners.
  */
 import { type SpawnSyncOptions, spawn, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -293,7 +293,7 @@ const SECURITY_NOTE = [
   "A runner runs whatever code a job checks out. In a PUBLIC repository this is only safe",
   "because CI sends pull requests from forks to GitHub-hosted runners, no workflow uses",
   "pull_request_target, deploys start only by hand, and outside contributors' workflows need",
-  "approval (Settings → Actions → General). See docs/guides/how-to-setup-ci.md#security.",
+  "approval (Settings → Actions → General). See docs/reference/ci.md#security.",
 ].join("\n");
 
 // --- Commands ------------------------------------------------------------------------

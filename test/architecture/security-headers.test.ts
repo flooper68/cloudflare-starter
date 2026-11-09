@@ -1,7 +1,7 @@
 /**
  * The pages' Content-Security-Policy allows no 'unsafe-inline' script: an inline script
  * runs only when Astro hashed it at build time. These rules keep new markup inside that
- * contract (docs/guides/how-to-configure-security-headers.md#inline-scripts-and-styles).
+ * contract (docs/reference/security-headers.md#inline-scripts-and-styles).
  */
 import { describe, expect, it } from "vitest";
 

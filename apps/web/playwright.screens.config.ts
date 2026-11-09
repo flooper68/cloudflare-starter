@@ -5,7 +5,7 @@ import { devPort } from "./dev-port.mjs";
 // `bun run docs:screenshots`: the docs screenshots (test/screens/), against `astro dev`
 // with local bindings and the demo seed (test/seed/demo.ts), like the E2E journeys. Not
 // part of CI's checks: the docs-screenshots workflow runs it by hand and opens a PR.
-// SHOTS=members,billing captures only those. docs/guides/how-to-publish-docs-and-landing.md#screenshots
+// SHOTS=members,billing captures only those. docs/reference/docs-site.md#screenshots
 const port = devPort();
 const baseURL = `http://localhost:${port}`;
 

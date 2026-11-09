@@ -1,5 +1,5 @@
 /**
- * The docs' images stay whole (docs/guides/how-to-publish-docs-and-landing.md#screenshots):
+ * The docs' images stay whole (docs/reference/docs-site.md#screenshots):
  * - every screenshot a doc names (`shot="…"`, `::shot{id="…"}`, `poster="…"`) is in
  *   docs/images/screens/manifest.json with its dark and light images, and every image
  *   the manifest lists is in the repository, under the 150 KB budget;

@@ -26,7 +26,7 @@ import {
 } from "../../src/docs/kit/shots";
 import { expect, test } from "../e2e/fixtures";
 import { open } from "../e2e/helpers";
-import { seedDemo } from "../seed/demo";
+import { DEMO, seedDemo } from "../seed/demo";
 import { SHOTS, type Shot } from "./shots";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
@@ -164,6 +164,9 @@ for (const shot of SHOTS.filter((entry) => !only || only.includes(entry.id))) {
     for (const variant of variants) {
       const context = await newContext(browser, shot, variant);
       const page = await context.newPage();
+      // One fixed "now" for the browser, so relative times ("2 days left", "yesterday")
+      // read the same in every capture.
+      await page.clock.setFixedTime(DEMO.now);
       await show(page, shot);
       const png = await page.screenshot({
         animations: "disabled",

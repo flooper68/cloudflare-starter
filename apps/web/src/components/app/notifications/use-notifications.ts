@@ -19,7 +19,7 @@ function failed(error: unknown) {
  * The unread count for the bell: loaded on mount, again when the window regains focus or
  * becomes visible, and every 60 s while it is visible. Polling is the starter's choice;
  * a Durable Object pushing changes is the realtime upgrade
- * (docs/guides/how-to-send-notifications.md#realtime).
+ * (docs/reference/notifications.md#realtime).
  */
 export function useUnreadCount() {
   const [count, setCount] = useState(0);

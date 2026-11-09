@@ -4,7 +4,7 @@
  * Cloudflare adapter adds an immutable rule for `/_astro/*` only when none is here; one is.
  * Every static HTML file also gets `no-transform` (cache-control.ts): the Cloudflare
  * edge then injects no Web Analytics beacon the page policy would block.
- * docs/guides/how-to-publish-docs-and-landing.md#caching
+ * docs/reference/docs-site.md#caching
  */
 
 import { withNoTransform } from "./cache-control";
