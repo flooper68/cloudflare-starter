@@ -5,9 +5,12 @@
  * page", edit link, search). The rendered Markdown is what Pagefind indexes. The
  * changelog has its own page (changelog.astro); the roadmap page renders the planned
  * features of the feature data under its Markdown (DocsRoadmap.astro). docs/guides/how-to-publish-docs-and-landing.md
+ * changelog has its own page (changelog.astro). A doc with a recorded `::video`
+ * (src/docs/walkthroughs.ts) also loads the video player's script. docs/guides/how-to-publish-docs-and-landing.md
  */
 import { getCollection, render } from "astro:content";
 import { Prose } from "@cloudflare-starter/ui";
+import PlayerAssets from "@/components/media/PlayerAssets.astro";
 import DocsHome from "@/components/site/DocsHome.astro";
 import DocsRoadmap from "@/components/site/DocsRoadmap.astro";
 import { roadmap } from "@/content/features";
@@ -16,6 +19,7 @@ import { DOCS } from "@/docs/docs.config";
 import { slugFor } from "@/docs/links";
 import { docDescription } from "@/docs/meta";
 import { buildNav, docTitle } from "@/docs/nav";
+import { hasRecordedVideo } from "@/docs/walkthroughs";
 import DocsLayout from "@/layouts/DocsLayout.astro";
 
 export const prerender = true;
@@ -65,4 +69,5 @@ const tocHeadings = isRoadmap
     <Content />
   </Prose>
   {isRoadmap && <DocsRoadmap />}
+  {hasRecordedVideo(entry.body ?? "") && <PlayerAssets />}
 </DocsLayout>

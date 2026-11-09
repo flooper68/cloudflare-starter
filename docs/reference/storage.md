@@ -167,6 +167,10 @@ Adding presigned URLs:
 
 Profile avatars/logos use capped PNG/JPEG/WebP uploads, current-reference checks and private versioned reads under users/<id>/avatar/ and workspaces/<id>/logo/. See [settings](../guides/how-to-use-settings.md) for ownership, cleanup and reconciliation.
 
+## Walkthrough videos
+
+The FILES bucket also holds the site's walkthrough videos under `media/<hash>/`, uploaded by `bun run media:upload --env <env>` and served publicly by the Worker at `/media/<hash>/<file>`. They are not user data: no `files` row names them, storage reconciliation scans only `workspaces/` and `users/`, and exports and erasures never touch them. [how-to-record-walkthrough-videos.md](../guides/how-to-record-walkthrough-videos.md)
+
 ## Orphaned storage
 
 Optional daily maintenance and on-demand admin reports use `STORAGE_RECONCILE=off|report|delete` (required; explicitly off in the starter). `bun run setup:storage --env all --dry-run` previews source configuration; `doctor` checks it. Start with a report; deletion is permanent and only touches registered application key shapes older than 24 hours with no live, trashed, avatar/logo or pending-upload reference. See [storage reconciliation](trash.md#optional-storage-reconciliation) for the cursor job, admin actions, audit results and safety contract.

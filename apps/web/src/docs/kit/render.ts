@@ -8,6 +8,9 @@
  * (a blank line would end the HTML block) and every text is escaped.
  * Syntax and examples: docs/reference/docs-site.md#docs-components
  */
+
+import { playerHtml } from "../../components/media/player-markup";
+import type { MediaEntry } from "../../content/media";
 import { diagramHtml } from "../diagrams";
 
 export function escapeHtml(text: string): string {
@@ -383,32 +386,13 @@ export function variantOpen(variant: ShotVariant): string {
 // ---------------------------------------------------------------------------------------
 // Video slot
 
-export interface MediaEntry {
-  readonly src: string;
-  readonly poster?: string;
-  readonly captions?: string;
-  readonly chapters?: string;
-  readonly title?: string;
-  /** "1:15" */
-  readonly duration?: string;
-}
-
 /**
- * The video when the media manifest has it: a native player with captions and chapters
- * (the video PR's player component replaces this markup). No autoplay, no preload.
+ * The video when the media manifest has it: the walkthrough player shared with the home
+ * page (components/media/player-markup.ts; the docs page loads its script). Nothing loads
+ * before Play; captions on, chapters beside it.
  */
-export function videoPlayerHtml(title: string, media: MediaEntry): string {
-  const tracks = [
-    media.captions
-      ? `<track kind="captions" src="${escapeHtml(media.captions)}" srclang="en" label="English" default>`
-      : "",
-    media.chapters
-      ? `<track kind="chapters" src="${escapeHtml(media.chapters)}" srclang="en">`
-      : "",
-  ].join("");
-  const poster = media.poster ? ` poster="${escapeHtml(media.poster)}"` : "";
-  const length = media.duration ? ` · ${escapeHtml(media.duration)}` : "";
-  return `<figure class="dk-video" data-state="ready"><video controls preload="none" playsinline${poster} src="${escapeHtml(media.src)}" aria-label="${escapeHtml(`Video: ${title}`)}">${tracks}</video><figcaption class="dk-video-caption"><strong>${escapeHtml(title)}</strong>${length}</figcaption></figure>`;
+export function videoPlayerHtml(media: MediaEntry): string {
+  return `<div class="dk-walkthrough not-prose">${playerHtml(media, media.title)}</div>`;
 }
 
 /** The poster until the video exists: its opening (the poster image follows) and close. */

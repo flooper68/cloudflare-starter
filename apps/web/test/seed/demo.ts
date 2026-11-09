@@ -208,6 +208,9 @@ async function seedPeople(page: Page) {
       .context()
       .browser()
       ?.newContext({
+        // The page's origin: outside Playwright Test (the video recorder) no baseURL
+        // is configured for a new context.
+        baseURL: new URL(page.url()).origin,
         storageState: { cookies: [], origins: [] },
       });
     if (!context) throw new Error("no browser");
@@ -282,23 +285,39 @@ async function seedAgent(page: Page) {
 }
 
 /** Makes Ada a platform admin on the local D1, the documented way. */
-function seedAdmin() {
-  execFileSync("bun", ["scripts/setup-admin.ts", "--email", DEMO.owner.email], {
-    cwd: ROOT,
-    stdio: "pipe",
-  });
+function seedAdmin(persistTo?: string) {
+  execFileSync(
+    "bun",
+    [
+      "scripts/setup-admin.ts",
+      "--email",
+      DEMO.owner.email,
+      ...(persistTo ? ["--persist-to", persistTo] : []),
+    ],
+    { cwd: ROOT, stdio: "pipe" }
+  );
+}
+
+export interface SeedOptions {
+  /**
+   * Connect the "Demo MCP client" (default true). The walkthrough recorder leaves it
+   * out: its videos connect the agent on camera.
+   */
+  readonly agent?: boolean;
+  /** The local state of the dev server, when it is not .wrangler/state (the recorder's). */
+  readonly persistTo?: string;
 }
 
 /** Builds the demo world; leaves `page` signed in as Ada in the demo workspace. */
-export async function seedDemo(page: Page) {
+export async function seedDemo(page: Page, options: SeedOptions = {}) {
   await signInDemo(page, DEMO.owner);
-  seedAdmin();
+  seedAdmin(options.persistTo);
   await switchToDemoWorkspace(page);
   await seedNotes(page);
   await seedTrash(page);
   await seedFile(page);
   await seedPeople(page);
-  await seedAgent(page);
+  if (options.agent ?? true) await seedAgent(page);
   // Sign in again so the session carries the admin role.
   await page.context().clearCookies();
   await signInDemo(page, DEMO.owner);

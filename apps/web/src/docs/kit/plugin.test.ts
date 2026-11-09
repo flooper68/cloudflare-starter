@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { markdownToHtml } from "satteri";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { EMPTY_MEDIA, MEDIA_MANIFEST } from "./media";
 import { docsKitPlugins } from "./plugin";
 import type { ScreensManifest } from "./shots";
 
@@ -166,5 +167,37 @@ describe("docs kit plugin", () => {
     expect(html).toContain('<figure class="dk-flow" data-docs-diagram=""');
     expect(html).toContain("Video coming soon");
     expect(html).toContain('alt="Video coming soon: Agents walkthrough"');
+  });
+
+  it("plays a recorded video from the shared media manifest", () => {
+    const entry = {
+      id: "agents",
+      title: "Agents & MCP",
+      kind: "walkthrough",
+      hash: "0123456789ab",
+      duration: 75,
+      width: 1440,
+      height: 900,
+      audio: false,
+      poster: { src: "/media/0123456789ab/agents.jpg", bytes: 1 },
+      captions: { src: "/media/0123456789ab/agents.vtt", bytes: 1 },
+      chapters: [{ start: 0, title: "Start", caption: "No agents yet." }],
+      sources: [
+        { src: "/media/0123456789ab/agents.mp4", type: "video/mp4", bytes: 1 },
+      ],
+      encoder: "ffmpeg",
+    };
+    mkdirSync(join(root, "apps/web/src/content"), { recursive: true });
+    writeFileSync(
+      join(root, MEDIA_MANIFEST),
+      JSON.stringify({ version: 1, videos: { agents: entry } })
+    );
+    const html = render(
+      '::video{id="agents" poster="agents" title="Agents walkthrough"}\n'
+    );
+    expect(html).toContain('aria-label="Video: Agents &amp; MCP"');
+    expect(html).toContain('data-src="/media/0123456789ab/agents.vtt"');
+    expect(html).not.toContain("Video coming soon");
+    writeFileSync(join(root, MEDIA_MANIFEST), JSON.stringify(EMPTY_MEDIA));
   });
 });

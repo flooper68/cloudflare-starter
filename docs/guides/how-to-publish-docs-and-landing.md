@@ -29,6 +29,8 @@ settings cards, the one prompt, tabs for app / API / agent, decisions and gotcha
 
 Docs are visual first. The components (`:::screenshot`, `:::steps`, `::flow`, `:::settings`, `:::tabs`, `:::prompt`, `:::byhand`, callouts, the video slot) are Markdown directives rendered at build time; screenshots come from `bun run docs:screenshots`, with callouts placed from element locators. Syntax and the pipeline: [docs components](../reference/docs-site.md#docs-components), [screenshots](../reference/docs-site.md#screenshots).
 
+The landing clips and a doc's `::video` play walkthrough videos recorded with `bun run media:record`, uploaded to R2 with `bun run media:upload --env <env>` and served at `/media/`: [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md).
+
 ## Generated reference pages
 
 Settings, agent tools, catalogs and costs are generated from the code into marked blocks (`<!-- generated:name -->`). After changing a setting, a tool, a catalog or the home page's prices, run `bun run docs:reference`; a test fails while a block is out of date.

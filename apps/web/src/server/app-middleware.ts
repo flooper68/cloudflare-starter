@@ -20,6 +20,7 @@ import {
   withHeaders,
   withRequestContext,
 } from "@/server/http";
+import { MEDIA_PATH } from "@/server/media";
 import { buildPlatform } from "@/server/platform";
 import {
   CSP_REPORT_PATH,
@@ -164,12 +165,13 @@ async function routeAppRequest(
     async (scope) => {
       context.locals.requestContext = scope.context;
 
-      // The auth handler, OAuth discovery, /mcp (bearer tokens, not cookies) and the
-      // anonymous CSP reports never need the cookie session. /mcp sets the user on its
-      // context itself.
+      // The auth handler, OAuth discovery, /mcp (bearer tokens, not cookies), the
+      // anonymous CSP reports and the public walkthrough media never need the cookie
+      // session. /mcp sets the user on its context itself.
       const { pathname } = context.url;
       if (
         pathname.startsWith(AUTH_BASE_PATH) ||
+        pathname.startsWith(MEDIA_PATH) ||
         pathname.startsWith("/.well-known/") ||
         pathname === MCP_PATH ||
         pathname === CSP_REPORT_PATH

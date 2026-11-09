@@ -17,16 +17,12 @@ index 5063798..d103e65 100644
  import { siteIntegrations } from "./src/docs/site-integrations.ts";
 -import { demoAdapterOptions, localDemoPlugins } from "./test/e2e/demo-vite.mjs";
  import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
-@@ -27,7 +26,3 @@ export default defineConfig({
-   // adapter's default to resize with Cloudflare Images (a paid feature).
--  adapter: cloudflare({
--    imageService: "passthrough",
+@@ -30,4 +29,2 @@ export default defineConfig({
+     imageService: "passthrough",
 -    // The demo-mode E2E server only (test/e2e/demo-vite.mjs): its own local state.
 -    ...demoAdapterOptions(process.env.E2E_DEMO_PORT),
--  }),
-+  adapter: cloudflare({ imageService: "passthrough" }),
-   // Better Auth owns sessions; an in-memory driver keeps Astro from
-@@ -99,3 +94,2 @@ export default defineConfig({
+     // MEDIA_STATE_DIR: the walkthrough recorder (media/record.ts) runs `astro dev` on its
+@@ -110,3 +106,2 @@ export default defineConfig({
        ...localTurnstilePlugins(process.env.E2E_LOCAL_TURNSTILE === "1"),
 -      ...localDemoPlugins(process.env.E2E_DEMO_PORT),
      ],

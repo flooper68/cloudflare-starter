@@ -821,6 +821,8 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
     "Atom feed of CHANGELOG.md, prerendered at build time; agents read the changelog in the repository",
   "robots.txt.ts":
     "static crawler rules, prerendered at build time; no data and nothing for an agent to do",
+  "media/[...path].ts":
+    "the public walkthrough videos and posters from R2 for the site's player; no user data and nothing for an agent to do",
 };
 
 export function annotationsOf(tool: ToolDefinition) {

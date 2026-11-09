@@ -200,7 +200,7 @@ function leaf(doc: Doc, node: MdNode, ctx: Ctx): Content | Content[] {
       const title = attr(node, "title") ?? label;
       if (!title) throw new Error(`${where(doc.from, node)} needs a title`);
       const media = doc.media.videos[id];
-      if (media) return raw(videoPlayerHtml(title, media));
+      if (media) return raw(videoPlayerHtml(media));
       const poster = attr(node, "poster");
       if (!poster) return raw(videoPlaceholderHtml(title));
       const { open, close } = videoPosterHtml(title);
