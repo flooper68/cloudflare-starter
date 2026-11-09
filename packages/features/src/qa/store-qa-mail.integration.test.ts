@@ -22,7 +22,7 @@ describe("storeQaMail", () => {
     expect(stored).toMatchObject({
       id,
       to: OWNER,
-      from: "starter@flooper.me",
+      from: '"Cloudflare Starter" <starter@flooper.me>',
       subject: "Member joined",
       receivedAt: at,
     });

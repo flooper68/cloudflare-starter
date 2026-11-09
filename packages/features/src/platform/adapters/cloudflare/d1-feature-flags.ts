@@ -85,7 +85,13 @@ function toFlag(row: FlagRow, rules: readonly RuleRow[]): StoredFlag {
  * once; other isolates pick a change up within the TTL. A flag whose stored JSON does not
  * parse evaluates to the default with PARSE_ERROR; a failed query to the default with
  * GENERAL (the port never throws), reported through `onLoadError` and not retried for
- * D1_FLAGS_RETRY_MS. Concurrent evaluations on a cold cache share one query.
+ * D1_FLAGS_RETRY_MS.
+ *
+ * Only settled data is shared between requests, never a pending query: in Workers a
+ * promise belongs to the request that created it, and when that request ends early (the
+ * browser navigated away) its I/O is cancelled and the promise never settles. A second
+ * request awaiting it hung with it (every tRPC batch with `flags.client` after a
+ * navigation, on production). So each evaluation on a cold cache runs its own query.
  */
 export function createD1FeatureFlags(
   options: D1FeatureFlagsOptions
@@ -93,7 +99,6 @@ export function createD1FeatureFlags(
   const db = createDb(options.d1, schema);
   const ttlMs = options.ttlMs ?? D1_FLAGS_TTL_MS;
   let cache: { readonly at: number; readonly flags: StoredFlags } | undefined;
-  let inFlight: Promise<StoredFlags> | undefined;
   let failure: { readonly at: number; readonly error: unknown } | undefined;
 
   async function read(): Promise<StoredFlags> {
@@ -133,20 +138,15 @@ export function createD1FeatureFlags(
     const now = options.clock.now().getTime();
     if (cache && now - cache.at < ttlMs) return cache.flags;
     if (failure && now - failure.at < D1_FLAGS_RETRY_MS) throw failure.error;
-    inFlight ??= read()
-      .then((flags) => {
-        failure = undefined;
-        return flags;
-      })
-      .catch((error: unknown) => {
-        failure = { at: options.clock.now().getTime(), error };
-        options.onLoadError?.(error);
-        throw error;
-      })
-      .finally(() => {
-        inFlight = undefined;
-      });
-    return inFlight;
+    try {
+      const flags = await read();
+      failure = undefined;
+      return flags;
+    } catch (error) {
+      failure = { at: options.clock.now().getTime(), error };
+      options.onLoadError?.(error);
+      throw error;
+    }
   }
 
   /**

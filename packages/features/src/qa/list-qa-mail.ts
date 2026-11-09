@@ -9,6 +9,7 @@ import { qaOutbox } from "./qa.schema";
 export interface QaMail {
   readonly id: string;
   readonly to: string;
+  /** As the From header reads: `"Cloudflare Starter" <starter@flooper.me>`. */
   readonly from: string;
   readonly subject: string;
   readonly text: string;

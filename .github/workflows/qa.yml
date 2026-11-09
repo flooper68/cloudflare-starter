@@ -100,7 +100,7 @@ jobs:
             apps/web/playwright-report/qa
             apps/web/test-results/qa
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3
 
   cleanup:
     name: Erase leftover QA accounts
@@ -141,7 +141,7 @@ jobs:
             apps/web/playwright-report/qa
             apps/web/test-results/qa
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3
 
   # Asserts only that the app sent the mail; inbox placement (not spam, links intact) is
   # checked by a person in that mailbox when needed. Skipped, with the reason, without
@@ -195,4 +195,4 @@ jobs:
             apps/web/playwright-report/qa
             apps/web/test-results/qa
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3

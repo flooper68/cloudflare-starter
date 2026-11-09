@@ -1,4 +1,5 @@
 import { type QaEnv, qaEnv } from "./env";
+import { takeSlots } from "./limits";
 import { extractLinks } from "./links";
 import { QA_TOKEN_HEADER } from "./routing";
 
@@ -52,6 +53,8 @@ async function call(
   method: "GET" | "DELETE",
   query: URLSearchParams
 ): Promise<unknown> {
+  // Shares `qa.bypass` with the run's sign-ups and sign-ins (limits.ts paces them all).
+  await takeSlots(["qa.bypass"]);
   let response = await fetch(`${env.baseURL}${OUTBOX_PATH}?${query}`, {
     method,
     headers: { [QA_TOKEN_HEADER]: env.token },

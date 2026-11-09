@@ -9,7 +9,7 @@ The detail behind [the guide](../guides/how-to-use-admin-portal.md) on the admin
 - A **platform admin** is a user whose `user.role` is `admin` (Better Auth's admin plugin column; it may hold a comma list such as `user,admin`). Workspace roles (`owner`, `member`) are separate: a workspace owner administers one workspace, a platform admin the app.
 - The portal is open only when `ADMIN_PORTAL=on` **and** the signed-in user is an admin who is not suspended. Everyone else, anonymous callers included, gets 404 / `NOT_FOUND` for every `/admin` page and `admin.*` procedure: the portal does not reveal that it exists.
 - The role and suspension are read from D1 on every admin call, so a demotion or suspension takes effect at once (the session cookie cache is not trusted for this).
-- Suspending revokes the person's sessions, and erasing an account deletes them. A browser that still holds such a session is signed out on its next request, whether or not its one-minute session cookie cache has run out: pages redirect to `/sign-in` (which renders), APIs answer 401, and the stale session cookies are expired (`apps/web/src/server/auth-security.ts`).
+- Suspending revokes the person's sessions, and erasing an account deletes them. A browser that still holds such a session is signed out on its next request, whether or not its one-minute session cookie cache has run out: pages redirect to `/sign-in` (which renders) and expire the stale session cookies, APIs answer 401 (`apps/web/src/server/auth-security.ts`).
 
 ## Turn it on or off
 
