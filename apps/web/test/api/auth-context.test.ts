@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AUTH_CONTEXT_STALL_MS, getAuth } from "@/server/auth";
+import { AUTH_CONTEXT_STALL_MS, getAuth, readyAuth } from "@/server/auth";
 import type { AppEnv } from "@/server/env";
 
 import { env } from "./helpers";
@@ -83,5 +83,36 @@ describe("getAuth and Better Auth's shared context", () => {
     // A settled instance is kept, however old.
     vi.setSystemTime(Date.now() + 10 * AUTH_CONTEXT_STALL_MS);
     expect(getAuth(isolated)).toBe(second);
+  });
+
+  it("a request arriving while another request's build is stuck builds its own and answers", async () => {
+    // The production QA run: a page and an avatar upload hung for minutes after the
+    // request that started the build had been aborted by a navigation.
+    let hanging = true;
+    const isolated: AppEnv = {
+      ...env,
+      DB: switchableD1(env.DB, () => hanging),
+    };
+    const stuck = getAuth(isolated);
+    expect(await settlesWithin(stuck.$context, 200)).toBe(false);
+
+    // D1 answers again, but the stuck build's query never will.
+    hanging = false;
+    const ready = readyAuth(isolated, 200);
+    expect(await settlesWithin(ready, 5_000)).toBe(true);
+    const auth = await ready;
+    expect(auth).not.toBe(stuck);
+    expect(await auth.api.getSession({ headers: new Headers() })).toBeNull();
+
+    // The rest of the request (tRPC, gateways) gets the built instance, not the stuck one.
+    expect(getAuth(isolated)).toBe(auth);
+    expect(await readyAuth(isolated, 200)).toBe(auth);
+  });
+
+  it("readyAuth serves a built instance without building another", async () => {
+    const isolated: AppEnv = { ...env };
+    const first = await readyAuth(isolated);
+    expect(await readyAuth(isolated, 1)).toBe(first);
+    expect(getAuth(isolated)).toBe(first);
   });
 });

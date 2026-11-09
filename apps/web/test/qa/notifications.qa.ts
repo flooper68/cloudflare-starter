@@ -34,6 +34,12 @@ let joinedMail: Awaited<ReturnType<typeof expectMail>>;
 const workspace = `QA ${process.env.QA_RUN_ID ?? "run"} notices`;
 const joinedLabel = "Someone joins a workspace you manage";
 const roleLabel = "Your role in a workspace changes";
+/**
+ * One look after a reload: longer than the page takes to show its data (document, app
+ * bundle, then the batched tRPC query, about 3 s on production). With 2 s, every look
+ * ended while the inbox was still a skeleton (production run 42546548879).
+ */
+const PAGE_LOAD = 10_000;
 
 test.beforeAll(async ({ browser }) => {
   a = await newUserPage(browser);
@@ -92,8 +98,8 @@ test("the bell: the badge counts the unread items; open, mark read and archive",
   const badge = a.getByRole("button", { name: /^Notifications, \d+ unread$/ });
   await expect(async () => {
     await open(a, "/app/dashboard");
-    await expect(badge).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 60_000 });
+    await expect(badge).toBeVisible({ timeout: PAGE_LOAD });
+  }).toPass({ timeout: 90_000 });
   const count = Number(
     /(\d+) unread/.exec((await badge.getAttribute("aria-label")) ?? "")?.[1]
   );
@@ -202,6 +208,10 @@ test("one-click unsubscribe (RFC 8058 POST) from a role-change mail; no mail of 
   await expect(
     b.getByRole("switch", { name: `${roleLabel}: email` })
   ).not.toBeChecked();
+  // Only that type's mail: its in-app notices stay on.
+  await expect(
+    b.getByRole("switch", { name: `${roleLabel}: in app` })
+  ).toBeChecked();
 
   // The next role change still reaches B's inbox in the app, but sends no mail.
   const after = new Date();
@@ -212,8 +222,8 @@ test("one-click unsubscribe (RFC 8058 POST) from a role-change mail; no mail of 
       b.getByRole("list", { name: "Notifications" }).getByRole("link", {
         name: `You are now Member in ${workspace}`,
       })
-    ).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 60_000 });
+    ).toBeVisible({ timeout: PAGE_LOAD });
+  }).toPass({ timeout: 90_000 });
   const extra = await inbox
     .waitFor({
       to: accountB.email,

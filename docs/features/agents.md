@@ -82,6 +82,6 @@ The call that does it completes; the next one is refused. It only ever removes a
 
 ## Related
 
-- [Add an agent tool](../guides/how-to-setup-mcp.md#adding-a-tool) and the parity rule
+- [Add an agent tool](../reference/mcp.md#adding-a-tool) and the parity rule
 - [Accounts and security](accounts.md): tokens tied to the browser that allowed them
 - [Notes](notes.md): the tools of the example feature

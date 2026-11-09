@@ -3,6 +3,7 @@ import { Checkbox as CheckboxPrimitive } from "radix-ui";
 import type { ComponentProps, ReactNode } from "react";
 import { useId } from "react";
 
+import { useHydrating } from "../lib/hydration";
 import { focusRing } from "../lib/styles";
 import { cn } from "../lib/utils";
 
@@ -27,6 +28,8 @@ export function Checkbox({
 }: CheckboxProps) {
   const generatedId = useId();
   const id = idProp ?? generatedId;
+  // Inside an island that has not hydrated yet: not clickable until it works.
+  const hydrating = useHydrating();
 
   const box = (
     <CheckboxPrimitive.Root
@@ -42,10 +45,14 @@ export function Checkbox({
         "data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-accent-fg",
         "data-[state=indeterminate]:border-accent data-[state=indeterminate]:bg-accent data-[state=indeterminate]:text-accent-fg",
         "aria-invalid:border-danger disabled:cursor-not-allowed disabled:opacity-50",
+        "data-hydrating:opacity-100 data-hydrating:animate-hydrating",
         focusRing,
         !label && className
       )}
       {...props}
+      disabled={props.disabled || hydrating}
+      aria-busy={hydrating || undefined}
+      data-hydrating={hydrating || undefined}
     >
       <CheckboxPrimitive.Indicator className="group flex items-center justify-center">
         <Check

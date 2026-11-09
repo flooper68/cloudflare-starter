@@ -2,7 +2,7 @@
  * The copy and links of the home page (src/pages/index.astro): the starter's own page.
  * What the starter does (pillars, groups, features) is data in src/content/features.ts;
  * this file holds the page's own words. A project replaces both with its product's
- * landing: docs/guides/how-to-publish-docs-and-landing.md#replace-the-landing-page.
+ * landing: docs/reference/docs-site.md#replace-the-landing-page.
  */
 import { DOCS } from "@/docs/docs.config";
 

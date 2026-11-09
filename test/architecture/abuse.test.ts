@@ -176,7 +176,7 @@ describe("rate-limit bindings in wrangler.jsonc", () => {
 
   // namespace_ids are account-wide; uniqueness against other Workers cannot be checked
   // here, but a project must at least not keep the starter's ids (setup:cloudflare
-  // replaces them; docs/guides/how-to-configure-abuse-protection.md#namespace-ids).
+  // replaces them; docs/reference/abuse-protection.md#namespace-ids).
   it("keeps the starter's namespace_ids only in the starter's own Worker", () => {
     const ids = environments.flatMap(([, block]) =>
       ratelimitsOf(block).map((b) => b.namespace_id)

@@ -98,6 +98,7 @@ for (const run of runs) {
         ...args,
       ],
       ["bun", "install"],
+      ["bun", "run", "docs:reference"],
       ["bun", "run", "lint:fix"],
     ];
     let ok = steps.every((step) => sh(copy, step));

@@ -13,7 +13,7 @@ Create a new agent-native app called <name> from the template https://github.com
 ## Start in three steps
 
 :::steps
-1. **Run it locally.** Clone, install, run: everything runs on your machine, with nothing to sign up for. [Run locally, then deploy](guides/how-to-setup-web-app.md).
+1. **Run it locally.** Clone, install, run: everything runs on your machine, with nothing to sign up for. [Run it locally](start/run-locally.md), then [deploy](start/deploy.md); [what it costs](start/what-it-costs.md).
    ::shot{id="dashboard" alt="The dashboard of a freshly started app, with the getting-started checklist"}
 2. **Choose your modes.** Workspaces, sign-up and billing, per environment, by asking your coding agent. [Workspaces](features/workspaces.md), [billing](features/billing.md).
 3. **Deploy and connect an agent.** Deploy to Cloudflare, then add `https://<your-app>/mcp` as a connector in Claude. [Let agents use your app](features/agents.md).
@@ -47,7 +47,6 @@ How to set up or do something; read while doing it.
 | Guide                                                                                 | Use when …                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [how-to-start-a-project.md](guides/how-to-start-a-project.md)                         | you create a new product from the template: the start prompt for a coding agent, what `bun run starter:strip` removes, and the steps by hand                                                                                                                                                                                                                                                                                                                   |
-| [how-to-setup-web-app.md](guides/how-to-setup-web-app.md)                             | you run the app locally for the first time or deploy it                                                                                                                                                                                                                                                                                                                                                                                                        |
 | [how-to-add-a-feature.md](guides/how-to-add-a-feature.md)                             | you add a product feature end to end, add a page to the app navigation or a search to the command palette, replace a placeholder app (Notes, Tasks), or review whether a new feature is complete                                                                                                                                                                                                                                                               |
 | [how-to-add-background-jobs.md](guides/how-to-add-background-jobs.md)                 | you add a background job or cron entry, debug a failed job, inspect or replay the dead-letter queue, or weigh jobs vs Workflows                                                                                                                                                                                                                                                                                                                                |
 | [how-to-setup-auth.md](guides/how-to-setup-auth.md)                                   | you set secrets, change sign-in methods, add Google, or regenerate the auth tables                                                                                                                                                                                                                                                                                                                                                                             |
@@ -99,7 +98,49 @@ Contracts and principles that hold regardless of the current code, and the diagr
 
 ## Reference
 
-How work is done here, and where the code lives.
+Everything to look up: settings, agent tools and catalogs (generated from the code), the detail behind each guide, how work is done here, and where the code lives.
+
+### Lookups
+
+| Doc                                                  | Use when …                                                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [reference/settings.md](reference/settings.md)       | you look up any setting: its values, local default and what it does (generated)                               |
+| [reference/agent-tools.md](reference/agent-tools.md) | you look up an agent tool, or why a procedure has none (generated)                                            |
+| [reference/catalogs.md](reference/catalogs.md)       | you look up a rate limit, audit action, notification type, flag, analytics event, job or schedule (generated) |
+| [reference/deployment.md](reference/deployment.md)   | you need every binding, var and secret, a deploy step in full, or a fix for a failing deploy                  |
+
+### Guide details
+
+The reference half of each guide: the guide shows how, this shows everything.
+
+| Doc                                                                  | Use when …                                                                                                   |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [reference/abuse-protection.md](reference/abuse-protection.md)       | you need rate limits and the human check in depth: refusals, the QA bypass, namespace ids, another limiter   |
+| [reference/security-headers.md](reference/security-headers.md)       | you need every header, the page policy, static and prerendered pages, exceptions, HSTS                       |
+| [reference/metrics-and-tracing.md](reference/metrics-and-tracing.md) | you need what is measured, the metric catalog, the data-point layout, SQL and Grafana                        |
+| [reference/logging.md](reference/logging.md)                         | you need the log record, trace context, forwarding to an OpenTelemetry backend                               |
+| [reference/product-analytics.md](reference/product-analytics.md)     | you need the event rules, the Segment mapping, privacy, sampling, querying, Web Analytics                    |
+| [reference/audit-log.md](reference/audit-log.md)                     | you need what is recorded, metadata rules, retention, the OCSF mapping                                       |
+| [reference/background-jobs.md](reference/background-jobs.md)         | you need the envelope, retries, idempotency, the dead-letter queue, jobs or Workflows                        |
+| [reference/notifications.md](reference/notifications.md)             | you need channels and cadence, producers, unsubscribe headers, the digest, retention                         |
+| [reference/billing.md](reference/billing.md)                         | you need the catalog, refusals, the billing page and prompts, trials, admin tools, a provider adapter        |
+| [reference/trash.md](reference/trash.md)                             | you need how the trash is built, reading trashable tables, retention, storage reconciliation                 |
+| [reference/feature-flags.md](reference/feature-flags.md)             | you need flags versus entitlements, evaluation, changing flags with SQL, a flag vendor                       |
+| [reference/data-privacy.md](reference/data-privacy.md)               | you need exports and erasure in full, storage expiry, retained data, uploads during erasure                  |
+| [reference/mcp.md](reference/mcp.md)                                 | you need how the agent endpoint works, agent tokens, disconnecting, testing                                  |
+| [reference/auth.md](reference/auth.md)                               | you need what is wired up, the pages, auth mail, changing the auth tables                                    |
+| [reference/account-security.md](reference/account-security.md)       | you need the security flows, assurance and agent tokens, implementation and tests                            |
+| [reference/settings-pages.md](reference/settings-pages.md)           | you need the settings pages, session credentials, images and storage, their tools                            |
+| [reference/workspaces.md](reference/workspaces.md)                   | you need the modes, the active workspace, sign-up rules, invitations, roles, stripping                       |
+| [reference/admin-portal.md](reference/admin-portal.md)               | you need every admin action and its rules, impersonation, how the portal is built                            |
+| [reference/health.md](reference/health.md)                           | you need the response format, each check, what the public sees, status pages, troubleshooting                |
+| [reference/storage.md](reference/storage.md)                         | you need the two upload paths compared, presigned set-up step by step, common problems                       |
+| [reference/email.md](reference/email.md)                             | you need what sends mail, the sender, the verification screens, swapping the provider                        |
+| [reference/ci.md](reference/ci.md)                                   | you need every CI job, the deploy workflow in detail, self-hosted runners                                    |
+| [reference/public-demo.md](reference/public-demo.md)                 | you need demo mode settings in full, the retention rules, debugging, removing it                             |
+| [reference/adding-a-feature.md](reference/adding-a-feature.md)       | you need the seventeen steps as Notes does them, navigation, removing Notes                                  |
+| [reference/docs-site.md](reference/docs-site.md)                     | you need what is published, docs components, screenshots, the landing page, the feature map, search, caching |
+| [reference/branding.md](reference/branding.md)                       | you need brand versus system, choosing values, the checklist                                                 |
 
 ### Processes
 

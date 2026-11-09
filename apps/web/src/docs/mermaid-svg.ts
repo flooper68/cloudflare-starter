@@ -6,7 +6,7 @@
  * GitHub. mermaid-svg.test.ts fails while a committed `.svg` differs from its source's
  * output, so a diagram cannot go stale.
  *
- * The output follows the docs diagram rules (how-to-publish-docs-and-landing.md#diagrams):
+ * The output follows the docs diagram rules (docs/reference/docs-site.md#diagrams):
  * - colours from the site tokens (`var(--ui-fg, <fallback>)`), with GitHub fallbacks
  *   for both colour schemes, in a `<style>` scoped to the `dg-mm` class: beautiful-mermaid
  *   paints with `--_*` variables, set here instead of its own stylesheet, which imports a

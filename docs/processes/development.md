@@ -64,7 +64,7 @@ Commit, push, open a PR, run a deploy, change the owner's Cloudflare account, cr
 
 ## Changelog
 
-[CHANGELOG.md](../../CHANGELOG.md) at the repository root records what changed in each release for people evaluating the starter or building on it. It follows [Keep a Changelog 1.1](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and the docs site renders it as release notes at `/docs/changelog/` with an Atom feed at `/docs/changelog.xml` ([how-to-publish-docs-and-landing.md](../guides/how-to-publish-docs-and-landing.md#changelog)).
+[CHANGELOG.md](../../CHANGELOG.md) at the repository root records what changed in each release for people evaluating the starter or building on it. It follows [Keep a Changelog 1.1](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/spec/v2.0.0.html), and the docs site renders it as release notes at `/docs/changelog/` with an Atom feed at `/docs/changelog.xml` ([how-to-publish-docs-and-landing.md](../reference/docs-site.md#changelog)).
 
 **Every PR that changes something a user or adopter notices adds a line under `## [Unreleased]`**: a new capability, a changed behaviour, setting, command, route or default, a removal or deprecation, a security change, a fix of something people could hit. Internal refactors, test-only changes and docs typo fixes need none.
 

@@ -23,6 +23,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const PASSWORD = "Demo-only-password-2026";
 
 export const DEMO = {
+  /**
+   * The browser's clock in captures and recordings (`page.clock.setFixedTime`). Data the
+   * server writes keeps its real time; screens that show relative times use this.
+   */
+  now: new Date("2026-11-10T09:00:00Z"),
   workspace: "Acme (sample)",
   owner: { name: "Ada Lovelace", email: "ada@demo.test", password: PASSWORD },
   member: {

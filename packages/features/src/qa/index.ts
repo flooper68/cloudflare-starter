@@ -1,5 +1,5 @@
 // The QA outbox: with QA_BYPASS=on, mail to QA addresses is stored for the automated QA
-// suite instead of sent (docs/guides/how-to-qa-a-deployment.md#the-qa-outbox).
+// suite instead of sent (apps/web/test/qa/README.md#the-qa-outbox).
 export { clearQaMail } from "./clear-qa-mail";
 export {
   isQaRunAddress,

@@ -7,7 +7,7 @@
  * portal's "send test email" (`admin.email.sendTest`) for QA_DELIVERY_ADDRESS, a plain
  * workflow variable (the owner's own address, not a secret). It asserts only that the app
  * accepted and sent it; whether it reached the inbox (and not spam) a person checks there
- * when needed. docs/guides/how-to-qa-a-deployment.md#weekly-delivery-check
+ * when needed. apps/web/test/qa/README.md#weekly-delivery-check
  */
 import { callApp, open, qaEnv, qaSkipReason, qaTest, signIn } from "../support";
 import { qaAdmin } from "../support/admin";
@@ -18,7 +18,7 @@ const skip =
   qaSkipReason() ??
   (deliveryAddress
     ? null
-    : "Delivery check skipped: set QA_DELIVERY_ADDRESS (docs/guides/how-to-qa-a-deployment.md#weekly-delivery-check)");
+    : "Delivery check skipped: set QA_DELIVERY_ADDRESS (apps/web/test/qa/README.md#weekly-delivery-check)");
 
 qaTest.skip(skip !== null, skip ?? "");
 

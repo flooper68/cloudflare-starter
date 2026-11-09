@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { APIRoute } from "astro";
 
-import { AUTH_BASE_PATH, getAuth } from "@/server/auth";
+import { AUTH_BASE_PATH, readyAuth } from "@/server/auth";
 import { buildPlatform } from "@/server/platform";
 import {
   betterAuthResponse,
@@ -33,7 +33,7 @@ export const ALL: APIRoute = async ({ request, locals }) => {
   if (refused) return refused;
   return betterAuthResponse(
     request,
-    await getAuth(env).handler(request),
+    await (await readyAuth(env)).handler(request),
     requestContext,
     AUTH_BASE_PATH
   );

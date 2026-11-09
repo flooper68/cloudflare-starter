@@ -1,6 +1,6 @@
 /**
  * The automated QA suite's bypass of the human check through the real Better Auth handler
- * (docs/guides/how-to-configure-abuse-protection.md#qa-bypass): QA_BYPASS=on in the API
+ * (docs/reference/abuse-protection.md#qa-bypass): QA_BYPASS=on in the API
  * test bindings, the test token in X-QA-Token, an address @qa.flooper.me, and no Turnstile
  * token. Every branch: off, wrong token, wrong domain, accepted (audited), rate limited.
  */

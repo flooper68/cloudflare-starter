@@ -1,6 +1,6 @@
 /**
  * The automated QA suite's self-provisioned admin at the Better Auth edge (QA_BYPASS=on),
- * docs/guides/how-to-configure-abuse-protection.md#the-qa-admin:
+ * docs/reference/abuse-protection.md#the-qa-admin:
  * - QA addresses (`qa@`, `qa+<tag>@` in QA_EMAIL_DOMAIN) can be signed up, taken by an
  *   email change or created by any other sign-in method (Google) only with the QA token,
  *   and never linked to a social account: nobody else can create or claim the QA admin;

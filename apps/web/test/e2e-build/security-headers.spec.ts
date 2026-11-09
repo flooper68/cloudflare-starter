@@ -192,7 +192,7 @@ test("static assets, API and health answers carry the headers", async ({
 
 // Cache-Control: no-transform on every HTML response, so a zone's Web Analytics
 // "automatic setup" injects no beacon at the edge
-// (docs/guides/how-to-configure-security-headers.md#edge-injected-web-analytics). The
+// (docs/reference/security-headers.md#edge-injected-web-analytics). The
 // edge itself is not here: this proves what the Worker and public/_headers send.
 test("every HTML response says no-transform; other responses keep their Cache-Control", async ({
   request,

@@ -5,7 +5,7 @@
  * section, "Works with"). Plain data and pure helpers: no Astro, no DOM, so a page, a
  * component, a test or a script can import it.
  *
- * Stable API (docs/guides/how-to-publish-docs-and-landing.md#feature-data):
+ * Stable API (docs/reference/docs-site.md#feature-data):
  * - `PILLARS`, `GROUPS`, `FEATURES`, `EDGES`, `FLOWS`: readonly arrays, in display order.
  * - Types: `Pillar`, `Group`, `Feature`, `FeatureEdge`, `MapFlow`, `PillarId`, `GroupId`,
  *   `FeatureId`, `FeatureStatus`, `MapNodeId`.
@@ -343,7 +343,7 @@ const RAW = [
     "developer-experience",
     "Setup scripts and doctor",
     "Resources, secrets, auth, admins, analytics, email and storage, checked.",
-    "guides/how-to-setup-web-app"
+    "start/run-locally"
   ),
   f(
     "tests-every-layer",

@@ -2,7 +2,7 @@
 
 The main Worker: Astro 7 + React 19 serving the public SSR surface and the Better Auth–protected React SPA under `/app/*`, plus the queue consumer and Cron Triggers ([src/worker.ts](src/worker.ts)). Data, users and sessions live in D1; files in R2.
 
-See [docs/guides/how-to-setup-web-app.md](../../docs/guides/how-to-setup-web-app.md) for setup and deployment.
+See [../../docs/start/run-locally.md](../../docs/start/run-locally.md) for setup and deployment.
 
 Related guides:
 

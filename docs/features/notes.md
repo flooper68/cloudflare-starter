@@ -73,7 +73,7 @@ A working example shows every rule the architecture tests check (audit, privacy,
 ## Limits
 
 - Free plan: 50 notes; Pro: unlimited (examples in the catalog).
-- Remove it when your feature is in: [removing Notes](../guides/how-to-add-a-feature.md#removing-notes-from-a-project).
+- Remove it when your feature is in: [removing Notes](../reference/adding-a-feature.md#removing-notes-from-a-project).
 
 ## Related
 

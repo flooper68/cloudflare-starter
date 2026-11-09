@@ -72,7 +72,7 @@ curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"
 :::
 
 :::decision{title="Jobs or Workflows"}
-Jobs fit short steps (seconds) with retries. A long, multi-step process that must resume after each step is a Workflow ([jobs or Workflows](../guides/how-to-add-background-jobs.md#jobs-or-workflows)).
+Jobs fit short steps (seconds) with retries. A long, multi-step process that must resume after each step is a Workflow ([jobs or Workflows](../reference/background-jobs.md#jobs-or-workflows)).
 :::
 
 :::gotcha{title="A job that isn't in the catalog is dropped"}
