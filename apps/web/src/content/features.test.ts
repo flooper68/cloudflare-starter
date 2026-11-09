@@ -1,7 +1,8 @@
 /**
  * The feature data stays whole: unique ids, every reference resolves, every docs slug is
  * a published docs page, the map stays small (owner's decision: about 8 to 12 nodes and
- * 10 to 12 edges), and each group's card lists 3 to 6 features.
+ * 10 to 12 edges), each group's card lists 3 to 6 features, and the roadmap lists only
+ * planned features, each once.
  */
 import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -18,6 +19,8 @@ import {
   GROUPS,
   highlightsOf,
   PILLARS,
+  ROADMAP,
+  roadmap,
   worksWith,
 } from "./features";
 
@@ -123,5 +126,17 @@ describe("feature data", () => {
     expect(FEATURES.find((entry) => entry.id === "containers")?.status).toBe(
       "demo"
     );
+  });
+
+  it("puts only planned features on the roadmap, each once, with a few points", () => {
+    expect(unique(ROADMAP.map((item) => item.feature))).toBe(true);
+    for (const item of roadmap()) {
+      // Never claim built: a feature that ships leaves the roadmap.
+      expect(item.status, item.id).toBe("planned");
+      expect(item.points.length, item.id).toBeGreaterThanOrEqual(2);
+      expect(item.points.length, item.id).toBeLessThanOrEqual(6);
+      for (const point of item.points)
+        expect(point.length, `${item.id}: ${point}`).toBeLessThanOrEqual(40);
+    }
   });
 });

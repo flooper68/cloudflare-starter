@@ -75,9 +75,10 @@ Moving or renaming a doc changes its URL; old links from outside the site then r
 | What it costs    | "$5/month", one sentence on the Workers Paid plan and the source, beside one receipt (`RECEIPT`): each line is what the plan covers, its included allowance and the price above it, then "$5.00 / month + usage above allowances". Numbers exactly as sourced |
 | Start in minutes | One prompt to paste into a coding agent (`START_PROMPT`, `CopyPrompt.astro`): **Copy prompt** uses the Clipboard API, or selects the text where it is missing or refused. No manual steps on the page                                                         |
 | What's new       | The three newest titled entries of `CHANGELOG.md` (`src/landing/whats-new.ts`, read at build time), with the release notes and the feed                                                                                                                       |
+| What's next      | The roadmap (`ROADMAP`, [below](#roadmap)) as one numbered row of planned features, each linking to its entry, with **The roadmap**; left out when the roadmap is empty                                                                                       |
 | Closing, footer  | Both calls to action again; `SiteFooter.astro` with Product, Docs and Project links and the one place the page names its technology, a collapsed "Under the hood"                                                                                             |
 
-What the starter does is data ([feature data](#feature-data)); the page's own words and links are in `apps/web/src/landing/content.ts`. Keep the copy honest: the hook says "today" because a local app was measured (about 45 s from a fresh clone with Bun's cache warm, 80 s cold) and a deploy was not; the costs come from Cloudflare's pricing pages with the date checked; Containers is a demo, never "built".
+What the starter does is data ([feature data](#feature-data)); the page's own words and links are in `apps/web/src/landing/content.ts`. Keep the copy honest: planned features are always marked **Planned**, never built; the hook says "today" because a local app was measured (about 45 s from a fresh clone with Bun's cache warm, 80 s cold) and a deploy was not; the costs come from Cloudflare's pricing pages with the date checked; Containers is a demo, never "built".
 
 The page reads no session, so it is the same for everyone. It ships no React. Its scripts are the theme file, the header menu (`site-menu.ts`), the hero (`hero-scene.ts`), the feature map (`feature-map.ts`), the copy button (`copy-prompt.ts`) and the video player (`video-player.ts`), about 4 KB gzip together ([bundle budget](#bundle-budget)).
 
@@ -121,6 +122,7 @@ A product built from the starter replaces this page with its own:
 | `FEATURES`                                                                          | Every feature: `id`, `name`, a one-line `benefit`, `pillar`, `group`, `docs`, `status` (`built`; `demo`: runnable but not wired into the app; `planned`: not built) |
 | `EDGES`                                                                             | Features that work together, `{ a, b, why }`: the docs' "Works with"                                                                                                |
 | `FLOWS`                                                                             | The feature map's edges, `{ from, to, why, main? }` between groups and `app`; `main` is the path of the map's pulse                                                 |
+| `ROADMAP`, `roadmap()`                                                              | What comes next, in order: `{ feature, points }` for `planned` features only, and the list with each feature's data ([Roadmap](#roadmap))                           |
 | `pillar`, `group`, `feature`, `groupsOf`, `featuresOf`, `highlightsOf`, `worksWith` | Lookups and lists                                                                                                                                                   |
 | `docsHref(slug)`                                                                    | `guides/how-to-setup-mcp` → `/docs/guides/how-to-setup-mcp/`                                                                                                        |
 
@@ -138,11 +140,21 @@ A product built from the starter replaces this page with its own:
 
 Its script is `feature-map.ts`, the `<feature-map>` custom element. Positions are set in the component (a 1000 × 560 box); a new group needs a position there.
 
+## Roadmap
+
+> **Starter-only, removed by `starter:strip`** (`marketing`): the roadmap lists the starter's own next features. The strip removes them from the feature data and empties `ROADMAP`, so the page says nothing is planned and the home page leaves out What's next ([how-to-start-a-project.md](../guides/how-to-start-a-project.md)).
+
+`/docs/roadmap/` is [docs/roadmap.md](../roadmap.md) (its title and intro) with the roadmap under it: `[...slug].astro` renders `DocsRoadmap.astro` for the file `DOCS.roadmap` names, a numbered timeline of `ROADMAP` from the [feature data](#feature-data), each item with its group, a **Planned** badge, its one line, its points and a link to the group's docs; its items are also the page's "On this page" headings. The page is in the navigation's Start section, next to the changelog; the home page's What's next and the footer link to it.
+
+- **Add an item:** a feature with `status: "planned"` and `docs: "roadmap"` in `RAW`, and an entry in `ROADMAP` where it comes in the order. It shows as **Planned** on the feature map too.
+- **Ship one:** set its status to `built`, point `docs` at its page, and remove it from `ROADMAP`; `features.test.ts` fails while a roadmap item is not `planned`.
+- In the starter, the strip's text operations on `apps/web/src/content/features.ts` (in `starter-only.json`, `marketing`) quote the planned block and `ROADMAP` exactly: change them with the data, or `test/architecture/starter-only.test.ts` fails.
+
 ## Changelog
 
 > **Starter-only, removed by `starter:strip`** (`marketing`): `CHANGELOG.md` is the starter's history; the strip resets it to an empty Unreleased with one entry for the project ([how-to-start-a-project.md](../guides/how-to-start-a-project.md)).
 
-`/docs/changelog/` renders the root [CHANGELOG.md](../../CHANGELOG.md) (the docs collection reads it like any published file; there is no copy) as release notes: `apps/web/src/pages/docs/changelog.astro` parses it (`apps/web/src/docs/changelog.ts`) and renders `ReleaseNotes` from `packages/ui`, each release with its version, date and compare link, and each change type with its own label colour. Inline Markdown in an entry (`code`, **bold**, links) is rendered as elements (`src/docs/inline.ts`); relative links are rewritten like the rest of the docs. The page is in the navigation's Start section, the sitemap and the search index, and needs no script beyond the docs' own.
+`/docs/changelog/` renders the root [CHANGELOG.md](../../CHANGELOG.md) (the docs collection reads it like any published file; there is no copy) as release notes: `apps/web/src/pages/docs/changelog.astro` parses it (`apps/web/src/docs/changelog.ts`) and renders `ReleaseNotes` from `packages/ui`, each release with its version, date and compare link, and each change type with its own label colour. Inline Markdown in an entry (`code`, **bold**, links) is rendered as elements (`src/docs/inline.ts`); relative links are rewritten like the rest of the docs. The page is in the navigation's Start section (with the roadmap), the sitemap and the search index, and needs no script beyond the docs' own.
 
 `/docs/changelog.xml` is an Atom feed of the released versions (not Unreleased), prerendered by `src/pages/docs/changelog.xml.ts`. Its URLs use `SITE_URL` (set for production); without it the feed has no self link and its entries point at the file on GitHub. It is served as a static asset, typed `application/xml`. The landing page's header and footer and the dashboard link to the changelog.
 

@@ -1,6 +1,26 @@
 # Dependencies
 
-How dependencies are updated, audited for security and added: the commands, what else besides `package.json` goes stale, how to triage an advisory, and what a PR that touches dependencies must show. It describes how to do the work; nothing here runs on its own. Use when you update dependencies, respond to a security advisory, run an audit, or add a new package.
+How dependencies are updated, audited for security and added: the commands, what else besides `package.json` goes stale, how to triage an advisory, and what a PR that touches dependencies must show. Updates and audits run every day: a scheduled agent runs the [`update-dependencies`](../../.claude/skills/update-dependencies/SKILL.md) skill, which follows this page ([Daily runs](#daily-runs)). Use when you update dependencies, respond to a security advisory, run an audit, or add a new package.
+
+## Daily runs
+
+A scheduled agent runs one update and audit pass every day with the [`update-dependencies`](../../.claude/skills/update-dependencies/SKILL.md) skill: the steps of [Update](#update), [Not in package.json](#not-in-packagejson) and [Security audit](#security-audit) below, in that order, with reachable runtime findings fixed first.
+
+- **Nothing to do, nothing done.** When nothing is outdated and the audit is clean, the run opens nothing and reports "nothing to do".
+- **Pull requests, never merges of risk.** Each group of updates is a pull request through the normal required checks. The agent never merges a risky update, an override or an accepted advisory; those wait for the owner, and so do routine ones unless the owner has said routine passes may be merged once the checks are green. It never deploys.
+- **A report per run:** what was outdated, each pull request and its checks, each finding with its triage, and what needs the owner.
+- **Manual runs use the same skill:** ask a coding agent to "update the dependencies" or "run an audit", and it runs `update-dependencies` the same way.
+
+### Set up the daily trigger
+
+A project made from the template sets up its own trigger once; nothing in the repository schedules it. With Claude Code, create a scheduled routine (the `/schedule` command, or a cloud routine at claude.ai/code) on the project's repository that runs every day with a prompt like:
+
+```text
+Run the update-dependencies skill (.claude/skills/update-dependencies/SKILL.md) on this
+repository: open pull requests as it says, merge nothing risky, and report what you did.
+```
+
+The routine needs a GitHub connection that can push branches and open pull requests, and nothing more: no Cloudflare credentials, since it never deploys. Any other agent runner with a daily schedule works the same way, as long as it runs the skill. There is no Dependabot or Renovate configuration; the daily agent replaces them.
 
 ## Update
 

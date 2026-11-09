@@ -282,20 +282,19 @@ export interface FeatureListEntry {
 
 /**
  * The README's compact feature list (from apps/web/src/content/features.ts): the counts
- * by status, then one line per group under its pillar, with demo and planned features
- * marked.
+ * by status, one line per group under its pillar with the built and demo features (demo
+ * marked), then the planned ones under `roadmapHref`.
  */
 export function featureListMarkdown(
   pillars: readonly FeatureListPillar[],
   groups: readonly FeatureListGroup[],
-  features: readonly FeatureListEntry[]
+  features: readonly FeatureListEntry[],
+  roadmapHref: string
 ): string {
   const count = (status: FeatureListEntry["status"]) =>
     features.filter((feature) => feature.status === status).length;
   const label = (feature: FeatureListEntry) =>
-    feature.status === "built"
-      ? feature.name
-      : `${feature.name} _(${feature.status})_`;
+    feature.status === "demo" ? `${feature.name} _(demo)_` : feature.name;
   const lines = [
     `${count("built")} built, ${count("demo")} demo, ${count("planned")} planned.`,
   ];
@@ -303,10 +302,22 @@ export function featureListMarkdown(
     lines.push("", `**${pillar.title}**`, "");
     for (const group of groups.filter((entry) => entry.pillar === pillar.id)) {
       const names = features
-        .filter((feature) => feature.group === group.id)
+        .filter(
+          (feature) =>
+            feature.group === group.id && feature.status !== "planned"
+        )
         .map(label);
-      lines.push(`- [${group.title}](${group.href}): ${names.join(" · ")}`);
+      if (names.length)
+        lines.push(`- [${group.title}](${group.href}): ${names.join(" · ")}`);
     }
   }
+  const planned = features.filter((feature) => feature.status === "planned");
+  if (planned.length)
+    lines.push(
+      "",
+      `**[Planned](${roadmapHref})**`,
+      "",
+      planned.map(label).join(" · ")
+    );
   return lines.join("\n");
 }

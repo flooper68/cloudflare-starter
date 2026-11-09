@@ -109,7 +109,8 @@ const README_BLOCKS: readonly {
           ...group,
           href: SITE + docsHref(group.docs),
         })),
-        FEATURES
+        FEATURES,
+        "docs/roadmap.md"
       ),
   },
 ];

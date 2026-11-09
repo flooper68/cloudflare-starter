@@ -23,6 +23,7 @@ for (const colorScheme of ["dark", "light"] as const) {
       "/docs/",
       "/docs/guides/how-to-configure-workspaces/",
       "/docs/processes/agentic-workflow/",
+      "/docs/roadmap/",
       // A walkthrough player from the docs kit's ::video{id="agents"}.
       "/docs/features/agents/",
     ])

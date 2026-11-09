@@ -1,3 +1,4 @@
+import { roadmap } from "../../src/content/features";
 import { PRERENDERED_PAGE_CSP } from "../../src/server/security-headers";
 import { expect, test } from "../e2e/fixtures";
 
@@ -53,6 +54,34 @@ test("a diagram is inlined and follows the theme switch", async ({ page }) => {
   await page.getByRole("button", { name: "Switch to the light theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await expect.poll(fill).not.toBe(dark);
+});
+
+test("the roadmap lists the planned features in order, never as built", async ({
+  page,
+}) => {
+  const response = await page.goto("/docs/roadmap/");
+  expect(response?.status()).toBe(200);
+  expect(response?.headers()["content-security-policy"]).toBe(
+    PRERENDERED_PAGE_CSP
+  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Roadmap");
+  const nav = page.getByRole("navigation", { name: "Docs", exact: true });
+  await expect(nav.getByRole("link", { name: "Roadmap" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  const list = page.getByRole("list", { name: "Planned features, in order" });
+  const items = list.locator(":scope > li");
+  await expect(items).toHaveCount(roadmap().length);
+  for (const [index, item] of roadmap().entries()) {
+    const entry = items.nth(index);
+    const heading = entry.getByRole("heading", { level: 2 });
+    await expect(heading).toContainText(item.name);
+    await expect(heading).toContainText("Planned");
+    await expect(heading).toHaveAttribute("id", item.id);
+    await expect(entry.getByRole("listitem")).toHaveCount(item.points.length);
+  }
+  await expect(page.getByText("Built", { exact: true })).toHaveCount(0);
 });
 
 test("an unknown path is the public 404 under the same policy", async ({

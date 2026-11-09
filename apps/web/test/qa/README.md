@@ -32,28 +32,32 @@ The [QA checklist](README.md#the-checklist) as unattended Playwright journeys, o
 | Dashboard and system screens                         | `dashboard.qa.ts`       | Get started, in-app 404, offline (context offline).                                                                                                                                                                           |
 | Command palette                                      | `command-palette.qa.ts` | ⌘K, groups, note search, keyboard, Search trigger and Esc, no results, theme action, phone width.                                                                                                                             |
 | Demos                                                | `demos.qa.ts`           | Queue hello; the test email to the account's own QA address.                                                                                                                                                                  |
+| Demos: containers                                    | `container-demo.qa.ts`  | One 1,000-digit run (a Retry only if it failed): every step in order, digits `3.14159…`, the download, past runs, the hourly allowance, the bell.                                                                             |
 | Themes and mobile width                              | `themes-mobile.qa.ts`   | Every main screen at 1440 and 390 dark, light only on landing, sign-in, dashboard, members, settings account and admin overview; `<section>-<screen>-<viewport>-<theme>.png` in the report; fails if a page scrolls sideways. |
 | Cleanup                                              | global teardown         | `cleanupRun` through `POST /api/qa/cleanup` (no sign-ins, no erasure limit), then the nightly cleanup for what a killed run left.                                                                                             |
 
 ## Skips and gaps
 
-| Where                            | Skips when                            | Why                                                                   |
-| -------------------------------- | ------------------------------------- | --------------------------------------------------------------------- |
-| Every file                       | QA variables missing                  | `qaSkipReason()`.                                                     |
-| `signup.qa.ts`                   | Sign-up signs in without verification | `AUTH_REQUIRE_EMAIL_VERIFICATION=false`.                              |
-| `two-factor.qa.ts`, emailed code | No **Email me a code**                | `TWO_FACTOR_EMAIL_OTP=off`.                                           |
-| `files.qa.ts`, presigned         | The demo reports "Not uploaded."      | Presigned uploads not configured: the checklist's N/A.                |
-| `notifications.qa.ts`, digest    | Always                                | Sent by the 08:00 UTC cron only; nothing triggers it on a deployment. |
-| `billing.qa.ts`                  | `BILLING=off`                         | Nothing to show.                                                      |
+| Where                                | Skips when                            | Why                                                                           |
+| ------------------------------------ | ------------------------------------- | ----------------------------------------------------------------------------- |
+| Every file                           | QA variables missing                  | `qaSkipReason()`.                                                             |
+| `signup.qa.ts`                       | Sign-up signs in without verification | `AUTH_REQUIRE_EMAIL_VERIFICATION=false`.                                      |
+| `two-factor.qa.ts`, emailed code     | No **Email me a code**                | `TWO_FACTOR_EMAIL_OTP=off`.                                                   |
+| `files.qa.ts`, presigned             | The demo reports "Not uploaded."      | Presigned uploads not configured: the checklist's N/A.                        |
+| `notifications.qa.ts`, digest        | Always                                | Sent by the 08:00 UTC cron only; nothing triggers it on a deployment.         |
+| `billing.qa.ts`                      | `BILLING=off`                         | Nothing to show.                                                              |
+| `container-demo.qa.ts`               | The demo says it cannot start a run   | `CONTAINER_DEMO=off`, or today's cap (`CONTAINER_DEMO_DAILY_CAP`) is used up. |
+| `container-demo.qa.ts`, hourly limit | Always                                | Reaching it takes five billed container runs; the API tests cover it.         |
 
 Not covered: renaming a passkey and **mark unread** (no control in the UI); a member refused **delete forever** and a member's note comment (a second account per file; the API tests cover them); production feature flags (never changed on a shared deployment); the real Claude (a test client walks the same OAuth flow). The app's workspace roles are owner and member (the checklist's "admin" is owner here), and transfer ownership and leave have no UI control: those steps call `workspace.transferOwnership` and `workspace.leave` with `callApp`.
 
 ## Per-run budget
 
-- **Sign-ups: 21** (plus the QA admin's, once ever): one per file, two in `workspaces` and `notifications`. At 4 per burst and a minute of quiet after each (`limits.ts`), sign-ups alone take about six minutes; a whole run about 20 minutes with one worker.
-- **Mails: about 60**, all to run addresses: 21 verifications plus one resend, up to about 15 new-sign-in notices (a sign-in from a browser with no other live session, after the account's first minute), 2 for the reset, 3 two-factor, 3 passkey, about 9 workspace and notification mails, 2 for the email change, 2 export-ready, 1 demo, and the erasure mails of the cleanup.
+- **Sign-ups: 22** (plus the QA admin's, once ever): one per file, two in `workspaces` and `notifications`. At 4 per burst and a minute of quiet after each (`limits.ts`), sign-ups alone take about six minutes; a whole run about 20 minutes with one worker.
+- **Mails: about 60**, all to run addresses: 22 verifications plus one resend, up to about 15 new-sign-in notices (a sign-in from a browser with no other live session, after the account's first minute), 2 for the reset, 3 two-factor, 3 passkey, about 9 workspace and notification mails, 2 for the email change, 2 export-ready, 1 demo, and the erasure mails of the cleanup.
 - **Account erasures:** 1 in `settings.qa.ts` (3 an hour per IP); the cleanup goes through `/api/qa/cleanup`, which counts against `qa.bypass` only.
 - **OAuth client registrations: 1** (5 an hour per IP).
+- **Container runs: 1**, 2 when the first fails (`container-demo.qa.ts`), of the deployment's daily cap (`CONTAINER_DEMO_DAILY_CAP`, 100 on production). The cleanup's erasure deletes the runs and their R2 results with the workspace.
 
 Better Auth's counters live in D1 and outlive a run: start a run at least a minute after the previous one ended.
 
@@ -397,7 +401,7 @@ Mail: **[production] Starter kit test email**.
 
 ### Demos: containers (a workflow)
 
-Guide: [how-to-run-container-workflows.md](../../../../docs/guides/how-to-run-container-workflows.md). Costs a container run: start at most two.
+Guide: [how-to-run-container-workflows.md](../../../../docs/guides/how-to-run-container-workflows.md). Costs a container run: start at most two. Automated in `container-demo.qa.ts` (steps 1 to 4, with 1,000 digits); 5 to 7 are by hand.
 
 1. **Developer demos** → **Containers** → **Run a workflow** (`/app/container-demo`): the card says how many runs are left today and for A this hour.
 2. Pick **10,000** and **Start run**: the timeline goes Queued, Starting container, Computing, Storing in R2, Notifying, Done, each with a time; a cold start takes a few seconds.

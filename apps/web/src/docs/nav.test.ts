@@ -63,6 +63,8 @@ describe("buildNav", () => {
       "/docs/start/run-locally/",
       "/docs/start/deploy/",
       "/docs/start/what-it-costs/",
+      "/docs/changelog/",
+      "/docs/roadmap/",
     ]);
   });
 
@@ -95,7 +97,7 @@ describe("locate", () => {
   it("finds the section and the neighbours in reading order", () => {
     const location = locate(nav, "docs/guides/how-to-a.md");
     expect(location.section?.title).toBe("Guides");
-    expect(location.previous?.path).toBe("docs/start/what-it-costs.md");
+    expect(location.previous?.path).toBe("docs/roadmap.md");
     expect(location.next?.path).toBe("docs/guides/how-to-b.md");
   });
 
@@ -122,7 +124,6 @@ describe("the real docs index", () => {
       "Guides",
       "Architecture",
       "Reference",
-      "Changelog",
       "Working with agents",
     ]);
   });

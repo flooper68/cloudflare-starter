@@ -40,8 +40,15 @@ export const DOCS = {
       { path: "docs/start/run-locally.md", label: "Run it locally" },
       { path: "docs/start/deploy.md", label: "Deploy" },
       { path: "docs/start/what-it-costs.md", label: "What it costs" },
+      { path: "CHANGELOG.md", label: "Changelog" },
+      { path: "docs/roadmap.md", label: "Roadmap" },
     ],
   },
+  /**
+   * The roadmap page: its Markdown is the title and intro, and the docs page renders the
+   * planned features of `ROADMAP` (src/content/features.ts) under it (DocsRoadmap.astro).
+   */
+  roadmap: "docs/roadmap.md",
   /**
    * Docs under docs/ that may stay out of the navigation, each with its reason. Every
    * other docs/**\/*.md must be linked from the navigation source (docs.test.ts).

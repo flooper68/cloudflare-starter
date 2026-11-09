@@ -70,7 +70,7 @@
 
 <!-- generated:features -->
 
-60 built, 1 demo, 1 planned.
+60 built, 1 demo, 11 planned.
 
 **Agent-native**
 
@@ -85,15 +85,19 @@
 
 **Everything a full app needs**
 
-- [App platform](https://starter.flooper.me/docs/features/notes/): Notes, the example feature · Command palette · Notifications · Email · File storage · Background jobs · Scheduled tasks · Feature flags · Typed API and a REST example · Containers _(demo)_ · Container tasks from jobs _(planned)_
+- [App platform](https://starter.flooper.me/docs/features/notes/): Notes, the example feature · Command palette · Notifications · Email · File storage · Background jobs · Scheduled tasks · Feature flags · Typed API and a REST example · Containers _(demo)_
 
 **Infra solved**
 
 - [Observability & ops](https://starter.flooper.me/docs/features/observability/): Product analytics · Cookieless web analytics · Logs and error reports · Metrics and traces · Health checks · 30-day database restore
 
+**[Planned](docs/roadmap.md)**
+
+Container tasks from jobs · API keys · Outgoing webhooks · Approval inbox for agent actions · Real-time updates · Onboarding · In-app agents · Better agent skills and processes · Feedback · Installable app with push · Announcements and maintenance mode
+
 <!-- /generated:features -->
 
-What changed, release by release: the [changelog](CHANGELOG.md).
+What comes next: the [roadmap](docs/roadmap.md). What changed, release by release: the [changelog](CHANGELOG.md).
 
 </details>
 
