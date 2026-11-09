@@ -28,8 +28,9 @@ let createdAt: number;
 
 test.beforeAll(async ({ browser }) => {
   page = await newUserPage(browser);
-  createdAt = Date.now();
   account = { ...(await newQaAccount(page, { role: "signin" })) };
+  // After the sign-up, not before: the sign-up can wait for a rate-limit slot first.
+  createdAt = Date.now();
 });
 
 test.afterAll(async () => {

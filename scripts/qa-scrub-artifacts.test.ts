@@ -28,6 +28,47 @@ open(root + "/index.html", "wb").write(html)
 open(root + "/log.txt", "w").write("header x-qa-token: %s" % token)
 `;
 
+const SESSION = "M1Nffn4RBPA3kIzZvoVFl1KnsDUVXEdr.UxmF8MAgBDfaZpFgArihj%2F1lvz";
+const SESSION_DATA = "eyJzZXNzaW9uIjp7InNlc3Npb24iOnsiZXhwaXJlc0F0Ijoi";
+const JWT =
+  "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InFhKzIwMjYxMTA4bGpraC1maWxlc0Bx.yJarfTgTuQIOyOMFHv2Auak9DH";
+const BEARER = "oat_0123456789abcdefghijklmnop";
+const RESET = "DXeOXFbGVDLDCUVfIAVhNLol";
+/** Every secret the trace fixture holds; none may survive the scrub. */
+const SECRETS = [SESSION, SESSION_DATA, JWT, BEARER, RESET, TOKEN];
+
+/**
+ * A trace zip shaped like Playwright's: the network log (HAR entries with header pairs,
+ * cookie lists and response bodies), the action log (route.continue with the headers it
+ * sent) and a page snapshot whose JSON is escaped once more.
+ */
+const MAKE_TRACE = `
+import io, json, sys, zipfile
+root = sys.argv[1]
+session, data, jwt, bearer, reset, token = ${JSON.stringify([SESSION, SESSION_DATA, JWT, BEARER, RESET, TOKEN])}
+cookie = "__Secure-better-auth.session_token=%s; __Secure-better-auth.session_data=%s" % (session, data)
+network = json.dumps({"type": "resource-snapshot", "snapshot": {
+  "request": {"url": "https://starter.flooper.me/api/trpc/flags.client?batch=1",
+    "headers": [{"name": "accept", "value": "application/json"},
+                {"name": "Cookie", "value": cookie},
+                {"name": "authorization", "value": "Bearer " + bearer},
+                {"name": "x-qa-token", "value": token}],
+    "cookies": [{"name": "__Secure-better-auth.session_token", "value": session}]},
+  "response": {"headers": [{"name": "set-cookie", "value": "__Secure-better-auth.session_token=%s; Path=/; HttpOnly" % session}],
+    "content": {"text": json.dumps({"token": session, "url": "https://starter.flooper.me/api/auth/verify-email?token=" + jwt})}}}},
+  separators=(",", ":"))
+action = json.dumps({"type": "before", "method": "continue", "params": {
+  "headers": [{"name": "cookie", "value": cookie}],
+  "url": "https://starter.flooper.me/api/auth/reset-password/" + reset}}, separators=(",", ":"))
+snapshot = json.dumps({"html": json.dumps({"href": "/email-verified?token=" + jwt, "cookie": cookie})})
+out = io.BytesIO()
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr("0-trace.network", network + "\\n")
+    z.writestr("0-trace.trace", action + "\\n")
+    z.writestr("resources/page@1.json", snapshot)
+open(root + "/trace.zip", "wb").write(out.getvalue())
+`;
+
 /** Every entry's text of every zip under root, plus the plain files, as one string. */
 const DUMP = `
 import base64, io, os, re, sys, zipfile
@@ -68,6 +109,36 @@ describe("qa-scrub-artifacts.py", () => {
     expect(readFileSync(join(root, "log.txt"), "utf8")).toBe(
       "header x-qa-token: [redacted]"
     );
+  });
+
+  it("removes session cookies, auth headers and tokens from a trace's network log, actions and snapshots", () => {
+    const root = mkdtempSync(join(tmpdir(), "qa-scrub-"));
+    expect(python(["-c", MAKE_TRACE, root]).status).toBe(0);
+    const before = python(["-c", DUMP, root]).stdout;
+    for (const secret of SECRETS) expect(before).toContain(secret);
+
+    const result = python(["scripts/qa-scrub-artifacts.py", root], {
+      QA_TOKEN: TOKEN,
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const after = python(["-c", DUMP, root]).stdout;
+    for (const secret of SECRETS) expect(after).not.toContain(secret);
+    expect(after).toContain('{"name":"Cookie","value":"[redacted]"}');
+    // What is no secret stays readable for debugging.
+    expect(after).toContain('"name":"accept","value":"application/json"');
+    expect(after).toContain("/api/trpc/flags.client");
+  });
+
+  it("refuses (exit 1) when a session cookie is left in a file it cannot rewrite", () => {
+    const root = mkdtempSync(join(tmpdir(), "qa-scrub-"));
+    writeFileSync(
+      join(root, "broken.zip"),
+      `PK\u0003\u0004cookie: __Secure-better-auth.session_token=${SESSION}`
+    );
+    const result = python(["scripts/qa-scrub-artifacts.py", root], {
+      QA_TOKEN: TOKEN,
+    });
+    expect(result.status).not.toBe(0);
   });
 
   it("fails when a secret cannot be removed (an unreadable zip)", () => {

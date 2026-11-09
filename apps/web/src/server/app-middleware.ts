@@ -179,14 +179,21 @@ async function routeAppRequest(
 
       // A stale session (erased or suspended account, revoked session) comes back as
       // signed out, with Set-Cookie headers that expire its cookies (auth-security.ts).
-      // Only those are passed on: a live session's cookie cache is left as it was.
+      // Only those are passed on: a live session's cookie cache is left as it was. And only
+      // on pages: an API call that was in flight while the browser got a new session (an
+      // admin's "Stop impersonating" swaps the session cookie) would otherwise answer after
+      // it and expire the new session's cookie. An API answers 401; the next page load
+      // clears the cookies.
       const { response: result, headers: sessionHeaders } = await getAuth(
         env
       ).api.getSession({
         headers: context.request.headers,
         returnHeaders: true,
       });
-      const expired = result ? [] : sessionHeaders.getSetCookie();
+      const expired =
+        result || pathname.startsWith("/api/")
+          ? []
+          : sessionHeaders.getSetCookie();
       const respond = (response: Response) =>
         expired.length === 0 ? response : withSetCookies(response, expired);
       context.locals.user = result?.user ?? null;

@@ -1,7 +1,7 @@
 import type { Database } from "../database";
 import type { Clock, Ids } from "../kernel";
 import type { EmailRecipient, SendEmailInput } from "../platform";
-import { renderedHeaders } from "./domain";
+import { formatMailbox, renderedHeaders } from "./domain";
 import { qaOutbox } from "./qa.schema";
 
 /**
@@ -19,7 +19,8 @@ export async function storeQaMail(
   await deps.db.insert(qaOutbox).values({
     id,
     recipient: message.to.email.trim().toLowerCase(),
-    sender: input.from.email,
+    // As the From header reads, display name included: what a mail client shows.
+    sender: formatMailbox(input.from),
     subject: message.subject,
     textBody: message.text,
     htmlBody: message.html,

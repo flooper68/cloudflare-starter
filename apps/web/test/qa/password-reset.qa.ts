@@ -12,6 +12,7 @@ import { expectMail, linkTo } from "./support/mail";
 import {
   type Account,
   AUTH_WAIT,
+  formReady,
   open,
   openSettings,
   signInAs,
@@ -43,8 +44,10 @@ test.afterAll(async () => {
 
 async function requestReset(email: string) {
   await open(page, "/forgot-password");
+  const send = page.getByRole("button", { name: "Send reset link" });
+  await formReady(send);
   await page.getByLabel("Email").fill(email);
-  await page.getByRole("button", { name: "Send reset link" }).click();
+  await send.click();
   await expect(
     page.getByText(
       `If an account exists for ${email}, a reset link is on its way.`
