@@ -4,6 +4,7 @@ import { currentRunId, qaAddress } from "./address";
 import { callApp, open, signIn, waitForForm } from "./app";
 import { type QaEnv, qaEnv } from "./env";
 import { inbox } from "./inbox";
+import { authPolicies, waitForSlots } from "./limits";
 import { linkTo } from "./links";
 import { qaPassword } from "./password";
 import { registerAccount, runAccounts } from "./registry";
@@ -38,6 +39,9 @@ export async function createVerifiedAccount(
   await installQaRouting(page.context());
   registerAccount(runId, email);
 
+  // The form's request takes the slot when it is sent; wait until one is free first, so
+  // the 30 s wait for its answer below is not spent waiting on the limit.
+  await waitForSlots(authPolicies("/sign-up/email"));
   const since = new Date(Date.now() - SKEW_MS);
   await open(page, "/sign-up");
   const submit = page.getByRole("button", { name: "Create account" });

@@ -42,6 +42,28 @@ async function toSecondFactor() {
   await submitSignIn(page, account.email, account.password);
   await expect(page).toHaveURL(/\/two-factor/, { timeout: AUTH_WAIT });
   await expect(page.locator("astro-island[ssr]")).toHaveCount(0);
+  // Proves the form has hydrated before anything is typed into it (below).
+  await switchFactor("Recovery code");
+  await switchFactor("Verification code");
+}
+
+/**
+ * Switches the challenge to `label`'s input with its toggle ("Use a recovery code" /
+ * "Use authenticator"). Astro drops `ssr` from the island as hydration starts, before
+ * React commits: a click in between does nothing (the production run's failure: the
+ * recovery-code field never appeared). So it clicks until the field shows, checking first
+ * that an earlier, late click has not already switched it.
+ */
+async function switchFactor(label: "Verification code" | "Recovery code") {
+  const toggle = page.getByRole("button", {
+    name:
+      label === "Recovery code" ? "Use a recovery code" : "Use authenticator",
+  });
+  await expect(async () => {
+    if (await page.getByLabel(label).isVisible()) return;
+    await toggle.click({ timeout: 2_000 });
+    await expect(page.getByLabel(label)).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 async function verify(
@@ -92,18 +114,18 @@ test("sign-in asks for a code; the authenticator's code completes it", async () 
 test("a recovery code completes sign-in once; the same code is refused next time", async () => {
   const [first] = codes;
   await toSecondFactor();
-  await page.getByRole("button", { name: "Use a recovery code" }).click();
+  await switchFactor("Recovery code");
   await verify("Recovery code", first ?? "");
   await expect(page).toHaveURL(/\/app\/dashboard$/, { timeout: AUTH_WAIT });
 
   await toSecondFactor();
-  await page.getByRole("button", { name: "Use a recovery code" }).click();
+  await switchFactor("Recovery code");
   await verify("Recovery code", first ?? "");
   await expect(
     page.getByText(/invalid|couldn't verify/i).first()
   ).toBeVisible();
   await expect(page).toHaveURL(/\/two-factor/, { timeout: AUTH_WAIT });
-  await page.getByRole("button", { name: "Use authenticator" }).click();
+  await switchFactor("Verification code");
   await verify("Verification code", await freshTotpCode(totpURI));
   await expect(page).toHaveURL(/\/app\/dashboard$/, { timeout: AUTH_WAIT });
 });
@@ -152,7 +174,7 @@ test("regenerating recovery codes retires the old ones", async () => {
   );
 
   await toSecondFactor();
-  await page.getByRole("button", { name: "Use a recovery code" }).click();
+  await switchFactor("Recovery code");
   await verify("Recovery code", codes[1] ?? "");
   await expect(
     page.getByText(/invalid|couldn't verify/i).first()

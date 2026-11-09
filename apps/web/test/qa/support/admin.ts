@@ -11,6 +11,7 @@ import { open } from "./app";
 import { type QaEnv, qaEnv } from "./env";
 import { expect } from "./fixtures";
 import { inbox } from "./inbox";
+import { authPolicies, takeSlots } from "./limits";
 import { linkTo } from "./links";
 import { qaPassword } from "./password";
 import { QA_TOKEN_HEADER } from "./routing";
@@ -32,6 +33,7 @@ async function authPost(
   path: string,
   body: Record<string, string>
 ): Promise<{ readonly status: number; readonly code: string | null }> {
+  await takeSlots(authPolicies(path));
   const response = await fetch(`${env.baseURL}/api/auth${path}`, {
     method: "POST",
     headers: {
