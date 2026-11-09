@@ -61,7 +61,7 @@ Deleting an account for good is a browser-only action behind a fresh sign-in and
 :::
 
 :::gotcha{title="A restored database brings erased people back"}
-After a point-in-time restore, re-apply the erasure ledger ([erasure and retained data](../guides/how-to-handle-data-privacy.md#erasure-and-retained-data)).
+After a point-in-time restore, re-apply the erasure ledger ([erasure and retained data](../reference/data-privacy.md#erasure-and-retained-data)).
 :::
 
 ## Limits

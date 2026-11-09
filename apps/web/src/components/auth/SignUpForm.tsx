@@ -7,6 +7,7 @@ import {
   CardTitle,
   CheckInboxCard,
   FieldError,
+  hydrationGated,
   Input,
   Label,
   Logo,
@@ -36,7 +37,7 @@ interface FieldErrors {
   password?: string;
 }
 
-export function SignUpForm({
+function SignUpFormView({
   emailPassword,
   google,
   search,
@@ -243,3 +244,6 @@ export function SignUpForm({
     </Card>
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const SignUpForm = hydrationGated(SignUpFormView);

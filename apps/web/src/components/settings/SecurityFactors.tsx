@@ -8,6 +8,7 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  hydrationGated,
   Input,
   PasskeyList,
   SkeletonCard,
@@ -25,7 +26,7 @@ import { useAsync } from "@/lib/use-async";
  * `continueToApp` (the enrollment page, outside the app) offers the way into the app once
  * enrollment allows it; the settings page is already in the app and shows no such link.
  */
-export function SecurityFactors({
+function SecurityFactorsView({
   search = "",
   continueToApp = false,
 }: {
@@ -270,3 +271,6 @@ export function SecurityFactors({
     </DataState>
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const SecurityFactors = hydrationGated(SecurityFactorsView);

@@ -4,7 +4,7 @@ name: Docs screenshots
 # local database, then every shot in apps/web/test/screens/shots.ts, dark and light) and
 # opens a pull request with the new images and manifest. By hand only (Actions → Docs
 # screenshots → Run workflow), on a GitHub-hosted runner, with local bindings: nothing
-# reaches a Cloudflare account. docs/guides/how-to-publish-docs-and-landing.md#screenshots
+# reaches a Cloudflare account. docs/reference/docs-site.md#screenshots
 on:
   workflow_dispatch:
     inputs:

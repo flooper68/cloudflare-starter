@@ -1,38 +1,46 @@
 # Account security
 
-Use this guide to choose enrollment policy, set up authenticators/passkeys, recover access or change the auth integration.
+::reviewed{date="2026-11-09"}
 
-`bun run setup:auth --env <env> --dry-run` previews choices. The real setup writes these nonsecret vars into each environment; deploy only after review. No deployed choice is shipped. Local development copies `.dev.vars.example`.
+Choose who must set up two-factor, whether passkeys and emailed recovery codes are on, and how long a browser may skip the code. Use this guide to set the policy, recover someone's access, or understand why an agent's token or an admin action was refused. What people see: [Sign-in, passkeys and two-factor](../features/accounts.md).
 
-| Setting                          | Values                                               | Effect                                                                                                                                                                           |
-| -------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TWO_FACTOR`                     | `off`, `optional`, `required-for-admins`, `required` | Off closes factor endpoints. Optional allows enrollment; enrolled people always complete a factor. The required modes gate application access until enrollment and verification. |
-| `TWO_FACTOR_EMAIL_OTP`           | `on`, `off`                                          | Enables email recovery codes after authenticator enrollment. Needs configured email; no email-only enrollment shortcut.                                                          |
-| `TWO_FACTOR_TRUSTED_DEVICE_DAYS` | Integer 0–30                                         | Zero disables remembered devices and invalidates presented trust records. Positive values use Better Auth's signed, server-backed, rotating trust cookie.                        |
-| `PASSKEYS`                       | `on`, `off`                                          | Enables native WebAuthn registration and sign-in for this origin.                                                                                                                |
+::flow[Password, passkey or Google -> Second factor -> Session with evidence -> Fresh code for destructive admin actions]{title="Account security: any first factor, then the second factor, a session that remembers it, and a fresh code for destructive admin actions"}
 
-`bun run doctor` checks choices. Passkey RP ID is the hostname of `APP_URL`; origin is exactly `APP_URL`. A production hostname change affects existing credentials and must be planned. Local browser testing uses localhost.
+## Set the policy
 
-## User flows
+:::settings
+- TWO_FACTOR = optional (off | optional | required-for-admins | required) Who must set up an authenticator
+- TWO_FACTOR_EMAIL_OTP = off (on | off) Emailed codes as recovery, after an authenticator is set up
+- TWO_FACTOR_TRUSTED_DEVICE_DAYS = 0 Days a browser may skip the code, 0 to 30
+- PASSKEYS = on (on | off) Passkey sign-in
+  :::
 
-Settings → Security contains authenticator enrollment (QR and manual-key alternative), recovery codes, regeneration, optional-factor removal and a named passkey list. Password accounts confirm their current password; social-only accounts use the current authenticated session. Required enrollment redirects to `/two-factor`, which exposes only setup/challenge/recovery access until complete. The native six-digit code, backup code or optional emailed code completes sign-in. Email recovery is available only after a verified authenticator enrollment, never as an enrollment shortcut. An enrolled account may re-read its TOTP setup key only after a fresh explicit factor verification. Recovery codes are encrypted at rest, returned only to the browser that enrolls/regenerates them, and usable once.
+:::prompt{title="Paste this into your coding agent"}
+```text
+Use the setup-auth skill to set the account security policy for production: two-factor
+required for admins, passkeys on, emailed recovery codes on, no remembered devices.
+Dry run first, then run doctor.
+```
+:::
 
-Passkeys are primary credentials. Better Auth 1.7.14's plugin does not require authenticator user verification, so this application does not claim that a passkey alone proves multiple factors: enrolled users still complete their configured second factor after passkey or Google sign-in. A remembered device may satisfy normal application access; destructive admin actions require a fresh explicit code verification within fifteen minutes. `STEP_UP_REQUIRED` opens `/two-factor?stepUp=1&next=…` even when normal access is already allowed, returns to the interrupted page after success, and leaves the action for the administrator to confirm again.
+`bun run setup:auth --env <env> --dry-run` previews the choices; no deployed choice is shipped.
 
-An administrator may reset another person's second factor from their user-detail page. This requires a browser and the destructive-admin gate. Self-reset and resetting the last active administrator are refused. Reset removes the authenticator/recovery codes, remembered-device records, sessions and OAuth tokens, records an audit event, and sends a security notification. Passkeys remain primary sign-in credentials; the person enrolls a new authenticator if policy requires it.
+## Recover someone's access
 
-## Assurance and MCP
+An admin opens the person's page in **Admin › Users** and resets their second factor, in the browser, after a fresh sign-in. It removes the authenticator, recovery codes, remembered devices, sessions and agent tokens, and sends a security notice. Never yourself or the last active admin.
 
-Session `amr` (space-separated RFC 8176 method identifiers) and `secondFactorAt` are server-owned fields with `input: false`. A final auth plugin runs after native factor hooks: a password accepted before its challenge is not a sign-in and is never audited as one. Gates read current enrollment and the exact user-bound, unexpired D1 session, so neither enrollment alone nor another session can grant assurance.
+:::decision{title="A passkey still asks for the second factor"}
+The passkey library does not require the device to verify the person, so enrolled people complete their code after a passkey, as after a password.
+:::
 
-OAuth access tokens carry `starter_session_id` derived from the authorization/refresh grant's session ID. The resource server rechecks that exact session, not the user's newest login. An expired/revoked grant session requires reconnecting the client. Every user-bound token needs that claim, including when two-factor authentication is optional or off. Minting or refreshing a user token without a live grant session returns `invalid_grant`; previously issued tokens without the claim require reconnecting. Independently of the session, `/mcp` also requires the user's consent for the token's client to be on record and not newer than the token, so disconnecting an agent in Settings › Connected agents ends its access at once ([how-to-setup-mcp.md](how-to-setup-mcp.md#connected-agents-and-disconnecting)). Factor management and admin recovery stay in the browser; `get_security_status` is the safe MCP status tool and returns no credentials, TOTP keys or backup codes.
+:::gotcha{title="Agent tokens follow the browser that allowed them"}
+An agent's token names the browser session that approved it. When that session ends, the agent must reconnect; a refused token says `invalid_grant`.
+:::
 
-Why it is built this way (the rule is in [Account security](../architecture/overview.md#account-security)): Better Auth creates a provisional session before its two-factor hook replaces it with a challenge, so neither enrollment nor the user's newest session proves that this browser or OAuth client completed a factor. Binding evidence to the exact session avoids a separate ambient assurance cache and any trust from caller-supplied fields. The cost: reconnecting a client after its browser session ends is explicit, and every Better Auth or plugin upgrade re-runs the hook-ordering and ceremony regression tests.
+:::gotcha{title="Changing the production hostname breaks passkeys"}
+A passkey belongs to the hostname of `APP_URL`. Plan the change: people sign in another way and add a new passkey.
+:::
 
-Native sign-in challenges and signed-in step-up share an account budget: ten failed verifications lock verification for fifteen minutes. Additional database-backed endpoint limits are ten factor requests/minute, three email-code sends/minute, twenty passkey requests/minute. They complement the existing auth IP edge limit.
+## Reference
 
-## Implementation and validation
-
-`server/auth-security.ts` adapts the pinned native plugin hooks; review their ordering/response semantics on Better Auth upgrades. The pure policy and safe state reader live under `packages/features/src/accounts`. Regenerate auth tables from `scripts/auth-schema.config.ts` after changing plugins/session fields, then regenerate the starter's single migration per the D1 guide. A deployed downstream app uses additive migrations.
-
-Tests cover policy choices, required enrollment, current-session evidence, factor removal, recovery replay, API bypass, administrative recovery and native ceremonies. Review regressions use signed stale cookies, actual OAuth PKCE/offline refresh/revocation, and synthetic Google tokens/callbacks verified with the real provider signature/issuer/audience/nonce logic. The only Google key is a public test fixture; no test uses real Google credentials or reaches Google. `apps/web/test/e2e/security.spec.ts` enrolls a real TOTP and uses a Chromium virtual WebAuthn authenticator; it uses the same test-only Turnstile simulator as other journeys. This proves browser/runtime wiring, not a real phone or hardware key. Capture both themes and redact setup keys/recovery codes from shareable evidence.
+The flows in full, assurance and agent tokens, lockouts and limits, and the implementation and tests to review on an upgrade: [Account security reference](../reference/account-security.md).

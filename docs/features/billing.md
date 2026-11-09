@@ -36,7 +36,7 @@ Pro (14-day trial, unlimited). Update billing-catalog.ts to match and run the te
 :::byhand
 1. `bun run setup:auth --env <env>` asks for `BILLING` with the workspace settings.
 2. Edit the catalog (`catalog.ts`) and the browser's words for it (`apps/web/src/lib/billing-catalog.ts`); `bun run test` fails when they drift.
-3. For `provider`, register an adapter in `apps/web/src/server/billing-provider.ts` ([sell online](../guides/how-to-configure-plans-and-billing.md#sell-online-a-provider-adapter)).
+3. For `provider`, register an adapter in `apps/web/src/server/billing-provider.ts` ([sell online](../reference/billing.md#sell-online-a-provider-adapter)).
 
 :::
 

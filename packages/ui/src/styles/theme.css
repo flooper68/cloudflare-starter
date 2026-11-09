@@ -87,6 +87,9 @@
   --animate-indeterminate: indeterminate 1.2s ease-in-out infinite;
   --animate-spin-slow: spin 900ms linear infinite;
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  /* A control waiting for its island to hydrate dims only after 400 ms, so a fast load
+     does not flicker every button (lib/hydration.tsx). */
+  --animate-hydrating: hydrating 150ms ease-out 400ms forwards;
 
   @keyframes fade-in {
     from {
@@ -204,6 +207,11 @@
     }
     100% {
       transform: translateX(250%);
+    }
+  }
+  @keyframes hydrating {
+    to {
+      opacity: 0.5;
     }
   }
   @keyframes shimmer {

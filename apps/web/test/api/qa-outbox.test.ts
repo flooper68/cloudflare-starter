@@ -1,6 +1,6 @@
 /**
  * The QA outbox, the QA cleanup and the QA admin through the real handlers
- * (docs/guides/how-to-qa-a-deployment.md#the-qa-outbox): QA_BYPASS=on in the API test
+ * (apps/web/test/qa/README.md#the-qa-outbox): QA_BYPASS=on in the API test
  * bindings with QA_EMAIL_DOMAIN qa.flooper.me and a test QA_TOKEN.
  */
 import {
@@ -151,6 +151,11 @@ describe("the QA outbox", () => {
     expect((await signUpQa(run)).status).toBe(200);
     const [mail] = await messages(run);
     expect(mail).toMatchObject({ to: run, subject: "Verify your email" });
+    // `from` reads as the From header does, display name included.
+    expect(mail?.from).toMatch(/^".+" <[^@>]+@[^>]+>$/);
+    expect(mail?.from).toBe(
+      (mail?.headers as Record<string, string> | undefined)?.from
+    );
     expect(String(mail?.text)).toContain("/api/auth/verify-email?");
     expect(mail?.headers).toMatchObject({
       to: expect.stringContaining(run),

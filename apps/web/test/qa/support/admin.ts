@@ -1,7 +1,7 @@
 /**
  * The QA admin: `qa+admin@<QA_EMAIL_DOMAIN>`, self-provisioned like every QA account (its
  * password is derived from the QA token, support/password.ts) and promoted by the app
- * while QA_BYPASS=on (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin). The
+ * while QA_BYPASS=on (docs/reference/abuse-protection.md#the-qa-admin). The
  * global setup makes sure it exists and is verified (`ensureQaAdmin`); journeys sign in as
  * it with `signInQaAdmin(page)` and act only on the run's own accounts and workspaces.
  * There is no owner step and no skip.
@@ -11,6 +11,7 @@ import { open } from "./app";
 import { type QaEnv, qaEnv } from "./env";
 import { expect } from "./fixtures";
 import { inbox } from "./inbox";
+import { authPolicies, takeSlots } from "./limits";
 import { linkTo } from "./links";
 import { qaPassword } from "./password";
 import { QA_TOKEN_HEADER } from "./routing";
@@ -32,6 +33,7 @@ async function authPost(
   path: string,
   body: Record<string, string>
 ): Promise<{ readonly status: number; readonly code: string | null }> {
+  await takeSlots(authPolicies(path));
   const response = await fetch(`${env.baseURL}/api/auth${path}`, {
     method: "POST",
     headers: {

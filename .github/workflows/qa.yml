@@ -60,7 +60,7 @@ jobs:
     name: QA suite
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     environment: qa
     env:
       QA_ENV: ${{ inputs.environment || 'production' }}
@@ -70,13 +70,18 @@ jobs:
       - run: bun scripts/ci-playwright-install.ts
       # Without it every journey would skip and the run would pass: fail instead.
       - name: QA secret is set
+        id: token
         env:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
         run: |
           if [ -z "$QA_TOKEN" ]; then
-            echo "::error::Missing secret QA_TOKEN in the GitHub environment qa (docs/guides/how-to-qa-a-deployment.md#ci)"
+            echo "::error::Missing secret QA_TOKEN in the GitHub environment qa (apps/web/test/qa/README.md#ci)"
             exit 1
           fi
+      # The run id is fixed here, not in the suite's global setup (which keeps a valid one),
+      # so the erase step below still knows it when the suite was killed halfway.
+      - name: QA run id
+        run: python3 -I -c 'import datetime, secrets, string; print("QA_RUN_ID=" + datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d") + "".join(secrets.choice(string.ascii_lowercase) for _ in range(4)))' >> "$GITHUB_ENV"
       - name: QA suite
         timeout-minutes: 40
         env:
@@ -100,7 +105,18 @@ jobs:
             apps/web/playwright-report/qa
             apps/web/test-results/qa
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3
+      # Whatever the suite did (failed, timed out, cancelled): erase this run's accounts
+      # (the global teardown, cleanupRun, with the same QA_RUN_ID) and every leftover over
+      # two hours old (cleanup/leftovers.cleanup.ts), so a failed run leaves no accounts
+      # behind until the nightly cleanup. After the upload: a second Playwright run
+      # replaces the report and the traces.
+      - name: Erase this run's and leftover QA accounts
+        if: always() && steps.token.outcome == 'success'
+        timeout-minutes: 10
+        env:
+          QA_TOKEN: ${{ secrets.QA_TOKEN }}
+        run: bun run test:qa -- --env "$QA_ENV" --project qa-cleanup
 
   cleanup:
     name: Erase leftover QA accounts
@@ -119,7 +135,7 @@ jobs:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
         run: |
           if [ -z "$QA_TOKEN" ]; then
-            echo "::error::Missing secret QA_TOKEN in the GitHub environment qa (docs/guides/how-to-qa-a-deployment.md#nightly-cleanup)"
+            echo "::error::Missing secret QA_TOKEN in the GitHub environment qa (apps/web/test/qa/README.md#nightly-cleanup)"
             exit 1
           fi
       - name: Erase leftovers
@@ -141,7 +157,7 @@ jobs:
             apps/web/playwright-report/qa
             apps/web/test-results/qa
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3
 
   # Asserts only that the app sent the mail; inbox placement (not spam, links intact) is
   # checked by a person in that mailbox when needed. Skipped, with the reason, without
@@ -164,7 +180,7 @@ jobs:
           QA_TOKEN: ${{ secrets.QA_TOKEN }}
         run: |
           if [ -z "$QA_TOKEN" ]; then
-            echo "::warning::Real-delivery check skipped: missing secret QA_TOKEN in the GitHub environment qa (docs/guides/how-to-qa-a-deployment.md#weekly-delivery-check)"
+            echo "::warning::Real-delivery check skipped: missing secret QA_TOKEN in the GitHub environment qa (apps/web/test/qa/README.md#weekly-delivery-check)"
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -195,4 +211,4 @@ jobs:
             apps/web/playwright-report/qa
             apps/web/test-results/qa
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 3

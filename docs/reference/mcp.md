@@ -1,0 +1,68 @@
+# Agent endpoint reference
+
+::reviewed{date="2026-11-09"}
+
+The detail behind [the guide](../guides/how-to-setup-mcp.md) on the agent endpoint (MCP): read it when the guide is not enough.
+
+## The Rule
+
+> Anything the app can do over HTTP, an MCP client can do too.
+
+Enforced by [apps/web/src/server/mcp/parity.test.ts](../../apps/web/src/server/mcp/parity.test.ts), which runs in `bun run verify` and CI:
+
+- every tRPC procedure is used by an MCP tool, or listed in `MCP_EXEMPT_PROCEDURES` with a reason;
+- every other HTTP endpoint (`.ts` files under `apps/web/src/pages`) is listed in `NON_TRPC_ROUTES` with a reason;
+- tool names are unique snake_case with real descriptions, and single-procedure tools take exactly the procedure's input.
+
+Reviews treat a new exemption as a design decision: it needs a reason a reviewer would accept, not "later".
+
+Exempt today (`MCP_EXEMPT_PROCEDURES` in [server/mcp/tools.ts](../../apps/web/src/server/mcp/tools.ts)): `admin.impersonation.start` and `admin.impersonation.stop` (they create a browser cookie session; an MCP client has none), `admin.users.resetSecondFactor`, `admin.privacy.eraseUser` and its legacy alias `admin.users.remove` (account recovery and permanent erasure are browser-only, with fresh administrator assurance), and `analytics.track` (client telemetry, not an agent capability). Every other admin procedure has an `admin_*` tool: `admin_get_overview`, `admin_get_health`, `admin_get_settings`, `admin_list_users`, `admin_get_user`, `admin_ban_user`, `admin_unban_user`, `admin_revoke_user_sessions`, `admin_set_user_role`, `admin_send_password_reset` (outward), `admin_send_test_email` (outward), `admin_list_workspaces`, `admin_get_workspace`, `admin_assign_workspace_owner`, `admin_delete_workspace`, `admin_list_audit_events`, the billing tools `admin_get_workspace_billing`, `admin_get_workspace_usage`, `admin_assign_plan`, `admin_set_addons`, `admin_set_override`, the data-request tools `admin_list_data_requests`, `admin_request_data_export`, the storage tools `admin_storage_status`, `admin_reconcile_storage`, `admin_delete_storage_orphans`, and the feature-flag tools `list_feature_flags`, `update_feature_flag`, `set_feature_flag_rules`. They answer `NOT_FOUND` unless the token's user is a platform admin and `ADMIN_PORTAL=on`; the destructive ones need the admin's newest sign-in to the web app to be at most 15 minutes old and, for an admin enrolled in two-factor, a recent explicit factor verification on the browser session that granted the token ([how-to-use-admin-portal.md](admin-portal.md#recent-sign-in-for-destructive-actions)).
+
+The placeholder Notes app's tools, the worked example of a feature's tools ([how-to-add-a-feature.md](../guides/how-to-add-a-feature.md)): `list_notes`, `search_notes`, `get_note`, `create_note`, `update_note`, `delete_note` (moves to the trash; `restore_from_trash` with type `note` brings it back) and `add_note_comment`.
+
+## How It Works
+
+| Piece                                                                                                       | Where                                                                                        |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| OAuth 2.1 server (dynamic client registration, PKCE, consent, JWT access tokens bound to `/mcp`)            | Better Auth `mcp()` + `jwt()` plugins in [server/auth.ts](../../apps/web/src/server/auth.ts) |
+| Discovery (`/.well-known/oauth-protected-resource/mcp`, `/.well-known/oauth-authorization-server/api/auth`) | [pages/.well-known/[...path].ts](../../apps/web/src/pages/.well-known/[...path].ts)          |
+| Sign-in during the flow                                                                                     | `/sign-in` (the OAuth client plugin carries the signed request through)                      |
+| Consent                                                                                                     | [pages/consent.astro](../../apps/web/src/pages/consent.astro)                                |
+| Endpoint: verifies the token, loads the user from D1, serves stateless Streamable HTTP                      | [server/mcp/handler.ts](../../apps/web/src/server/mcp/handler.ts)                            |
+| Tools: thin adapters calling tRPC procedures in-process with `createCaller`                                 | [server/mcp/tools.ts](../../apps/web/src/server/mcp/tools.ts)                                |
+
+Because tools call the same procedures with the same context, validation, auth checks and errors are identical to the web app by construction. Tool results wrap user data in `<untrusted-data>` so the model treats it as data, not instructions.
+
+## Connect Claude
+
+1. Deploy, so `APP_URL` is a public HTTPS origin.
+2. In Claude, add a custom connector with the URL `<APP_URL>/mcp`.
+3. Sign in and click Allow on the consent page. It names the client, your address and the host it returns to, and lists the requested scopes in plain words (`describeScopes` in [lib/oauth-scopes.ts](../../apps/web/src/lib/oauth-scopes.ts); a new scope gets a line there, an unknown one is shown as it is).
+
+Tokens are bound to `/mcp` and to the browser session that approved them (`starter_session_id`); the user and that session are reloaded from D1 on every request, so deleting the user, or signing out or revoking that session, cuts access at once and the client must reconnect ([how-to-configure-account-security.md](account-security.md#assurance-and-mcp)).
+
+## Connected agents and disconnecting
+
+Connecting an agent means: it registers itself, the person signs in and clicks Allow on the consent page, and from then on it can call the app's tools as that person, in their workspaces, until it is disconnected. **Settings › Connected agents** (`/app/settings/connected-agents`) lists every agent the person allowed and disconnects one with a confirmation; agents do the same with `list_connected_agents` and `disconnect_agent` (procedures `account.agents.list` and `account.agents.disconnect`, the default `mutation.user` rate limit).
+
+How disconnecting works:
+
+- A connection is the person's consent for that client in Better Auth's `oauth_consent`. `disconnectAgent` (`packages/features/src/accounts/`) deletes, in one D1 batch and only for that user and client, its refresh tokens (`oauth_refresh_token`), stored access tokens (`oauth_access_token`) and consents. The registered client (`oauth_client`) stays: other people may use the same client id. Better Auth has no endpoint that revokes a client's tokens for a user without holding the token itself (`/oauth2/revoke` takes the token; `/oauth2/delete-consent` removes the consent only and needs a browser cookie), so the use case writes those tables directly; recheck it when upgrading `@better-auth/oauth-provider`.
+- JWT access tokens are not stored, so deleting rows alone would leave them valid until they expire (an hour). `/mcp` therefore also checks, on every request, that a consent of the token's user for its client (`azp`) exists and is not newer than the token (`iat`, `hasAgentGrant`): a disconnected agent's token is refused from its next request, and a token from before a disconnect stays refused after the person allows the agent again. Consent times are whole seconds, so a token issued in the same second as a new consent counts.
+- The next authorization shows the consent page again. Refreshing fails with `invalid_grant`.
+- An agent may disconnect itself (`thisConnection: true` in `list_connected_agents`): the request in flight was authorized before the change and completes with its result; the next one is `401 invalid_token`. Refusing would only push the person to the browser for the same outcome, and a self-disconnect removes access rather than granting any.
+- Recorded as `mcp.client.revoked` (and the Allow as `mcp.client.authorized`) in the audit log, with the client id and name, never a token or code. No email: like signing out a session, a disconnect removes access; security notices go out when access or credentials are gained or changed (a new sign-in, a password or factor change).
+- Every connection needs a consent row. A first-party client a project creates with `skip_consent` gets none, so `/mcp` would refuse it: record a consent for it (or extend `hasAgentGrant`) when adding one.
+- Signing out the browser session that approved an agent (the session shown on its row) also ends its access, as before.
+
+## Adding A Tool
+
+1. Write the tRPC procedure first (logic, input schema, auth).
+2. Add a tool in `tools.ts` with `direct(name, "read" | "write", "router.procedure", title, description)`. Describe it for the model: what it returns, when to use it, preconditions. Mark tools that send something outside the app with `{ outward: true }` and tools that remove access or data with `{ destructive: true }`, and say "confirm with the user" in the description. Tools on workspace data take an optional `workspaceId` (from `workspaceProcedure`); without it they act in the user's current workspace (`list_workspaces`, `switch_workspace`).
+3. `bun run test`.
+
+A tool may compose several procedures with a custom `run`; list them all in `procedures`.
+
+## Testing
+
+MCP is used against deployed environments only: Claude connects from Anthropic's servers and cannot reach `localhost`, and there is no local MCP setup. Locally, `bun run test` covers the tool layer (`server.test.ts` calls the MCP server in-process) and the parity rule; connect Claude to the develop environment to try the full flow.

@@ -1,0 +1,1346 @@
+diff --git a/apps/web/.dev.vars.example b/apps/web/.dev.vars.example
+index 2ca89cc..01c98de 100644
+--- a/apps/web/.dev.vars.example
++++ b/apps/web/.dev.vars.example
+@@ -12,6 +12,2 @@ APP_ENV=local
+ STORAGE_RECONCILE=off
+-# DEMO_MODE (required, no default): off | on. Starter-only public demo
+-# (docs/guides/how-to-run-a-public-demo.md); keep off. With on, also set
+-# DEMO_RETENTION_DAYS=7, DEMO_SAMPLE_DATA=on and optionally DEMO_PROTECTED_EMAILS=a@x.test,b@x.test.
+-DEMO_MODE=off
+ APP_URL=http://localhost:4321
+diff --git a/apps/web/astro.config.mjs b/apps/web/astro.config.mjs
+index 5063798..d103e65 100644
+--- a/apps/web/astro.config.mjs
++++ b/apps/web/astro.config.mjs
+@@ -13,3 +13,2 @@ import {
+ import { siteIntegrations } from "./src/docs/site-integrations.ts";
+-import { demoAdapterOptions, localDemoPlugins } from "./test/e2e/demo-vite.mjs";
+ import { localTurnstilePlugins } from "./test/e2e/turnstile-vite.mjs";
+@@ -30,4 +29,2 @@ export default defineConfig({
+     imageService: "passthrough",
+-    // The demo-mode E2E server only (test/e2e/demo-vite.mjs): its own local state.
+-    ...demoAdapterOptions(process.env.E2E_DEMO_PORT),
+     // MEDIA_STATE_DIR: the walkthrough recorder (media/record.ts) runs `astro dev` on its
+@@ -110,3 +106,2 @@ export default defineConfig({
+       ...localTurnstilePlugins(process.env.E2E_LOCAL_TURNSTILE === "1"),
+-      ...localDemoPlugins(process.env.E2E_DEMO_PORT),
+     ],
+diff --git a/apps/web/playwright.config.ts b/apps/web/playwright.config.ts
+index 1f7345d..6fcec58 100644
+--- a/apps/web/playwright.config.ts
++++ b/apps/web/playwright.config.ts
+@@ -3,3 +3,2 @@ import { defineConfig, devices } from "@playwright/test";
+ import { devPort } from "./dev-port.mjs";
+-import { DEMO_E2E_STATE } from "./test/e2e/demo-vite.mjs";
+ 
+@@ -12,6 +11,2 @@ const port = devPort();
+ const baseURL = `http://localhost:${port}`;
+-// The demo-mode journeys (test/e2e/demo/) get their own dev server on the next port, with
+-// DEMO_MODE=on injected by test/e2e/demo-vite.mjs; every other journey runs with off.
+-const demoPort = port + 1;
+-const demoBaseURL = `http://localhost:${demoPort}`;
+ const ci = Boolean(process.env.CI);
+@@ -78,38 +73,21 @@ const local = defineConfig({
+       // The production smoke specs run only against a deployed URL (`smoke` above).
+-      testIgnore: /\/(smoke|demo)\//,
+-    },
+-    {
+-      name: "demo",
+-      testMatch: /\/demo\/.*\.spec\.ts$/,
+-      use: { ...devices["Desktop Chrome"], baseURL: demoBaseURL },
+-    },
+-  ],
+-  webServer: [
+-    {
+-      // Local test keys, with no dependency on Cloudflare's live widget/Siteverify.
+-      env: { E2E_LOCAL_TURNSTILE: "1" },
+-      // --ignore-lock keeps astro dev in the foreground (Astro backgrounds it when an AI agent
+-      // runs it), so Playwright owns the process and stops it after the run.
+-      command: `bun run dev --ignore-lock --port ${port}`,
+-      url: baseURL,
+-      // Never a server this run did not start: on a shared machine the port may belong to
+-      // another checkout. A busy port fails the run; E2E_REUSE_SERVER=1 opts into reusing
+-      // your own running `bun run dev:web` (CI never sets it).
+-      reuseExistingServer: !ci && process.env.E2E_REUSE_SERVER === "1",
+-      // The first request compiles the app.
+-      timeout: 120_000,
+-      stdout: "ignore",
+-      stderr: "pipe",
+-    },
+-    {
+-      // Its own local state (migrated first), APP_URL on demoPort, DEMO_MODE=on.
+-      env: { E2E_LOCAL_TURNSTILE: "1", E2E_DEMO_PORT: String(demoPort) },
+-      command: `bunx wrangler d1 migrations apply DB --local --persist-to ${DEMO_E2E_STATE} && bun run dev --ignore-lock --port ${demoPort}`,
+-      url: demoBaseURL,
+-      reuseExistingServer: !ci && process.env.E2E_REUSE_SERVER === "1",
+-      timeout: 120_000,
+-      stdout: "ignore",
+-      stderr: "pipe",
++      testIgnore: /\/smoke\//,
+     },
+   ],
++  webServer: {
++    // Local test keys, with no dependency on Cloudflare's live widget/Siteverify.
++    env: { E2E_LOCAL_TURNSTILE: "1" },
++    // --ignore-lock keeps astro dev in the foreground (Astro backgrounds it when an AI agent
++    // runs it), so Playwright owns the process and stops it after the run.
++    command: `bun run dev --ignore-lock --port ${port}`,
++    url: baseURL,
++    // Never a server this run did not start: on a shared machine the port may belong to
++    // another checkout. A busy port fails the run; E2E_REUSE_SERVER=1 opts into reusing
++    // your own running `bun run dev:web` (CI never sets it).
++    reuseExistingServer: !ci && process.env.E2E_REUSE_SERVER === "1",
++    // The first request compiles the app.
++    timeout: 120_000,
++    stdout: "ignore",
++    stderr: "pipe",
++  },
+ });
+diff --git a/apps/web/src/components/app/components/AppLayout.tsx b/apps/web/src/components/app/components/AppLayout.tsx
+index 41b4d1f..63a13bd 100644
+--- a/apps/web/src/components/app/components/AppLayout.tsx
++++ b/apps/web/src/components/app/components/AppLayout.tsx
+@@ -4,3 +4,2 @@ import {
+   brand,
+-  DemoBanner,
+   EmptyState,
+@@ -19,7 +18,2 @@ import { useWorkspace } from "@/components/shared/spa/workspace-context";
+ import { connectivity } from "@/lib/connectivity";
+-import {
+-  demoBannerDismissed,
+-  dismissDemoBanner,
+-  STARTER_REPOSITORY_URL,
+-} from "@/lib/demo-banner";
+ import { trpc } from "@/lib/trpc/client";
+@@ -76,19 +70,2 @@ function Impersonation() {
+ 
+-/** DEMO_MODE=on: the demo notice, dismissible for the browser session. */
+-function DemoNotice() {
+-  const { demo } = useAuth();
+-  const [dismissed, setDismissed] = useState(demoBannerDismissed);
+-  if (!demo || dismissed) return null;
+-  return (
+-    <DemoBanner
+-      retentionDays={demo.retentionDays}
+-      repositoryUrl={STARTER_REPOSITORY_URL}
+-      onDismiss={() => {
+-        dismissDemoBanner();
+-        setDismissed(true);
+-      }}
+-    />
+-  );
+-}
+-
+ /**
+@@ -139,3 +116,2 @@ export function AppLayout() {
+         <Impersonation />
+-        <DemoNotice />
+         <TrialBanner />
+diff --git a/apps/web/src/components/shared/spa/auth-context.tsx b/apps/web/src/components/shared/spa/auth-context.tsx
+index d30816e..6fdd72a 100644
+--- a/apps/web/src/components/shared/spa/auth-context.tsx
++++ b/apps/web/src/components/shared/spa/auth-context.tsx
+@@ -29,4 +29,2 @@ export interface AuthContextValue {
+   readonly impersonatedBy: string | null;
+-  /** DEMO_MODE=on: the demo banner with the retention; null (or absent) with off. */
+-  readonly demo?: { readonly retentionDays: number } | null;
+ }
+diff --git a/apps/web/src/lib/config.test.ts b/apps/web/src/lib/config.test.ts
+index aaeacfc..21af203 100644
+--- a/apps/web/src/lib/config.test.ts
++++ b/apps/web/src/lib/config.test.ts
+@@ -7,3 +7,2 @@ import {
+   parseAppConfig,
+-  parseDemoConfig,
+   parseOptionalFeature,
+@@ -13,3 +12,2 @@ import {
+ const core = {
+-  DEMO_MODE: "off",
+   STORAGE_RECONCILE: "off",
+@@ -458,79 +456 @@ describe("analytics config", () => {
+ });
+-
+-describe("demo config", () => {
+-  const on = {
+-    DEMO_MODE: "on",
+-    DEMO_RETENTION_DAYS: "7",
+-    DEMO_SAMPLE_DATA: "on",
+-  };
+-
+-  it("requires DEMO_MODE, without a default", () => {
+-    expect(() => parseDemoConfig({})).toThrow(
+-      new ConfigError(
+-        "DEMO_MODE",
+-        "DEMO_MODE is not set: set DEMO_MODE to one of off, on in the vars of apps/web/wrangler.jsonc (docs/guides/how-to-run-a-public-demo.md)"
+-      )
+-    );
+-    expect(() => parseDemoConfig({ DEMO_MODE: "true" })).toThrow(
+-      /^DEMO_MODE is "true"/
+-    );
+-  });
+-
+-  it("with off, ignores the other DEMO_* vars, valid or not", () => {
+-    expect(
+-      parseDemoConfig({
+-        DEMO_MODE: "off",
+-        DEMO_RETENTION_DAYS: "nope",
+-        DEMO_PROTECTED_EMAILS: "not an email",
+-      })
+-    ).toEqual({ mode: "off" });
+-  });
+-
+-  it("with on, parses the retention, sample data and the protected list", () => {
+-    expect(
+-      parseDemoConfig({
+-        ...on,
+-        DEMO_SAMPLE_DATA: "off",
+-        DEMO_PROTECTED_EMAILS:
+-          " Owner@Flooper.me, second@flooper.me,,owner@flooper.me ",
+-      })
+-    ).toEqual({
+-      mode: "on",
+-      retentionDays: 7,
+-      sampleData: false,
+-      protectedEmails: ["owner@flooper.me", "second@flooper.me"],
+-    });
+-    expect(parseDemoConfig(on)).toMatchObject({
+-      sampleData: true,
+-      protectedEmails: [],
+-    });
+-  });
+-
+-  it("with on, requires a whole DEMO_RETENTION_DAYS from 2 to 365", () => {
+-    for (const days of [undefined, "", "1", "0", "366", "7.5", "-3", "7d"]) {
+-      expect(() =>
+-        parseDemoConfig({ ...on, DEMO_RETENTION_DAYS: days })
+-      ).toThrow(/^DEMO_MODE=on needs DEMO_RETENTION_DAYS/);
+-    }
+-    expect(parseDemoConfig({ ...on, DEMO_RETENTION_DAYS: "2" })).toMatchObject({
+-      retentionDays: 2,
+-    });
+-  });
+-
+-  it("with on, requires DEMO_SAMPLE_DATA and validates the protected addresses", () => {
+-    expect(() =>
+-      parseDemoConfig({ ...on, DEMO_SAMPLE_DATA: undefined })
+-    ).toThrow(/^DEMO_SAMPLE_DATA is not set/);
+-    expect(() =>
+-      parseDemoConfig({ ...on, DEMO_PROTECTED_EMAILS: "a@b.test, nope" })
+-    ).toThrow(/"nope" is not one/);
+-    const many = Array.from({ length: 51 }, (_, i) => `u${i}@x.test`).join(",");
+-    expect(() =>
+-      parseDemoConfig({ ...on, DEMO_PROTECTED_EMAILS: many })
+-    ).toThrow(/at most 50/);
+-  });
+-
+-  it("is part of the app config and required there", () => {
+-    expect(() => parseAppConfig({ ...core, DEMO_MODE: undefined })).toThrow();
+-  });
+-});
+diff --git a/apps/web/src/lib/config.ts b/apps/web/src/lib/config.ts
+index 3bde9b2..5e4d5af 100644
+--- a/apps/web/src/lib/config.ts
++++ b/apps/web/src/lib/config.ts
+@@ -3,8 +3,2 @@ import {
+   billingSettingsSchema,
+-  DEMO_MODES,
+-  DEMO_PROTECTED_EMAILS_MAX,
+-  DEMO_RETENTION_MAX_DAYS,
+-  DEMO_RETENTION_MIN_DAYS,
+-  DEMO_SAMPLE_DATA_VALUES,
+-  type DemoSettings,
+   type SecuritySettings,
+@@ -57,4 +51,2 @@ export type AppConfig = z.infer<typeof envSchema> & {
+   readonly AUTH_REQUIRE_EMAIL_VERIFICATION: boolean;
+-  /** DEMO_MODE and, with on, DEMO_RETENTION_DAYS, DEMO_SAMPLE_DATA, DEMO_PROTECTED_EMAILS. */
+-  readonly demo: DemoSettings;
+ };
+@@ -101,61 +93,2 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
+     security: securitySettingsSchema.parse(env),
+-    demo: parseDemoConfig(env),
+-  };
+-}
+-
+-const DEMO_WHERE =
+-  "in the vars of apps/web/wrangler.jsonc (docs/guides/how-to-run-a-public-demo.md)";
+-
+-/**
+- * Demo mode (docs/guides/how-to-run-a-public-demo.md), starter-only: DEMO_MODE=off|on is
+- * required, no default; apps built from the starter keep off. With on, DEMO_RETENTION_DAYS
+- * (an integer, 2..365) and DEMO_SAMPLE_DATA (on|off) are required too, and
+- * DEMO_PROTECTED_EMAILS (optional, comma-separated addresses, at most 50) is read. With
+- * off the other DEMO_* vars are ignored.
+- */
+-export function parseDemoConfig(env: PartialEnv): DemoSettings {
+-  const mode = requiredChoice(env, "DEMO_MODE", DEMO_MODES, DEMO_WHERE);
+-  if (mode === "off") return { mode };
+-  const rawDays = env.DEMO_RETENTION_DAYS;
+-  const days = Number(rawDays);
+-  if (
+-    rawDays === undefined ||
+-    !/^\d+$/.test(rawDays) ||
+-    days < DEMO_RETENTION_MIN_DAYS ||
+-    days > DEMO_RETENTION_MAX_DAYS
+-  ) {
+-    throw new ConfigError(
+-      "DEMO_RETENTION_DAYS",
+-      `DEMO_MODE=on needs DEMO_RETENTION_DAYS, a whole number of days from ${DEMO_RETENTION_MIN_DAYS} to ${DEMO_RETENTION_MAX_DAYS}, ${DEMO_WHERE}${rawDays === undefined ? "" : `; "${rawDays}" is not one`}`
+-    );
+-  }
+-  const sampleData = requiredChoice(
+-    env,
+-    "DEMO_SAMPLE_DATA",
+-    DEMO_SAMPLE_DATA_VALUES,
+-    DEMO_WHERE
+-  );
+-  const protectedEmails = (env.DEMO_PROTECTED_EMAILS ?? "")
+-    .split(",")
+-    .map((email) => email.trim().toLowerCase())
+-    .filter((email) => email !== "");
+-  for (const email of protectedEmails) {
+-    if (!z.email().safeParse(email).success) {
+-      throw new ConfigError(
+-        "DEMO_PROTECTED_EMAILS",
+-        `DEMO_PROTECTED_EMAILS must be comma-separated email addresses; "${email}" is not one`
+-      );
+-    }
+-  }
+-  if (protectedEmails.length > DEMO_PROTECTED_EMAILS_MAX) {
+-    throw new ConfigError(
+-      "DEMO_PROTECTED_EMAILS",
+-      `DEMO_PROTECTED_EMAILS holds at most ${DEMO_PROTECTED_EMAILS_MAX} addresses`
+-    );
+-  }
+-  return {
+-    mode,
+-    retentionDays: days,
+-    sampleData: sampleData === "on",
+-    protectedEmails: [...new Set(protectedEmails)],
+   };
+diff --git a/apps/web/src/pages/sign-up.astro b/apps/web/src/pages/sign-up.astro
+index 8c66f8b..a0e84c1 100644
+--- a/apps/web/src/pages/sign-up.astro
++++ b/apps/web/src/pages/sign-up.astro
+@@ -2,3 +2,2 @@
+ import { env } from "cloudflare:workers";
+-import { DemoBanner } from "@cloudflare-starter/ui";
+ 
+@@ -7,4 +6,2 @@ import Layout from "@/layouts/Layout.astro";
+ import { nextPath } from "@/lib/auth-links";
+-import { STARTER_REPOSITORY_URL } from "@/lib/demo-banner";
+-import { buildRequiredConfig } from "@/lib/env";
+ import { getAuthMethods } from "@/server/auth";
+@@ -20,5 +17,2 @@ const methods = getAuthMethods(env);
+ const { turnstile } = buildPlatform(env);
+-// DEMO_MODE=on: the demo notice above the form, before anyone signs up (rendered on the
+-// server only; docs/guides/how-to-run-a-public-demo.md).
+-const { demo } = buildRequiredConfig(env);
+ ---
+@@ -26,12 +20,3 @@ const { demo } = buildRequiredConfig(env);
+ <Layout title="Sign up">
+-  <main class="mx-auto flex min-h-[80vh] max-w-5xl flex-col items-center justify-center gap-6 px-6 py-10">
+-    {
+-      demo.mode === "on" && (
+-        <DemoBanner
+-          retentionDays={demo.retentionDays}
+-          repositoryUrl={STARTER_REPOSITORY_URL}
+-          className="max-w-md rounded-lg border"
+-        />
+-      )
+-    }
++  <main class="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center px-6 py-10">
+     <SignUpForm
+diff --git a/apps/web/src/server/auth.ts b/apps/web/src/server/auth.ts
+index add555a..f2c73b7 100644
+--- a/apps/web/src/server/auth.ts
++++ b/apps/web/src/server/auth.ts
+@@ -19,3 +19,2 @@ import {
+   SignUpNotAllowedError,
+-  scheduleDemoSeed,
+   schema,
+@@ -61,3 +60,2 @@ import { billingGateFor } from "@/server/billing-provider";
+ import { getDb } from "@/server/db";
+-import { demoRuntimeFor } from "@/server/demo";
+ import type { AppEnv } from "@/server/env";
+@@ -268,5 +266,4 @@ async function provisionNewUser(
+   const requestContext = { ...contextFor(env, ctx), userId: user.id };
+-  let workspaceId: string | null = null;
+   try {
+-    ({ workspaceId } = await provisionUser(
++    await provisionUser(
+       {
+@@ -284,21 +281,2 @@ async function provisionNewUser(
+       }
+-    ));
+-  } catch (error) {
+-    buildPlatform(env).errors.capture(error, requestContext, {
+-      "app.auth.hook": "user.create.after",
+-    });
+-    return;
+-  }
+-  // Demo mode (DEMO_MODE=on, DEMO_SAMPLE_DATA=on): sample notes for the new workspace,
+-  // written by a queued job. Fails open like provisioning: sign-up never fails for it.
+-  try {
+-    const platform = buildPlatform(env);
+-    await scheduleDemoSeed(
+-      {
+-        jobQueue: platform.jobQueue,
+-        clock: systemClock,
+-        ids: randomIds,
+-        demo: demoRuntimeFor(env),
+-      },
+-      { userId: user.id, workspaceId, context: requestContext }
+     );
+@@ -307,3 +285,2 @@ async function provisionNewUser(
+       "app.auth.hook": "user.create.after",
+-      "app.demo.operation": "schedule_seed",
+     });
+diff --git a/apps/web/src/server/cron.test.ts b/apps/web/src/server/cron.test.ts
+index e6bfd60..26b6308 100644
+--- a/apps/web/src/server/cron.test.ts
++++ b/apps/web/src/server/cron.test.ts
+@@ -33,3 +33,2 @@ function memoryPlatform() {
+     storageReconcile: "off",
+-    demo: { mode: "off" },
+     cspMode: "enforce",
+@@ -87,24 +86,2 @@ describe("cron handler", () => {
+   });
+-  it("demo.enforce-retention enqueues the first batch as of the run with DEMO_MODE=on and nothing with off", async () => {
+-    for (const demo of [
+-      { mode: "off" as const },
+-      {
+-        mode: "on" as const,
+-        retentionDays: 7,
+-        sampleData: true,
+-        protectedEmails: [],
+-      },
+-    ]) {
+-      const { platform, jobQueue } = memoryPlatform();
+-      await runScheduled(controller("17 3 * * *"), { ...platform, demo });
+-      const runs = jobQueue.sent.filter(
+-        (x) => x.envelope.type === "demo.enforce-retention"
+-      );
+-      expect(runs.map((x) => x.envelope.data)).toEqual(
+-        demo.mode === "on"
+-          ? [{ asOf: "2026-10-28T03:17:00.000Z", batch: 0 }]
+-          : []
+-      );
+-    }
+-  });
+   it("the daily schedule runs audit.purge-events, jobs.purge-idempotency-keys, billing.expire-trials, notifications.purge, qa-outbox.purge and trash.purge-expired, each in a new trace", async () => {
+@@ -120,3 +97,2 @@ describe("cron handler", () => {
+       "trash.purge-expired",
+-      "demo.enforce-retention",
+       "storage.reconcile",
+@@ -259,3 +235,2 @@ describe("cron handler", () => {
+       "cron trash.purge-expired",
+-      "cron demo.enforce-retention",
+       "cron storage.reconcile",
+@@ -311,8 +286,2 @@ describe("cron handler", () => {
+       }),
+-      expect.objectContaining({
+-        attributes: {
+-          "app.cron.name": "demo.enforce-retention",
+-          "app.cron.schedule": "17 3 * * *",
+-        },
+-      }),
+       expect.objectContaining({
+diff --git a/apps/web/src/server/cron.ts b/apps/web/src/server/cron.ts
+index 39edfc7..13ca601 100644
+--- a/apps/web/src/server/cron.ts
++++ b/apps/web/src/server/cron.ts
+@@ -78,3 +78,2 @@ async function runEntries(
+               storageReconcile: platform.storageReconcile,
+-              demo: platform.demo,
+               jobQueue: platform.jobQueue,
+diff --git a/apps/web/src/server/mcp/server.test.ts b/apps/web/src/server/mcp/server.test.ts
+index 7020744..e1ede5e 100644
+--- a/apps/web/src/server/mcp/server.test.ts
++++ b/apps/web/src/server/mcp/server.test.ts
+@@ -55,3 +55,2 @@ function context(overrides: Partial<Context> = {}): Context {
+       STORAGE_RECONCILE: "off",
+-      demo: { mode: "off" },
+       workspaces: {
+@@ -95,3 +94,2 @@ function context(overrides: Partial<Context> = {}): Context {
+     },
+-    demo: { mode: "off" },
+     ...overrides,
+diff --git a/apps/web/src/server/mcp/tools.ts b/apps/web/src/server/mcp/tools.ts
+index ee34671..b4a8bb0 100644
+--- a/apps/web/src/server/mcp/tools.ts
++++ b/apps/web/src/server/mcp/tools.ts
+@@ -623,3 +623,3 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
+     "Admin: overview",
+-    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, workspace counts and sizes, and with DEMO_MODE=on the demo counters (active demo accounts, deletions scheduled today, accounts erased in the last 7 days; null otherwise)."
++    "Platform admins only. Returns user counts (total, admins, suspended), daily sign-ups and daily active users for the last 30 days, and workspace counts and sizes."
+   ),
+@@ -637,3 +637,3 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
+     "Admin: deployment settings",
+-    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL, and DEMO_MODE with its retention days, sample data, protected emails and QA domain."
++    "Platform admins only. Returns this environment's settings, read-only: workspace mode, sign-up policy and domains, bootstrap admin email, sign-in methods, email verification, email, ADMIN_PORTAL."
+   ),
+diff --git a/apps/web/src/server/platform.ts b/apps/web/src/server/platform.ts
+index 422064f..66e1fc1 100644
+--- a/apps/web/src/server/platform.ts
++++ b/apps/web/src/server/platform.ts
+@@ -18,3 +18,2 @@ import {
+   createWorkersTracer,
+-  type DemoSettings,
+   type EmailService,
+@@ -56,3 +55,2 @@ import {
+   parseAnalyticsConfig,
+-  parseDemoConfig,
+   parsePlatformConfig,
+@@ -70,4 +68,2 @@ export interface Platform {
+   readonly storageReconcile: StorageReconcileMode;
+-  /** DEMO_MODE and its settings: the cron's demo retention entry runs only with on. */
+-  readonly demo: DemoSettings;
+   /** CSP_MODE: how HTML pages get their Content-Security-Policy (server/security-headers.ts). */
+@@ -249,3 +245,2 @@ export function buildPlatform(env: AppEnv): Platform {
+     storageReconcile: config.STORAGE_RECONCILE,
+-    demo: parseDemoConfig(raw),
+     cspMode: config.CSP_MODE,
+diff --git a/apps/web/src/server/queue.ts b/apps/web/src/server/queue.ts
+index 6282afa..a2a1e35 100644
+--- a/apps/web/src/server/queue.ts
++++ b/apps/web/src/server/queue.ts
+@@ -21,7 +21,4 @@ import {
+ import { buildRequiredConfig } from "@/lib/env";
+-import { createAdminAuthGateway } from "@/server/admin-auth-gateway";
+-import { APP_NAME, getAuth } from "@/server/auth";
+-import { billingGateFor } from "@/server/billing-provider";
++import { APP_NAME } from "@/server/auth";
+ import { getDb } from "@/server/db";
+-import { demoRuntimeFor } from "@/server/demo";
+ import type { AppEnv } from "@/server/env";
+@@ -41,8 +38,2 @@ export interface QueueDeps {
+   readonly app: JobDeps["app"];
+-  /** DEMO_MODE and its retention policy. */
+-  readonly demo: JobDeps["demo"];
+-  /** Better Auth's user deletion (the admin gateway's), for the demo retention's erasure. */
+-  readonly authUsers: JobDeps["authUsers"];
+-  /** The BillingGate of one job's work. */
+-  readonly billing: JobDeps["billing"];
+ }
+@@ -63,5 +54,2 @@ export function queueDeps(env: AppEnv): QueueDeps {
+     maxRetries: JOB_MAX_RETRIES,
+-    demo: demoRuntimeFor(env),
+-    authUsers: createAdminAuthGateway(() => getAuth(env), null),
+-    billing: (context) => billingGateFor(env, context),
+   };
+@@ -196,6 +184,2 @@ async function handleMessage(
+           app: deps.app,
+-          demo: deps.demo,
+-          authUsers: deps.authUsers,
+-          billing: deps.billing,
+-          analytics: platform.productAnalytics(),
+         },
+diff --git a/apps/web/src/server/spa-bootstrap.ts b/apps/web/src/server/spa-bootstrap.ts
+index 0a3c16c..e2c78ba 100644
+--- a/apps/web/src/server/spa-bootstrap.ts
++++ b/apps/web/src/server/spa-bootstrap.ts
+@@ -4,3 +4,3 @@
+  * the billing mode, whether they may open the admin portal, and whether this session is
+- * an impersonation, and demo mode's retention (the demo banner).
++ * an impersonation.
+  */
+@@ -41,4 +41,2 @@ export interface SpaBootstrap {
+   readonly impersonatedBy: string | null;
+-  /** DEMO_MODE=on: the retention the demo banner names; null with off. */
+-  readonly demo: { readonly retentionDays: number } | null;
+ }
+@@ -106,6 +104,2 @@ export async function spaBootstrap(
+     impersonatedBy: session?.impersonatedBy ?? null,
+-    demo:
+-      config.demo.mode === "on"
+-        ? { retentionDays: config.demo.retentionDays }
+-        : null,
+   };
+diff --git a/apps/web/src/server/trpc/admin-router.ts b/apps/web/src/server/trpc/admin-router.ts
+index 63c1ce8..7babec1 100644
+--- a/apps/web/src/server/trpc/admin-router.ts
++++ b/apps/web/src/server/trpc/admin-router.ts
+@@ -14,3 +14,2 @@ import {
+   getAdminOverview,
+-  getDemoStats,
+   getUserDetail,
+@@ -113,13 +112,5 @@ export const adminRouter = router({
+   overview: router({
+-    get: adminProcedure.query(async ({ ctx }) => ({
+-      ...(await getAdminOverview(
+-        { ...ctx, billing: ctx.config.billing },
+-        ctx.admin
+-      )),
+-      // DEMO_MODE=on: active demo accounts, deletions due today, erased in 7 days.
+-      demo:
+-        ctx.demo.mode === "on"
+-          ? await getDemoStats(ctx, ctx.admin, ctx.demo.policy)
+-          : null,
+-    })),
++    get: adminProcedure.query(({ ctx }) =>
++      getAdminOverview({ ...ctx, billing: ctx.config.billing }, ctx.admin)
++    ),
+   }),
+@@ -154,12 +145,2 @@ export const adminRouter = router({
+         adminPortal: ctx.config.ADMIN_PORTAL,
+-        demo:
+-          ctx.demo.mode === "on"
+-            ? {
+-                mode: "on",
+-                retentionDays: ctx.demo.policy.retentionDays,
+-                sampleData: ctx.demo.sampleData,
+-                protectedEmails: ctx.demo.policy.protectedEmails,
+-                qaEmailDomain: ctx.demo.policy.qaEmailDomain,
+-              }
+-            : { mode: "off" },
+         methods: authMethodsOf(ctx.config),
+diff --git a/apps/web/src/server/trpc/context.ts b/apps/web/src/server/trpc/context.ts
+index 5b27b0d..54f5bc8 100644
+--- a/apps/web/src/server/trpc/context.ts
++++ b/apps/web/src/server/trpc/context.ts
+@@ -24,3 +24,2 @@ import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
+ import { getDb } from "@/server/db";
+-import { demoRuntimeFor } from "@/server/demo";
+ import type { AppEnv } from "@/server/env";
+@@ -109,3 +108,2 @@ export function createAppContext(
+     readiness: () => readinessReport(env, scoped, { detail: true }),
+-    demo: demoRuntimeFor(env),
+   };
+diff --git a/apps/web/src/server/trpc/init.ts b/apps/web/src/server/trpc/init.ts
+index 2ed69c3..e0657ce 100644
+--- a/apps/web/src/server/trpc/init.ts
++++ b/apps/web/src/server/trpc/init.ts
+@@ -9,3 +9,2 @@ import {
+   type Database,
+-  type DemoRuntime,
+   DomainError,
+@@ -103,4 +102,2 @@ export interface Context {
+   readonly readiness: () => Promise<HealthResponseBody>;
+-  /** DEMO_MODE with its retention policy (server/demo.ts). */
+-  readonly demo: DemoRuntime;
+ }
+diff --git a/apps/web/src/server/trpc/notifications-router.ts b/apps/web/src/server/trpc/notifications-router.ts
+index 70bf9f1..737cbbe 100644
+--- a/apps/web/src/server/trpc/notifications-router.ts
++++ b/apps/web/src/server/trpc/notifications-router.ts
+@@ -10,3 +10,2 @@ import {
+   notificationCatalog,
+-  preferenceCatalogFor,
+   preferencesUpdateSchema,
+@@ -62,3 +61,3 @@ export const notificationsRouter = router({
+           db: ctx.db,
+-          catalog: preferenceCatalogFor(ctx.demo.mode),
++          catalog: notificationCatalog,
+           emailEnabled: ctx.emailOut.enabled,
+diff --git a/apps/web/test/api-bindings.ts b/apps/web/test/api-bindings.ts
+index 3d9282c..48ed626 100644
+--- a/apps/web/test/api-bindings.ts
++++ b/apps/web/test/api-bindings.ts
+@@ -15,7 +15,2 @@ export const API_TEST_BINDINGS = {
+   STORAGE_RECONCILE: "off",
+-  // Demo mode off, as in the develop vars; test/api/demo-mode.test.ts turns it on.
+-  DEMO_MODE: "off",
+-  DEMO_RETENTION_DAYS: "7",
+-  DEMO_SAMPLE_DATA: "on",
+-  DEMO_PROTECTED_EMAILS: "",
+   CSP_MODE: "enforce",
+diff --git a/apps/web/test/e2e/smoke/public.smoke.ts b/apps/web/test/e2e/smoke/public.smoke.ts
+index 8698818..ebc9057 100644
+--- a/apps/web/test/e2e/smoke/public.smoke.ts
++++ b/apps/web/test/e2e/smoke/public.smoke.ts
+@@ -67,30 +67,2 @@ test.describe("public pages", () => {
+ 
+-test.describe("demo notice", () => {
+-  // DEMO_MODE of the environment named with `--env` (scripts/smoke.ts passes
+-  // SMOKE_DEMO_MODE from its vars in wrangler.jsonc): on, the sign-up page names the
+-  // retention and links the starter on GitHub before anyone signs up; off, no notice.
+-  // With a bare --base-url the setting is unknown and the test is skipped.
+-  test(
+-    "/sign-up shows the demo notice exactly when demo mode is on",
+-    smoke,
+-    async ({ page }) => {
+-      const demo = process.env.SMOKE_DEMO_MODE;
+-      test.skip(!demo, "demo mode unknown without --env");
+-      await page.goto("/sign-up");
+-      await hydrated(page);
+-      const notice = page.getByRole("status", { name: "Demo instance" });
+-      if (demo === "on") {
+-        await expect(notice).toContainText(
+-          /Demo instance: your account and data are deleted after \d+ days\./
+-        );
+-        await expect(
+-          notice.getByRole("link", { name: /Get the starter on GitHub/ })
+-        ).toHaveAttribute("href", /^https:\/\/github\.com\//);
+-      } else {
+-        await expect(notice).toHaveCount(0);
+-      }
+-    }
+-  );
+-});
+-
+ test.describe("signed-out access", () => {
+diff --git a/packages/features/src/admin/domain/deployment-settings.ts b/packages/features/src/admin/domain/deployment-settings.ts
+index 3b94e21..cfe8862 100644
+--- a/packages/features/src/admin/domain/deployment-settings.ts
++++ b/packages/features/src/admin/domain/deployment-settings.ts
+@@ -14,12 +14,2 @@ export interface DeploymentSettings {
+   readonly adminPortal: "on" | "off";
+-  /** DEMO_MODE and, with on, its retention, sample data and the accounts it never erases. */
+-  readonly demo:
+-    | { readonly mode: "off" }
+-    | {
+-        readonly mode: "on";
+-        readonly retentionDays: number;
+-        readonly sampleData: boolean;
+-        readonly protectedEmails: readonly string[];
+-        readonly qaEmailDomain: string | null;
+-      };
+ }
+diff --git a/packages/features/src/admin/domain/settings-and-roles.test.ts b/packages/features/src/admin/domain/settings-and-roles.test.ts
+index 6b60d96..bdc5805 100644
+--- a/packages/features/src/admin/domain/settings-and-roles.test.ts
++++ b/packages/features/src/admin/domain/settings-and-roles.test.ts
+@@ -30,3 +30,2 @@ describe("deployment settings", () => {
+     adminPortal: "on" as const,
+-    demo: { mode: "off" as const },
+   };
+diff --git a/packages/features/src/audit/domain/audit-event.test.ts b/packages/features/src/audit/domain/audit-event.test.ts
+index 953bf9c..5e3a0e9 100644
+--- a/packages/features/src/audit/domain/audit-event.test.ts
++++ b/packages/features/src/audit/domain/audit-event.test.ts
+@@ -316,14 +316,2 @@ const VALID: Record<AuditAction, AuditEventInput> = {
+   },
+-  "demo.deletion_warned": {
+-    action: "demo.deletion_warned",
+-    actor: { kind: "system" },
+-    target: { type: "user", id: "user-demo" },
+-    metadata: { deletesAt: "2026-11-08T03:17:00.000Z" },
+-  },
+-  "demo.account_erased": {
+-    action: "demo.account_erased",
+-    actor: { kind: "system" },
+-    target: { type: "user", id: "user-demo" },
+-    metadata: { retentionDays: 7 },
+-  },
+   "note.commented": {
+diff --git a/packages/features/src/audit/domain/audit-event.ts b/packages/features/src/audit/domain/audit-event.ts
+index 6c87d50..bbcc716 100644
+--- a/packages/features/src/audit/domain/audit-event.ts
++++ b/packages/features/src/audit/domain/audit-event.ts
+@@ -118,17 +118,2 @@ export const auditEventSchema = z.discriminatedUnion("action", [
+   }),
+-  // Demo mode (DEMO_MODE=on): the daily retention, actor `system`.
+-  z.object({
+-    ...common,
+-    /** The "deleted tomorrow" warning was sent; the retention erases only warned accounts. */
+-    action: z.literal("demo.deletion_warned"),
+-    target: target("user"),
+-    metadata: z.object({ deletesAt: z.iso.datetime() }).strict(),
+-  }),
+-  z.object({
+-    ...common,
+-    /** The retention erased an account through the privacy erasure. */
+-    action: z.literal("demo.account_erased"),
+-    target: target("user"),
+-    metadata: z.object({ retentionDays: z.number().int().positive() }).strict(),
+-  }),
+   z.object({
+diff --git a/packages/features/src/audit/index.ts b/packages/features/src/audit/index.ts
+index 02a19c0..4dfa309 100644
+--- a/packages/features/src/audit/index.ts
++++ b/packages/features/src/audit/index.ts
+@@ -1,2 +1 @@
+-export { countAuditEvents } from "./count-audit-events";
+ export {
+@@ -23,3 +22,2 @@ export {
+ } from "./domain";
+-export { findLatestAuditTimes } from "./find-latest-audit-times";
+ export { type AuditEventPage, listAuditEvents } from "./list-audit-events";
+diff --git a/packages/features/src/cron-catalog.ts b/packages/features/src/cron-catalog.ts
+index 0f0b293..9f62bc6 100644
+--- a/packages/features/src/cron-catalog.ts
++++ b/packages/features/src/cron-catalog.ts
+@@ -8,3 +8,2 @@ import { purgeAuditEventsJob } from "./audit";
+ import { expireTrialsJob } from "./billing";
+-import { type DemoSettings, enforceDemoRetentionJob } from "./demo";
+ import { retryFileCleanupsJob } from "./files";
+@@ -29,4 +28,2 @@ export interface CronDeps {
+   readonly storageReconcile: StorageReconcileMode;
+-  /** DEMO_MODE and its settings: the demo retention runs only with on. */
+-  readonly demo: DemoSettings;
+   readonly jobQueue: JobQueue;
+@@ -132,17 +129,2 @@ export const cronCatalog = createCronCatalog<CronDeps>([
+   },
+-  {
+-    // Demo mode only (DEMO_MODE=on; starter-only): warns accounts a day before
+-    // DEMO_RETENTION_DAYS and erases the expired ones. Enqueues nothing with off.
+-    name: "demo.enforce-retention",
+-    schedule: DAILY,
+-    run: async (deps, { scheduledTime, context }) => {
+-      if (deps.demo.mode !== "on") return;
+-      return enqueueJob(
+-        deps,
+-        enforceDemoRetentionJob,
+-        { asOf: new Date(scheduledTime).toISOString(), batch: 0 },
+-        { context }
+-      );
+-    },
+-  },
+   {
+diff --git a/packages/features/src/index.ts b/packages/features/src/index.ts
+index 8011405..78654a6 100644
+--- a/packages/features/src/index.ts
++++ b/packages/features/src/index.ts
+@@ -12,3 +12,2 @@ export { DATA_CATALOG } from "./data-catalog";
+ export { createDatabase, type Database, schema } from "./database";
+-export * from "./demo";
+ export { buildErasureHandlers } from "./erasure-catalog";
+@@ -22,6 +21,3 @@ export * from "./kernel";
+ export * from "./notes";
+-export {
+-  notificationCatalog,
+-  preferenceCatalogFor,
+-} from "./notification-catalog";
++export { notificationCatalog } from "./notification-catalog";
+ export * from "./notifications";
+diff --git a/packages/features/src/job-catalog.ts b/packages/features/src/job-catalog.ts
+index 1874514..f2a88cd 100644
+--- a/packages/features/src/job-catalog.ts
++++ b/packages/features/src/job-catalog.ts
+@@ -7,11 +7,2 @@ import { expireTrials, expireTrialsJob } from "./billing";
+ import { DATA_CATALOG } from "./data-catalog";
+-import {
+-  enforceDemoRetention,
+-  enforceDemoRetentionJob,
+-  seedDemoWorkspace,
+-  seedDemoWorkspaceJob,
+-  warnDemoAccount,
+-  warnDemoAccountJob,
+-} from "./demo";
+-import { buildErasureHandlers } from "./erasure-catalog";
+ import {
+@@ -156,34 +147,2 @@ export const jobCatalog = createJobCatalog<JobDeps>([
+   ),
+-  // Demo mode (DEMO_MODE=on; starter-only). Each re-reads the settings when it runs.
+-  registerJob(seedDemoWorkspaceJob, (deps: JobDeps, payload, job) =>
+-    seedDemoWorkspace(
+-      {
+-        ...deps,
+-        requestContext: job.context,
+-        billing: deps.billing(job.context),
+-      },
+-      payload
+-    )
+-  ),
+-  // Judged as of the cron run's time; erasures through the privacy erasure.
+-  registerJob(enforceDemoRetentionJob, (deps: JobDeps, payload, job) =>
+-    enforceDemoRetention(
+-      {
+-        ...deps,
+-        requestContext: job.context,
+-        ...buildErasureHandlers(deps),
+-      },
+-      { asOf: new Date(payload.asOf), batch: payload.batch, skip: payload.skip }
+-    )
+-  ),
+-  registerJob(warnDemoAccountJob, (deps: JobDeps, payload, job) =>
+-    warnDemoAccount(
+-      {
+-        ...deps,
+-        requestContext: job.context,
+-        notify: (definition, input) => notify(deps, definition, input),
+-      },
+-      { userId: payload.userId, asOf: new Date(payload.asOf) }
+-    )
+-  ),
+ ]);
+diff --git a/packages/features/src/jobs/run-job.integration.test.ts b/packages/features/src/jobs/run-job.integration.test.ts
+index e1337d0..64d0eaa 100644
+--- a/packages/features/src/jobs/run-job.integration.test.ts
++++ b/packages/features/src/jobs/run-job.integration.test.ts
+@@ -9,3 +9,2 @@ import {
+   testDb,
+-  testJobPorts,
+ } from "../../test/fixtures";
+@@ -42,3 +41,2 @@ function deps(iso = "2026-10-28T12:00:00.000Z"): JobDeps {
+     storageReconcile: "off",
+-    ...testJobPorts(),
+   };
+diff --git a/packages/features/src/jobs/run-job.ts b/packages/features/src/jobs/run-job.ts
+index 24e94ac..bd6414d 100644
+--- a/packages/features/src/jobs/run-job.ts
++++ b/packages/features/src/jobs/run-job.ts
+@@ -1,12 +1,4 @@
+ import { and, eq, sql } from "drizzle-orm";
+-import type { AdminAuthGateway } from "../admin";
+ import type { Database } from "../database";
+-import type { DemoRuntime } from "../demo";
+-import type {
+-  BillingGate,
+-  Clock,
+-  Ids,
+-  JobEnvelope,
+-  RequestContext,
+-} from "../kernel";
++import type { Clock, Ids, JobEnvelope } from "../kernel";
+ import type {
+@@ -17,3 +9,2 @@ import type {
+   Metrics,
+-  ProductAnalytics,
+ } from "../platform";
+@@ -55,9 +46,2 @@ export interface JobDeps {
+   readonly bucket: R2Bucket;
+-  /** DEMO_MODE and its retention policy (the demo feature's jobs). */
+-  readonly demo: DemoRuntime;
+-  /** Better Auth's user deletion, for server-initiated erasure (its hooks complete it). */
+-  readonly authUsers: Pick<AdminAuthGateway, "deleteUser">;
+-  /** The BillingGate for the work a job does as a member (plan limits). */
+-  readonly billing: (context: RequestContext) => BillingGate;
+-  readonly analytics: ProductAnalytics;
+ }
+diff --git a/packages/features/src/kernel/notification.ts b/packages/features/src/kernel/notification.ts
+index 9dc06a2..5f98716 100644
+--- a/packages/features/src/kernel/notification.ts
++++ b/packages/features/src/kernel/notification.ts
+@@ -71,8 +71,2 @@ export interface NotifyInput<TData> {
+   readonly data: TData;
+-  /**
+-   * A stable event id, for a producer that may send the same notification twice (a job
+-   * retried after it was sent): the dispatch job is keyed by it, so the repeat is a no-op.
+-   * Omitted: a new id per call.
+-   */
+-  readonly eventId?: string;
+   readonly context: {
+diff --git a/packages/features/src/notification-catalog.ts b/packages/features/src/notification-catalog.ts
+index 7d75f0c..0b729fe 100644
+--- a/packages/features/src/notification-catalog.ts
++++ b/packages/features/src/notification-catalog.ts
+@@ -9,3 +9,2 @@ import {
+ } from "./accounts";
+-import { demoDeletionWarningNotification } from "./demo";
+ import type { NotificationDefinition } from "./kernel";
+@@ -26,17 +25,2 @@ export const notificationCatalog = createNotificationCatalog([
+   exportReadyNotification,
+-  // Demo mode only (DEMO_MODE=on); starter-only, removable with the demo feature.
+-  demoDeletionWarningNotification,
+ ] as readonly NotificationDefinition<unknown>[]);
+-
+-/**
+- * The catalog the preferences matrix shows: without the demo warning unless DEMO_MODE=on,
+- * so a deployment that is not a demo never lists it.
+- */
+-export function preferenceCatalogFor(demoMode: "on" | "off") {
+-  if (demoMode === "on") return notificationCatalog;
+-  return createNotificationCatalog(
+-    [...notificationCatalog.values()].filter(
+-      (definition) => definition.type !== demoDeletionWarningNotification.type
+-    )
+-  );
+-}
+diff --git a/packages/features/src/notifications/domain/catalog.test.ts b/packages/features/src/notifications/domain/catalog.test.ts
+index dbb7911..15ae24f 100644
+--- a/packages/features/src/notifications/domain/catalog.test.ts
++++ b/packages/features/src/notifications/domain/catalog.test.ts
+@@ -70,3 +70,2 @@ describe("notification catalog", () => {
+       "privacy.export-ready",
+-      "demo.deletion-warning",
+     ]);
+diff --git a/packages/features/src/notifications/get-notification-preferences.integration.test.ts b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
+index 6bae831..c6f0463 100644
+--- a/packages/features/src/notifications/get-notification-preferences.integration.test.ts
++++ b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
+@@ -4,6 +4,3 @@ import { describe, expect, it } from "vitest";
+ import { seedUser, testDb } from "../../test/fixtures";
+-import {
+-  notificationCatalog,
+-  preferenceCatalogFor,
+-} from "../notification-catalog";
++import { notificationCatalog } from "../notification-catalog";
+ import { getNotificationPreferences } from "./get-notification-preferences";
+@@ -29,3 +26,2 @@ describe("getNotificationPreferences", () => {
+       ["privacy.export-ready", true, true, true],
+-      ["demo.deletion-warning", true, true, true],
+     ]);
+@@ -33,20 +29,2 @@ describe("getNotificationPreferences", () => {
+ 
+-  it("lists the demo warning only for a demo deployment (preferenceCatalogFor)", async () => {
+-    const ada = await seedUser("Ada Prefs", "ada.prefs@example.test");
+-    const types = async (mode: "on" | "off") =>
+-      (
+-        await getNotificationPreferences(
+-          {
+-            db: testDb(),
+-            catalog: preferenceCatalogFor(mode),
+-            emailEnabled: true,
+-          },
+-          { userId: ada.id }
+-        )
+-      ).types.map((row) => row.type);
+-    expect(await types("on")).toContain("demo.deletion-warning");
+-    expect(await types("off")).not.toContain("demo.deletion-warning");
+-    expect(await types("off")).toContain("privacy.export-ready");
+-  });
+-
+   it("applies the user's overrides and cadence", async () => {
+diff --git a/packages/features/src/notifications/notify.test.ts b/packages/features/src/notifications/notify.test.ts
+index 108198b..2737920 100644
+--- a/packages/features/src/notifications/notify.test.ts
++++ b/packages/features/src/notifications/notify.test.ts
+@@ -73,20 +73,2 @@ describe("notify", () => {
+ 
+-  it("uses a stable event id when the producer gives one, so a repeat has the same dispatch key", async () => {
+-    const d = deps();
+-    for (let i = 0; i < 2; i++) {
+-      await notify(d, memberJoinedNotification, {
+-        recipients: ["user-ada"],
+-        data,
+-        eventId: "demo-warning-user-ada-2026-10-28T03:17:00.000Z",
+-        context: { workspaceId: "ws-acme", requestContext },
+-      });
+-    }
+-    expect(d.jobQueue.sent.map((sent) => sent.envelope.idempotencykey)).toEqual(
+-      [
+-        "notifications.dispatch:demo-warning-user-ada-2026-10-28T03:17:00.000Z",
+-        "notifications.dispatch:demo-warning-user-ada-2026-10-28T03:17:00.000Z",
+-      ]
+-    );
+-  });
+-
+   it("keeps the actor for a security notification", async () => {
+diff --git a/packages/features/src/notifications/notify.ts b/packages/features/src/notifications/notify.ts
+index 2f8dcad..e65ef85 100644
+--- a/packages/features/src/notifications/notify.ts
++++ b/packages/features/src/notifications/notify.ts
+@@ -54,3 +54,3 @@ export async function notify<TData>(
+ 
+-    const eventId = input.eventId ?? deps.ids.uuid();
++    const eventId = deps.ids.uuid();
+     await enqueueJob(
+diff --git a/packages/features/src/privacy/erase-user-data.ts b/packages/features/src/privacy/erase-user-data.ts
+index 49479b6..19928f7 100644
+--- a/packages/features/src/privacy/erase-user-data.ts
++++ b/packages/features/src/privacy/erase-user-data.ts
+@@ -9,3 +9,3 @@ import {
+ } from "../kernel";
+-import { eraseAccount } from "./erase-account";
++import { prepareUserErasure } from "./prepare-user-erasure";
+ /** Administrator path shares the same preflight/erasers as self-service deletion. */
+@@ -36,6 +36,9 @@ export async function eraseUserData(
+     );
+-  const plan = await eraseAccount(deps, {
++  const operationId = deps.ids.uuid();
++  const plan = await prepareUserErasure(deps, {
+     userId: input.userId,
++    operationId,
+     actor: { kind: "admin", userId: admin.userId },
+   });
++  await deps.gateway.deleteUser(input.userId, operationId);
+   await recordAuditEvent(deps, deps.requestContext, {
+diff --git a/packages/features/src/privacy/index.ts b/packages/features/src/privacy/index.ts
+index 5469b79..99bfa14 100644
+--- a/packages/features/src/privacy/index.ts
++++ b/packages/features/src/privacy/index.ts
+@@ -20,3 +20,2 @@ export {
+ export { downloadDataExport } from "./download-data-export";
+-export { eraseAccount } from "./erase-account";
+ export { eraseIdentityReferences } from "./erase-identity-references";
+diff --git a/packages/features/test/fixtures.ts b/packages/features/test/fixtures.ts
+index 1e57847..edf041e 100644
+--- a/packages/features/test/fixtures.ts
++++ b/packages/features/test/fixtures.ts
+@@ -177,21 +177,2 @@ export function testBilling(mode: BillingMode = "off", at?: string) {
+ 
+-/**
+- * The JobDeps a job of another feature does not use: demo mode off, a user deletion
+- * that only deletes the row, BILLING=off and a memory ProductAnalytics.
+- */
+-export function testJobPorts() {
+-  return {
+-    demo: { mode: "off" } as const,
+-    authUsers: {
+-      async deleteUser(userId: string) {
+-        await env.DB.prepare("DELETE FROM user WHERE id = ?")
+-          .bind(userId)
+-          .run();
+-      },
+-    },
+-    billing: () => testBilling(),
+-    analytics: createMemoryProductAnalytics(),
+-  };
+-}
+-
+ let depsRun = 0;
+diff --git a/packages/ui/src/components/patterns/admin-overview.stories.tsx b/packages/ui/src/components/patterns/admin-overview.stories.tsx
+index 195dd2d..208fc36 100644
+--- a/packages/ui/src/components/patterns/admin-overview.stories.tsx
++++ b/packages/ui/src/components/patterns/admin-overview.stories.tsx
+@@ -70,27 +70,2 @@ export const Content: Story = {
+ 
+-/** A demo instance (DEMO_MODE=on): the demo retention's counters. */
+-export const DemoInstance: Story = {
+-  args: {
+-    data: {
+-      ...data,
+-      demo: {
+-        retentionDays: 7,
+-        activeAccounts: 342,
+-        scheduledToday: 18,
+-        erasedLast7Days: 121,
+-      },
+-    },
+-  },
+-  play: async ({ canvasElement }) => {
+-    const canvas = within(canvasElement);
+-    await expect(canvas.getByText("Demo instance")).toBeVisible();
+-    await expect(canvas.getByText("Active demo accounts")).toBeVisible();
+-    await expect(canvas.getByText("342")).toBeVisible();
+-    await expect(canvas.getByText("Deletions scheduled today")).toBeVisible();
+-    await expect(canvas.getByText("18")).toBeVisible();
+-    await expect(canvas.getByText("Deleted, last 7 days")).toBeVisible();
+-    await expect(canvas.getByText("121")).toBeVisible();
+-  },
+-};
+-
+ /** With billing on: workspaces per plan and status, trials and this month's usage. */
+diff --git a/packages/ui/src/components/patterns/admin-overview.tsx b/packages/ui/src/components/patterns/admin-overview.tsx
+index 0ac4763..d4627d5 100644
+--- a/packages/ui/src/components/patterns/admin-overview.tsx
++++ b/packages/ui/src/components/patterns/admin-overview.tsx
+@@ -4,3 +4,2 @@ import {
+   CreditCard,
+-  FlaskConical,
+   ShieldCheck,
+@@ -56,9 +55,2 @@ export interface AdminOverviewData {
+   } | null;
+-  /** DEMO_MODE=on: the demo retention's counters; null or absent with off. */
+-  readonly demo?: {
+-    readonly retentionDays: number;
+-    readonly activeAccounts: number;
+-    readonly scheduledToday: number;
+-    readonly erasedLast7Days: number;
+-  } | null;
+ }
+@@ -156,30 +148,2 @@ export function AdminOverview({ data }: AdminOverviewProps) {
+       ) : null}
+-      {data.demo ? (
+-        <Card className="flex flex-col gap-4 p-4">
+-          <div className="flex flex-wrap items-center justify-between gap-2">
+-            <p className="flex items-center gap-2 text-sm font-medium text-fg">
+-              <FlaskConical aria-hidden className="size-4 text-fg-muted" />
+-              Demo instance
+-            </p>
+-            <p className="text-xs text-fg-muted">
+-              Accounts are erased {number.format(data.demo.retentionDays)} days
+-              after sign-up; admins, protected and QA accounts never.
+-            </p>
+-          </div>
+-          <dl className="grid gap-4 sm:grid-cols-3">
+-            {[
+-              ["Active demo accounts", data.demo.activeAccounts],
+-              ["Deletions scheduled today", data.demo.scheduledToday],
+-              ["Deleted, last 7 days", data.demo.erasedLast7Days],
+-            ].map(([label, value]) => (
+-              <div key={label} className="flex flex-col gap-1">
+-                <dt className="text-xs text-fg-muted">{label}</dt>
+-                <dd className="text-xl font-semibold tabular-nums text-fg">
+-                  {number.format(Number(value))}
+-                </dd>
+-              </div>
+-            ))}
+-          </dl>
+-        </Card>
+-      ) : null}
+       {data.plans ? (
+diff --git a/packages/ui/src/components/patterns/admin-settings.stories.tsx b/packages/ui/src/components/patterns/admin-settings.stories.tsx
+index 857ceef..be1596c 100644
+--- a/packages/ui/src/components/patterns/admin-settings.stories.tsx
++++ b/packages/ui/src/components/patterns/admin-settings.stories.tsx
+@@ -19,3 +19,2 @@ const settings: AdminSettingsData = {
+   adminPortal: "on",
+-  demo: { mode: "off" },
+ };
+@@ -54,27 +53,2 @@ export const Content: Story = {
+ 
+-/** A public demo instance (DEMO_MODE=on): its retention and who it never erases. */
+-export const DemoInstance: Story = {
+-  args: {
+-    settings: {
+-      ...settings,
+-      signUp: "open",
+-      signUpDomains: [],
+-      demo: {
+-        mode: "on",
+-        retentionDays: 7,
+-        sampleData: true,
+-        protectedEmails: ["owner@acme.test"],
+-        qaEmailDomain: "qa.acme.test",
+-      },
+-    },
+-  },
+-  play: async ({ canvasElement }) => {
+-    const canvas = within(canvasElement);
+-    await expect(canvas.getByText("Retention")).toBeVisible();
+-    await expect(canvas.getByText("7 days")).toBeVisible();
+-    await expect(canvas.getByText("owner@acme.test")).toBeVisible();
+-    await expect(canvas.getByText("qa.acme.test")).toBeVisible();
+-  },
+-};
+-
+ /** Local development: open sign-up, personal mode, no email, no dashboard link. */
+diff --git a/packages/ui/src/components/patterns/admin-settings.tsx b/packages/ui/src/components/patterns/admin-settings.tsx
+index ea45d90..115d762 100644
+--- a/packages/ui/src/components/patterns/admin-settings.tsx
++++ b/packages/ui/src/components/patterns/admin-settings.tsx
+@@ -16,12 +16,2 @@ export interface AdminSettingsData {
+   readonly adminPortal: "on" | "off";
+-  /** DEMO_MODE and its settings; absent on older servers. */
+-  readonly demo?:
+-    | { readonly mode: "off" }
+-    | {
+-        readonly mode: "on";
+-        readonly retentionDays: number;
+-        readonly sampleData: boolean;
+-        readonly protectedEmails: readonly string[];
+-        readonly qaEmailDomain: string | null;
+-      };
+ }
+@@ -95,30 +85,2 @@ export function AdminSettings({
+       </SettingsSection>
+-      {settings.demo ? (
+-        <SettingsSection
+-          title="Demo mode"
+-          description="A public demo erases accounts after the retention. Apps built from the starter keep it off."
+-        >
+-          <SettingsRow label="Demo mode">
+-            {onOff(settings.demo.mode === "on")}
+-          </SettingsRow>
+-          {settings.demo.mode === "on" ? (
+-            <>
+-              <SettingsRow label="Retention">
+-                {`${settings.demo.retentionDays} days`}
+-              </SettingsRow>
+-              <SettingsRow label="Sample data">
+-                {onOff(settings.demo.sampleData)}
+-              </SettingsRow>
+-              <SettingsRow label="Protected accounts">
+-                {settings.demo.protectedEmails.length
+-                  ? settings.demo.protectedEmails.join(", ")
+-                  : "None"}
+-              </SettingsRow>
+-              <SettingsRow label="QA domain (skipped)">
+-                {settings.demo.qaEmailDomain ?? "None"}
+-              </SettingsRow>
+-            </>
+-          ) : null}
+-        </SettingsSection>
+-      ) : null}
+       {queuesDashboardUrl ? (
+diff --git a/packages/ui/src/exports/patterns.ts b/packages/ui/src/exports/patterns.ts
+index 2340594..a9e736d 100644
+--- a/packages/ui/src/exports/patterns.ts
++++ b/packages/ui/src/exports/patterns.ts
+@@ -145,6 +145,2 @@ export {
+ } from "../components/patterns/data-export-list";
+-export {
+-  DemoBanner,
+-  type DemoBannerProps,
+-} from "../components/patterns/demo-banner";
+ export {
+diff --git a/scripts/smoke.ts b/scripts/smoke.ts
+index c0aa85f..3518b46 100644
+--- a/scripts/smoke.ts
++++ b/scripts/smoke.ts
+@@ -27,4 +27,2 @@ let fromEnvironment: string | undefined;
+ let smokeEnvironment: string | undefined;
+-// Its DEMO_MODE (the sign-up page's demo notice), from its vars in wrangler.jsonc.
+-let smokeDemoMode: string | undefined;
+ if (envIndex !== -1) {
+@@ -36,5 +34,5 @@ if (envIndex !== -1) {
+   smokeEnvironment = env;
+-  const block = envBlock(readWranglerConfig(), env as Environment);
+-  fromEnvironment = deployedURL(block);
+-  smokeDemoMode = (block.vars as Record<string, string> | undefined)?.DEMO_MODE;
++  fromEnvironment = deployedURL(
++    envBlock(readWranglerConfig(), env as Environment)
++  );
+   if (
+@@ -66,3 +64,2 @@ const result = spawnSync(
+       ...(smokeEnvironment ? { SMOKE_ENV: smokeEnvironment } : {}),
+-      ...(smokeDemoMode ? { SMOKE_DEMO_MODE: smokeDemoMode } : {}),
+     },
+diff --git a/test/architecture/audit-coverage.test.ts b/test/architecture/audit-coverage.test.ts
+index 6153db0..c155e4c 100644
+--- a/test/architecture/audit-coverage.test.ts
++++ b/test/architecture/audit-coverage.test.ts
+@@ -24,3 +24,2 @@ const AUDITED_FEATURES = [
+   "notes",
+-  "demo",
+ ] as const;
+@@ -29,10 +28,2 @@ const AUDITED_FEATURES = [
+ const AUDIT_EXEMPT: Readonly<Record<string, string>> = {
+-  "packages/features/src/privacy/erase-account.ts":
+-    "Shared erasure core: its callers record the event (eraseUserData user.deleted, eraseDemoAccount demo.account_erased); workspace.deleted and privacy.user_erased come from the erasure itself.",
+-  "packages/features/src/demo/enforce-demo-retention.ts":
+-    "Orchestrates the retention: each erasure is audited by eraseDemoAccount (demo.account_erased) and each warning by warnDemoAccount (demo.deletion_warned).",
+-  "packages/features/src/demo/schedule-demo-seed.ts":
+-    "Only enqueues the seed job; the notes it writes are audited by createNote and addNoteComment.",
+-  "packages/features/src/demo/seed-demo-workspace.ts":
+-    "Writes through createNote and addNoteComment, which record note.created and note.commented.",
+   "packages/features/src/privacy/erase-user-exports.ts":
+diff --git a/test/architecture/e2e-isolation.test.ts b/test/architecture/e2e-isolation.test.ts
+index 16514a9..d8ca399 100644
+--- a/test/architecture/e2e-isolation.test.ts
++++ b/test/architecture/e2e-isolation.test.ts
+@@ -3,7 +3,2 @@ import { describe, expect, it } from "vitest";
+ 
+-import {
+-  DEMO_E2E_STATE,
+-  demoAdapterOptions,
+-  localDemoPlugins,
+-} from "../../apps/web/test/e2e/demo-vite.mjs";
+ import { localTurnstilePlugins } from "../../apps/web/test/e2e/turnstile-vite.mjs";
+@@ -41,34 +36 @@ describe("local E2E Turnstile transport", () => {
+ });
+-
+-describe("demo-mode E2E server", () => {
+-  it("is absent without E2E_DEMO_PORT and refuses builds or non-development modes", () => {
+-    expect(localDemoPlugins(undefined)).toEqual([]);
+-    expect(demoAdapterOptions(undefined)).toEqual({});
+-    expect(() => localDemoPlugins("4322; rm")).toThrow();
+-    const [plugin] = localDemoPlugins("4322");
+-    expect(() =>
+-      plugin.apply({}, { command: "build", mode: "production" })
+-    ).toThrow();
+-    expect(() =>
+-      plugin.apply({}, { command: "serve", mode: "production" })
+-    ).toThrow();
+-    expect(plugin.apply({}, { command: "serve", mode: "development" })).toBe(
+-      true
+-    );
+-    expect(demoAdapterOptions("4322")).toEqual({
+-      persistState: { path: DEMO_E2E_STATE },
+-    });
+-  });
+-
+-  it("only turns demo mode on in src/lib/env.ts and detects source drift", () => {
+-    const [plugin] = localDemoPlugins("4322");
+-    const source = readFileSync("apps/web/src/lib/env.ts", "utf8");
+-    expect(plugin.transform(source, "/repo/other.ts")).toBeNull();
+-    const result = plugin.transform(source, "/repo/apps/web/src/lib/env.ts");
+-    expect(result?.code).toContain('"DEMO_MODE":"on"');
+-    expect(result?.code).toContain('"APP_URL":"http://localhost:4322"');
+-    expect(() =>
+-      plugin.transform("changed", "/repo/apps/web/src/lib/env.ts")
+-    ).toThrow();
+-  });
+-});
+diff --git a/test/architecture/trash.test.ts b/test/architecture/trash.test.ts
+index c9ecc21..3e9b511 100644
+--- a/test/architecture/trash.test.ts
++++ b/test/architecture/trash.test.ts
+@@ -24,4 +24,2 @@ const UNSCOPED_READS: Readonly<Record<string, string>> = {
+     "billing's notes metric counts live notes by workspace id for a caller that authorized it; it filters deleted_at itself (no actor to pass liveIn)",
+-  "packages/features/src/demo/seed-demo-workspace.ts":
+-    "the demo seed's idempotency check: a workspace with any note, live or trashed, is never seeded again",
+   "packages/features/src/files/measure-workspace-storage.ts":

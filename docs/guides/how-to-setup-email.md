@@ -1,94 +1,52 @@
 # How to set up email (Cloudflare Email Service)
 
-The web Worker sends mail through [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) with the `EMAIL` `send_email` binding. There is no API key: the binding is the permission. Callers use the Email port, `EmailService` in [packages/features/src/platform/ports/email.ts](../../packages/features/src/platform/ports/email.ts) (`enabled`, `send({ to, subject, text, html, headers? })`), so another provider is a new adapter, not a change to callers. Adapters: `cloudflare` (the binding), `noop` (email off) and `memory` (tests); each passes the port's contract suite, which also refuses header injection (a line break in a subject or header value) and headers the adapter sets itself (From, To, Subject).
+::reviewed{date="2026-11-09"}
 
-What sends mail:
+The app sends mail through Cloudflare Email Service: password resets, verification, invitations and notifications. There is no API key (the binding is the permission), and locally every mail is simulated and saved to disk. Use this guide to send real mail from an environment or turn on email verification.
 
-- `/app/email-demo` (tRPC `email.sendTest`, MCP tool `send_test_email`)
-- Better Auth: password reset links, email verification (when enabled), email-change confirmation, and two-factor codes by email (`TWO_FACTOR_EMAIL_OTP=on`)
-- Account erasure: the confirmation after an account was deleted
-- Workspace invitations
-- Notifications: one mail per notification or a daily digest, with RFC 8058 one-click unsubscribe headers ([how-to-send-notifications.md](how-to-send-notifications.md)), including the security notices and the data-export-ready link; without email they stay in the in-app inbox
+::flow[Use case -> Email port -> Cloudflare Email Service -> Inbox]{title="Mail flow: a use case sends through the email port, Cloudflare Email Service delivers it"}
 
-Email is on when the environment has the `EMAIL` binding and an `EMAIL_FROM` var: `buildPlatform` (`apps/web/src/server/platform.ts`) then gives `platform.email` the Cloudflare adapter, otherwise the noop one (`email.enabled` is false). Without them the demo reports "not configured". Auth links (password reset, verification) then go to the dev log only when `APP_ENV=local` (set in `.dev.vars`); a deployed environment never logs them and answers those requests with 412 `EMAIL_NOT_CONFIGURED` ("Email is not configured for this environment …").
+## Locally
 
-## Local Development
+Nothing to set up. The dev server logs each mail and saves its text and HTML under `apps/web/.wrangler/tmp/email/`.
 
-Nothing to set up. `apps/web/.dev.vars.example` sets `EMAIL_FROM=noreply@example.test`, and `wrangler dev` simulates the binding: each message is logged by the dev server, with its text and HTML saved under `apps/web/.wrangler/tmp/email/`.
+## Send real mail from an environment
 
+:::settings
+- EMAIL_FROM = none The sender address; blank turns email off
+- EMAIL_FROM_NAME = none The sender's display name
+  :::
+
+You need the Workers Paid plan (3,000 mails a month included) and a sender domain whose DNS is on Cloudflare.
+
+:::prompt{title="Paste this into your coding agent"}
+```text
+Use the setup-email skill to send email from production as noreply@<my domain>: onboard
+the sender domain (dry run first), set EMAIL_FROM, deploy, and send a test mail to me.
 ```
-send_email binding called with MessageBuilder:
-From: "Cloudflare Starter" <noreply@example.test>
-To: "Test User" <test@example.test>
-Subject: Verify your email
-```
+:::
 
-To send real mail from local dev, Cloudflare supports `"remote": true` on the binding. Use addresses you control.
-
-## Deployed Environments
-
-Requirements (Email Sending is in beta, check the docs for current terms):
-
-- Workers Paid plan. It includes 3,000 mails a month, then $0.35 per 1,000.
-- A sender domain whose DNS is on Cloudflare.
-
-Set up a domain and an environment:
-
+:::byhand
 ```bash
 bun run setup:email --domain example.com --from noreply@example.com --env production --dry-run
 bun run setup:email --domain example.com --from noreply@example.com --env production
 ```
 
-The script checks `wrangler email sending list <domain>` and runs `wrangler email sending enable` only when the domain is not onboarded yet (an already-enabled domain, including Wrangler's "Subdomain already exists [code 2040]", counts as done, so the script can be re-run for another environment or sender), prints the DNS records (SPF, DKIM, bounce), and writes into `apps/web/wrangler.jsonc` for that environment:
+It onboards the domain if needed and writes `EMAIL_FROM` and the `send_email` binding into `wrangler.jsonc`. Deploy, then send a test from `/app/email-demo`.
+:::
 
-- `vars.EMAIL_FROM` (and `EMAIL_FROM_NAME` with `--name`)
-- `send_email: [{ "name": "EMAIL", "allowed_sender_addresses": ["noreply@example.com"] }]`
+:::gotcha{title="Test with addresses you control"}
+Bounces from made-up addresses hurt the domain's reputation.
+:::
 
-Then deploy the environment (`cd apps/web && bun run deploy:production`) and send a test from `/app/email-demo`. Test with addresses you control; bounces from made-up addresses hurt the domain's reputation.
+## Turn on email verification
 
-### Choosing The Sender
+Once mail works, set `AUTH_REQUIRE_EMAIL_VERIFICATION` to `true` in the environment's `vars`. New people then get a link and cannot sign in until they open it; links are valid for an hour. The app refuses to start with verification on and no email.
 
-`EMAIL_FROM` is the address every mail of the environment comes from (password resets, verification, invitations, notifications), so pick it once per environment:
+:::decision{title="No email, no secrets in logs"}
+Without a sender, a deployed environment refuses to send auth links (412 `EMAIL_NOT_CONFIGURED`) instead of logging them: a link is a credential. Only `APP_ENV=local` logs them.
+:::
 
-- Its domain must be onboarded to Email Service (DNS on Cloudflare, the SPF, DKIM and bounce records in place). It does not have to be the app's hostname: one onboarded domain can send for several projects.
-- Give each project its own local part on a shared domain (the starter's production, served at `starter.flooper.me`, sends as `starter@flooper.me`), so a recipient sees which product wrote, and complaints and bounces can be told apart. The domain's reputation is still shared: a project that sends badly hurts the others.
-- Use an address that exists or is routed (Email Routing), since replies go to it; no-reply addresses work, but users then answer into nothing.
-- `setup:email` writes the same address into `allowed_sender_addresses`; the binding refuses any other sender.
+## Reference
 
-## Email Verification
-
-Once mail works in an environment, set `"AUTH_REQUIRE_EMAIL_VERIFICATION": "true"` in its `vars`. New users then get a verification link and cannot sign in until they open it; the link signs them in. The app refuses to start with the flag on and no email configured.
-
-The screens around it (`CheckInboxCard` and `EmailVerifiedCard` in `packages/ui`, stories under Patterns/VerifyEmail):
-
-| Screen                             | When                                                                                                                                                                        | What it does                                                                                                                                                           |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Check your inbox (in `SignUpForm`) | sign-up with the flag on: there is no session yet                                                                                                                           | names the address; **Resend link** (`/send-verification-email`, limited by `auth.verification-email`, a 429 shows the wait); **Use another email** returns to the form |
-| Check your inbox (in `SignInForm`) | a correct password for an unverified address (`EMAIL_NOT_VERIFIED`)                                                                                                         | the same card for the typed address                                                                                                                                    |
-| `/verify-email`                    | signed in and not verified (the dashboard's checklist links here; with the flag off, sign-up signs in at once and the address stays unverified until the link is opened)    | resend to the user's own address; **Use another email** opens Settings › Account; a verified user is sent on to the app                                                |
-| `/email-verified`                  | where every verification link lands (`callbackURL`, built by `verifiedCallbackURL` in `apps/web/src/lib/auth-links.ts`, keeping a same-site `?next=` such as an invitation) | **Email verified** and **Continue to the app**; Better Auth's `?error=` (expired or cut-off link) shows **This link doesn't work** with **Send a new link** (HTTP 400) |
-
-Links are stateless and valid for an hour (Better Auth's default `emailVerification.expiresIn`); a resend does not invalidate the earlier ones.
-
-## Swapping The Provider
-
-Add an adapter in `packages/features/src/platform/adapters/<vendor>/` that implements `EmailService` and calls `assertEmailMessage` first, with a `<name>.contract.test.ts` running `describeEmailContract` ([overview.md](../architecture/overview.md#ports-and-adapters)). Return it from `buildEmailFeature` in [apps/web/src/lib/env.ts](../../apps/web/src/lib/env.ts), and keep its keys as Worker secrets. Pass `headers` through: notification mail needs `List-Unsubscribe`.
-
-## Headers through the binding (unverified in production)
-
-Notification mail sets `List-Unsubscribe` and `List-Unsubscribe-Post` through the binding's `headers` field ([how-to-send-notifications.md](how-to-send-notifications.md#email-headers-and-unsubscribe)). The local simulation and the tests accept them; whether Cloudflare Email Service delivers them unchanged has not been checked against a deployed environment yet. After the first deploy with email:
-
-1. Trigger a notification mail to an address you control (invite yourself into a workspace from a second account and accept, so the first account gets "… joined …").
-2. Open the received mail's original source (Gmail: "Show original") and check that both headers are present, `List-Unsubscribe` holding `<https://<your app>/api/notifications/unsubscribe?t=…>`, and that DKIM passes.
-3. Gmail and Apple Mail then show an "Unsubscribe" link next to the sender; using it should turn that type's email off under `/app/notifications/preferences`.
-
-If the headers are missing, the binding drops custom headers: report it, and until then the footer link in every mail is the way to unsubscribe.
-
-## Common Problems
-
-| Symptom                     | Fix                                                                              |
-| --------------------------- | -------------------------------------------------------------------------------- |
-| "Email is not configured"   | The environment has no `EMAIL_FROM` var or no `send_email` binding               |
-| Send rejected               | The sender is not on an onboarded domain or not in `allowed_sender_addresses`    |
-| Mail lands in spam          | Check the records from `bunx wrangler email sending dns get <domain>`; add DMARC |
-| Reset link only in the logs | Email is off for that environment; see above                                     |
+What sends mail, choosing the sender, the verification screens, swapping the provider, headers through the binding and common problems: [Email reference](../reference/email.md).

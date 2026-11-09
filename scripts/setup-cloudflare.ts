@@ -223,7 +223,7 @@ function setupQueue(queue: PlannedQueue) {
     // Workers Free fixes retention at 24 hours and rejects the setting: keep the queue
     // (created without it) and go on with the other resources.
     console.warn(
-      `  ! message retention ${queue.messageRetentionSeconds} s was rejected (Workers Free fixes it at 24 hours; docs/guides/how-to-add-background-jobs.md#dead-letter-queue):\n    ${(result.stderr || result.stdout).trim()}`
+      `  ! message retention ${queue.messageRetentionSeconds} s was rejected (Workers Free fixes it at 24 hours; docs/reference/background-jobs.md#dead-letter-queue):\n    ${(result.stderr || result.stdout).trim()}`
     );
     result = exists
       ? { ok: true, stdout: "", stderr: "" }
@@ -293,5 +293,5 @@ console.log(
     ? "\nDry run: nothing was created or changed."
     : remaining.length
       ? `\nStill a placeholder database_id in: ${remaining.join(", ")}`
-      : "\nDone. Next: bun run setup:secrets --env <env>, then migrate and deploy (docs/guides/how-to-setup-web-app.md)."
+      : "\nDone. Next: bun run setup:secrets --env <env>, then migrate and deploy (docs/start/deploy.md)."
 );

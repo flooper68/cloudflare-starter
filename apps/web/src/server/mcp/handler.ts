@@ -10,7 +10,7 @@ import { createMcpHandler } from "@modelcontextprotocol/server";
 import { createLocalJWKSet, type JWTPayload, jwtVerify } from "jose";
 
 import { buildRequiredConfig } from "@/lib/env";
-import { AUTH_BASE_PATH, getAuth, mcpResource } from "@/server/auth";
+import { AUTH_BASE_PATH, mcpResource, readyAuth } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { withHeaders } from "@/server/http";
@@ -80,7 +80,7 @@ async function verifyAccessToken(
   appUrl: string,
   token: string
 ): Promise<JWTPayload> {
-  const jwks = await getAuth(env).api.getJwks();
+  const jwks = await (await readyAuth(env)).api.getJwks();
   const { payload } = await jwtVerify(
     token,
     createLocalJWKSet(jwks as Parameters<typeof createLocalJWKSet>[0]),

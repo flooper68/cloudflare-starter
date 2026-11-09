@@ -45,6 +45,7 @@
     "test:e2e": "bun run --filter @cloudflare-starter/web test:e2e",
     "test:e2e:build": "bun run --filter @cloudflare-starter/web test:e2e:build",
     "docs:screenshots": "bun run --filter @cloudflare-starter/web docs:screenshots",
+    "docs:reference": "UPDATE_REFERENCE=1 vitest run --project unit apps/web/src/docs/reference && biome format --write docs/reference docs/start",
     "test:smoke": "bun scripts/smoke.ts",
     "test:qa": "bun scripts/qa.ts",
     "media:record": "bun apps/web/media/record.ts",

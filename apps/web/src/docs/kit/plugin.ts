@@ -9,7 +9,7 @@
  *
  * Screenshots stay Markdown images, so Astro processes and fingerprints them like any
  * other docs image (and fails on a missing file).
- * docs/guides/how-to-publish-docs-and-landing.md#docs-components
+ * docs/reference/docs-site.md#docs-components
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";

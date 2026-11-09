@@ -32,6 +32,12 @@ import {
 } from "../../../../../packages/features/src/abuse/domain/policies";
 
 const MARGIN = 0.8;
+/**
+ * Between a slot and the server's own clock: the request reaches the app a little after
+ * its slot is taken (the routing hands it on), so a window is only counted as over this
+ * long after it really is.
+ */
+const SLACK_MS = 2_000;
 
 function stateDir(): string {
   const dir = join(
@@ -43,9 +49,19 @@ function stateDir(): string {
   return dir;
 }
 
+/** Better Auth endpoints behind the human check (HUMAN_CHECKED_PATHS in server/auth.ts). */
+const HUMAN_CHECKED = [
+  "/sign-up/email",
+  "/sign-in/email",
+  "/request-password-reset",
+];
+
 /** The policies a request to `/api/auth<path>` counts against. */
 export function authPolicies(path: string): RateLimitPolicyId[] {
   const policies: RateLimitPolicyId[] = ["auth.ip"];
+  // The human-checked endpoints a QA run reaches through the QA bypass count against
+  // `qa.bypass` too, with the outbox reads (inbox.ts) and the cleanup.
+  if (HUMAN_CHECKED.includes(path)) policies.push("qa.bypass");
   for (const [id, policy] of Object.entries(RATE_LIMIT_POLICIES)) {
     const pattern = (policy as { authPath?: string }).authPath;
     if (!pattern) continue;
@@ -61,10 +77,14 @@ export function authPolicies(path: string): RateLimitPolicyId[] {
 type Used = Record<string, number[]>;
 
 /** How long `id` must wait before one more request (0: it may go now). */
-function waitFor(id: RateLimitPolicyId, times: readonly number[], now: number) {
+export function waitFor(
+  id: RateLimitPolicyId,
+  times: readonly number[],
+  now: number
+) {
   const policy = RATE_LIMIT_POLICIES[id];
   const slots = Math.max(1, Math.floor(policy.limit * MARGIN));
-  const windowMs = policy.periodSeconds * 1000;
+  const windowMs = policy.periodSeconds * 1000 + SLACK_MS;
   if (policy.enforcer === "better-auth") {
     // The current burst: the requests since the last gap of a whole window.
     let start = times.length;
@@ -138,6 +158,33 @@ export async function takeSlots(
         writeFileSync(file, JSON.stringify(used));
       }
       return longest;
+    });
+    if (wait === 0) return;
+    await pause(wait + 100);
+  }
+}
+
+/**
+ * Waits until one more request of each policy could go, without taking the slot: the
+ * request takes it when it is sent (routing.ts), so the slot's time is the request's.
+ */
+export async function waitForSlots(
+  policies: readonly RateLimitPolicyId[]
+): Promise<void> {
+  const file = join(stateDir(), "slots.json");
+  for (;;) {
+    const wait = await locked(() => {
+      let used: Used = {};
+      try {
+        used = JSON.parse(readFileSync(file, "utf8"));
+      } catch {
+        used = {};
+      }
+      const now = Date.now();
+      return Math.max(
+        0,
+        ...policies.map((id) => waitFor(id, used[id] ?? [], now))
+      );
     });
     if (wait === 0) return;
     await pause(wait + 100);

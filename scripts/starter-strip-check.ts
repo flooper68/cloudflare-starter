@@ -5,7 +5,8 @@
  * Proves a strip leaves a working app: copies the repository (tracked and untracked
  * files, no node_modules) to a scratch directory, installs, runs `starter:strip --apply
  * --yes` there, runs it a second time (it must find nothing to do), then the commands
- * (default: typecheck, lint, test). Without a selection it strips the default set, which
+ * (default: the migrations match the schema and apply to a fresh local D1, then typecheck,
+ * lint and test). Without a selection it strips the default set, which
  * CI does on every pull request (job `starter-strip`). --each checks every active
  * component on its own; --all strips everything active at once.
  * docs/processes/development.md#starter-only-parts
@@ -32,9 +33,19 @@ const { values } = parseArgs({
   },
 });
 
-const commands = (
-  values.commands ?? "bun run typecheck;bun run lint;bun run test"
-)
+/**
+ * After the strip: the regenerated migrations match the schema (generating again changes
+ * nothing) and apply to a fresh local D1, then the app typechecks, lints and tests.
+ */
+const DEFAULT_COMMANDS = [
+  "cd packages/features && bunx drizzle-kit generate | grep -q 'No schema changes'",
+  "cp apps/web/.dev.vars.example apps/web/.dev.vars && bun run db:migrate:local",
+  "bun run typecheck",
+  "bun run lint",
+  "bun run test",
+].join(";");
+
+const commands = (values.commands ?? DEFAULT_COMMANDS)
   .split(";")
   .map((command) => command.trim())
   .filter(Boolean);
@@ -87,6 +98,7 @@ for (const run of runs) {
         ...args,
       ],
       ["bun", "install"],
+      ["bun", "run", "docs:reference"],
       ["bun", "run", "lint:fix"],
     ];
     let ok = steps.every((step) => sh(copy, step));

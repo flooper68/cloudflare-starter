@@ -48,7 +48,7 @@ test.describe("docs site", () => {
       (href) => href?.endsWith(".md") && !href.startsWith("https://")
     );
     expect(relativeMd).toEqual([]);
-    expect(hrefs).toContain("/docs/guides/how-to-setup-web-app/");
+    expect(hrefs).toContain("/docs/start/run-locally/");
 
     await expect(
       main.getByRole("link", { name: "Edit this page on GitHub" })

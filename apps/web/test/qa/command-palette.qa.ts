@@ -101,8 +101,16 @@ test("the theme action switches at once and is remembered after a reload", async
     });
     const name = (await option.textContent()) ?? "";
     const theme = /light/.test(name) ? "light" : "dark";
+    // The theme applies at once and is saved in the background: wait for the save, or
+    // the reload below can cancel it (a deployed app answers slower than astro dev).
+    const saved = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/trpc/account.settings.update") &&
+        response.request().method() === "POST"
+    );
     await option.click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    expect((await saved).ok()).toBe(true);
     return theme;
   };
   await open(page, "/app/dashboard");

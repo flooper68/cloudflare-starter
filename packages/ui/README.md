@@ -36,3 +36,23 @@ src/
 Built on Radix primitives (`radix-ui`), `cmdk`, `sonner`, `@tanstack/react-table`,
 `react-day-picker`, `@dnd-kit` and `lucide-react` icons. This package targets the browser;
 server code belongs in [`packages/features`](../features/README.md).
+
+## Islands wait for hydration
+
+A React component that an Astro page server-renders and hydrates (`client:load`,
+`client:idle`, `client:visible`) shows its buttons before React can handle them; a click in
+that window used to do nothing. Export such an island through `hydrationGated`
+(`src/lib/hydration.tsx`): inside it, `Button` (and `IconButton`) and `Checkbox` render
+`disabled` with `aria-busy` until React has hydrated, and dim only after 400 ms, so a fast load does
+not flicker. A disabled submit button also blocks the browser's own submission of the form
+(Enter in a field), which would put the fields in the URL. Outside a gate nothing changes:
+static React markup driven by a plain script and `client:only` renders (the app SPA) keep
+their controls enabled. `test/architecture/hydration-gate.test.ts` fails when an island
+is not gated.
+
+```tsx
+function SignInFormView(props: SignInFormProps) {
+  /* … */
+}
+export const SignInForm = hydrationGated(SignInFormView);
+```

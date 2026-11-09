@@ -17,7 +17,7 @@ Only `media-manifest.json` is committed: the media itself is never in git. Each 
 
 ## Requirements
 
-- **Bun and the app's local setup**: `apps/web/.dev.vars` from `.dev.vars.example` ([how-to-setup-web-app.md](how-to-setup-web-app.md)). The recordings assume the example's settings: `WORKSPACE_MODE=multi`, `BILLING=manual`, `ADMIN_PORTAL=on`, `TWO_FACTOR=optional`.
+- **Bun and the app's local setup**: `apps/web/.dev.vars` from `.dev.vars.example` ([run it locally](../start/run-locally.md)). The recordings assume the example's settings: `WORKSPACE_MODE=multi`, `BILLING=manual`, `ADMIN_PORTAL=on`, `TWO_FACTOR=optional`.
 - **Playwright's Chromium** (`bunx playwright install chromium` in `apps/web`), as for the E2E tests.
 - **ffmpeg and ffprobe**, a development requirement for the full output (`brew install ffmpeg`, `apt-get install ffmpeg`). Without them the recorder still runs, keeps Playwright's own WebM (untrimmed, VP8, larger) and no MP4, and says so; the entry records `"encoder": "playwright"`. In CI, or with `--require-ffmpeg`, it stops instead. Safari plays only the MP4, so record with ffmpeg before you upload.
 - **The port of `APP_URL` must be free**: the recorder starts its own `astro dev` there (Better Auth trusts only that origin). Stop your dev server first.
@@ -72,7 +72,7 @@ bun run media:upload --env production                  # staging and develop the
 
 It reads the manifest, and for each video checks the bucket for its `media/<hash>/<id>.json`: present means the folder is complete and it is skipped; otherwise it puts the media files, then the JSON last, with `wrangler r2 object put` (`--remote --env <env>`, the bucket bound as `FILES` in `wrangler.jsonc`). The files come from `apps/web/tmp/media/out/`, so upload from the machine (or CI run) that recorded them. Remote uploads use your Wrangler login, or `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. Upload before you deploy the manifest that names the videos; a page whose media is not in R2 yet shows the poster's designed stand-in.
 
-The `media/` prefix of the FILES bucket holds only these public videos: storage reconciliation scans `workspaces/` and `users/` only, and no export or erasure touches it ([how-to-setup-r2.md](how-to-setup-r2.md#walkthrough-videos)).
+The `media/` prefix of the FILES bucket holds only these public videos: storage reconciliation scans `workspaces/` and `users/` only, and no export or erasure touches it ([storage reference](../reference/storage.md#walkthrough-videos)).
 
 ## In CI
 
@@ -106,7 +106,7 @@ import VideoPlayer from "@/components/media/VideoPlayer.astro";
 <VideoPlayer id="agents" />
 ```
 
-The home page shows `HOME_CLIPS` in the pillar cards and `HOME_WALKTHROUGH` in "Watch each part work" ([how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md#the-landing-page)).
+The home page shows `HOME_CLIPS` in the pillar cards and `HOME_WALKTHROUGH` in "Watch each part work" ([docs site reference](../reference/docs-site.md#the-landing-page)).
 
 ### In the docs
 

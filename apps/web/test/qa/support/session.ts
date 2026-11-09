@@ -4,9 +4,10 @@
  * signing out through the profile menu, settings, the workspace switcher. When the shell's
  * menus move, only this file changes.
  */
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 import { openProfileMenu } from "../../e2e/helpers";
+import { waitForForm } from "./app";
 import { expect, open, QA_TOKEN_HEADER, qaEnv } from "./index";
 import { authPolicies, takeSlots } from "./limits";
 
@@ -31,9 +32,16 @@ export async function submitSignIn(
   password: string
 ): Promise<void> {
   await open(page, "/sign-in");
+  const submit = page.getByRole("button", { name: "Sign in", exact: true });
+  await formReady(submit);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await submit.click();
+}
+
+/** The suite's `waitForForm` (app.ts), under the name the journeys use. */
+export async function formReady(submit: Locator): Promise<void> {
+  await waitForForm(submit);
 }
 
 /** Signs in with the password and lands on `landing` (the dashboard by default). */

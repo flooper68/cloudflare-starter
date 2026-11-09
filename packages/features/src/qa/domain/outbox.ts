@@ -34,7 +34,8 @@ export function isQaRunAddress(email: string, domain: string): boolean {
   return Boolean(match && match[1] === domain.toLowerCase());
 }
 
-function formatAddress(recipient: Mailbox): string {
+/** A mailbox as a From or To header shows it: `"Name" <address>`, or the bare address. */
+export function formatMailbox(recipient: Mailbox): string {
   return recipient.name
     ? `"${recipient.name.replaceAll(/["\\]/g, "")}" <${recipient.email}>`
     : recipient.email;
@@ -56,8 +57,8 @@ export function renderedHeaders(input: {
 }): Record<string, string> {
   const domain = input.from.email.split("@")[1] ?? "localhost";
   const headers: Record<string, string> = {
-    from: formatAddress(input.from),
-    to: formatAddress(input.to),
+    from: formatMailbox(input.from),
+    to: formatMailbox(input.to),
     subject: input.subject,
     date: input.date.toUTCString(),
     "message-id": `<${input.id}@${domain}>`,

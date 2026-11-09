@@ -6,7 +6,7 @@
  *
  * The HTML is spliced into the Markdown as raw blocks, so every fragment here is ONE line
  * (a blank line would end the HTML block) and every text is escaped.
- * Syntax and examples: docs/guides/how-to-publish-docs-and-landing.md#docs-components
+ * Syntax and examples: docs/reference/docs-site.md#docs-components
  */
 
 import { playerHtml } from "../../components/media/player-markup";

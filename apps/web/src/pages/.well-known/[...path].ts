@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { APIRoute } from "astro";
 
-import { getAuth } from "@/server/auth";
+import { readyAuth } from "@/server/auth";
 
 /**
  * OAuth discovery documents at the origin root, where MCP clients look for them:
@@ -10,4 +10,5 @@ import { getAuth } from "@/server/auth";
  *  - /.well-known/openid-configuration/api/auth        (OIDC discovery)
  * Better Auth's MCP plugin answers them.
  */
-export const GET: APIRoute = ({ request }) => getAuth(env).handler(request);
+export const GET: APIRoute = async ({ request }) =>
+  (await readyAuth(env)).handler(request);

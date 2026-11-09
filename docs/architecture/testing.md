@@ -41,7 +41,7 @@ The `web-api` project disables Vitest's filesystem module cache (`fsModuleCache:
 
 ### Production QA journeys
 
-- `bun run test:qa -- --base-url <url>` runs the QA suite (`apps/web/test/qa/*.qa.ts`, project `qa` of `apps/web/playwright.qa.config.ts`) against a deployed app: [the checklist](../guides/how-to-qa-a-deployment.md#the-checklist) as journeys with their own QA accounts, mail read from the QA outbox (`/api/qa/outbox`), every account erased afterwards. Without the QA variables every journey skips. Which file covers which section, the skips and the run's sign-up and mail budget: [apps/web/test/qa/README.md](../../apps/web/test/qa/README.md).
+- `bun run test:qa -- --base-url <url>` runs the QA suite (`apps/web/test/qa/*.qa.ts`, project `qa` of `apps/web/playwright.qa.config.ts`) against a deployed app: [the checklist](../../apps/web/test/qa/README.md#the-checklist) as journeys with their own QA accounts, mail read from the QA outbox (`/api/qa/outbox`), every account erased afterwards. Without the QA variables every journey skips. Which file covers which section, the skips and the run's sign-up and mail budget: [apps/web/test/qa/README.md](../../apps/web/test/qa/README.md).
 
 ### Production smoke
 

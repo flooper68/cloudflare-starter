@@ -5,13 +5,14 @@ import {
   Checkbox,
   ErrorState,
   Field,
+  hydrationGated,
   OneTimeCodeInput,
 } from "@cloudflare-starter/ui";
 import { useState } from "react";
 import { afterSignIn, authClient, authErrorMessage } from "@/lib/auth-client";
 
 /** Completes the native sign-in challenge; codes never leave this browser/auth endpoint. */
-export function TwoFactorChallenge({
+function TwoFactorChallengeView({
   emailOtp,
   trustedDays,
   search,
@@ -134,3 +135,6 @@ export function TwoFactorChallenge({
     </Card>
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const TwoFactorChallenge = hydrationGated(TwoFactorChallengeView);

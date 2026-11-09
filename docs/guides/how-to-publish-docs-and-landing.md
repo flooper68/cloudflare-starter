@@ -1,249 +1,44 @@
 # How to publish the docs and the landing page
 
-The web Worker serves a landing page at `/`, a public docs site at `/docs` built from the repository's own Markdown, and a public 404 page. All three are prerendered at build time: the HTML is the same for every visitor, needs no session and is served as a static asset. Use when you change or replace the landing page, add, move or rename a doc, change what the site publishes or how its navigation is built, fix a broken docs link, change the docs search, page metadata, `robots.txt`, the sitemap or the cache headers of the public pages, or the bundle budget fails.
+::reviewed{date="2026-11-09"}
 
-## What is published
+The Worker serves a landing page at `/`, a docs site at `/docs` built from the repository's own Markdown, and a public 404, all prerendered at build time. Use this guide to add or move a doc, write one with screenshots and the docs components, change the landing page, or fix a failing docs check.
 
-`apps/web/src/docs/docs.config.ts` (`DOCS`) decides:
-
-| Setting             | What it does                                                                                                                                                                                                                                                                                                                 |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sources`           | Globs from the repository root; each matching file is one page. Today `docs/**/*.md`, `README.md`, `apps/*/README.md`, `packages/*/README.md` and `packages/ui/CONVENTIONS.md`                                                                                                                                               |
-| `routes`            | URL overrides. By default a file is served at its path without `.md`, without a leading `docs/` and a trailing `README`, in lower case: `docs/guides/how-to-setup-d1.md` is `/docs/guides/how-to-setup-d1/`, `apps/web/README.md` is `/docs/apps/web/`, `docs/README.md` is `/docs/`. The root `README.md` is `/docs/start/` |
-| `navSource`         | The file the navigation is built from: `docs/README.md`                                                                                                                                                                                                                                                                      |
-| `start`             | The first navigation section (the index and the root README)                                                                                                                                                                                                                                                                 |
-| `exempt`            | Files under `docs/` that may stay out of the navigation, each with a reason                                                                                                                                                                                                                                                  |
-| `repoUrl`, `branch` | Where "Edit this page on GitHub" and links to unpublished files point                                                                                                                                                                                                                                                        |
-
-The pages are read by an Astro content collection (`apps/web/src/content.config.ts`, a `glob` loader over the repository root) and rendered by `apps/web/src/pages/docs/[...slug].astro` with `export const prerender = true`.
-
-## Write docs that work on GitHub and on the site
-
-Write links as you always do: relative paths between files (`[testing.md](../architecture/testing.md#e2e-tests)`). A Sätteri hast plugin (`apps/web/src/docs/markdown-plugins.ts`, registered under `markdown.processor` in `apps/web/astro.config.mjs`) rewrites them while the page is built (`apps/web/src/docs/links.ts`):
-
-- a published Markdown file becomes its page, keeping the `#fragment`: `/docs/architecture/testing/#e2e-tests`;
-- any other file becomes its GitHub page (`…/blob/main/apps/web/wrangler.jsonc`), a folder (`../.claude/skills/`) its GitHub tree;
-- absolute URLs, site paths (`/app`) and `#fragments` stay as they are.
-
-Heading ids are GitHub's (github-slugger), so a fragment that works on GitHub works on the site. Each table is wrapped in a keyboard-scrollable box; code blocks are highlighted by Shiki in both themes (`markdown.shikiConfig`, colours switched by `packages/ui/src/styles/prose.css`). A ` ```mermaid ` block is shown as code on the site; for a diagram, use an SVG, hand-drawn or generated from a Mermaid source ([Diagrams](#diagrams)).
-
-### Diagrams
-
-A paragraph that is only an image of an SVG in the repository is a diagram: `![The lifecycle of a change](images/agentic-lifecycle.svg)`. GitHub shows the file as an image. The site inlines the SVG itself into the page (a Sätteri mdast plugin, `docsDiagramsPlugin` with `apps/web/src/docs/diagrams.ts`), in a `<figure data-docs-diagram>` named by the alt text that scrolls sideways on phones, so the diagram's own `<style>` can use the site's tokens and follows the theme switch:
-
-- colour with classes and `var(--ui-fg, <fallback>)`-style tokens (`--ui-surface`, `--ui-line-strong`, `--ui-accent`, `--ui-fg-muted`), with fallback colours for GitHub and a `@media (prefers-color-scheme: dark)` block that also uses the tokens first;
-- give the root `<svg>` a `viewBox`, a `width` and `height` (its size on GitHub), `role="img"` and a `<title>`, and the image alt text; no blank lines (a blank line ends the inlined HTML), no script, no event handlers;
-- prefix class names and marker ids (`dg-`, `dg-<diagram>-arrow`): every inlined SVG shares the page's styles and ids.
-
-The build fails when an inlined SVG has no `<title>` or alt text, or contains script. The docs pages allow inline styles (`style-src 'unsafe-inline'`), so the inlined `<style>` passes their Content-Security-Policy. Examples: `docs/processes/images/`.
-
-#### From a Mermaid source
-
-For boxes and arrows or a sequence, write the diagram in Mermaid instead of drawing it: a `<name>.mmd` file under `docs/` with an `accTitle:` and an `accDescr:` line (Mermaid's accessibility syntax: a short name, then what the diagram shows in sentences). `bun run docs:diagrams` writes `<name>.svg` beside it (`apps/web/scripts/render-diagrams.ts`, `apps/web/src/docs/mermaid-svg.ts`, with [beautiful-mermaid](https://github.com/lukilabs/beautiful-mermaid), which needs no browser), following the rules above: token colours with fallbacks for both schemes, `<title>` and `<desc>` from the two lines, marker ids prefixed with the file name, which is therefore unique. Commit both files and link the `.svg` like any diagram. A generated diagram keeps its own size on the site (`data-natural-width`) and scrolls sideways when wider than the column. `apps/web/src/docs/mermaid-svg.test.ts` fails when an `.svg` differs from what its source renders to, or a source lacks either line. Flowcharts, sequence, state, class and ER diagrams work; keep to plain syntax (no `classDef`, `style` or `click`) and quote labels with punctuation (`A["/api/trpc"]`). Examples: `docs/architecture/diagrams/`.
+::flow[Markdown in the repository -> Build -> Static pages with search -> /docs]{title="Docs pipeline: the repository's Markdown is built into static pages with a search index, served at /docs"}
 
 ## Add, move or remove a doc
 
-1. Write the doc under `docs/` with a `# Title` first line (the page title, the navigation label without a leading "How to").
-2. Add a row for it to the right table of [docs/README.md](../README.md), its link in the first cell. That row puts it in the navigation, in the same order.
-3. Run `bun run test:unit`. `test/architecture/docs.test.ts` fails when a doc under `docs/` is neither in the navigation nor in `DOCS.exempt` (with a reason), when an exemption is stale, when a published file has no title, or when a relative link or `#fragment` in a published file points at nothing.
+:::steps
+1. **Write it** under `docs/` with a `# Title` first line (the page title and the navigation label).
+2. **List it** in [docs/README.md](../README.md): a row in the right table, its link in the first cell. That row puts it in the navigation.
+3. **Run `bun run test:unit`.** `test/architecture/docs.test.ts` fails when a doc is not in the navigation, a link or `#fragment` points at nothing, or a page has no title.
+   :::
 
-Moving or renaming a doc changes its URL; old links from outside the site then reach the 404 page.
+Write links as on GitHub (relative paths between files): the build rewrites them for the site. Moving a doc changes its URL.
 
-## The pages
-
-- **Docs page:** the header (site name, the Docs badge, [search](#search), Storybook, GitHub, theme switch), the navigation (`DocsNav`), the breadcrumb, the rendered Markdown (`Prose`), previous and next page, "Edit this page on GitHub", and "On this page" (`TableOfContents`, the page's second- and third-level headings, on wide screens). Under 1024 px the navigation is a "Docs menu" disclosure above the page. The components are in `packages/ui` (group `site`) with stories.
-- **404:** `apps/web/src/pages/404.astro`, prerendered, for every unknown path outside the SPA, with links home and to the docs, and the search in its header. It is `noindex`.
-- **Landing page:** see [below](#the-landing-page).
-- **Layout:** `apps/web/src/layouts/PublicLayout.astro` is the document shell of these pages. It reads no session, so the HTML can be built once.
-- **Header:** `apps/web/src/components/site/SiteHeader.astro`, on every public and account page: the logo and name, Docs, Changelog and GitHub, the theme switch, a small **Sign in** link and one **Try the demo** button (to `/sign-up`, which sends a signed-in visitor on to the app). Pages rendered per request pass `signedIn` and show **Open app** instead of both. Below 768 px the header is the logo, the button and a menu (`SiteMenu.astro`, a native `<details>`: the links, the theme as Dark, Light or System, and both calls to action). Storybook is linked from the footer and the docs.
-- **Account pages** (sign-in, sign-up, password reset, verification, invitations, consent, two-factor) are rendered per request on `apps/web/src/layouts/Layout.astro` with the same header and theme switch: their per-request policy allows `/site-theme.js` by its full URL, one file and nothing else beside `/_astro/` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#page-policy)). Demo endpoints such as `/api/hello` are not in the public header; they are on the app's **Developer demos** page.
-
-## The landing page
-
-> **Starter-only, removed by `starter:strip`** (`marketing`): the landing page's copy describes the starter. The strip retitles the docs and resets the changelog; you replace this page by [the steps below](#replace-the-landing-page) ([how-to-start-a-project.md](how-to-start-a-project.md)).
-
-`apps/web/src/pages/index.astro`, prerendered on `PublicLayout`. Its sections, top to bottom:
-
-| Section          | What it is                                                                                                                                                                                                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hero             | The hook, the lead, **Try the demo app** and **View on GitHub**, and `HeroScene.astro`: the app in CSS 3D with requests flowing to the database, files, jobs and email, plain labels, one `role="img"` with a text label                                      |
-| Pillars          | The four pillars from the feature data, each with its muted loop (`HOME_CLIPS` in `src/content/videos.ts`), or the "Clip coming soon" poster while it is not recorded                                                                                         |
-| Feature map      | `FeatureMap.astro`, [below](#the-feature-map)                                                                                                                                                                                                                 |
-| Feature tour     | "Watch each part work": the `tour` walkthrough (`HOME_WALKTHROUGH`) with its chapters and transcript, and links to the other recorded walkthroughs in the docs                                                                                                |
-| What it costs    | "$5/month", one sentence on the Workers Paid plan and the source, beside one receipt (`RECEIPT`): each line is what the plan covers, its included allowance and the price above it, then "$5.00 / month + usage above allowances". Numbers exactly as sourced |
-| Start in minutes | One prompt to paste into a coding agent (`START_PROMPT`, `CopyPrompt.astro`): **Copy prompt** uses the Clipboard API, or selects the text where it is missing or refused. No manual steps on the page                                                         |
-| What's new       | The three newest titled entries of `CHANGELOG.md` (`src/landing/whats-new.ts`, read at build time), with the release notes and the feed                                                                                                                       |
-| Closing, footer  | Both calls to action again; `SiteFooter.astro` with Product, Docs and Project links and the one place the page names its technology, a collapsed "Under the hood"                                                                                             |
-
-What the starter does is data ([feature data](#feature-data)); the page's own words and links are in `apps/web/src/landing/content.ts`. Keep the copy honest: the hook says "today" because a local app was measured (about 45 s from a fresh clone with Bun's cache warm, 80 s cold) and a deploy was not; the costs come from Cloudflare's pricing pages with the date checked; Containers is a demo, never "built".
-
-The page reads no session, so it is the same for everyone. It ships no React. Its scripts are the theme file, the header menu (`site-menu.ts`), the hero (`hero-scene.ts`), the feature map (`feature-map.ts`), the copy button (`copy-prompt.ts`) and the video player (`video-player.ts`), about 4 KB gzip together ([bundle budget](#bundle-budget)).
-
-### Videos
-
-The clips and the walkthrough are recorded by script from the app and served from R2 at `/media/` through the Worker, so the page's policy (`media-src 'self'`) needed no change. Recording, uploading, the player and a doc's `::video` once its video is recorded: [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md). The page names the videos from the committed `src/content/media-manifest.json` at build time; deploy it only after `bun run media:upload` put its videos into that environment's R2, or the player shows the poster's stand-in.
-
-### Motion
-
-CSS first, and the base style is always the finished state, so the first frame is complete and nothing waits for a script:
-
-- **Hero, idle:** requests flow, the services pulse, the app bobs (keyframes).
-- **Hero, scroll:** over the first 45% of a viewport of scrolling, the app's layers lift apart, the services rise and connect, then the requests brighten; scrolling up plays it back (`animation-timeline: scroll(root)`). Browsers without scroll timelines get the same states from an IntersectionObserver and a transition once the hero leaves the view.
-- **Hero, pointer:** under a fine pointer the scene tilts a few degrees toward it, eased by one `requestAnimationFrame` loop that stops when it settles; services lift on hover. Not on touch screens.
-- **Pillar cards** rise in, and the cost receipt prints in line by line, as they scroll into view (`animation-timeline: view()`), static where unsupported.
-- **Feature map:** one pulse along the main flow.
-- **`prefers-reduced-motion: reduce`:** none of it. The scene and the map are static and no script moves anything; `test/e2e-build/landing.spec.ts` checks that no animation runs.
-
-No WebGL: a particle layer behind a CSS 3D scene would add a chunk and GPU work for decoration the scene already gives.
-
-### Replace the landing page
-
-A product built from the starter replaces this page with its own:
-
-1. Rewrite `apps/web/src/landing/content.ts` (or delete it), `src/content/features.ts` (or keep it for the docs) and the sections of `index.astro`. Keep `export const prerender = true` and `PublicLayout` unless the page must know who is signed in; a page that reads the session is rendered per request, and its `Cache-Control` must then not be `public` (remove `/` from `PRERENDERED_PAGE_PATHS` in `apps/web/src/server/security-headers.ts` and from `STATIC_CACHE_RULES` in `static-cache.ts`, then regenerate `_headers`).
-2. Set `DOCS.siteName` (`apps/web/src/docs/docs.config.ts`) to the product's name; it is the header and the page titles. For videos of the product, script them as in [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md); otherwise drop the `VideoPlayer` uses.
-3. Decide whether the product publishes the repository's docs. To publish product docs instead, point `DOCS.sources`, `navSource` and `start` at them. To drop the docs site:
-   - delete `src/pages/docs/`, `src/content.config.ts`, `components/site/DocsSearch.astro` and its uses, and in `src/docs/` the docs-only modules (`links.ts`, `nav.ts`, `meta.ts`, `markdown-plugins.ts`, `search*.ts` and their tests); keep `docs.config.ts` (`siteName` and `repoUrl` are used by the header, the layout, the landing and the 404; drop its other fields), `robots.ts` and `site-integrations.ts` without `docsSearch()` (the sitemap);
-   - remove `markdown` and the Pagefind import from `apps/web/astro.config.mjs`, the `/pagefind/*` and `/docs/*` entries of `PRERENDERED_PAGE_PATHS`, `PAGEFIND_CSP` and `STATIC_CACHE_RULES` (then regenerate `_headers`), and the Pagefind budget from `scripts/check-bundle-budget.ts`;
-   - remove the Docs links (header, landing, 404), `test/architecture/docs.test.ts`, `test/e2e/docs.spec.ts`, `test/e2e-build/search.spec.ts` and `docs.spec.ts`, the `/docs/` paths in `test/e2e-build/a11y.spec.ts` and `landing.spec.ts`, and the docs rows of the smoke suite.
-4. Run `bun run build`, `bun run budget` and `bun run test:e2e:build` (landing, its policy, axe in both themes, phone width).
-
-## Feature data
-
-`apps/web/src/content/features.ts` is the one source of what the starter does, for the home page and the docs: plain data and pure helpers, no Astro or DOM, so pages, components, tests and scripts import it. It lives in the web app because both of its consumers do and its docs slugs are checked against the docs this app publishes; `packages/ui` stays free of product data.
-
-| Export                                                                              | What it is                                                                                                                                                          |
-| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PILLARS`                                                                           | The four pillars, in order: `id`, `n` ("01"), `title`, `benefit`, five `points` for the pillar cards                                                                |
-| `GROUPS`                                                                            | The seven capability groups: `id`, `pillar`, `title`, `short` (the map's label), `benefit`, `docs`, `highlights` (3 to 6 feature ids the map's card lists)          |
-| `FEATURES`                                                                          | Every feature: `id`, `name`, a one-line `benefit`, `pillar`, `group`, `docs`, `status` (`built`; `demo`: runnable but not wired into the app; `planned`: not built) |
-| `EDGES`                                                                             | Features that work together, `{ a, b, why }`: the docs' "Works with"                                                                                                |
-| `FLOWS`                                                                             | The feature map's edges, `{ from, to, why, main? }` between groups and `app`; `main` is the path of the map's pulse                                                 |
-| `pillar`, `group`, `feature`, `groupsOf`, `featuresOf`, `highlightsOf`, `worksWith` | Lookups and lists                                                                                                                                                   |
-| `docsHref(slug)`                                                                    | `guides/how-to-setup-mcp` → `/docs/guides/how-to-setup-mcp/`                                                                                                        |
-
-`docs` is a route under `/docs/` without slashes at the ends (`start`, `guides/how-to-setup-r2`). Ids are stable once published: add, don't rename. `apps/web/src/content/features.test.ts` fails on a duplicate id, a feature outside its group's pillar, a `docs` slug that is not a published page, a group card with fewer than 3 or more than 6 features, or a map that grows past 12 nodes and 12 edges.
-
-### The feature map
-
-`apps/web/src/components/site/FeatureMap.astro`, generated from the data and shared (`<FeatureMap />` on any page; pass `id` when a page has two). It draws the app, the four pillars as areas and the seven groups as nodes, with the `FLOWS` between them; individual features are in the cards, not on the map.
-
-- Hover, focus or tap a node: its flows and neighbours light up, the rest dims, and the card beside the map (`aria-live="polite"`) lists the group's highlights with **Read the docs**.
-- The pillar chips, or a pillar's label, filter the map; **List** shows the same content as rows.
-- Keyboard: the map is one tab stop; arrow keys, Home and End move between nodes, Escape goes back to the app and clears the filter, Tab moves on to the card's link.
-- Below 768 px: four pillar rows (`<details>`), each expanding to its groups and every feature with a docs link.
-- Without JavaScript the map and the list both show.
-
-Its script is `feature-map.ts`, the `<feature-map>` custom element. Positions are set in the component (a 1000 × 560 box); a new group needs a position there.
-
-## Changelog
-
-> **Starter-only, removed by `starter:strip`** (`marketing`): `CHANGELOG.md` is the starter's history; the strip resets it to an empty Unreleased with one entry for the project ([how-to-start-a-project.md](how-to-start-a-project.md)).
-
-`/docs/changelog/` renders the root [CHANGELOG.md](../../CHANGELOG.md) (the docs collection reads it like any published file; there is no copy) as release notes: `apps/web/src/pages/docs/changelog.astro` parses it (`apps/web/src/docs/changelog.ts`) and renders `ReleaseNotes` from `packages/ui`, each release with its version, date and compare link, and each change type with its own label colour. Inline Markdown in an entry (`code`, **bold**, links) is rendered as elements (`src/docs/inline.ts`); relative links are rewritten like the rest of the docs. The page is in the navigation's Start section, the sitemap and the search index, and needs no script beyond the docs' own.
-
-`/docs/changelog.xml` is an Atom feed of the released versions (not Unreleased), prerendered by `src/pages/docs/changelog.xml.ts`. Its URLs use `SITE_URL` (set for production); without it the feed has no self link and its entries point at the file on GitHub. It is served as a static asset, typed `application/xml`. The landing page's header and footer and the dashboard link to the changelog.
-
-What goes into the changelog and how a release is cut: [development.md](../processes/development.md#changelog).
-
-## Theme
-
-The public and account pages follow the OS setting until the visitor picks a theme with the switch in the header (or Dark, Light or System in the phone menu); the choice is kept in `localStorage` (`site-theme`) and applied before the first paint by `apps/web/public/site-theme.js`, a blocking script in the head of `PublicLayout.astro` and `Layout.astro`. It is an external file, not inline code, so no policy needs `'unsafe-inline'`, a hash or a nonce for it: the prerendered pages' policy allows `'self'` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)) and the per-request policy allows this one file by its full URL ([page policy](how-to-configure-security-headers.md#page-policy)). It stays a separate file rather than part of a bundle because bundles are deferred modules, which would apply the saved theme after the first paint. The `/app` theme is a user setting and separate.
-
-## Search
-
-The header's "Search docs" button (or ⌘K / Ctrl+K) opens a dialog that searches every docs page.
-
-- **Index:** after `astro build`, the integration in `apps/web/src/docs/search-integration.ts` (`astro:build:done`) runs [Pagefind](https://pagefind.app) over `dist/client/docs/**/*.html` and writes the index and its client into `dist/client/pagefind/`, served at `/pagefind/`. Only the rendered Markdown is indexed (`data-pagefind-body` on `Prose`); each result carries its navigation section (`data-pagefind-meta`). A build fails when nothing was indexed.
-- **Dialog:** `apps/web/src/components/site/DocsSearch.astro` is the markup (a native `<dialog>`, a combobox and a listbox); `apps/web/src/docs/search.ts` is the `<docs-search>` custom element, a small module under `/_astro/`. It imports `/pagefind/pagefind.js` the first time the dialog opens, so pages that are never searched never load the index. ↑/↓ move, Enter or a click opens, Esc or a click outside closes.
-- **In development:** `astro dev` builds no index; the dialog says "Search could not load". Use `bun run build:app && bunx astro preview` (in `apps/web`) to try it.
-- **Content-Security-Policy:** Pagefind runs WebAssembly, so the docs pages' policy (`PRERENDERED_PAGE_CSP` in `_headers`, and Astro's `<meta>` through `security.csp.scriptDirective`) has `'wasm-unsafe-eval'`, never `'unsafe-eval'`; its worker comes from `/pagefind/` (`worker-src 'self'`). Every script is an external file (`vite.build.assetsInlineLimit` keeps Astro from inlining small page scripts). [how-to-configure-security-headers.md](how-to-configure-security-headers.md#prerendered-pages)
-
-## Page metadata, robots.txt and the sitemap
-
-- **Title and description:** each docs page's `<title>` is its `# Title` plus "· Cloudflare Starter docs"; the meta description is the doc's first paragraph as plain text, cut to 160 characters (`apps/web/src/docs/meta.ts`). That is one more reason every doc starts with its purpose ([documentation.md](../processes/documentation.md)).
-- **Canonical and Open Graph:** `PublicLayout.astro` writes `og:title`, `og:description`, `og:type` and, when the build knows the site's origin, `<link rel="canonical">` and `og:url`.
-- **`SITE_URL`:** the origin, read at build time (`site` in `apps/web/astro.config.mjs`). `deploy:production` sets `SITE_URL=https://starter.flooper.me`; a project sets its own domain there. Without it a build warns "SITE_URL is not set" and leaves out the sitemap, canonical and `og:url`.
-- **Sitemap:** `@astrojs/sitemap` writes `/sitemap-index.xml` with `/` and every `/docs/` page, only when `SITE_URL` is set.
-- **`robots.txt`:** `apps/web/src/pages/robots.txt.ts`, prerendered. A production build (`CLOUDFLARE_ENV=production`) disallows `/app`, `/api`, `/admin`, `/_storybook` and `/health` and lists the sitemap; every other build disallows everything, so staging and develop are never indexed.
-
-## Caching
-
-`apps/web/public/_headers` sets `Cache-Control` for static assets (Workers static assets honour `_headers`; the Astro Cloudflare adapter would add a `/_astro/*` rule, but the file sets one). The file is generated: the cache rules are `STATIC_CACHE_RULES` in `apps/web/src/server/static-cache.ts`, rendered after the security rules by `bun apps/web/scripts/write-static-headers.ts` ([how-to-configure-security-headers.md](how-to-configure-security-headers.md#static-assets)):
-
-| Path                                                                          | Cache-Control                                      | Why                                                                                                                                                          |
-| ----------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/_astro/*`                                                                   | `public, max-age=31536000, immutable`              | content-hashed file names                                                                                                                                    |
-| `/pagefind/*`                                                                 | `public, max-age=31536000, immutable`              | index chunks and fragments are content-hashed                                                                                                                |
-| `/pagefind/pagefind.js`, `/pagefind/pagefind-*` (entry, worker, UI), `wasm.*` | `public, max-age=300`                              | fixed names that change with every build                                                                                                                     |
-| `/`, `/docs/*`, `/404`, `/_storybook/`, `/_storybook/iframe` (static HTML)    | `public, max-age=0, must-revalidate, no-transform` | a deploy shows at once; the ETag makes it cheap; the edge may not rewrite the HTML ([why](how-to-configure-security-headers.md#edge-injected-web-analytics)) |
-| `/docs/changelog.xml`                                                         | `public, max-age=0, must-revalidate`               | the feed is not HTML                                                                                                                                         |
-| `/media/*` (served by the Worker from R2, not a static asset)                 | `public, max-age=31536000, immutable`              | each video's files are in a folder named by their content hash ([videos](#videos))                                                                           |
-
-The rules apply only to responses served from the static assets, not to pages the Worker renders on request (sign-in, `/app`, the API); those get `no-transform` from the middleware. Check them with `curl -I` against `bunx astro preview` (it serves the build like Cloudflare does) or a deployment.
-
-## Bundle budget
-
-`bun run budget` (after `bun run build`; CI runs it in the `build` job) checks the budgets in [performance.md](../architecture/performance.md#targets): each prerendered page loads at most 50 KB gzip of JavaScript on first load (its scripts and their static imports), and each Pagefind file is at most 100 KB gzip. It prints the heaviest pages and files (`scripts/check-bundle-budget.ts`). A page over budget is a regression: drop the dependency, load it lazily, or change the budget with a reason ([performance.md](../architecture/performance.md#regressions-and-budget-changes)).
-
-## Check it locally
-
-```bash
-bun run dev:web                     # /docs renders on request in dev
-cd apps/web && bun run build:app    # prerenders every page into dist/client/docs/
+:::prompt{title="Paste this into your coding agent"}
+```text
+Write a docs page for <feature> in the visual style: a screenshot with callouts, one flow,
+settings cards, the one prompt, tabs for app / API / agent, decisions and gotchas, under
+800 words. Add its screenshots to apps/web/test/screens/shots.ts, run
+`bun run docs:screenshots`, list the page in docs/README.md and run the docs tests.
 ```
+:::
 
-`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the landing page (static, its calls to action, the cache header, the feature map by mouse and keyboard, its filter and list, no running animation under reduced motion, the phone menu and the stacked map), the theme switch on the account pages, the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes, and no sideways scrolling at 375 px. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](how-to-qa-a-deployment.md)).
+## Screenshots and components
 
-## Common problems
+Docs are visual first. The components (`:::screenshot`, `:::steps`, `::flow`, `:::settings`, `:::tabs`, `:::prompt`, `:::byhand`, callouts, the video slot) are Markdown directives rendered at build time; screenshots come from `bun run docs:screenshots`, with callouts placed from element locators. Syntax and the pipeline: [docs components](../reference/docs-site.md#docs-components), [screenshots](../reference/docs-site.md#screenshots).
 
-### A doc is missing from the site
+The landing clips and a doc's `::video` play walkthrough videos recorded with `bun run media:record`, uploaded to R2 with `bun run media:upload --env <env>` and served at `/media/`: [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md).
 
-Its path does not match `DOCS.sources`. Add a glob, or move the file under `docs/`.
+## Generated reference pages
 
-### `docs.test.ts` fails with "is in the navigation or exempt with a reason"
+Settings, agent tools, catalogs and costs are generated from the code into marked blocks (`<!-- generated:name -->`). After changing a setting, a tool, a catalog or the home page's prices, run `bun run docs:reference`; a test fails while a block is out of date.
 
-Add a row for the doc to [docs/README.md](../README.md), or an entry to `DOCS.exempt` saying why it is not in the navigation.
+:::gotcha{title="The bundle budget"}
+`bun run budget` fails when a page loads more than 50 KB of script. A new dependency in a page script, or a component hydrated on a public page, is the usual cause.
+:::
 
-### Search says "Search could not load"
+## Reference
 
-The page has no index: `astro dev` builds none (use a build and `astro preview`), or `/pagefind/pagefind.js` failed to load (check the network tab and the console: a policy without `'wasm-unsafe-eval'` blocks it).
-
-### `bun run budget` fails
-
-It names the page and its files. A new dependency in a page script, or a component hydrated on a public page (`client:*`), is the usual cause.
-
-### `docs.test.ts` fails with "no heading #… in …"
-
-The heading the link points at was renamed or removed. Point the link at the current heading; ids are the heading text in lower case, spaces as `-`, punctuation dropped.
-
-## Docs components
-
-Docs are visual first: a screenshot, a flow and short sections, not walls of text. Write them with generic Markdown directives, which read as plain text on GitHub and render to static HTML on the site at build time (`apps/web/src/docs/kit/`: `render.ts` builds the HTML, `plugin.ts` is the Markdown plugin, `docs-kit.ts` the only script, for tabs and the copy button; styles in `apps/web/src/styles/docs-kit.css`). An unknown directive, a bad attribute or a missing screenshot fails the build. Feature pages under `docs/features/` follow one template: what it does, the video slot and a screenshot, how it works (one flow), turn it on (settings cards and the one prompt), use it (tabs: app, API, agent), decisions and gotchas, limits, related pages, and a "Last reviewed" date.
-
-| Component            | Write                                                                              | Shows                                                                                                                                                                                                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Annotated screenshot | `:::screenshot{shot="members" alt="…"}` then a list, one item per numbered callout | The shot in the reader's theme (and at phone size, if captured), with numbered markers placed from the capture's element locators; `(74%, 36%) Label` places one by hand; `src="path"` uses any image                                                                   |
-| Screenshot           | `::shot{id="members" alt="…"}`                                                     | The shot without markers, e.g. inside a step                                                                                                                                                                                                                            |
-| Steps                | `:::steps` around one numbered list; start each item with `**Title**`              | A stepper; put a `::shot` in an item for its image                                                                                                                                                                                                                      |
-| Flow                 | `::flow[Agent -> Consent -> Token]{title="…"}`                                     | A diagram of 2 to 7 steps through the diagram pipeline ([Diagrams](#diagrams)): a row on wide screens, a column on phones                                                                                                                                               |
-| Before and after     | `:::compare` around `::before[…]` and `::after[…]`                                 | Two cards                                                                                                                                                                                                                                                               |
-| Settings             | `:::settings` around a list of `NAME = default (a \| b) What it does`              | One card per setting with its values, the default marked                                                                                                                                                                                                                |
-| Decision, gotcha     | `:::decision{title="…"}`, `:::gotcha{title="…"}`                                   | Callouts                                                                                                                                                                                                                                                                |
-| Tabs                 | `:::tabs` around code blocks with `title="bun"` (or a language)                    | ARIA tabs with arrow keys; without script every block shows under its label                                                                                                                                                                                             |
-| The one prompt       | `:::prompt{title="…"}` around a code block                                         | The prompt to paste into a coding agent, with a copy button                                                                                                                                                                                                             |
-| Doing it by hand     | `:::byhand{title="…"}`                                                             | A collapsed section for the manual steps                                                                                                                                                                                                                                |
-| Video                | `::video{id="agents" poster="<shot id>" title="…"}`                                | The walkthrough player when the media manifest (`apps/web/src/content/media-manifest.json`, the home page's too) has `id` ([how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md#in-the-docs)); until then the poster shot with "Video coming soon" |
-| Last reviewed        | `::reviewed{date="2026-11-08"}`                                                    | The date under the title                                                                                                                                                                                                                                                |
-
-Prose like `10:30` or `a:b` stays text: only the names above are components.
-
-## Screenshots
-
-`bun run docs:screenshots` captures every screen the docs show, so screenshots never go stale by hand. It runs Playwright (`apps/web/playwright.screens.config.ts`) against `astro dev` with local bindings, after building a fixed demo world through the app itself (`apps/web/test/seed/demo.ts`: the "Acme (sample)" workspace, Ada, Grace and a pending invitation, notes, a trashed note, a file, a connected agent). Each shot in `apps/web/test/screens/shots.ts` names its path, what to wait for and its callout elements as locators; the run writes `docs/images/screens/<id>.<dark|light|phone-dark|phone-light>.webp` (1440 × 900, phone 390 × 844 at 2×, WebP under 150 KB, encoded by Chromium) and `manifest.json` with each image's size and callout positions.
-
-1. Add or change the shot in `shots.ts`, and use its id in the doc.
-2. `bun run docs:screenshots` (needs `apps/web/.dev.vars` and a migrated local database, like the E2E journeys). `SHOTS=members,billing` captures only those; `SKIP_SEED=1` reuses the last run's sign-in.
-3. Commit the images and the manifest.
-
-Or run the **Docs screenshots** workflow by hand on GitHub: it captures everything on a fresh database and opens a pull request with the result. `test/architecture/docs-images.test.ts` fails when a doc names a shot or an image that is not in the repository, or the manifest names a missing file.
+What is published, links and diagrams, the pages, the landing page and its motion, replacing it, the feature data and map, the changelog, theme, search, metadata, caching, the budget, checking locally and common problems: [Docs site reference](../reference/docs-site.md).

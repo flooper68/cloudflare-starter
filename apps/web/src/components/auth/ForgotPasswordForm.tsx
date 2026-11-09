@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
   FieldError,
+  hydrationGated,
   Input,
   Label,
   Logo,
@@ -19,7 +20,7 @@ import {
   useAuthGuard,
 } from "./use-auth-guard";
 
-export function ForgotPasswordForm({
+function ForgotPasswordFormView({
   humanCheck,
 }: {
   /** Turnstile site key when TURNSTILE=on. */
@@ -130,3 +131,6 @@ export function ForgotPasswordForm({
     </Card>
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const ForgotPasswordForm = hydrationGated(ForgotPasswordFormView);

@@ -12,7 +12,7 @@ import type { Metrics } from "../../ports";
 /**
  * The data-point layout in the Analytics Engine dataset (one row per series per flush).
  * Queries depend on it: change it only together with the guide's queries
- * (docs/guides/how-to-setup-metrics-and-tracing.md#data-point-layout).
+ * (docs/reference/metrics-and-tracing.md#data-point-layout).
  *
  * - index1: the metric name (the sampling key: Analytics Engine samples per index)
  * - blob1…blob15: the attribute values in catalog order ("" when absent)

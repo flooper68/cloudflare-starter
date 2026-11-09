@@ -56,9 +56,16 @@ test("a note is created, edited and commented; the dashboard step is done", asyn
   await expect(page.getByText("Note saved")).toBeVisible();
   await expect(page.getByText("Second line")).toBeVisible();
 
-  await page.getByRole("textbox", { name: "Comment" }).fill("QA comment");
+  const composer = page.getByRole("textbox", { name: "Comment" });
+  await composer.fill("QA comment");
   await page.getByRole("button", { name: "Send comment" }).click();
-  await expect(page.getByText("QA comment")).toBeVisible();
+  // In the thread, and the composer emptied: the comment is saved. (The composer's own
+  // text matches "QA comment" too, so that alone passed before the request answered, and
+  // the next navigation cancelled it.)
+  await expect(
+    page.getByRole("article").filter({ hasText: "QA comment" })
+  ).toBeVisible();
+  await expect(composer).toHaveValue("");
 
   await open(page, "/app/dashboard");
   await expect(page.getByRole("list", { name: "Get started" })).toContainText(
@@ -88,7 +95,9 @@ test("search finds it; the trash takes it out of the list and restores it with i
   await open(page, "/app/notes");
   await page.getByLabel("Search notes").fill(title);
   await list.getByRole("option", { name: new RegExp(title) }).click();
-  await expect(page.getByText("QA comment")).toBeVisible();
+  await expect(
+    page.getByRole("article").filter({ hasText: "QA comment" })
+  ).toBeVisible();
 });
 
 test("Tasks: the sample board, the list view, and sample data that starts over on reload", async () => {

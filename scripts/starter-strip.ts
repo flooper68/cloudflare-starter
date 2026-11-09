@@ -184,6 +184,8 @@ console.log(`\n✓ ${todo.length} change(s) applied.`);
 if (!values["skip-checks"]) {
   for (const command of [
     ["bun", "install"],
+    // The generated reference pages list the catalogs the strip just changed.
+    ["bun", "run", "docs:reference"],
     ["bun", "run", "lint:fix"],
     ["bun", "run", "typecheck"],
     ["bun", "run", "lint"],

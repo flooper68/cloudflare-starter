@@ -41,10 +41,9 @@ export const DOCS = {
     items: [
       { path: "docs/README.md", label: "Overview" },
       { path: "README.md", label: "Start a project" },
-      {
-        path: "docs/guides/how-to-setup-web-app.md",
-        label: "Run locally and deploy",
-      },
+      { path: "docs/start/run-locally.md", label: "Run it locally" },
+      { path: "docs/start/deploy.md", label: "Deploy" },
+      { path: "docs/start/what-it-costs.md", label: "What it costs" },
     ],
   },
   /**
