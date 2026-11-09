@@ -35,7 +35,7 @@ describe("CHANGELOG.md", () => {
 
   it("is published on the docs site and in its navigation", () => {
     expect(isPublished(CHANGELOG_PATH)).toBe(true);
-    // Its own section of the docs navigation (docs/README.md, "## Changelog").
+    // In the Start section of the docs navigation (DOCS.start), next to the roadmap.
     const nav = buildNav(read(DOCS.navSource), new Map());
     expect(navPaths(nav)).toContain(CHANGELOG_PATH);
   });

@@ -146,13 +146,13 @@ The reference half of each guide: the guide shows how, this shows everything.
 
 How work is planned, reviewed, documented and decided, and how dependencies are kept current. How agents run these as a team: [Working with agents](#working-with-agents).
 
-| Doc                                                      | Use when …                                                                                                                  |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| [processes/development.md](processes/development.md)     | you start any change, write a plan for an agent, check whether a change is done, add a changelog entry or release a version |
-| [processes/code-review.md](processes/code-review.md)     | you review a diff, respond to findings, or decide whether to use an independent reviewer                                    |
-| [processes/documentation.md](processes/documentation.md) | you write, move or delete a doc, or run the docs audit                                                                      |
-| [processes/adrs.md](processes/adrs.md)                   | a change makes or reverses a decision others will build on                                                                  |
-| [processes/dependencies.md](processes/dependencies.md)   | you update dependencies, respond to a security advisory, run `bun audit`, or add a package                                  |
+| Doc                                                      | Use when …                                                                                                                          |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [processes/development.md](processes/development.md)     | you start any change, write a plan for an agent, check whether a change is done, add a changelog entry or release a version         |
+| [processes/code-review.md](processes/code-review.md)     | you review a diff, respond to findings, or decide whether to use an independent reviewer                                            |
+| [processes/documentation.md](processes/documentation.md) | you write, move or delete a doc, or run the docs audit                                                                              |
+| [processes/adrs.md](processes/adrs.md)                   | a change makes or reverses a decision others will build on                                                                          |
+| [processes/dependencies.md](processes/dependencies.md)   | you update dependencies, respond to a security advisory, run `bun audit`, add a package, or set up the daily update and audit agent |
 
 ### Code layout
 
@@ -165,17 +165,19 @@ How work is planned, reviewed, documented and decided, and how dependencies are 
 | [../apps/web/README.md](../apps/web/README.md)                 | you work in the web app                                                                                              |
 | [../.claude/](../.claude/)                                     | you want the skills and subagents themselves; what each does: [processes/agent-skills.md](processes/agent-skills.md) |
 
-## Changelog
+## Changelog and roadmap
 
-| Doc                                | Use when …                              |
-| ---------------------------------- | --------------------------------------- |
-| [../CHANGELOG.md](../CHANGELOG.md) | you want to know what changed, and when |
+| Doc                                | Use when …                                      |
+| ---------------------------------- | ----------------------------------------------- |
+| [../CHANGELOG.md](../CHANGELOG.md) | you want to know what changed, and when         |
+| [roadmap.md](roadmap.md)           | you want to know what is planned next, in order |
 
 ## Working with agents
 
 How coding agents build this repository as a team, and the skills and subagents they use.
 
-| Doc                                                            | Use when …                                                                                                                                                            |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [processes/agentic-workflow.md](processes/agentic-workflow.md) | you lead agents on this repository, write a brief for a subagent, run agents in parallel, check what an agent may do without asking, or decide when a request is done |
-| [processes/agent-skills.md](processes/agent-skills.md)         | you look for a skill before a setup task, decide whether to use the `reviewer` subagent, or add, rename or remove a skill or subagent in `.claude/`                   |
+| Doc                                                                                              | Use when …                                                                                                                                                            |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [processes/agentic-workflow.md](processes/agentic-workflow.md)                                   | you lead agents on this repository, write a brief for a subagent, run agents in parallel, check what an agent may do without asking, or decide when a request is done |
+| [processes/agent-skills.md](processes/agent-skills.md)                                           | you look for a skill before a setup task, decide whether to use the `reviewer` subagent, or add, rename or remove a skill or subagent in `.claude/`                   |
+| [../.claude/skills/update-dependencies/SKILL.md](../.claude/skills/update-dependencies/SKILL.md) | a scheduled agent runs the daily dependency update and audit, or you run that pass by hand ([dependencies.md, Daily runs](processes/dependencies.md#daily-runs))      |

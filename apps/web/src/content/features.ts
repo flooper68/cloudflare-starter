@@ -6,11 +6,13 @@
  * component, a test or a script can import it.
  *
  * Stable API (docs/reference/docs-site.md#feature-data):
- * - `PILLARS`, `GROUPS`, `FEATURES`, `EDGES`, `FLOWS`: readonly arrays, in display order.
- * - Types: `Pillar`, `Group`, `Feature`, `FeatureEdge`, `MapFlow`, `PillarId`, `GroupId`,
- *   `FeatureId`, `FeatureStatus`, `MapNodeId`.
+ * - `PILLARS`, `GROUPS`, `FEATURES`, `EDGES`, `FLOWS`, `ROADMAP`: readonly arrays, in
+ *   display order.
+ * - Types: `Pillar`, `Group`, `Feature`, `FeatureEdge`, `MapFlow`, `RoadmapItem`,
+ *   `PillarId`, `GroupId`, `FeatureId`, `FeatureStatus`, `MapNodeId`.
  * - Lookups: `pillar(id)`, `group(id)`, `feature(id)`; lists: `groupsOf(pillarId)`,
- *   `featuresOf(groupId)`, `highlightsOf(groupId)`, `worksWith(featureId)`.
+ *   `featuresOf(groupId)`, `highlightsOf(groupId)`, `worksWith(featureId)`,
+ *   `roadmap()`.
  * - `docsHref(slug)`: the site URL of a `docs` slug (`guides/how-to-setup-mcp` →
  *   `/docs/guides/how-to-setup-mcp/`).
  *
@@ -78,6 +80,16 @@ export interface FeatureEdge {
   readonly a: FeatureId;
   readonly b: FeatureId;
   readonly why: string;
+}
+
+/**
+ * One entry of the public roadmap (/docs/roadmap/): a `planned` feature, in the order it
+ * comes next, with a few short points of what it will do.
+ */
+export interface RoadmapItem {
+  readonly feature: FeatureId;
+  /** Two to six short points, a few words each. */
+  readonly points: readonly string[];
 }
 
 /** A node of the feature map: the app at the centre, or a capability group. */
@@ -384,14 +396,14 @@ const RAW = [
     "ci",
     "developer-experience",
     "CI, with optional self-hosted runners",
-    "Every check runs on every pull request.",
+    "Every check on every pull request; optional local runners in Docker for faster, cheaper CI.",
     "guides/how-to-setup-ci"
   ),
   f(
     "pinned-dependencies",
     "developer-experience",
     "Pinned dependencies and a bundle budget",
-    "No surprise upgrades or bloat.",
+    "Updated and audited daily by an agent; no surprise upgrades or bloat.",
     "processes/dependencies"
   ),
   // Accounts & security
@@ -716,6 +728,87 @@ const RAW = [
     "Roll the database back to any minute in 30 days.",
     "features/observability"
   ),
+  // Next on the roadmap: planned, not built (ROADMAP below has the order)
+  f(
+    "api-keys",
+    "agents-mcp",
+    "API keys",
+    "Per-workspace keys for scripts, CI and server-to-server calls, on the API and MCP.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "outgoing-webhooks",
+    "app-platform",
+    "Outgoing webhooks",
+    "Signed events to your endpoints, delivered through the queue with retries.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "approval-inbox",
+    "agents-mcp",
+    "Approval inbox for agent actions",
+    "An agent proposes a risky change; a person approves or rejects it, and can undo it.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "realtime-updates",
+    "app-platform",
+    "Real-time updates",
+    "Lists, comments and notifications update live, with presence.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "onboarding",
+    "workspaces-billing-admin",
+    "Onboarding",
+    "A first-run checklist, empty states and sample data for a new workspace.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "in-app-agents",
+    "agents-mcp",
+    "In-app agents",
+    "Agents that run inside the app on its data and tools, with the same tools and permissions.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "agentic-development",
+    "developer-experience",
+    "Better agent skills and processes",
+    "Sharper skills, the orchestrator, implementer and reviewer workflow, and briefs.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "feedback",
+    "app-platform",
+    "Feedback",
+    "A Send feedback box with an optional screenshot, read in the admin portal and over MCP.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "pwa",
+    "app-platform",
+    "Installable app with push",
+    "Install the app and get web push notifications.",
+    "roadmap",
+    "planned"
+  ),
+  f(
+    "announcements-maintenance",
+    "workspaces-billing-admin",
+    "Announcements and maintenance mode",
+    "An admin banner for everyone, and a read-only maintenance mode.",
+    "roadmap",
+    "planned"
+  ),
 ] as const;
 
 export type FeatureId = (typeof RAW)[number]["id"];
@@ -876,6 +969,88 @@ export const FLOWS: readonly MapFlow[] = [
   },
 ];
 
+/** What comes next, in order: the public roadmap (/docs/roadmap/, the home page). */
+export const ROADMAP: readonly RoadmapItem[] = [
+  {
+    feature: "api-keys",
+    points: [
+      "Scopes and expiry",
+      "Hashed, shown once",
+      "Revocable and audited",
+      "Rate limited",
+      "API and MCP",
+    ],
+  },
+  {
+    feature: "outgoing-webhooks",
+    points: [
+      "Endpoints subscribed to events",
+      "Standard Webhooks signing",
+      "Secret rotation",
+      "Queue retries and a dead-letter queue",
+      "Delivery log, redeliver, test event",
+    ],
+  },
+  {
+    feature: "approval-inbox",
+    points: [
+      "An agent proposes a risky change",
+      "A person approves or rejects",
+      "Approved changes can be undone",
+    ],
+  },
+  {
+    feature: "realtime-updates",
+    points: [
+      "Live lists",
+      "Live comments",
+      "Live notifications",
+      "Presence",
+      "Durable Objects WebSockets",
+    ],
+  },
+  {
+    feature: "onboarding",
+    points: ["First-run checklist", "Empty states", "Sample data"],
+  },
+  {
+    feature: "in-app-agents",
+    points: [
+      "A workspace assistant",
+      "Scheduled and background agents",
+      "Cloudflare Agents SDK",
+      "Same MCP tools and permissions",
+      "Risky actions need approval",
+    ],
+  },
+  {
+    feature: "agentic-development",
+    points: [
+      "Better skills in .claude/",
+      "Orchestrator, implementer, reviewer",
+      "Briefs",
+      "Daily dependency and audit agent",
+    ],
+  },
+  {
+    feature: "feedback",
+    points: [
+      "Send feedback in the app",
+      "Optional screenshot",
+      "In the admin portal",
+      "Agents read it over MCP",
+    ],
+  },
+  {
+    feature: "pwa",
+    points: ["Installable", "Web push notifications"],
+  },
+  {
+    feature: "announcements-maintenance",
+    points: ["Admin banner", "Read-only maintenance mode"],
+  },
+];
+
 /** The site URL of a docs slug. */
 export function docsHref(slug: string): string {
   return slug === "" ? "/docs/" : `/docs/${slug}/`;
@@ -910,6 +1085,16 @@ export function featuresOf(groupId: GroupId): readonly Feature[] {
 /** The 3 to 6 features a group's card lists. */
 export function highlightsOf(groupId: GroupId): readonly Feature[] {
   return group(groupId).highlights.map(feature);
+}
+
+/** The roadmap's features, in order, each with its points. */
+export function roadmap(): readonly (Feature & {
+  readonly points: readonly string[];
+})[] {
+  return ROADMAP.map((item) => ({
+    ...feature(item.feature),
+    points: item.points,
+  }));
 }
 
 /** The features a feature works with, and why. */

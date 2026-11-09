@@ -2,14 +2,14 @@
 /**
  * The home page, prerendered: the same HTML for everyone, no session read. Hero (the
  * isometric scene), the four pillars, the feature map, what it costs, start in minutes,
- * what's new and a closing call to action. What the starter does is data
+ * what's new, what's next (the roadmap) and a closing call to action. What the starter does is data
  * (src/content/features.ts); the page's own words are in src/landing/content.ts. Motion is
  * CSS first; the scripts are the hero's tilt, the feature map and the header menu. A
  * project replaces this page with its own:
  * docs/reference/docs-site.md#replace-the-landing-page.
  */
 import { getCollection } from "astro:content";
-import { buttonVariants, cn } from "@cloudflare-starter/ui";
+import { Badge, buttonVariants, cn } from "@cloudflare-starter/ui";
 import {
   ArrowRight,
   Bot,
@@ -27,7 +27,7 @@ import FeatureMap from "@/components/site/FeatureMap.astro";
 import HeroScene from "@/components/site/HeroScene.astro";
 import SiteFooter from "@/components/site/SiteFooter.astro";
 import SiteHeader from "@/components/site/SiteHeader.astro";
-import { PILLARS, type PillarId } from "@/content/features";
+import { PILLARS, type PillarId, roadmap } from "@/content/features";
 import { CHANGELOG_PATH, parseChangelog } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import {
@@ -61,6 +61,7 @@ const changelog = parseChangelog(
   entries.find((entry) => entry.id === CHANGELOG_PATH)?.body ?? ""
 );
 const news = whatsNew(changelog);
+const next = roadmap();
 
 const primary = cn(
   buttonVariants({ variant: "primary", size: "lg" }),
@@ -295,6 +296,40 @@ const inlineLink =
         }
       </ul>
     </section>
+
+    {
+      next.length > 0 && (
+        <section
+          aria-labelledby="next-title"
+          class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pt-10 pb-6 sm:px-6"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="next-title" class="text-xl font-semibold text-fg">
+              What's next
+            </h2>
+            <a class={cn(inlineLink, "text-sm")} href={LINKS.roadmap}>
+              The roadmap
+            </a>
+          </div>
+          <ol class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+            {next.map((item, index) => (
+              <li class="min-w-0">
+                <a
+                  href={`${LINKS.roadmap}#${item.id}`}
+                  class="flex h-full items-center gap-3 rounded-xl border border-line bg-surface-raised px-3.5 py-3 text-fg hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                >
+                  <span class="font-mono text-xs text-accent-text" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span class="min-w-0 flex-1 text-sm font-medium">{item.name}</span>
+                  <Badge tone="warning">Planned</Badge>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )
+    }
 
     <section aria-labelledby="closing-title" class="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
       <div
