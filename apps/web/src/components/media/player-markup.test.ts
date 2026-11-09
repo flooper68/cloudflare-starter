@@ -42,6 +42,10 @@ describe("walkthroughHtml", () => {
     );
   });
 
+  it("keeps the native controls' full screen button", () => {
+    expect(html).not.toMatch(/controlslist|nofullscreen/i);
+  });
+
   it("has captions on by default, MP4 first", () => {
     expect(html).toContain(
       '<track kind="captions" srclang="en" label="English" data-src="/media/0123456789ab/agents.vtt" default>'
@@ -69,6 +73,9 @@ describe("loopHtml", () => {
     expect(html).toMatch(/<video[^>]* muted loop playsinline preload="none"/);
     expect(html).not.toMatch(/autoplay/);
     expect(html).toContain('aria-label="Play clip: Agents &amp; MCP"');
+    expect(html).toContain(
+      'class="wv-expand" aria-label="Play full screen: Agents &amp; MCP"'
+    );
   });
 });
 
