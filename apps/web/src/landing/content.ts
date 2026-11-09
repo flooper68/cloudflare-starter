@@ -10,6 +10,7 @@ export const LINKS = {
   docs: "/docs/",
   start: "/docs/start/",
   changelog: "/docs/changelog/",
+  roadmap: "/docs/roadmap/",
   feed: "/docs/changelog.xml",
   github: DOCS.repoUrl,
   issues: `${DOCS.repoUrl}/issues`,
@@ -134,6 +135,7 @@ export const PRODUCTION_CHECKS: readonly string[] = [
   "Every table is in the privacy catalog",
   "Every action has a rate limit",
   "Health checks in the IETF format",
+  "Dependencies updated and audited daily by an agent",
 ];
 
 /** The only place the page names the technology. */
@@ -150,6 +152,7 @@ export const FOOTER: readonly {
       { label: "Try the demo", href: LINKS.demo },
       { label: "Sign in", href: LINKS.signIn },
       { label: "Changelog", href: LINKS.changelog },
+      { label: "Roadmap", href: LINKS.roadmap },
       { label: "Feature map", href: "/#feature-map" },
     ],
   },

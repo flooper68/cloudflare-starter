@@ -325,8 +325,8 @@
     },
     {
       "id": "marketing",
-      "title": "The starter's marketing: changelog, README, docs title",
-      "why": "The changelog is the starter's release history, the README's highlights sell the starter, and the docs site is titled and linked to the starter's repository. A project starts its own history and points its docs at its own repository; the docs themselves stay.",
+      "title": "The starter's marketing: changelog, roadmap, README, docs title",
+      "why": "The changelog is the starter's release history, the roadmap lists the starter's own next features, the README's highlights sell the starter, and the docs site is titled and linked to the starter's repository. A project starts its own history and its own roadmap (the strip removes the starter's planned features and empties ROADMAP in apps/web/src/content/features.ts, so /docs/roadmap/ says nothing is planned and the home page leaves out What's next) and points its docs at its own repository; the docs themselves stay.",
       "status": "active",
       "default": true,
       "files": [
@@ -355,6 +355,21 @@
           "file": "apps/web/test/e2e/docs.spec.ts",
           "find": "https://github.com/flooper68/cloudflare-starter",
           "replace": "{{repoUrl}}"
+        },
+        {
+          "file": "apps/web/src/content/features.ts",
+          "find": "  // Next on the roadmap: planned, not built (ROADMAP below has the order)\n  f(\n    \"api-keys\",\n    \"agents-mcp\",\n    \"API keys\",\n    \"Per-workspace keys for scripts, CI and server-to-server calls, on the API and MCP.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"outgoing-webhooks\",\n    \"app-platform\",\n    \"Outgoing webhooks\",\n    \"Signed events to your endpoints, delivered through the queue with retries.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"approval-inbox\",\n    \"agents-mcp\",\n    \"Approval inbox for agent actions\",\n    \"An agent proposes a risky change; a person approves or rejects it, and can undo it.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"realtime-updates\",\n    \"app-platform\",\n    \"Real-time updates\",\n    \"Lists, comments and notifications update live, with presence.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"onboarding\",\n    \"workspaces-billing-admin\",\n    \"Onboarding\",\n    \"A first-run checklist, empty states and sample data for a new workspace.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"in-app-agents\",\n    \"agents-mcp\",\n    \"In-app agents\",\n    \"Agents that run inside the app on its data and tools, with the same tools and permissions.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"agentic-development\",\n    \"developer-experience\",\n    \"Better agent skills and processes\",\n    \"Sharper skills, the orchestrator, implementer and reviewer workflow, and briefs.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"feedback\",\n    \"app-platform\",\n    \"Feedback\",\n    \"A Send feedback box with an optional screenshot, read in the admin portal and over MCP.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"pwa\",\n    \"app-platform\",\n    \"Installable app with push\",\n    \"Install the app and get web push notifications.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n  f(\n    \"announcements-maintenance\",\n    \"workspaces-billing-admin\",\n    \"Announcements and maintenance mode\",\n    \"An admin banner for everyone, and a read-only maintenance mode.\",\n    \"roadmap\",\n    \"planned\"\n  ),\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/content/features.ts",
+          "find": "export const ROADMAP: readonly RoadmapItem[] = [\n  {\n    feature: \"api-keys\",\n    points: [\n      \"Scopes and expiry\",\n      \"Hashed, shown once\",\n      \"Revocable and audited\",\n      \"Rate limited\",\n      \"API and MCP\",\n    ],\n  },\n  {\n    feature: \"outgoing-webhooks\",\n    points: [\n      \"Endpoints subscribed to events\",\n      \"Standard Webhooks signing\",\n      \"Secret rotation\",\n      \"Queue retries and a dead-letter queue\",\n      \"Delivery log, redeliver, test event\",\n    ],\n  },\n  {\n    feature: \"approval-inbox\",\n    points: [\n      \"An agent proposes a risky change\",\n      \"A person approves or rejects\",\n      \"Approved changes can be undone\",\n    ],\n  },\n  {\n    feature: \"realtime-updates\",\n    points: [\n      \"Live lists\",\n      \"Live comments\",\n      \"Live notifications\",\n      \"Presence\",\n      \"Durable Objects WebSockets\",\n    ],\n  },\n  {\n    feature: \"onboarding\",\n    points: [\"First-run checklist\", \"Empty states\", \"Sample data\"],\n  },\n  {\n    feature: \"in-app-agents\",\n    points: [\n      \"A workspace assistant\",\n      \"Scheduled and background agents\",\n      \"Cloudflare Agents SDK\",\n      \"Same MCP tools and permissions\",\n      \"Risky actions need approval\",\n    ],\n  },\n  {\n    feature: \"agentic-development\",\n    points: [\n      \"Better skills in .claude/\",\n      \"Orchestrator, implementer, reviewer\",\n      \"Briefs\",\n      \"Daily dependency and audit agent\",\n    ],\n  },\n  {\n    feature: \"feedback\",\n    points: [\n      \"Send feedback in the app\",\n      \"Optional screenshot\",\n      \"In the admin portal\",\n      \"Agents read it over MCP\",\n    ],\n  },\n  {\n    feature: \"pwa\",\n    points: [\"Installable\", \"Web push notifications\"],\n  },\n  {\n    feature: \"announcements-maintenance\",\n    points: [\"Admin banner\", \"Read-only maintenance mode\"],\n  },\n];\n",
+          "replace": "export const ROADMAP: readonly RoadmapItem[] = [];\n"
+        },
+        {
+          "file": "apps/web/src/landing/content.ts",
+          "find": "      { label: \"Roadmap\", href: LINKS.roadmap },\n",
+          "replace": ""
         },
         {
           "file": "docs/processes/dependencies.md",

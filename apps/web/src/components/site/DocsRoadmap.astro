@@ -1,0 +1,164 @@
+---
+/**
+ * The roadmap on /docs/roadmap/ (docs/roadmap.md, under its intro): the planned features
+ * of ROADMAP in src/content/features.ts, in order, as a numbered timeline. Each item has
+ * its group, a "Planned" badge (never "built"), its one line and a few short points, and
+ * links to the docs of the group it will join. With an empty roadmap it says so.
+ * docs/reference/docs-site.md#roadmap
+ */
+import { Badge } from "@cloudflare-starter/ui";
+import { ArrowRight } from "lucide-react";
+
+import { docsHref, group, pillar, roadmap } from "@/content/features";
+
+const items = roadmap().map((item, index) => ({
+  ...item,
+  n: String(index + 1).padStart(2, "0"),
+  group: group(item.group),
+  pillar: pillar(item.pillar),
+}));
+---
+
+{
+  items.length === 0 ? (
+    <p class="text-sm text-fg-muted">Nothing is planned yet.</p>
+  ) : (
+    <ol class="roadmap" aria-label="Planned features, in order">
+      {items.map((item) => (
+        <li class="roadmap-item">
+          <span class="roadmap-n" aria-hidden="true">
+            {item.n}
+          </span>
+          <article class="roadmap-card" aria-labelledby={item.id}>
+            <span class="text-xs font-medium text-fg-subtle">
+              {item.pillar.title} · {item.group.title}
+            </span>
+            <h2 id={item.id} class="roadmap-title">
+              {item.name}
+              <Badge tone="warning">Planned</Badge>
+            </h2>
+            <p class="text-sm leading-6 text-fg-muted">{item.benefit}</p>
+            <ul class="roadmap-points" aria-label={`${item.name}: what it will do`}>
+              {item.points.map((point) => (
+                <li>{point}</li>
+              ))}
+            </ul>
+            <a class="roadmap-link" href={docsHref(item.group.docs)}>
+              Joins {item.group.title}
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </a>
+          </article>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+<style>
+  .roadmap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0 2.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The rail behind the numbers. */
+  .roadmap::before {
+    content: "";
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    width: 1px;
+    background: var(--ui-line-strong);
+  }
+
+  .roadmap-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.875rem;
+    align-items: start;
+  }
+
+  .roadmap-n {
+    position: relative;
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 999px;
+    background: var(--ui-surface-raised);
+    color: var(--ui-accent-text);
+    font-family: var(--brand-font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .roadmap-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--ui-line);
+    border-radius: 0.75rem;
+    background: var(--ui-surface-raised);
+  }
+
+  .roadmap-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: var(--ui-fg);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.5rem;
+    scroll-margin-top: 5rem;
+  }
+
+  .roadmap-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 0.125rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .roadmap-points li {
+    padding: 0.125rem 0.5rem;
+    border: 1px solid var(--ui-line);
+    border-radius: 999px;
+    background: var(--ui-canvas);
+    color: var(--ui-fg-muted);
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+  }
+
+  .roadmap-link {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 0.25rem;
+    color: var(--ui-accent-text);
+    font-size: 0.8125rem;
+  }
+
+  .roadmap-link:hover {
+    text-decoration: underline;
+  }
+
+  .roadmap-link:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--ui-focus);
+  }
+</style>

@@ -78,7 +78,7 @@ Run each with `--dry-run` first and turn its plan into the list you show.
 
 ## 8. Hand over
 
-Tell the owner what is left, from the strip's next steps and the guide's "Keep or replace the placeholders": Notes stays as the pattern for the first real feature (`docs/guides/how-to-add-a-feature.md`), the landing page still describes the starter (`docs/reference/docs-site.md#replace-the-landing-page`), the example plans and roles are the starter's.
+Tell the owner what is left, from the strip's next steps and the guide's "Keep or replace the placeholders": Notes stays as the pattern for the first real feature (`docs/guides/how-to-add-a-feature.md`), the landing page still describes the starter (`docs/reference/docs-site.md#replace-the-landing-page`), the example plans and roles are the starter's. Offer to set up the daily dependency update and audit agent (a scheduled routine that runs the `update-dependencies` skill, `docs/processes/dependencies.md#set-up-the-daily-trigger`); creating it is their yes.
 
 ## Verify
 

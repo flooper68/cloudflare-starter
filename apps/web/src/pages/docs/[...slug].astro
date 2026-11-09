@@ -3,6 +3,8 @@
  * The docs site: one prerendered page per published repository file (DOCS.sources),
  * in the docs shell (layouts/DocsLayout.astro: navigation from docs/README.md, "On this
  * page", edit link, search). The rendered Markdown is what Pagefind indexes. The
+ * changelog has its own page (changelog.astro); the roadmap page renders the planned
+ * features of the feature data under its Markdown (DocsRoadmap.astro). docs/guides/how-to-publish-docs-and-landing.md
  * changelog has its own page (changelog.astro). A doc with a recorded `::video`
  * (src/docs/walkthroughs.ts) also loads the video player's script. docs/guides/how-to-publish-docs-and-landing.md
  */
@@ -10,6 +12,8 @@ import { getCollection, render } from "astro:content";
 import { Prose } from "@cloudflare-starter/ui";
 import PlayerAssets from "@/components/media/PlayerAssets.astro";
 import DocsHome from "@/components/site/DocsHome.astro";
+import DocsRoadmap from "@/components/site/DocsRoadmap.astro";
+import { roadmap } from "@/content/features";
 import { CHANGELOG_PATH } from "@/docs/changelog";
 import { DOCS } from "@/docs/docs.config";
 import { slugFor } from "@/docs/links";
@@ -39,6 +43,18 @@ const { entry, nav, title } = Astro.props;
 const { Content, headings } = await render(entry);
 // The docs home: DocsHome's h1 and cards first; the index's own h1 is dropped.
 const isHome = entry.id === DOCS.navSource;
+const isRoadmap = entry.id === DOCS.roadmap;
+// The roadmap's items are headings of the page too, for "On this page".
+const tocHeadings = isRoadmap
+  ? [
+      ...headings,
+      ...roadmap().map((item) => ({
+        depth: 2,
+        slug: item.id,
+        text: item.name,
+      })),
+    ]
+  : headings;
 ---
 
 <DocsLayout
@@ -46,11 +62,12 @@ const isHome = entry.id === DOCS.navSource;
   title={title}
   description={docDescription(entry.body ?? "")}
   nav={nav}
-  headings={headings}
+  headings={tocHeadings}
 >
   {isHome && <DocsHome />}
   <Prose className={isHome ? "docs-index" : undefined}>
     <Content />
   </Prose>
+  {isRoadmap && <DocsRoadmap />}
   {hasRecordedVideo(entry.body ?? "") && <PlayerAssets />}
 </DocsLayout>

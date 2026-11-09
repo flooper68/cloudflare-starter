@@ -31,7 +31,7 @@ Set them once per environment with `bun run setup:secrets --env <env>`, and choo
 
 ## Run CI on your own machines (optional)
 
-Self-hosted runners in Docker (`bun run runner:up`) make CI faster and free of GitHub minutes. Switch with the repository variable `CI_RUNS_ON`; pull requests from forks always stay on GitHub-hosted runners.
+A local GitHub Actions runner comes ready: self-hosted runners in Docker (`ops/runner`, `bun run runner:up -- --workers <n>`) make CI faster and free of GitHub minutes. They are optional; without them every job runs on GitHub's hosted runners. Switch with the repository variable `CI_RUNS_ON`; pull requests from forks always stay on GitHub-hosted runners.
 
 :::decision{title="Forks never reach your machine"}
 The repository is public and a fork's pull request runs code its author wrote, so every job keeps a fork guard and no workflow uses `pull_request_target`. `test/architecture/ci.test.ts` checks both.

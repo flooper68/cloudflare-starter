@@ -1,11 +1,11 @@
 /**
  * The home page as built: prerendered (the same HTML signed in or out) under one policy,
  * its calls to action, the feature map from src/content/features.ts (mouse, keyboard,
- * filter, list), the calm page under reduced motion, the phone menu, and the public pages
+ * filter, list), what's next from the roadmap, the calm page under reduced motion, the phone menu, and the public pages
  * at phone width without sideways scrolling. Every test fails on a CSP violation
  * (fixtures.ts).
  */
-import { GROUPS, PILLARS } from "../../src/content/features";
+import { GROUPS, PILLARS, roadmap } from "../../src/content/features";
 import { START_PROMPT } from "../../src/landing/content";
 import { PRERENDERED_PAGE_CSP } from "../../src/server/security-headers";
 import { expect, test } from "../e2e/fixtures";
@@ -206,6 +206,37 @@ test.describe("start prompt", () => {
   });
 });
 
+test.describe("what's next", () => {
+  // A project's strip empties the roadmap, and the page then leaves the section out.
+  test.skip(roadmap().length === 0, "no planned features on the roadmap");
+
+  test("lists the roadmap in order, each planned, linking to its entry", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const section = page.getByRole("region", { name: "What's next" });
+    const items = section.getByRole("listitem");
+    await expect(items).toHaveCount(roadmap().length);
+    for (const [index, item] of roadmap().entries()) {
+      await expect(items.nth(index)).toContainText(item.name);
+      await expect(items.nth(index)).toContainText("Planned");
+      await expect(items.nth(index).getByRole("link")).toHaveAttribute(
+        "href",
+        `/docs/roadmap/#${item.id}`
+      );
+    }
+    await expect(
+      section.getByRole("link", { name: "The roadmap" })
+    ).toHaveAttribute("href", "/docs/roadmap/");
+    await expect(
+      page
+        .getByRole("contentinfo")
+        .getByRole("navigation", { name: "Product" })
+        .getByRole("link", { name: "Roadmap" })
+    ).toHaveAttribute("href", "/docs/roadmap/");
+  });
+});
+
 test.describe("what it costs", () => {
   test("is one receipt with the allowances and the prices above them", async ({
     page,
@@ -256,7 +287,13 @@ test.describe("reduced motion", () => {
 test.describe("phone width", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
-  for (const path of ["/", "/docs/", "/docs/guides/how-to-setup-d1/", "/nope/"])
+  for (const path of [
+    "/",
+    "/docs/",
+    "/docs/guides/how-to-setup-d1/",
+    "/docs/roadmap/",
+    "/nope/",
+  ])
     test(`${path} does not scroll sideways`, async ({ page }) => {
       await page.goto(path);
       const overflow = await page.evaluate(

@@ -37,7 +37,7 @@ A Bun monorepo for building Cloudflare-first products: one Astro web Worker that
 - Storybook built into the web app at `/_storybook/` in every environment
 - Cloudflare Container demo, deployed as its own Worker
 - Setup scripts (`setup:cloudflare`, `setup:secrets`, `setup:auth`, `setup:admin`, `setup:analytics`, `setup:email`, `setup:storage`, `setup:privacy-storage`, `doctor`), agent skills in `.claude/skills/`, and CI that can run on self-hosted runners in Docker (`runner:up`)
-- Every dependency pinned to an exact version
+- Every dependency pinned to an exact version, updated and audited daily by an agent ([dependencies.md](docs/processes/dependencies.md#daily-runs))
 
 ## Starting a new project from this starter
 
