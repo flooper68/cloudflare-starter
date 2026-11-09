@@ -1,7 +1,7 @@
 /**
  * axe (any violation fails) on the public pages as built, in the dark and the light
  * theme: the landing page, the docs index, a guide with code blocks and tables, a page
- * with inline diagrams, and the open search dialog with results.
+ * with inline diagrams, the open video lightbox, and the open search dialog with results.
  */
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "../e2e/fixtures";
@@ -32,6 +32,15 @@ for (const colorScheme of ["dark", "light"] as const) {
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
         expect(await violations(page)).toEqual([]);
       });
+
+    test("the open video lightbox passes axe", async ({ page }) => {
+      await page.goto("/");
+      const expand = page.getByRole("button", { name: /^Play full screen: / });
+      test.skip((await expand.count()) === 0, "no clip is recorded yet");
+      await expand.first().click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      expect(await violations(page)).toEqual([]);
+    });
 
     test("the open search dialog passes axe", async ({ page }) => {
       await page.goto("/docs/");

@@ -86,6 +86,8 @@ The page reads no session, so it is the same for everyone. It ships no React. It
 
 The clips and the walkthrough are recorded by script from the app and served from R2 at `/media/` through the Worker, so the page's policy (`media-src 'self'`) needed no change. Recording, uploading, the player and a doc's `::video`: [how-to-record-walkthrough-videos.md](../guides/how-to-record-walkthrough-videos.md). The page names the videos from the committed `src/content/media-manifest.json` at build time; deploy it only after `bun run media:upload` put its videos into that environment's R2, or the player shows the poster's stand-in.
 
+A pillar clip opens large on a click, or Enter or Space on its expand button: a `<dialog>` lightbox about 90vw wide with controls and a **Full screen** button (Fullscreen API) on desktop, the video's native full screen on touch screens (`webkitEnterFullscreen` on iPhone). Escape, the backdrop or Close returns focus to the card; under reduced motion the lightbox shows the poster and a Play button. The walkthrough's full screen is its native controls' own. `video-player.ts` builds the lightbox with DOM calls, so it needs no inline script and no change to the policy; `test/e2e-build/video-player.spec.ts` covers it and `a11y.spec.ts` runs axe on it open.
+
 ### Motion
 
 CSS first, and the base style is always the finished state, so the first frame is complete and nothing waits for a script:
@@ -207,7 +209,7 @@ bun run dev:web                     # /docs renders on request in dev
 cd apps/web && bun run build:app    # prerenders every page into dist/client/docs/
 ```
 
-`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the landing page (static, its calls to action, the cache header, the feature map by mouse and keyboard, its filter and list, no running animation under reduced motion, the phone menu and the stacked map), the theme switch on the account pages, the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide and the open search dialog in both themes, and no sideways scrolling at 375 px. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md)).
+`bun run test:e2e` includes `test/e2e/docs.spec.ts` (landing → docs → a guide, the theme switch, the 404). `bun run test:e2e:build` (after `bun run build`) serves the build with `astro preview` on `APP_URL`'s port and runs `test/e2e-build/`, every test failing on any CSP violation: the landing page (static, its calls to action, the cache header, the feature map by mouse and keyboard, its filter and list, no running animation under reduced motion, the phone menu and the stacked map), the theme switch on the account pages, the search dialog, page metadata, `robots.txt`, and axe on `/`, `/docs/`, a guide, the open video lightbox and the open search dialog in both themes, and no sideways scrolling at 375 px. The production smoke suite checks `/docs/` and a search on the deployment ([how-to-qa-a-deployment.md](../guides/how-to-qa-a-deployment.md)).
 
 ## Common problems
 
