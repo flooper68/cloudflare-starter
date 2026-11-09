@@ -7,8 +7,6 @@
  */
 import {
   BILLING_MODES,
-  DEMO_MODES,
-  DEMO_SAMPLE_DATA_VALUES,
   SIGN_UP_POLICIES,
   STORAGE_RECONCILE_MODES,
   TWO_FACTOR_MODES,
@@ -25,7 +23,6 @@ import {
   FEATURE_FLAG_PROVIDERS,
   LOG_SINKS,
   METRICS_BACKENDS,
-  QA_BYPASS_SETTINGS,
   RATE_LIMITERS,
   TRACING_BACKENDS,
   TURNSTILE_SETTINGS,
@@ -56,6 +53,7 @@ export interface Setting {
   readonly starterOnly?: boolean;
 }
 
+// Starter-only settings spell their values out: `starter:strip` deletes their constants.
 const ON_OFF = ["on", "off"] as const;
 
 export const SETTINGS: readonly Setting[] = [
@@ -374,7 +372,7 @@ export const SETTINGS: readonly Setting[] = [
     name: "DEMO_MODE",
     group: "Demo and QA",
     kind: "var",
-    values: DEMO_MODES,
+    values: ["off", "on"],
     description: "The starter's public demo; apps built from it keep off.",
     doc: "docs/guides/how-to-run-a-public-demo.md",
     starterOnly: true,
@@ -392,7 +390,7 @@ export const SETTINGS: readonly Setting[] = [
     name: "DEMO_SAMPLE_DATA",
     group: "Demo and QA",
     kind: "var",
-    values: DEMO_SAMPLE_DATA_VALUES,
+    values: ON_OFF,
     description:
       "With the demo on: new demo workspaces start with sample data.",
     doc: "docs/guides/how-to-run-a-public-demo.md",
@@ -411,7 +409,7 @@ export const SETTINGS: readonly Setting[] = [
     name: "QA_BYPASS",
     group: "Demo and QA",
     kind: "var",
-    values: QA_BYPASS_SETTINGS,
+    values: ON_OFF,
     description:
       "Lets the automated QA suite skip the bot check, with QA_TOKEN.",
     doc: "docs/guides/how-to-qa-a-deployment.md",
