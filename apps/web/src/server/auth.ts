@@ -821,36 +821,86 @@ export type AuthSession = Auth["$Infer"]["Session"];
  */
 export const AUTH_CONTEXT_STALL_MS = 10_000;
 
-/** Per-isolate cache, like the database client. */
-let cache:
-  | {
-      readonly env: AppEnv;
-      readonly auth: Auth;
-      readonly createdAt: number;
-      settled: boolean;
-    }
-  | undefined;
+/**
+ * How long a request waits for an instance another request is still building before it
+ * builds its own (`readyAuth`). Far above a normal build (one D1 query), so a slow build is
+ * only built twice, never awaited forever.
+ */
+export const AUTH_CONTEXT_WAIT_MS = 3_000;
 
+interface AuthEntry {
+  readonly env: AppEnv;
+  readonly auth: Auth;
+  readonly createdAt: number;
+  settled: boolean;
+}
+
+/** Per-isolate cache, like the database client: the newest instance, and the newest built one. */
+let cache: AuthEntry | undefined;
+let built: AuthEntry | undefined;
+
+function newEntry(env: AppEnv, now: number): AuthEntry {
+  const entry: AuthEntry = {
+    env,
+    auth: createAuth(env),
+    createdAt: now,
+    settled: false,
+  };
+  entry.auth.$context.then(
+    () => {
+      entry.settled = true;
+      built = entry;
+    },
+    () => undefined
+  );
+  cache = entry;
+  return entry;
+}
+
+/**
+ * The isolate's Better Auth instance. A built one wins over a newer one that is still
+ * building, so code that runs after `readyAuth` in a request never waits on another
+ * request's build; an unbuilt one older than AUTH_CONTEXT_STALL_MS is replaced.
+ */
 export function getAuth(env: AppEnv): Auth {
   const now = Date.now();
+  if (cache?.env === env && cache.settled) return cache.auth;
+  if (built?.env === env) return built.auth;
   const stalled =
     cache !== undefined &&
     !cache.settled &&
     now - cache.createdAt > AUTH_CONTEXT_STALL_MS;
-  if (!cache || cache.env !== env || stalled) {
-    const entry = {
-      env,
-      auth: createAuth(env),
-      createdAt: now,
-      settled: false,
-    };
-    entry.auth.$context.then(
-      () => {
-        entry.settled = true;
-      },
-      () => undefined
-    );
-    cache = entry;
-  }
-  return cache.auth;
+  if (!cache || cache.env !== env || stalled) newEntry(env, now);
+  return (cache as AuthEntry).auth;
+}
+
+/**
+ * The instance once its context is built, for the start of a request (the middleware, the
+ * auth handler, discovery, /mcp). When another request is still building the shared one,
+ * it waits at most `waitMs`, then builds its own: that build's D1 query belongs to this
+ * request, so it cannot be cancelled by another request ending. Without this, a request
+ * that arrived while a cancelled build was pending hung until the client gave up.
+ */
+export async function readyAuth(
+  env: AppEnv,
+  waitMs: number = AUTH_CONTEXT_WAIT_MS
+): Promise<Auth> {
+  const auth = getAuth(env);
+  const entry = cache?.auth === auth ? cache : built;
+  if (!entry || entry.settled) return auth;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const ready = await Promise.race([
+    auth.$context.then(
+      () => true,
+      () => true
+    ),
+    new Promise<false>((resolve) => {
+      timer = setTimeout(() => resolve(false), waitMs);
+    }),
+  ]);
+  clearTimeout(timer);
+  if (ready) return auth;
+  const own = newEntry(env, Date.now());
+  await own.auth.$context;
+  return own.auth;
 }
