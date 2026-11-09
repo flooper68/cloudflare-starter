@@ -69,9 +69,8 @@ describe("getNotificationPreferences", () => {
     );
     expect(result.emailCadence).toBe("daily");
     expect(result.emailAvailable).toBe(false);
-    expect(result.types[1]).toMatchObject({
-      type: "workspaces.role-changed",
-      email: false,
-    });
+    expect(
+      result.types.find((row) => row.type === "workspaces.role-changed")
+    ).toMatchObject({ email: false });
   });
 });
