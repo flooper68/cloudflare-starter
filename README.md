@@ -157,4 +157,4 @@ Astro and React on Cloudflare Workers, D1 with Drizzle, R2, Queues, Cron Trigger
 
 ## License
 
-No license has been chosen yet.
+[MIT](LICENSE). Projects made from the template keep this notice for the starter's code and choose their own license for theirs.
