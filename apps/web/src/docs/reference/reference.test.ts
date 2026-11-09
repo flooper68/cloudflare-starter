@@ -18,6 +18,7 @@ import {
 import { parse } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
 
+import { docsHref, FEATURES, GROUPS, PILLARS } from "@/content/features";
 import { RECEIPT, SECTIONS } from "@/landing/content";
 import { MCP_EXEMPT_PROCEDURES, MCP_TOOLS } from "@/server/mcp/tools";
 
@@ -27,6 +28,7 @@ import {
   costsMarkdown,
   eventsMarkdown,
   exemptionsMarkdown,
+  featureListMarkdown,
   flagsMarkdown,
   jobsMarkdown,
   notificationsMarkdown,
@@ -72,8 +74,50 @@ function wranglerVars(): Set<string> {
   ]);
 }
 
+/** Where the README's links to the docs point: the starter's own deployment. */
+const SITE = "https://starter.flooper.me";
+
+/**
+ * The README is the starter's front page until `starter:strip` resets it (the marketing
+ * component); a project's README has no generated blocks.
+ */
+const starterReadme = (
+  JSON.parse(read("starter-only.json")) as {
+    components: { id: string; status: string }[];
+  }
+).components.some(
+  (component) => component.id === "marketing" && component.status !== "stripped"
+);
+
+const README_BLOCKS: readonly {
+  file: string;
+  name: string;
+  render: () => string;
+}[] = [
+  {
+    file: "README.md",
+    name: "costs",
+    render: () => costsMarkdown(RECEIPT, SECTIONS.costs.note),
+  },
+  {
+    file: "README.md",
+    name: "features",
+    render: () =>
+      featureListMarkdown(
+        PILLARS,
+        GROUPS.map((group) => ({
+          ...group,
+          href: SITE + docsHref(group.docs),
+        })),
+        FEATURES,
+        "docs/roadmap.md"
+      ),
+  },
+];
+
 const BLOCKS: readonly { file: string; name: string; render: () => string }[] =
   [
+    ...(starterReadme ? README_BLOCKS : []),
     {
       file: "docs/reference/settings.md",
       name: "settings",

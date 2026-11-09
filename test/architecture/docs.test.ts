@@ -4,7 +4,9 @@
  *   listed in DOCS.exempt with a reason, and no exemption is stale;
  * - every relative link in a published file names a file or folder that exists, and
  *   every `#fragment` (to the same or another Markdown file) names a heading there, with
- *   GitHub's heading ids (github-slugger), which the site uses too.
+ *   GitHub's heading ids (github-slugger), which the site uses too;
+ * - the same for README.md, the repository's front page on GitHub (not published), with
+ *   its HTML links and images.
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -59,6 +61,48 @@ function links(source: string): string[] {
   ].map((match) => match[1]);
 }
 
+/** The `href`, `src` and `srcset` of the HTML in the Markdown, and its Markdown images. */
+function htmlLinks(source: string): string[] {
+  const text = withoutFences(source);
+  return [
+    ...[...text.matchAll(/\b(?:href|src|srcset)="([^"]+)"/g)].map(
+      (match) => match[1]
+    ),
+    ...[...text.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)].map((match) => match[1]),
+  ];
+}
+
+/** The links of `hrefs` (written in `path`) that name no file, folder or heading. */
+function broken(path: string, hrefs: readonly string[]): string[] {
+  const source = read(path);
+  const problems: string[] = [];
+  for (const href of hrefs) {
+    if (href.startsWith("#")) {
+      if (!headingIds(source).has(decodeURIComponent(href.slice(1))))
+        problems.push(`${href}: no such heading here`);
+      continue;
+    }
+    const link = parseRepoLink(path, href);
+    if (!link) {
+      // Absolute URLs and site paths are fine; a relative path that leaves the
+      // repository is broken on the site and on GitHub.
+      if (!SCHEME.test(href) && !href.startsWith("/"))
+        problems.push(`${href}: leaves the repository`);
+      continue;
+    }
+    const target = join(ROOT, link.path);
+    if (!existsSync(target)) {
+      problems.push(`${href}: ${link.path} does not exist`);
+      continue;
+    }
+    if (link.anchor && link.path.endsWith(".md")) {
+      if (!headingIds(read(link.path)).has(decodeURIComponent(link.anchor)))
+        problems.push(`${href}: no heading #${link.anchor} in ${link.path}`);
+    }
+  }
+  return problems;
+}
+
 describe("docs site", () => {
   const titles = new Map(
     PUBLISHED.map((path) => [path, docTitle(read(path)) ?? path])
@@ -94,32 +138,19 @@ describe("docs site", () => {
   });
 
   it.each(PUBLISHED)("every relative link in %s resolves", (path) => {
-    const source = read(path);
-    const broken: string[] = [];
-    for (const href of links(source)) {
-      if (href.startsWith("#")) {
-        if (!headingIds(source).has(decodeURIComponent(href.slice(1))))
-          broken.push(`${href}: no such heading here`);
-        continue;
-      }
-      const link = parseRepoLink(path, href);
-      if (!link) {
-        // Absolute URLs and site paths are fine; a relative path that leaves the
-        // repository is broken on the site and on GitHub.
-        if (!SCHEME.test(href) && !href.startsWith("/"))
-          broken.push(`${href}: leaves the repository`);
-        continue;
-      }
-      const target = join(ROOT, link.path);
-      if (!existsSync(target)) {
-        broken.push(`${href}: ${link.path} does not exist`);
-        continue;
-      }
-      if (link.anchor && link.path.endsWith(".md")) {
-        if (!headingIds(read(link.path)).has(decodeURIComponent(link.anchor)))
-          broken.push(`${href}: no heading #${link.anchor} in ${link.path}`);
-      }
-    }
-    expect(broken).toEqual([]);
+    expect(broken(path, links(read(path)))).toEqual([]);
+  });
+});
+
+describe("README.md", () => {
+  it("is not published: its HTML images resolve on GitHub only", () => {
+    expect(isPublished("README.md")).toBe(false);
+  });
+
+  it("every relative link and image resolves", () => {
+    const source = read("README.md");
+    expect(
+      broken("README.md", [...links(source), ...htmlLinks(source)])
+    ).toEqual([]);
   });
 });
