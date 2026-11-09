@@ -11,7 +11,7 @@ import {
 } from "@cloudflare-starter/features";
 import type { APIContext } from "astro";
 import { buildR2Feature, buildRequiredConfig } from "@/lib/env";
-import { AUTH_BASE_PATH, getAuth, MCP_PATH } from "@/server/auth";
+import { AUTH_BASE_PATH, MCP_PATH, readyAuth } from "@/server/auth";
 import { getDb } from "@/server/db";
 import type { AppEnv } from "@/server/env";
 import { isHealthPath } from "@/server/health";
@@ -184,8 +184,8 @@ async function routeAppRequest(
       // admin's "Stop impersonating" swaps the session cookie) would otherwise answer after
       // it and expire the new session's cookie. An API answers 401; the next page load
       // clears the cookies.
-      const { response: result, headers: sessionHeaders } = await getAuth(
-        env
+      const { response: result, headers: sessionHeaders } = await (
+        await readyAuth(env)
       ).api.getSession({
         headers: context.request.headers,
         returnHeaders: true,
