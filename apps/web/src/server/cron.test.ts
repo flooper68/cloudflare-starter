@@ -120,6 +120,7 @@ describe("cron handler", () => {
       "trash.purge-expired",
       "demo.enforce-retention",
       "storage.reconcile",
+      "container-runs.purge",
     ]);
 
     await runScheduled(controller("17 3 * * *"), platform);
@@ -155,17 +156,23 @@ describe("cron handler", () => {
         type: "trash.purge-expired",
         data: { asOf: "2026-10-28T03:17:00.000Z" },
       }),
+      expect.objectContaining({
+        type: "container-runs.purge",
+        data: { asOf: "2026-10-28T03:17:00.000Z" },
+      }),
       expect.objectContaining({ type: "audit.purge-events" }),
       expect.objectContaining({ type: "jobs.purge-idempotency-keys" }),
       expect.objectContaining({ type: "billing.expire-trials" }),
       expect.objectContaining({ type: "notifications.purge" }),
       expect.objectContaining({ type: "qa-outbox.purge" }),
       expect.objectContaining({ type: "trash.purge-expired" }),
+      expect.objectContaining({ type: "container-runs.purge" }),
     ]);
     const traces = jobQueue.sent.map(
       (sent) => sent.envelope.traceparent?.split("-")[1]
     );
-    expect(new Set(traces).size).toBe(12);
+    // One trace per enqueued job, however many entries the schedule has.
+    expect(new Set(traces).size).toBe(traces.length);
     expect(logger.records[1]).toMatchObject({
       body: "cron.completed",
       trace_id: traces[1],
@@ -259,6 +266,7 @@ describe("cron handler", () => {
       "cron trash.purge-expired",
       "cron demo.enforce-retention",
       "cron storage.reconcile",
+      "cron container-runs.purge",
     ]);
     expect(tracer.spans[0]).toMatchObject({
       kind: "internal",
@@ -318,6 +326,12 @@ describe("cron handler", () => {
       expect.objectContaining({
         attributes: {
           "app.cron.name": "storage.reconcile",
+          "app.cron.schedule": "17 3 * * *",
+        },
+      }),
+      expect.objectContaining({
+        attributes: {
+          "app.cron.name": "container-runs.purge",
           "app.cron.schedule": "17 3 * * *",
         },
       }),

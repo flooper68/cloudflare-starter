@@ -57,6 +57,8 @@ function bindings(block: Block): Record<string, string[]> {
       .sort(),
     queueConsumers: (queues.consumers ?? []).map(() => "consumer"),
     crons: block.triggers ? ["crons"] : [],
+    workflows: names("workflows", "binding"),
+    services: names("services", "binding"),
     vars: Object.keys((block.vars as Block | undefined) ?? {})
       .filter((name) => !(name in SETUP_WRITTEN_VARS))
       .sort(),
@@ -107,4 +109,68 @@ describe("wrangler.jsonc", () => {
       expect(bindings(block)).toEqual(bindings(config));
     }
   );
+});
+
+/**
+ * The container workflow demo: a Workflow per environment (names are account-wide) and a
+ * service binding to the pi container Worker of the same environment, which has no public
+ * URL and the demo's cost limits (docs/guides/how-to-run-container-workflows.md).
+ */
+describe("container workflow demo wiring", () => {
+  const container = parse(read("apps/container/wrangler.jsonc")) as Block & {
+    env?: Record<string, Block>;
+  };
+  const web: [string, Block][] = [
+    ["develop", config],
+    ...Object.entries(config.env ?? {}),
+  ];
+  const containerOf = (env: string): Block =>
+    env === "develop" ? container : (container.env?.[env] ?? {});
+  const containerName = (env: string) =>
+    env === "develop"
+      ? String(container.name)
+      : `${String(container.name)}-${env}`;
+
+  it("names one Workflow per environment, bound as CONTAINER_RUN_WORKFLOW to ContainerRunWorkflow", () => {
+    const names = web.map(([, block]) => {
+      const [workflow] = (block.workflows as Block[] | undefined) ?? [];
+      expect(workflow).toMatchObject({
+        binding: "CONTAINER_RUN_WORKFLOW",
+        class_name: "ContainerRunWorkflow",
+      });
+      return workflow?.name;
+    });
+    expect(new Set(names).size).toBe(web.length);
+  });
+
+  it.each(web)(
+    "%s binds PI_CONTAINER_SERVICE to the container Worker of the same environment",
+    (env, block) => {
+      expect(block.services).toEqual([
+        { binding: "PI_CONTAINER_SERVICE", service: containerName(env) },
+      ]);
+    }
+  );
+
+  it.each(web.map(([env]) => env))(
+    "the %s container Worker has no public URL, the smallest instance and at most two instances",
+    (env) => {
+      const block = containerOf(env);
+      expect(block.workers_dev).toBe(false);
+      expect(block.preview_urls).toBe(false);
+      expect(block.containers).toEqual([
+        expect.objectContaining({
+          class_name: "PiContainer",
+          instance_type: "lite",
+          max_instances: 2,
+        }),
+      ]);
+    }
+  );
+
+  it("keeps PI_INSTANCES equal to max_instances", () => {
+    expect(read("apps/container/src/index.ts")).toContain(
+      "export const PI_INSTANCES = 2;"
+    );
+  });
 });

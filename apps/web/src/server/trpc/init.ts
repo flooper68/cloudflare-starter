@@ -6,6 +6,7 @@ import {
   type BillingGate,
   type BillingProvider,
   type Clock,
+  type ContainerRunWorkflows,
   type Database,
   type DemoRuntime,
   DomainError,
@@ -64,6 +65,8 @@ export interface Context {
   readonly flags: FeatureFlags;
   /** The provider's store (FEATURE_FLAGS=d1), null otherwise. */
   readonly flagStore: FeatureFlagStore | null;
+  /** Starts a container run's Workflow (the container workflow demo). */
+  readonly containerRunWorkflows: ContainerRunWorkflows;
   /** Sends a notification (the notifications feature's `notify` on the job queue). */
   readonly notify: Notify;
   /** Outgoing mail of the deployment; `emailOut.enabled` is false without EMAIL/EMAIL_FROM. */

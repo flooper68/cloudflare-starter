@@ -43,7 +43,7 @@ curl "http://localhost:4321/cdn-cgi/local/scheduled?cron=17+3+*+*+*"
    :::
 
 :::decision{title="Jobs or Workflows"}
-Jobs fit short steps with retries. A long process that must resume after each step is a Workflow ([jobs or Workflows](../reference/background-jobs.md#jobs-or-workflows)).
+Jobs fit short steps with retries. A long process that must resume after each step is a Workflow ([jobs or Workflows](../reference/background-jobs.md#jobs-or-workflows)); the container workflow demo is the worked example ([how-to-run-container-workflows.md](how-to-run-container-workflows.md)).
 :::
 
 :::gotcha{title="A job missing from the catalog is dropped"}

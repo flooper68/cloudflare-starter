@@ -16,6 +16,13 @@ import {
 } from "@cloudflare-starter/features";
 import { z } from "zod";
 
+// The container workflow demo (starter-only: container-workflow-demo).
+
+import {
+  type ContainerDemoSettings,
+  containerDemoSettingsSchema,
+} from "@cloudflare-starter/features";
+
 const envSchema = z.object({
   APP_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
@@ -51,6 +58,8 @@ export type AppConfig = z.infer<typeof envSchema> & {
   readonly workspaces: WorkspaceSettings;
   readonly billing: BillingSettings;
   readonly security: SecuritySettings;
+  /** CONTAINER_DEMO, CONTAINER_DEMO_DAILY_CAP, CONTAINER_DEMO_RUNNER: required, no defaults. */
+  readonly containerDemo: ContainerDemoSettings;
   readonly ADMIN_PORTAL: AdminPortalSetting;
   readonly STORAGE_RECONCILE: StorageReconcileMode;
   readonly AUTH_EMAIL_PASSWORD: boolean;
@@ -86,6 +95,7 @@ export function parseAppConfig(env: PartialEnv): AppConfig {
       "AUTH_REQUIRE_EMAIL_VERIFICATION"
     ),
     workspaces: workspaceSettingsSchema.parse(env),
+    containerDemo: containerDemoSettingsSchema.parse(env),
     ADMIN_PORTAL: requiredChoice(
       env,
       "ADMIN_PORTAL",

@@ -13,6 +13,7 @@ export {
   createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
+  createContainerPiComputer,
   createD1FeatureFlags,
   createTurnstileVerifier,
   createWorkersLogsErrorReporter,
@@ -36,6 +37,8 @@ export {
 export { createFflateZip } from "./fflate";
 export {
   type CapturedError,
+  chudnovskyPi,
+  createFakePiComputer,
   createMemoryBillingProvider,
   createMemoryEmail,
   createMemoryErrorReporter,

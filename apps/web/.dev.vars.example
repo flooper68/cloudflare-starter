@@ -106,6 +106,16 @@ QA_BYPASS=off
 # try a policy change in report-only locally (never leave it blank).
 # CSP_MODE=report-only
 
+# The container workflow demo (/app/container-demo;
+# docs/guides/how-to-run-container-workflows.md). CONTAINER_DEMO (on | off),
+# CONTAINER_DEMO_DAILY_CAP (runs per UTC day) and CONTAINER_DEMO_RUNNER (container | fake)
+# are required vars in apps/web/wrangler.jsonc; local dev gets the develop values: on, with
+# the fake runner (pi computed in the Worker, no Docker). To run the real container
+# locally, start both apps with `bun run dev` (needs Docker) and uncomment the runner line.
+# Same rule: uncomment to override, never leave blank.
+# CONTAINER_DEMO_RUNNER=container
+# CONTAINER_DEMO=off
+
 # Metrics and tracing. METRICS (analytics-engine | none) and TRACING (workers | none) are
 # required vars in apps/web/wrangler.jsonc too, with the same rules: uncomment to override,
 # never leave blank. Locally the METRICS_DATASET Analytics Engine binding is simulated and

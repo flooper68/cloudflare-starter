@@ -17,6 +17,7 @@ import { z } from "zod";
 import { displayName } from "@/lib/user";
 import { accountRouter } from "./account-router";
 import { adminRouter } from "./admin-router";
+import { containerRunsRouter } from "./container-runs-router";
 import {
   protectedProcedure,
   publicProcedure,
@@ -89,6 +90,9 @@ export const appRouter = router({
 
   // The placeholder Notes app (docs/guides/how-to-add-a-feature.md).
   notes: notesRouter,
+
+  // The container workflow demo (Developer demos).
+  containerRuns: containerRunsRouter,
 
   queue: router({
     enqueueHello: protectedProcedure

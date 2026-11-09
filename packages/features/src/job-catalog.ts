@@ -4,6 +4,7 @@
 
 import { purgeAuditEvents, purgeAuditEventsJob } from "./audit";
 import { expireTrials, expireTrialsJob } from "./billing";
+import { purgeContainerRuns, purgeContainerRunsJob } from "./container-runs";
 import { DATA_CATALOG } from "./data-catalog";
 import {
   enforceDemoRetention,
@@ -59,6 +60,9 @@ import { purgeExpiredTrash, purgeExpiredTrashJob } from "./trash";
 import { TRASH_CATALOG } from "./trash-catalog";
 
 export const jobCatalog = createJobCatalog<JobDeps>([
+  registerJob(purgeContainerRunsJob, (deps: JobDeps, payload) =>
+    purgeContainerRuns(deps, payload)
+  ),
   registerJob(cleanupStorageJob, (deps: JobDeps, payload, job) =>
     cleanupStorage({ ...deps, requestContext: job.context }, payload)
   ),

@@ -43,6 +43,11 @@ export type {
   UpDownCounter,
 } from "./metrics";
 export type {
+  PiComputation,
+  PiComputer,
+  PiComputerFailure,
+} from "./pi-computer";
+export type {
   AnalyticsContext,
   IdentifyTraits,
   ProductAnalytics,
@@ -60,5 +65,4 @@ export type {
   SpanStatus,
   Tracer,
 } from "./tracer";
-
 export type { Zip, ZipWriter } from "./zip";

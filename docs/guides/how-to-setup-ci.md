@@ -19,7 +19,7 @@ CLOUDFLARE_ACCOUNT_ID in each environment with gh. Ask before each change.
 
 :::byhand
 1. **GitHub environments** `develop`, `staging`, `production` (Settings › Environments); for production, required reviewers and deployment branch `main` only.
-2. **A Cloudflare API token** with Account · Workers Scripts · Edit, D1 · Edit, Workers R2 Storage · Edit and Account Settings · Read (plus Zone · Workers Routes · Edit for a custom domain).
+2. **A Cloudflare API token** with Account · Workers Scripts · Edit, D1 · Edit, Workers R2 Storage · Edit, Containers · Edit (the pi container's image) and Account Settings · Read (plus Zone · Workers Routes · Edit for a custom domain).
 3. **Two secrets per environment:** `gh secret set CLOUDFLARE_API_TOKEN --env production` and `gh secret set CLOUDFLARE_ACCOUNT_ID --env production` (prompted, never `--body`).
    :::
 

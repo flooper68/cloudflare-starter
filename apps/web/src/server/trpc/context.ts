@@ -21,6 +21,7 @@ import {
 } from "@/server/admin-auth-gateway";
 import { getAuth } from "@/server/auth";
 import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
+import { containerRunWorkflowsFor } from "@/server/container-runs";
 import { getDb } from "@/server/db";
 import { demoRuntimeFor } from "@/server/demo";
 import type { AppEnv } from "@/server/env";
@@ -97,6 +98,7 @@ export function createAppContext(
       ? qaAdminEmail(platform.qaBypass.emailDomain)
       : null,
     notify: notifier,
+    containerRunWorkflows: containerRunWorkflowsFor(env),
     emailOut: platform.email,
     analytics: platform.productAnalytics(),
     user,

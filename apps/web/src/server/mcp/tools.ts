@@ -577,6 +577,27 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
     "Sends a hello message with the given name to the background queue (demo of a queued job)."
   ),
   direct(
+    "start_container_run",
+    "write",
+    "containerRuns.start",
+    "Start a container run",
+    "Starts the container workflow demo: a Cloudflare Workflow that computes digits of pi (1000, 10000 or 50000) in a Cloudflare Container, stores the result in R2 and notifies the user. Pass retryOf (a failed run's id) instead of digits to retry it. Returns the runId at once; poll get_container_run every few seconds until status is succeeded or failed (usually under a minute). Limited to a few runs per hour per user and a daily cap for the deployment; refused while the demo is off."
+  ),
+  direct(
+    "get_container_run",
+    "read",
+    "containerRuns.get",
+    "Get a container run",
+    "Reads one container workflow run: status (queued, running, succeeded, failed), the step timeline with start and end times (queued, starting, computing, storing, notifying, done), the error code of a failed run, and the result: the first 100 digits, size and a download path for the signed-in browser."
+  ),
+  direct(
+    "list_container_runs",
+    "read",
+    "containerRuns.list",
+    "List container runs",
+    "Lists the workspace's container workflow runs, newest first (they expire after 7 days), and whether the demo takes a new run now: on, off, daily_cap_reached or hourly_limit_reached, with the daily cap and the user's hourly limit."
+  ),
+  direct(
     "send_test_email",
     "write",
     "email.sendTest",
@@ -774,6 +795,8 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
   "api/hello.ts": "public REST example; tool ping returns the same",
   "api/files/index.ts":
     "binary upload through the Worker; MCP clients use create_upload_url",
+  "api/container-runs/[id]/result.ts":
+    "text download of a container run result through the Worker; MCP clients read the preview and size with get_container_run",
   "api/files/[id].ts":
     "binary download through the Worker; MCP clients use list_files and get_download_url",
   ".well-known/[...path].ts": "OAuth discovery documents for MCP clients",

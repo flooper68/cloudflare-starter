@@ -20,6 +20,8 @@ describe("getNotificationPreferences", () => {
     expect(
       result.types.map((row) => [row.type, row.locked, row.inApp, row.email])
     ).toEqual([
+      ["container-runs.finished", false, true, false],
+
       ["workspaces.member-joined", false, true, true],
       ["workspaces.role-changed", false, true, true],
       ["auth.password-changed", true, true, true],
@@ -67,9 +69,8 @@ describe("getNotificationPreferences", () => {
     );
     expect(result.emailCadence).toBe("daily");
     expect(result.emailAvailable).toBe(false);
-    expect(result.types[1]).toMatchObject({
-      type: "workspaces.role-changed",
-      email: false,
-    });
+    expect(
+      result.types.find((row) => row.type === "workspaces.role-changed")
+    ).toMatchObject({ email: false });
   });
 });

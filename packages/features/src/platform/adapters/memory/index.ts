@@ -1,5 +1,6 @@
 // In-memory adapters for tests: they record what the app sent so tests can assert on it.
 
+export { chudnovskyPi, createFakePiComputer } from "./fake-pi-computer";
 export {
   createMemoryBillingProvider,
   type MemoryBillingProvider,

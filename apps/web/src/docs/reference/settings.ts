@@ -431,4 +431,32 @@ export const SETTINGS: readonly Setting[] = [
     doc: "docs/guides/how-to-qa-a-deployment.md",
     starterOnly: true,
   },
+  {
+    name: "CONTAINER_DEMO",
+    group: "Demo and QA",
+    kind: "var",
+    values: ON_OFF,
+    description: "The container workflow demo (Developer demos › Containers).",
+    doc: "docs/guides/how-to-run-container-workflows.md",
+    starterOnly: true,
+  },
+  {
+    name: "CONTAINER_DEMO_DAILY_CAP",
+    group: "Demo and QA",
+    kind: "var",
+    description:
+      "Container demo runs per UTC day for the whole deployment, 1 to 10,000.",
+    doc: "docs/guides/how-to-run-container-workflows.md",
+    starterOnly: true,
+  },
+  {
+    name: "CONTAINER_DEMO_RUNNER",
+    group: "Demo and QA",
+    kind: "var",
+    values: ["container", "fake"],
+    description:
+      "Where the container demo computes pi: the pi container, or fake (in the Worker).",
+    doc: "docs/guides/how-to-run-container-workflows.md",
+    starterOnly: true,
+  },
 ];
