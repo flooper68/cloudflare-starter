@@ -46,7 +46,7 @@ Dry run first.
 1. `bun run setup:auth --env production --dry-run` shows what it would write.
 2. Run it without `--dry-run`, then `bun run doctor`, then deploy.
 
-The modes in full: [Configure workspaces](../guides/how-to-configure-workspaces.md#modes).
+The modes in full: [Configure workspaces](../reference/workspaces.md#modes).
 :::
 
 ## Use it

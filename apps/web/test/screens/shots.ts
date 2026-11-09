@@ -7,7 +7,7 @@
  * `callouts` are element locators, in the order of the doc's numbered callout list: the
  * pipeline measures each element and stores its position with the image, so a marker
  * follows its element when the UI moves. Add a shot here, run the pipeline, commit the
- * images and the manifest. docs/guides/how-to-publish-docs-and-landing.md#screenshots
+ * images and the manifest. docs/reference/docs-site.md#screenshots
  */
 import type { Locator, Page } from "@playwright/test";
 

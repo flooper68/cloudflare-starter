@@ -3,7 +3,7 @@
  * `QA`, job `cleanup`), through the app's QA cleanup endpoint with the QA token: every
  * `qa+<runId>-<role>@<QA_EMAIL_DOMAIN>` account older than two hours, through the real
  * erasure, never the QA admin and never any other address. No admin, no browser, never
- * SQL. docs/guides/how-to-qa-a-deployment.md#nightly-cleanup
+ * SQL. apps/web/test/qa/README.md#nightly-cleanup
  */
 import { expect, qaEnv, qaSkipReason, qaTest } from "../support";
 import { qaCleanup } from "../support/accounts";

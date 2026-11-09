@@ -1,77 +1,44 @@
 # How to add a feature
 
-The steps to add a product feature end to end, with the placeholder **Notes** app as the worked example: its table, rules, use cases, permissions, plan limit, trash, audit events, product event, tRPC procedures, MCP tools, rate limit, privacy catalog, screens and tests. Use when you build a project's first real feature, replace a placeholder app, or review whether a new feature is complete. The rules behind each step are in [architecture/overview.md](../architecture/overview.md#extension-checklists); the tests each step needs are in [testing.md](../architecture/testing.md#change--required-test).
+::reviewed{date="2026-11-09"}
 
-## The placeholder apps
+Add a product feature end to end, with the placeholder **Notes** app as the worked example: its table, rules, use cases, permissions, plan limit, trash, audit events, product event, API, agent tools, screens and tests. Use this guide for a project's first real feature, to replace a placeholder app, or to review whether a feature is complete. What Notes looks like: [Notes: the feature to copy](../features/notes.md).
 
-The app shell's sidebar has a **Product · placeholder** section with two modules that show where a project's own product goes. Both carry a "Placeholder" badge and a dashed notice.
+::flow[Table -> Use cases with permissions -> API and agent tools -> Screens -> Tests]{title="A feature, end to end: the table, use cases that check permissions, the API and agent tools, the screens, the tests"}
 
-| Module | What it is                                                                                                                                                     | Where                                                                                                                          |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Notes  | A real, thin feature: notes and comments in D1, workspace-scoped, with every platform piece wired. The worked example below                                    | `packages/features/src/notes/`, `apps/web/src/server/trpc/notes-router.ts`, `apps/web/src/components/app/notes/`, `/app/notes` |
-| Tasks  | Client-side sample data only (nothing is saved): it shows `TaskBoard` (IssueList, KanbanBoard, FilterBar and the list/board switch) from the component library | `apps/web/src/components/app/tasks/TasksPage.tsx`, `packages/ui/src/components/patterns/task-board.tsx`, `/app/tasks`          |
+## The one prompt
 
-A project keeps the shapes and replaces the content: rename or delete `notes/` once its own feature exists, and build Tasks (or delete it) the same way as Notes.
+:::prompt{title="Paste this into your coding agent"}
+```text
+Add a "<feature>" feature modelled on Notes: table, use cases with permissions, plan limit,
+trash, audit and product events, privacy catalog, tRPC procedures, MCP tools, list and
+detail screens with a palette search, and tests at every layer. Follow
+docs/guides/how-to-add-a-feature.md and check it against docs/reference/adding-a-feature.md.
+```
+:::
 
-## Steps, with Notes as the example
+## The steps
 
-| #   | Step              | Notes does                                                                                                                                                                                                                                                                                                                                   | Rule                                                                                   |
-| --- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| 1   | Feature folder    | `packages/features/src/notes/` with `index.ts` (the barrel), `domain/` and one use case per file; re-exported from `packages/features/src/index.ts`                                                                                                                                                                                          | [Feature layout](../architecture/overview.md#feature-layout)                           |
-| 2   | Tables            | `notes.schema.ts`: `notes` and `note_comments`, `workspace_id` NOT NULL with `ON DELETE CASCADE`, an index starting with it, `created_by`/`updated_by` for attribution only; added to `database.ts`; in the starter, `0000_init` regenerated to include them (a project with real data adds a numbered migration with `bun run db:generate`) | [how-to-setup-d1.md](how-to-setup-d1.md#changing-the-schema)                           |
-| 3   | Domain rules      | `domain/note-input.ts` (zod input schemas and limits), `note-summary.ts` (excerpt, API shape), `errors.ts` (`NoteNotFoundError`, kind `not_found`), each with a `.test.ts`                                                                                                                                                                   | Pure: no I/O, time or ids                                                              |
-| 4   | Permissions       | `notes.read`, `notes.write`, `notes.delete` in `ACTIONS` (`workspaces/domain/permissions.ts`) with a domain test; every use case starts with `requirePermission(actor, …)`                                                                                                                                                                   | [Tenancy and authorization](../architecture/overview.md#tenancy-and-authorization)     |
-| 5   | Use cases         | `createNote`, `listNotes`, `getNote`, `updateNote`, `trashNote`, `addNoteComment`: `(deps, actor, input)`, every query filtered by the actor's workspace                                                                                                                                                                                     | One exported function per file                                                         |
-| 6   | A plan limit      | Metric `notes` (current, live notes) in `billing/domain/catalog.ts` with a limit in every plan (Free 50, Pro unlimited), measured by `countWorkspaceNotes` (mapped in `billing/measure-metric.ts`); `createNote` calls `billing.requireLimit(workspaceId, "notes", 1)` after the permission                                                  | [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)         |
-| 7   | Trash             | `deleted_at`/`deleted_by` and the partial index; `noteTrash` (`notes/trash.ts`) in `TRASH_CATALOG`, `note` in `AUDIT_TRASH_TARGET_TYPES`; reads use `liveIn`; restore checks the limit (`checkRestore`); comments go with their note                                                                                                         | [how-to-use-trash.md](how-to-use-trash.md#making-a-table-trashable)                    |
-| 8   | Audit             | `note.created`, `note.updated` (which fields), `note.commented` (the comment id) in the audit catalog with examples in `audit-event.test.ts`; never the text; `notes` in `AUDITED_FEATURES`                                                                                                                                                  | [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)                             |
-| 9   | Product analytics | `notes.created` with a length bucket (`domain/analytics-events.ts`), registered in `analytics-events.ts`, tracked after the insert                                                                                                                                                                                                           | [how-to-setup-product-analytics.md](how-to-setup-product-analytics.md#adding-an-event) |
-| 10  | Privacy           | `notes` and `note_comments` in `DATA_CATALOG` (exported columns, `workspace-cascade` erasure)                                                                                                                                                                                                                                                | [how-to-handle-data-privacy.md](how-to-handle-data-privacy.md)                         |
-| 11  | tRPC              | `notesRouter` (`list`, `search`, `get`, `create`, `update`, `delete`, `comments.add`), all `workspaceProcedure`s that call one use case; `notes` in `WORKSPACE_ROUTERS` of `workspace-scope.test.ts`                                                                                                                                         | Procedures are adapters                                                                |
-| 12  | MCP               | `list_notes`, `search_notes`, `get_note`, `create_note`, `update_note`, `delete_note`, `add_note_comment` in `server/mcp/tools.ts`, descriptions written for the model                                                                                                                                                                       | [how-to-setup-mcp.md](how-to-setup-mcp.md#adding-a-tool)                               |
-| 13  | Rate limits       | The mutations use the default `mutation.user` (60 a minute per user): they send no mail and cost nothing, so no policy of their own                                                                                                                                                                                                          | [how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md)           |
-| 14  | Components        | `NoteList`, `NoteListSkeleton`, `NoteEditor`, `PlaceholderNotice` in `packages/ui/src/components/patterns/`, stories with `play` tests for each interaction and state                                                                                                                                                                        | [packages/ui/CONVENTIONS.md](../../packages/ui/CONVENTIONS.md)                         |
-| 15  | Screens           | `NotesPage` (list, search, new note, `BillingLimitPrompt` on `limit_reached`) and `NoteDetailPage` (edit, `CommentThread`, move to trash with undo); routes in `components/app/routes.tsx`, the sidebar entry and top bar title (`navigation.ts`), a command palette search provider                                                         | Every data view handles loading, empty, error and content (`DataState`)                |
-| 16  | Tests             | Domain tests; an integration test per use case and for `noteTrash` (real D1); `apps/web/test/api/notes.test.ts` (tRPC as members, `/mcp`, the limit refusal, `expectCrossWorkspaceDenied` for every procedure); `test/e2e/notes.spec.ts`                                                                                                     | [testing.md](../architecture/testing.md)                                               |
-| 17  | Docs              | This guide, the feature catalogs above, the QA checklist section                                                                                                                                                                                                                                                                             | [processes/documentation.md](../processes/documentation.md)                            |
+:::steps
+1. **Model it:** a folder in `packages/features/src/<feature>/`, its tables with `workspace_id` on every row, domain rules with tests.
+2. **Use cases:** one per action, each starting with `requirePermission(actor, "<feature>.<action>")`, then the plan's limit, the change, the audit event and the product event.
+3. **Plug it in:** trash, the privacy catalog, tRPC procedures (`workspaceProcedure`), an MCP tool per procedure.
+4. **Screens:** components with stories in `packages/ui`, pages and routes in the app, a sidebar entry, a palette search.
+5. **Tests:** domain, integration against a real database, API (including cross-workspace denial), a browser journey.
+   :::
 
-## Navigation and the command palette
+:::decision{title="The architecture tests are the checklist"}
+They fail when a feature misses its audit events, privacy catalog entries, trash support, rate limits, agent tools or workspace scoping, so "done" is what CI says.
+:::
 
-The signed-in app has one list of its destinations, `apps/web/src/components/app/navigation.ts` (`appDestinations`, with the settings sections spliced in from `components/settings/sections.ts`). The sidebar, the top bar title and the command palette's **Navigate** group all read it, filtered by mode, workspace kind, role (`apps/web/src/lib/workspace-permissions.ts`, a tested copy of the permission map), `BILLING` and the admin flag. A new page adds its route in `routes.tsx` and an entry there; `navigation.test.ts` fails when a route has neither an entry nor a reason in `NOT_DESTINATIONS`. Hiding an entry is a convenience: the server still checks every action.
+## Pages and the command palette
 
-The sidebar has two menus, both built from the same list:
+The sidebar, the top bar title and the palette's **Navigate** group all read one list, `apps/web/src/components/app/navigation.ts`: a new page adds its route and an entry there. A feature people look things up in adds a search provider, as Notes does ([searching from the palette](../reference/adding-a-feature.md#searching-from-the-command-palette)).
 
-| Menu                                                     | Contents (`navigation.ts`)                                                                                                                                                                                                                                                                                                                                 |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Workspace menu** (top, `WorkspaceSwitcher`)            | Only workspace things: the workspaces with the current one checked and **Create workspace** (multi mode), then `workspaceMenuEntries`: **Workspace settings** (roles that may manage the workspace) and **Members** (shared workspaces). In personal and single mode there is no list, only the entries the mode allows.                                   |
-| **Profile menu** (footer avatar and name, `ProfileMenu`) | Opens upward. The person's name and email, then `profileMenuEntries`: **Account settings**, **Security**, **Connected agents**, **Notifications**, **Appearance**, **Component library** (new tab), **Docs**, **Admin portal** (platform admins with `ADMIN_PORTAL=on`), then **Stop impersonating** (while an admin impersonates) and **Sign out**, last. |
+:::gotcha{title="Links between app pages route client-side"}
+Use a router `<Link>` or `navigate()`, never a plain `<a href="/app/…">`: `test/architecture/spa-links.test.ts` fails on a full-page reload.
+:::
 
-Collapsed, the profile menu is the avatar with the name in a tooltip; in the mobile drawer a pick also closes the drawer. Sign out and the theme are the same actions in the profile menu, its Appearance page and the command palette (`use-nav-context.ts`). A new account page goes in `profileMenuEntries`, a new workspace page in `workspaceMenuEntries`.
+## Reference
 
-Links between /app pages route client-side: a router `<Link>` (or `SidebarMenuItem asChild` around one), or `navigate()`. A plain `<a href="/app/…">` or `window.location` to an /app path reloads the whole document; `test/architecture/spa-links.test.ts` fails on one, and `test/e2e/spa-navigation.spec.ts` clicks through the settings sections and the sidebar checking that the page never reloads. Document loads stay plain links: the docs, the component library, the admin portal, `/api/*`, downloads, OAuth and consent, sign-out, and Astro pages such as `/verify-email`.
-
-The browser tab's title is the page's title from the same list, then `brand.titleSeparator` and the brand ("Dashboard · Starter", `documentTitle`), set by `AppLayout` and, before the SPA starts, by `pages/app/[...path].astro`. A page titled by its record (one note) calls `usePageTitle(title)` (`components/app/page-title.ts`).
-
-The command palette (⌘K on macOS, Ctrl+K elsewhere, or **Search** in the top bar; full screen on phones) shows, in this order: **Navigate**, one group per search provider (**Notes**), **Workspaces** (multi mode) and **Actions** (new note, invite member if allowed, theme, docs, changelog, sign out). It lives in `apps/web/src/components/app/command-palette/` and renders `AppCommandPalette` from `packages/ui`. It reports `app.command_palette_opened` (shortcut or trigger) and `app.command_palette_item_selected` (the item's kind only, never the query).
-
-### Searching from the command palette
-
-A feature whose records people look up adds a search provider, the way Notes does:
-
-1. A use case that searches the actor's workspace: `requirePermission(actor, "<feature>.read")`, live rows only (`liveIn`), a capped result (`searchNotes`, `notes/search-notes.ts`: title and body, `LIKE`, at most 20 hits, title matches first), with an input schema and an integration test that covers other workspaces and trashed rows.
-2. A `workspaceProcedure` query that calls it (`notes.search`), its MCP tool (`search_notes`), an API test with `expectCrossWorkspaceDenied`.
-3. An entry in `paletteSearchProviders` (`apps/web/src/components/app/command-palette/search-providers.ts`): `id`, `heading` (the group title), `kind` (add it to `COMMAND_PALETTE_ITEM_KINDS` in `product-analytics/domain/analytics-events.ts`), `icon`, `minQueryLength`, `visible` (the read permission, through `clientCan`) and `search(query, { workspaceId, signal })`, which returns `{ id, label, hint, to }` hits.
-
-The palette debounces typing (200 ms), aborts stale requests, and shows the provider's loading, error (with Try again) and no-match states. `LIKE '%…%'` cannot use an index, so a search scans the workspace's rows (the `workspace_id` index narrows it to them); that is fine for placeholder-sized workspaces. A project with large ones adds an FTS5 virtual table in a migration instead.
-
-## Architecture tests
-
-The architecture tests catch most missed steps: `use-cases.test.ts` and `test-presence.test.ts` (a test per use case and procedure), `workspace-scope.test.ts`, `trash.test.ts`, `audit-coverage.test.ts`, `entitlements.test.ts`, `privacy.test.ts`, `product-analytics.test.ts` and `parity.test.ts` (an MCP tool per procedure).
-
-## Deploying a new table
-
-The starter keeps one regenerated `0000_init` and no data migrations: an environment without real data is reset to the new `0000_init` before the deploy ([how-to-setup-d1.md](how-to-setup-d1.md#changing-the-schema)). A project with real data adds a numbered migration instead; the deploy workflow applies migrations (`wrangler d1 migrations apply DB --remote`) before the code, so the tables exist when the Worker that reads them starts. A new current metric is measured from the first request: an empty table measures 0.
-
-## Removing Notes from a project
-
-Delete `packages/features/src/notes/`, its lines in `database.ts`, `index.ts`, `trash-catalog.ts`, `analytics-events.ts`, `data-catalog.ts`, `billing/measure-metric.ts` and the `notes` metric of the catalog, the `notes.*` actions, the `note.*` audit actions and target, `notes-router.ts` and its tools, the screens, the `notes` entry in `navigation.ts` and in `paletteSearchProviders` (and the `note` palette item kind), the dashboard's "Write your first note" step, and the tests. Regenerate `0000_init` (or, with real data, add a migration that drops the tables once no deployed code reads them) ([how-to-setup-d1.md](how-to-setup-d1.md)).
+The placeholder apps, all seventeen steps as Notes does them, navigation and the palette, architecture tests, deploying a new table and removing Notes: [Adding a feature reference](../reference/adding-a-feature.md).

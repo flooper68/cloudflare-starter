@@ -1,6 +1,7 @@
 import {
   AcceptInvitationCard,
   type AcceptInvitationState,
+  hydrationGated,
 } from "@cloudflare-starter/ui";
 import { useState } from "react";
 
@@ -18,7 +19,7 @@ export interface AcceptInvitationProps {
 }
 
 /** The invitation page's island: accepts through tRPC, then opens the app in that workspace. */
-export function AcceptInvitation({ token, ...props }: AcceptInvitationProps) {
+function AcceptInvitationView({ token, ...props }: AcceptInvitationProps) {
   const [state, setState] = useState(props.state);
   const back = `?next=${encodeURIComponent(`/invite/${token}`)}`;
 
@@ -42,3 +43,6 @@ export function AcceptInvitation({ token, ...props }: AcceptInvitationProps) {
     />
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const AcceptInvitation = hydrationGated(AcceptInvitationView);

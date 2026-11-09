@@ -1,4 +1,8 @@
-import { CheckInboxCard, type ResendResult } from "@cloudflare-starter/ui";
+import {
+  CheckInboxCard,
+  hydrationGated,
+  type ResendResult,
+} from "@cloudflare-starter/ui";
 
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { verifiedCallbackURL } from "@/lib/auth-links";
@@ -33,7 +37,7 @@ export async function resendVerification(
  * `/verify-email` for a signed-in user whose address is not verified yet (the dashboard's
  * checklist links here): resend, or change the address in the account settings.
  */
-export function CheckInbox({
+function CheckInboxView({
   email,
   next,
 }: {
@@ -48,3 +52,6 @@ export function CheckInbox({
     />
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const CheckInbox = hydrationGated(CheckInboxView);

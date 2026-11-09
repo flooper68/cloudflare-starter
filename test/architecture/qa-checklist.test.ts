@@ -1,5 +1,5 @@
 /**
- * The scripted QA checklist (docs/guides/how-to-qa-a-deployment.md) covers every
+ * The scripted QA checklist (apps/web/test/qa/README.md#the-checklist) covers every
  * user-facing feature: each guide in docs/guides/ is linked from it, or exempt here with
  * the reason it describes no feature a person can try on a deployment.
  */
@@ -9,12 +9,17 @@ import { describe, expect, it } from "vitest";
 
 import { filesUnder, ROOT, read } from "./repo";
 
-const CHECKLIST = "docs/guides/how-to-qa-a-deployment.md";
+/**
+ * The checklist lives with the QA suite (apps/web/test/qa/README.md); a project that
+ * stripped the suite keeps a manual one in the QA guide (starter-only.json).
+ */
+const CHECKLIST = existsSync(join(ROOT, "apps/web/test/qa/README.md"))
+  ? "apps/web/test/qa/README.md"
+  : "docs/guides/how-to-qa-a-deployment.md";
 
 /** Guides with no user-facing feature of their own, and why. */
 const EXEMPT: Readonly<Record<string, string>> = {
   "how-to-qa-a-deployment.md": "the checklist itself",
-  "how-to-setup-web-app.md": "first-time local setup and deploy steps",
   "how-to-start-a-project.md":
     "starting a project from the template; nothing in the app",
   "how-to-setup-ci.md":
@@ -38,9 +43,11 @@ const guides = filesUnder("docs/guides", /\.md$/).map(
 );
 const checklist = read(CHECKLIST);
 const linked = new Set(
-  [...checklist.matchAll(/\]\(([\w.-]+\.md)(?:#[\w-]+)?\)/g)].map(
-    (match) => match[1] as string
-  )
+  [
+    ...checklist.matchAll(
+      /\]\((?:(?:[\w./-]*\/)?docs\/guides\/|(?:\.\/)?)(how-to-[\w.-]+\.md)(?:#[\w-]+)?\)/g
+    ),
+  ].map((match) => match[1] as string)
 );
 
 describe("QA checklist", () => {

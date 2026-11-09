@@ -1,6 +1,6 @@
 /**
  * The QA outbox, the QA cleanup and the QA admin through the real handlers
- * (docs/guides/how-to-qa-a-deployment.md#the-qa-outbox): QA_BYPASS=on in the API test
+ * (apps/web/test/qa/README.md#the-qa-outbox): QA_BYPASS=on in the API test
  * bindings with QA_EMAIL_DOMAIN qa.flooper.me and a test QA_TOKEN.
  */
 import {

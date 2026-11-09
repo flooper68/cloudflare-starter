@@ -1,7 +1,7 @@
 /**
  * The QA admin: `qa+admin@<QA_EMAIL_DOMAIN>`, self-provisioned like every QA account (its
  * password is derived from the QA token, support/password.ts) and promoted by the app
- * while QA_BYPASS=on (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin). The
+ * while QA_BYPASS=on (docs/reference/abuse-protection.md#the-qa-admin). The
  * global setup makes sure it exists and is verified (`ensureQaAdmin`); journeys sign in as
  * it with `signInQaAdmin(page)` and act only on the run's own accounts and workspaces.
  * There is no owner step and no skip.

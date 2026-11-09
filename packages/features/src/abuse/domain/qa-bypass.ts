@@ -1,7 +1,7 @@
 /**
  * The automated QA suite's bypass of the human check (QA_BYPASS=on): a request that names
  * an address in the QA mail domain and carries the QA token in this header skips Turnstile,
- * and only Turnstile. docs/guides/how-to-configure-abuse-protection.md#qa-bypass
+ * and only Turnstile. docs/reference/abuse-protection.md#qa-bypass
  */
 export const QA_TOKEN_HEADER = "x-qa-token";
 
@@ -46,7 +46,7 @@ export function isQaEmail(email: string | null, domain: string): boolean {
 /**
  * The QA admin's address, `qa+admin@<domain>`: with QA_BYPASS=on the app promotes exactly
  * this account to platform admin once its address is verified, and demotes it when the
- * bypass is off (docs/guides/how-to-configure-abuse-protection.md#the-qa-admin).
+ * bypass is off (docs/reference/abuse-protection.md#the-qa-admin).
  */
 export function qaAdminEmail(domain: string): string {
   return `qa+admin@${domain.toLowerCase()}`;
