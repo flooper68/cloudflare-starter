@@ -55,7 +55,7 @@ const link =
         )
       }
       <a class={link} href={LINKS.changelog}>Changelog</a>
-      <a class={link} href={LINKS.github}>GitHub</a>
+      <a class={link} href={LINKS.github} data-track-cta="github" data-track-placement="header">GitHub</a>
     </nav>
     <slot name="search" />
     <span class="flex-1 max-md:hidden"></span>
@@ -77,6 +77,8 @@ const link =
             <a
               class={buttonVariants({ variant: "primary", size: "sm" })}
               href={LINKS.demo}
+              data-track-cta="demo"
+              data-track-placement="header"
             >
               Try the demo
             </a>

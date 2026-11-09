@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Building2,
   Flag,
   LayoutDashboard,
@@ -19,6 +20,7 @@ export interface AdminNavItem {
 /** The admin sidebar, in order. A new admin page adds its entry here (and its route to adminRoutes). */
 export const adminNav: readonly AdminNavItem[] = [
   { to: "/admin/overview", label: "Overview", icon: <LayoutDashboard /> },
+  { to: "/admin/analytics", label: "Analytics", icon: <BarChart3 /> },
   { to: "/admin/users", label: "Users", icon: <Users /> },
   {
     to: "/admin/workspaces",

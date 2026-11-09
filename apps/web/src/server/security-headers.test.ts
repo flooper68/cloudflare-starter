@@ -98,12 +98,16 @@ describe("page policy", () => {
   it("allows the Web Analytics beacon only with WEB_ANALYTICS=cloudflare", () => {
     const policy = pagePolicy({ ...deployed, webAnalytics: true });
     expect(directive(policy, "script-src")).toContain(
-      "https://static.cloudflareinsights.com"
+      "https://static.cloudflareinsights.com/beacon.min.js"
     );
     expect(directive(policy, "connect-src")).toEqual([
       "'self'",
-      "https://cloudflareinsights.com",
+      "https://cloudflareinsights.com/cdn-cgi/rum",
     ]);
+    // Exactly the beacon and its endpoint: never a whole origin of either.
+    expect(directive(policy, "script-src")).not.toContain(
+      "https://static.cloudflareinsights.com"
+    );
     expect(pagePolicy(deployed)).not.toContain("cloudflareinsights");
   });
 

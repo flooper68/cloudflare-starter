@@ -2,14 +2,18 @@
 // JobQueue has no noop adapter on purpose (see ports/job-queue.ts).
 // Vendor SDKs may be imported only inside their own folder (dependency-cruiser rule
 // vendor-sdks-only-in-adapters).
+// Reading analytics back (the admin portal's Analytics page).
 export {
   ANALYTICS_ENGINE_FIXED_BLOBS,
   ANALYTICS_ENGINE_LAYOUT,
   type AnalyticsEngineMetricsOptions,
   type AnalyticsEngineProductAnalyticsOptions,
+  CLOUDFLARE_API,
+  type CloudflareAnalyticsReaderConfig,
   type CloudflareEmailConfig,
   createAnalyticsEngineMetrics,
   createAnalyticsEngineProductAnalytics,
+  createCloudflareAnalyticsReader,
   createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
@@ -39,6 +43,7 @@ export {
   type CapturedError,
   chudnovskyPi,
   createFakePiComputer,
+  createMemoryAnalyticsReader,
   createMemoryBillingProvider,
   createMemoryEmail,
   createMemoryErrorReporter,
@@ -51,6 +56,7 @@ export {
   createMemoryRateLimiter,
   createMemoryTracer,
   createMemoryZip,
+  type MemoryAnalyticsReader,
   type MemoryBillingProvider,
   type MemoryEmail,
   type MemoryErrorReporter,

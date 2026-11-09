@@ -8,3 +8,15 @@ export class InvalidAnalyticsEventError extends DomainError {
     super("invalid_input", message, InvalidAnalyticsEventError.CODE);
   }
 }
+
+/**
+ * The analytics report could not read its events (the token was refused, the API failed):
+ * the admin sees why and can retry.
+ */
+export class AnalyticsUnavailableError extends DomainError {
+  static readonly CODE = "ANALYTICS_UNAVAILABLE";
+
+  constructor(message: string) {
+    super("unavailable", message, AnalyticsUnavailableError.CODE);
+  }
+}

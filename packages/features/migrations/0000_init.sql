@@ -516,6 +516,14 @@ CREATE TABLE `erasure_records` (
 	`completed_at` integer
 );
 --> statement-breakpoint
+CREATE TABLE `analytics_milestones` (
+	`user_id` text NOT NULL,
+	`milestone` text NOT NULL,
+	`reached_at` integer NOT NULL,
+	PRIMARY KEY(`user_id`, `milestone`),
+	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
 CREATE TABLE `qa_outbox` (
 	`id` text PRIMARY KEY NOT NULL,
 	`recipient` text NOT NULL,

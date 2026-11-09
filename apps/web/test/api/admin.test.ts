@@ -10,6 +10,7 @@ import { invoke, PROCEDURE_PATHS } from "@/server/mcp/tools";
 import { buildPlatform } from "@/server/platform";
 import { serializeBootstrap, spaBootstrap } from "@/server/spa-bootstrap";
 
+import { ANALYTICS_FIXTURE } from "../analytics-fixture";
 import {
   APP_URL,
   browserCallerFor,
@@ -103,6 +104,7 @@ async function mcpCall(
       );
   return JSON.parse(json).result as {
     isError?: boolean;
+    content?: { type: string; text: string }[];
     structuredContent: Record<string, unknown> & {
       error?: { code: string; message: string };
     };
@@ -695,6 +697,40 @@ describe("admin tools through /mcp", () => {
     expect(
       (audit.events as { action: string }[]).map((e) => e.action)
     ).toContain("user.deleted");
+  });
+
+  it("admin_get_analytics: not configured, then the report as untrusted data", async () => {
+    const notConfigured = await mcpCall(
+      callerFor(admin),
+      "admin_get_analytics",
+      { days: 7 }
+    );
+    expect(notConfigured.isError).toBeFalsy();
+    expect(notConfigured.structuredContent).toEqual({
+      status: "not_configured",
+      missing: ["ANALYTICS_READ_TOKEN", "ANALYTICS_ACCOUNT_ID"],
+    });
+
+    // With the fixture's token and account (test/analytics-fixture.ts via outbound.ts).
+    const configured = await mcpCall(
+      callerFor(admin, {
+        ...env,
+        ANALYTICS_READ_TOKEN: ANALYTICS_FIXTURE.token,
+        ANALYTICS_ACCOUNT_ID: ANALYTICS_FIXTURE.accountId,
+      }),
+      "admin_get_analytics",
+      { days: 30 }
+    );
+    expect(configured.isError).toBeFalsy();
+    expect(configured.structuredContent).toMatchObject({
+      status: "ok",
+      days: 30,
+    });
+    // Referrer hosts come from visitors: the text the model reads is fenced as data.
+    const text = configured.content?.[0]?.text ?? "";
+    expect(text.startsWith("<untrusted-data>\n")).toBe(true);
+    expect(text.endsWith("\n</untrusted-data>")).toBe(true);
+    expect(text).toContain("news.ycombinator.com");
   });
 
   it("MCP: non-admins get NOT_FOUND, stale admins REAUTH_REQUIRED", async () => {

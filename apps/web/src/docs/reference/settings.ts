@@ -320,6 +320,46 @@ export const SETTINGS: readonly Setting[] = [
     doc: "docs/guides/how-to-setup-product-analytics.md",
   },
   {
+    name: "ANALYTICS_READ_TOKEN",
+    group: "Observability",
+    kind: "secret",
+    description:
+      "Optional: an account API token with Account Analytics Read, for the admin Analytics page.",
+    doc: "docs/guides/how-to-setup-product-analytics.md",
+  },
+  {
+    name: "ANALYTICS_ACCOUNT_ID",
+    group: "Observability",
+    kind: "secret",
+    description:
+      "Optional: the Cloudflare account id the analytics read token reads (32 hex characters).",
+    doc: "docs/guides/how-to-setup-product-analytics.md",
+  },
+  {
+    name: "ANALYTICS_EVENTS_DATASET",
+    group: "Observability",
+    kind: "var",
+    description:
+      "The product events dataset's name (the ANALYTICS_EVENTS binding's), for the admin Analytics page.",
+    doc: "docs/guides/how-to-setup-product-analytics.md",
+  },
+  {
+    name: "METRICS_DATASET_NAME",
+    group: "Observability",
+    kind: "var",
+    description:
+      "The metrics dataset's name (the METRICS_DATASET binding's): errors and latency per route on the Analytics page.",
+    doc: "docs/guides/how-to-setup-product-analytics.md",
+  },
+  {
+    name: "WEB_ANALYTICS_SITE_TAG",
+    group: "Observability",
+    kind: "var",
+    description:
+      "Optional: the Web Analytics site tag, to show its visits and referrers on the Analytics page.",
+    doc: "docs/guides/how-to-setup-product-analytics.md",
+  },
+  {
     name: "FEATURE_FLAGS",
     group: "Observability",
     kind: "var",

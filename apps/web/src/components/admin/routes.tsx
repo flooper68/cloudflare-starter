@@ -2,6 +2,7 @@ import { createRoute, redirect } from "@tanstack/react-router";
 
 import { rootRoute } from "@/components/app/root-route";
 import { AdminLayout } from "./AdminLayout";
+import { AdminAnalyticsPage, periodOf } from "./pages/AdminAnalyticsPage";
 import { AdminAuditPage } from "./pages/AdminAuditPage";
 import { AdminFlagsPage } from "./pages/AdminFlagsPage";
 import { AdminOverviewPage } from "./pages/AdminOverviewPage";
@@ -34,6 +35,15 @@ const overviewRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/admin/overview",
   component: AdminOverviewPage,
+});
+
+const analyticsRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/admin/analytics",
+  component: AdminAnalyticsPage,
+  // `?days=1|7|30`: the period, kept in the URL so a link and Back show the same report.
+  validateSearch: (search: Record<string, unknown>): { days?: 1 | 7 | 30 } =>
+    search.days === undefined ? {} : { days: periodOf(search) },
 });
 
 const usersRoute = createRoute({
@@ -93,6 +103,7 @@ export const adminRoutes = [
   privacyRoute,
   indexRoute,
   overviewRoute,
+  analyticsRoute,
   usersRoute,
   userRoute,
   workspacesRoute,

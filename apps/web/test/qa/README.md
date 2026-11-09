@@ -27,6 +27,7 @@ The [QA checklist](README.md#the-checklist) as unattended Playwright journeys, o
 | Trash                                                | `trash.qa.ts`           | Delete, restore (downloads again), delete forever (link answers 404).                                                                                                                                                         |
 | Privacy                                              | `privacy.qa.ts`         | Personal and workspace exports: ready mail, ZIP contents (manifest, NDJSON, `files/`, no secrets), same archive from the page, the mail and the bell, 404 signed out. Erasure is the cleanup.                                 |
 | Admin portal                                         | `admin.qa.ts`           | As the QA admin: overview, user detail, suspend and lift, impersonate and stop, plan, add-on and override on the run's own workspace, audit log, read-only pages.                                                             |
+| Analytics                                            | `analytics.qa.ts`       | As the QA admin, read-only: the Analytics page shows the funnel (24 hours) or the settings to set, never an error; the public pages send no site events from the suite's automated browser.                                   |
 | MCP                                                  | `mcp.qa.ts`             | Registration, consent page, `whoami`, `list_workspaces`, `list_files`, `list_connected_agents` (`thisConnection: true`), Disconnect, token refused.                                                                           |
 | Notes and Tasks                                      | `notes-tasks.qa.ts`     | Placeholder notice, create, edit, comment, search, trash and restore, dashboard step; the sample board.                                                                                                                       |
 | Dashboard and system screens                         | `dashboard.qa.ts`       | Get started, in-app 404, offline (context offline).                                                                                                                                                                           |
@@ -331,6 +332,18 @@ Guides: [how-to-use-admin-portal.md](../../../../docs/guides/how-to-use-admin-po
 
 Expected: destructive actions ask for a recent sign-in (and the admin's second factor when enrolled); an admin cannot act on their own account.
 Mail: **Your password was changed** or security notices only if those actions are taken; none for suspension.
+
+### Analytics
+
+Guide: [how-to-setup-product-analytics.md](../../../../docs/guides/how-to-setup-product-analytics.md). As the QA admin; read-only.
+
+1. `/admin/analytics`: the funnel (visits to returns) with the period switch, or "Analytics are not connected" naming the settings to set. Never an error state.
+2. Switch to 24 hours: the URL says `?days=1`; Back returns to 7 days.
+3. Open `/` and `/docs/` in an automated browser: no request to `/api/site-events` (automated browsers are left out); in a normal browser one batch per page view, `204`.
+4. QA accounts (`@QA_EMAIL_DOMAIN`) appear in no funnel count: their actions write no product events.
+
+Expected: no CSP violation with `WEB_ANALYTICS=cloudflare` on the public pages (the beacon and its report endpoint only).
+Mail: none.
 
 ### MCP: connect Claude and call a tool
 

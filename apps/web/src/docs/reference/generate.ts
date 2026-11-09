@@ -213,6 +213,8 @@ export function flagsMarkdown(rows: readonly FlagRow[]): string {
 export interface EventRow {
   readonly name: string;
   readonly client: boolean;
+  /** Sent anonymously by the public pages (`POST /api/site-events`). */
+  readonly site?: boolean;
   readonly description: string;
 }
 
@@ -221,7 +223,7 @@ export function eventsMarkdown(rows: readonly EventRow[]): string {
     ["Event", "Sent from", "What happened"],
     rows.map((row) => [
       code(row.name),
-      row.client ? "browser" : "server",
+      row.client ? "app (browser)" : row.site ? "public pages" : "server",
       row.description,
     ])
   );

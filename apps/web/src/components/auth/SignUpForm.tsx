@@ -20,7 +20,8 @@ import {
   authErrorMessage,
   nextPath,
 } from "@/lib/auth-client";
-import { verifiedCallbackURL } from "@/lib/auth-links";
+import { signUpFailureReason, verifiedCallbackURL } from "@/lib/auth-links";
+import { trackSiteEvent } from "@/lib/site-analytics";
 import { resendVerification } from "./CheckInbox";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import {
@@ -87,10 +88,22 @@ function SignUpFormView({
     setError(null);
 
     if (!validateForm()) {
+      // The funnel's sign-up drop-off (anonymous site events, never the form's values).
+      trackSiteEvent(
+        "auth.sign_up_failed",
+        { reason: "invalid" },
+        { once: "sign-up:invalid" }
+      );
       return;
     }
 
     setLoading(true);
+    // Once per page view: a retry after an error is the same attempt.
+    trackSiteEvent(
+      "auth.sign_up_started",
+      { method: "password" },
+      { once: "sign-up:started" }
+    );
 
     // Signs the new user in right away, unless email verification is required:
     // then there is no session token and the verification link signs them in. The link
@@ -105,6 +118,11 @@ function SignUpFormView({
     guard.settle();
 
     if (signUpError) {
+      trackSiteEvent(
+        "auth.sign_up_failed",
+        { reason: signUpFailureReason(signUpError) },
+        { now: true }
+      );
       // A 429 shows the rate-limit notice instead (useAuthGuard).
       if (signUpError.status !== 429) {
         setError(authErrorMessage(signUpError, "Unable to sign up."));
@@ -226,7 +244,17 @@ function SignUpFormView({
         ) : null}
 
         {google ? (
-          <GoogleSignInButton onError={setError} search={search} />
+          <GoogleSignInButton
+            onError={setError}
+            search={search}
+            onStart={() =>
+              trackSiteEvent(
+                "auth.sign_up_started",
+                { method: "google" },
+                { now: true }
+              )
+            }
+          />
         ) : null}
       </CardContent>
 

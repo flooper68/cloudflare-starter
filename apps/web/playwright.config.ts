@@ -86,8 +86,9 @@ const local = defineConfig({
   ],
   webServer: [
     {
-      // Local test keys, with no dependency on Cloudflare's live widget/Siteverify.
-      env: { E2E_LOCAL_TURNSTILE: "1" },
+      // Local test keys, with no dependency on Cloudflare's live widget/Siteverify, and
+      // canned answers of Cloudflare's analytics APIs (test/e2e/analytics-vite.mjs).
+      env: { E2E_LOCAL_TURNSTILE: "1", E2E_LOCAL_ANALYTICS: "1" },
       // --ignore-lock keeps astro dev in the foreground (Astro backgrounds it when an AI agent
       // runs it), so Playwright owns the process and stops it after the run.
       command: `bun run dev --ignore-lock --port ${port}`,

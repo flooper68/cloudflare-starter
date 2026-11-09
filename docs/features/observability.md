@@ -2,7 +2,7 @@
 
 ::reviewed{date="2026-11-08"}
 
-Know what your app is doing without adding a service: every request and job is logged and measured under one trace id, users quote a short reference instead of a stack trace, health checks answer your uptime monitor, and product analytics count usage without personal data.
+Know what your app is doing without adding a service: every request and job is logged and measured under one trace id, users quote a short reference instead of a stack trace, health checks answer your uptime monitor, and product analytics count usage without personal data or cookies, with the funnel from visit to return on the admin portal's Analytics page.
 
 ::video{id="infra" poster="admin-overview" title="Observability & ops in 60 seconds"}
 

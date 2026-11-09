@@ -45,6 +45,7 @@ Make me a platform admin on production: run `bun run setup:admin --email <my add
 :::tabs
 ```text title="In the app"
 Admin › Overview       users, sign-ups, workspaces, plans, health
+Admin › Analytics      the product funnel, sources, features tried
 Admin › Users          search, suspend, sign out everywhere, reset password, impersonate
 Admin › Workspaces     billing panel, assign an owner, delete
 Admin › Flags, Audit, Data requests, Settings (read-only)

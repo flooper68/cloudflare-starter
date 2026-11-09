@@ -137,6 +137,17 @@ ANALYTICS=analytics-engine
 ANALYTICS_ID_SECRET=local-analytics-id-secret-change-me-000
 WEB_ANALYTICS=none
 WEB_ANALYTICS_TOKEN=
+# Reading analytics back, optional: the admin portal's Analytics page (/admin/analytics) and
+# the admin_get_analytics tool query Workers Analytics Engine with the SQL API (the dataset
+# names are vars in wrangler.jsonc). Without these the page says it is not connected.
+# ANALYTICS_READ_TOKEN: secret, an account API token with Account > Account Analytics > Read
+#   only; ANALYTICS_ACCOUNT_ID: your 32-character Cloudflare account id. Locally the datasets
+#   are simulated, so a token here reads the deployed environment's data.
+# WEB_ANALYTICS_SITE_TAG: optional var, the Web Analytics site tag (32 hex characters, in the
+#   dashboard's site URL), to add Cloudflare Web Analytics visits and referrers.
+ANALYTICS_READ_TOKEN=
+ANALYTICS_ACCOUNT_ID=
+WEB_ANALYTICS_SITE_TAG=
 
 # R2 presigned URLs (optional). The FILES binding needs nothing here.
 R2_ACCOUNT_ID=

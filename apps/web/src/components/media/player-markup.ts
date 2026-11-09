@@ -173,6 +173,8 @@ export function walkthroughTree(entry: MediaEntry): MarkupElement {
       class: "wv wv-walkthrough",
       role: "group",
       "aria-label": `Video: ${entry.title}`,
+      // The site's analytics name the video by its id (video-player.ts).
+      "data-video": entry.id,
     },
     h(
       "div",
@@ -286,7 +288,7 @@ export function walkthroughTree(entry: MediaEntry): MarkupElement {
 export function loopTree(entry: MediaEntry): MarkupElement {
   return h(
     "walkthrough-video",
-    { class: "wv wv-loop", "data-loop": true },
+    { class: "wv wv-loop", "data-loop": true, "data-video": entry.id },
     h(
       "div",
       { class: "wv-stage" },

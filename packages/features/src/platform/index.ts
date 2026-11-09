@@ -1,13 +1,17 @@
+// Reading analytics back (the admin portal's Analytics page).
 export {
   ANALYTICS_ENGINE_FIXED_BLOBS,
   ANALYTICS_ENGINE_LAYOUT,
   type AnalyticsEngineMetricsOptions,
   type AnalyticsEngineProductAnalyticsOptions,
   type CapturedError,
+  CLOUDFLARE_API,
+  type CloudflareAnalyticsReaderConfig,
   type CloudflareEmailConfig,
   chudnovskyPi,
   createAnalyticsEngineMetrics,
   createAnalyticsEngineProductAnalytics,
+  createCloudflareAnalyticsReader,
   createCloudflareEmail,
   createCloudflareJobQueue,
   createCloudflareRateLimiter,
@@ -15,6 +19,7 @@ export {
   createD1FeatureFlags,
   createFakePiComputer,
   createFflateZip,
+  createMemoryAnalyticsReader,
   createMemoryBillingProvider,
   createMemoryEmail,
   createMemoryErrorReporter,
@@ -38,6 +43,7 @@ export {
   ERROR_REPORT_EVENT,
   fromDataPoint,
   MAX_POINTS_PER_FLUSH,
+  type MemoryAnalyticsReader,
   type MemoryBillingProvider,
   type MemoryEmail,
   type MemoryErrorReporter,
@@ -148,6 +154,12 @@ export type {
   UpDownCounter,
   Zip,
   ZipWriter,
+} from "./ports";
+export {
+  AnalyticsReadError,
+  type AnalyticsReader,
+  type AnalyticsReaderRow,
+  type AnalyticsReadFailure,
 } from "./ports";
 export { PiComputerError } from "./ports/pi-computer";
 export { mathRandom } from "./random";

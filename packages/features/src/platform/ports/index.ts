@@ -2,6 +2,12 @@
 // platform/adapters/<vendor>/ implement them; apps/web/src/server/platform.ts picks one.
 // The contract suites (*.contract.ts) are test support and stay out of this barrel.
 
+export {
+  AnalyticsReadError,
+  type AnalyticsReader,
+  type AnalyticsReaderRow,
+  type AnalyticsReadFailure,
+} from "./analytics-reader";
 export type {
   BillingProvider,
   CheckoutInput,

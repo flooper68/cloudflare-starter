@@ -1,5 +1,5 @@
 diff --git a/apps/web/.dev.vars.example b/apps/web/.dev.vars.example
-index e5e71f8..2ca89cc 100644
+index 738ee7b..d10b296 100644
 --- a/apps/web/.dev.vars.example
 +++ b/apps/web/.dev.vars.example
 @@ -108,12 +108,2 @@ QA_BYPASS=off
@@ -135,7 +135,7 @@ index 85a05e8..cb03aea 100644
 -  readonly CONTAINER_DEMO_RUNNER?: string;
    readonly [key: string]: unknown;
 diff --git a/apps/web/src/server/mcp/server.test.ts b/apps/web/src/server/mcp/server.test.ts
-index e8add38..7020744 100644
+index 3412414..6a7bfc0 100644
 --- a/apps/web/src/server/mcp/server.test.ts
 +++ b/apps/web/src/server/mcp/server.test.ts
 @@ -64,3 +64,2 @@ function context(overrides: Partial<Context> = {}): Context {
@@ -147,7 +147,7 @@ index e8add38..7020744 100644
 -    containerRunWorkflows: { start: async () => {} },
      emailOut: noopEmail,
 diff --git a/apps/web/src/server/mcp/tools.ts b/apps/web/src/server/mcp/tools.ts
-index 58489fa..ee34671 100644
+index 52c3568..e068c5f 100644
 --- a/apps/web/src/server/mcp/tools.ts
 +++ b/apps/web/src/server/mcp/tools.ts
 @@ -578,23 +578,2 @@ export const MCP_TOOLS: readonly ToolDefinition[] = [
@@ -174,45 +174,45 @@ index 58489fa..ee34671 100644
 -    "Lists the workspace's container workflow runs, newest first (they expire after 7 days), and whether the demo takes a new run now: on, off, daily_cap_reached or hourly_limit_reached, with the daily cap and the user's hourly limit."
 -  ),
    direct(
-@@ -797,4 +776,2 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
+@@ -804,4 +783,2 @@ export const NON_TRPC_ROUTES: Readonly<Record<string, string>> = {
      "binary upload through the Worker; MCP clients use create_upload_url",
 -  "api/container-runs/[id]/result.ts":
 -    "text download of a container run result through the Worker; MCP clients read the preview and size with get_container_run",
    "api/files/[id].ts":
 diff --git a/apps/web/src/server/trpc/context.ts b/apps/web/src/server/trpc/context.ts
-index ddb41a8..5b27b0d 100644
+index ad775e4..e97ea5b 100644
 --- a/apps/web/src/server/trpc/context.ts
 +++ b/apps/web/src/server/trpc/context.ts
-@@ -23,3 +23,2 @@ import { getAuth } from "@/server/auth";
+@@ -25,3 +25,2 @@ import { getAuth } from "@/server/auth";
  import { billingGateFor, billingProviderFor } from "@/server/billing-provider";
 -import { containerRunWorkflowsFor } from "@/server/container-runs";
  import { getDb } from "@/server/db";
-@@ -100,3 +99,2 @@ export function createAppContext(
+@@ -102,3 +101,2 @@ export function createAppContext(
      notify: notifier,
 -    containerRunWorkflows: containerRunWorkflowsFor(env),
      emailOut: platform.email,
 diff --git a/apps/web/src/server/trpc/init.ts b/apps/web/src/server/trpc/init.ts
-index 89f3847..2ed69c3 100644
+index 281706b..0a1b1af 100644
 --- a/apps/web/src/server/trpc/init.ts
 +++ b/apps/web/src/server/trpc/init.ts
-@@ -8,3 +8,2 @@ import {
+@@ -9,3 +9,2 @@ import {
    type Clock,
 -  type ContainerRunWorkflows,
    type Database,
-@@ -67,4 +66,2 @@ export interface Context {
+@@ -71,4 +70,2 @@ export interface Context {
    readonly flagStore: FeatureFlagStore | null;
 -  /** Starts a container run's Workflow (the container workflow demo). */
 -  readonly containerRunWorkflows: ContainerRunWorkflows;
    /** Sends a notification (the notifications feature's `notify` on the job queue). */
 diff --git a/apps/web/src/server/trpc/router.ts b/apps/web/src/server/trpc/router.ts
-index 25b4699..65d3ff3 100644
+index 5b0fa60..64ca39d 100644
 --- a/apps/web/src/server/trpc/router.ts
 +++ b/apps/web/src/server/trpc/router.ts
-@@ -19,3 +19,2 @@ import { accountRouter } from "./account-router";
+@@ -21,3 +21,2 @@ import { accountRouter } from "./account-router";
  import { adminRouter } from "./admin-router";
 -import { containerRunsRouter } from "./container-runs-router";
  import {
-@@ -93,5 +92,2 @@ export const appRouter = router({
+@@ -95,5 +94,2 @@ export const appRouter = router({
  
 -  // The container workflow demo (Developer demos).
 -  containerRuns: containerRunsRouter,
@@ -253,10 +253,10 @@ index 54eaaee..d9574b8 100644
 -
  export default {
 diff --git a/apps/web/test/api-bindings.ts b/apps/web/test/api-bindings.ts
-index 91072f6..3d9282c 100644
+index a277ffe..1dde251 100644
 --- a/apps/web/test/api-bindings.ts
 +++ b/apps/web/test/api-bindings.ts
-@@ -64,7 +64,2 @@ export const API_TEST_BINDINGS = {
+@@ -72,7 +72,2 @@ export const API_TEST_BINDINGS = {
    PASSKEYS: "on",
 -  // The container workflow demo, as in the develop vars: on, with the fake pi computer (no
 -  // Docker; the Workflow runs in Miniflare). Tests of off or the cap override them.
@@ -306,7 +306,7 @@ index c34691b..61b9716 100644
 -          serviceBindings: { PI_CONTAINER_SERVICE: noPiContainer },
          },
 diff --git a/packages/features/src/abuse/domain/policies.ts b/packages/features/src/abuse/domain/policies.ts
-index 2b344b8..cf84cfe 100644
+index bed47a7..8f2faeb 100644
 --- a/packages/features/src/abuse/domain/policies.ts
 +++ b/packages/features/src/abuse/domain/policies.ts
 @@ -208,14 +208,2 @@ export const RATE_LIMIT_POLICIES = {
@@ -324,25 +324,25 @@ index 2b344b8..cf84cfe 100644
 -      "Container workflow demo runs a user starts (containerRuns.start): each starts a billed container",
 -  },
    "analytics.client": {
-@@ -273,4 +261,2 @@ export const PROCEDURE_POLICIES: Readonly<Record<string, RateLimitPolicyId>> = {
+@@ -284,4 +272,2 @@ export const PROCEDURE_POLICIES: Readonly<Record<string, RateLimitPolicyId>> = {
    "analytics.track": "analytics.client",
 -  // Starts a billed container (the container workflow demo).
 -  "containerRuns.start": "container.run",
  };
-@@ -319,4 +305,2 @@ export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
+@@ -331,4 +317,2 @@ export const RATE_LIMIT_EXEMPT: Readonly<Record<string, string>> = {
    "api/hello.ts": "public read-only example with no state or cost behind it",
 -  "api/container-runs/[id]/result.ts":
 -    "authenticated read of a container run result of the user's own workspace; reads are not limited",
    "api/files/[id].ts":
 diff --git a/packages/features/src/analytics-events.ts b/packages/features/src/analytics-events.ts
-index c028ef6..ae7e12f 100644
+index 89d14ff..e210671 100644
 --- a/packages/features/src/analytics-events.ts
 +++ b/packages/features/src/analytics-events.ts
-@@ -6,3 +6,2 @@
- import { signedUpEvent } from "./accounts";
+@@ -10,3 +10,2 @@ import {
+ } from "./accounts";
 -import { containerRunStartedEvent } from "./container-runs";
  import { fileUploadedEvent } from "./files";
-@@ -21,3 +20,2 @@ export const analyticsEvents = createEventCatalog([
+@@ -35,3 +34,2 @@ export const analyticsEvents = createEventCatalog([
    noteCreatedEvent,
 -  containerRunStartedEvent,
    workspaceCreatedEvent,
@@ -431,7 +431,7 @@ index 8044c24..0f0b293 100644
 -  },
  ]);
 diff --git a/packages/features/src/data-catalog.ts b/packages/features/src/data-catalog.ts
-index 91442ce..b93777b 100644
+index 7575e38..46abfa8 100644
 --- a/packages/features/src/data-catalog.ts
 +++ b/packages/features/src/data-catalog.ts
 @@ -171,45 +171,2 @@ export const DATA_CATALOG: readonly DataEntity[] = [
@@ -481,14 +481,14 @@ index 91442ce..b93777b 100644
 -  },
    ...[
 diff --git a/packages/features/src/database.ts b/packages/features/src/database.ts
-index 3a48bbe..4679af8 100644
+index 7edac15..38b4a62 100644
 --- a/packages/features/src/database.ts
 +++ b/packages/features/src/database.ts
 @@ -8,3 +8,2 @@ import * as auditSchema from "./audit/audit.schema";
  import * as billingSchema from "./billing/billing.schema";
 -import * as containerRunsSchema from "./container-runs/container-runs.schema";
  import * as filesSchema from "./files/files.schema";
-@@ -24,3 +23,2 @@ export const schema = {
+@@ -25,3 +24,2 @@ export const schema = {
    ...billingSchema,
 -  ...containerRunsSchema,
    ...filesSchema,
@@ -550,7 +550,7 @@ index 8e1b764..dbb7911 100644
 -
        "workspaces.member-joined",
 diff --git a/packages/features/src/notifications/get-notification-preferences.integration.test.ts b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
-index 897a387..6bae831 100644
+index bf54dd2..67f41be 100644
 --- a/packages/features/src/notifications/get-notification-preferences.integration.test.ts
 +++ b/packages/features/src/notifications/get-notification-preferences.integration.test.ts
 @@ -22,4 +22,2 @@ describe("getNotificationPreferences", () => {
@@ -567,28 +567,28 @@ index fe5ff78..7fe6413 100644
 -      "container-runs.finished",
        "workspaces.member-joined",
 diff --git a/packages/features/src/platform/adapters/cloudflare/index.ts b/packages/features/src/platform/adapters/cloudflare/index.ts
-index 7d30c1b..b6b51fd 100644
+index bcbf484..923f8bb 100644
 --- a/packages/features/src/platform/adapters/cloudflare/index.ts
 +++ b/packages/features/src/platform/adapters/cloudflare/index.ts
-@@ -24,3 +24,2 @@ export {
+@@ -29,3 +29,2 @@ export {
  export { createCloudflareJobQueue } from "./cloudflare-job-queue";
 -export { createContainerPiComputer } from "./container-pi-computer";
  export {
 diff --git a/packages/features/src/platform/adapters/index.ts b/packages/features/src/platform/adapters/index.ts
-index f6f8423..11de9c9 100644
+index 12149b0..e5ec26e 100644
 --- a/packages/features/src/platform/adapters/index.ts
 +++ b/packages/features/src/platform/adapters/index.ts
-@@ -15,3 +15,2 @@ export {
+@@ -19,3 +19,2 @@ export {
    createCloudflareRateLimiter,
 -  createContainerPiComputer,
    createD1FeatureFlags,
-@@ -39,4 +38,2 @@ export {
+@@ -43,4 +42,2 @@ export {
    type CapturedError,
 -  chudnovskyPi,
 -  createFakePiComputer,
-   createMemoryBillingProvider,
+   createMemoryAnalyticsReader,
 diff --git a/packages/features/src/platform/adapters/memory/index.ts b/packages/features/src/platform/adapters/memory/index.ts
-index b0d422d..f85ef8f 100644
+index 1c9f3ac..5b9e7e6 100644
 --- a/packages/features/src/platform/adapters/memory/index.ts
 +++ b/packages/features/src/platform/adapters/memory/index.ts
 @@ -2,3 +2,2 @@
@@ -596,34 +596,34 @@ index b0d422d..f85ef8f 100644
 -export { chudnovskyPi, createFakePiComputer } from "./fake-pi-computer";
  export {
 diff --git a/packages/features/src/platform/index.ts b/packages/features/src/platform/index.ts
-index 0164dff..0a07245 100644
+index 88891cf..bf1fe74 100644
 --- a/packages/features/src/platform/index.ts
 +++ b/packages/features/src/platform/index.ts
-@@ -7,3 +7,2 @@ export {
+@@ -10,3 +10,2 @@ export {
    type CloudflareEmailConfig,
 -  chudnovskyPi,
    createAnalyticsEngineMetrics,
-@@ -13,5 +12,3 @@ export {
+@@ -17,5 +16,3 @@ export {
    createCloudflareRateLimiter,
 -  createContainerPiComputer,
    createD1FeatureFlags,
 -  createFakePiComputer,
    createFflateZip,
-@@ -129,5 +126,2 @@ export type {
+@@ -135,5 +132,2 @@ export type {
    Metrics,
 -  PiComputation,
 -  PiComputer,
 -  PiComputerFailure,
    PortalInput,
-@@ -151,3 +145,2 @@ export type {
+@@ -163,3 +157,2 @@ export {
  } from "./ports";
 -export { PiComputerError } from "./ports/pi-computer";
  export { mathRandom } from "./random";
 diff --git a/packages/features/src/platform/ports/index.ts b/packages/features/src/platform/ports/index.ts
-index 50a7c98..8359c29 100644
+index 5f87e7b..01363e5 100644
 --- a/packages/features/src/platform/ports/index.ts
 +++ b/packages/features/src/platform/ports/index.ts
-@@ -44,7 +44,2 @@ export type {
+@@ -50,7 +50,2 @@ export type {
  } from "./metrics";
 -export type {
 -  PiComputation,
@@ -672,10 +672,10 @@ index 2892cf2..7cd1713 100644
 -  "containers.run": ["owner", "member"],
    "trash.read": ["owner", "member"],
 diff --git a/packages/ui/src/exports/patterns.ts b/packages/ui/src/exports/patterns.ts
-index adc525b..2340594 100644
+index b6cbb6f..7699b16 100644
 --- a/packages/ui/src/exports/patterns.ts
 +++ b/packages/ui/src/exports/patterns.ts
-@@ -140,17 +140,2 @@ export {
+@@ -150,17 +150,2 @@ export {
  } from "../components/patterns/connected-agents";
 -export {
 -  ContainerRunList,
@@ -749,7 +749,7 @@ index 0b35c76..72a4419 100644
 -
  /**
 diff --git a/test/architecture/workspace-scope.test.ts b/test/architecture/workspace-scope.test.ts
-index ed4bb07..8397026 100644
+index 72bb170..bf3c440 100644
 --- a/test/architecture/workspace-scope.test.ts
 +++ b/test/architecture/workspace-scope.test.ts
 @@ -21,6 +21,2 @@ import { filesUnder, read } from "./repo";
@@ -759,15 +759,15 @@ index ed4bb07..8397026 100644
 -  container_run_user_quota:
 -    "the container demo's per-person hourly limit across workspaces; must survive deleting a workspace, cascades with the user",
    pending_file_cleanup:
-@@ -60,3 +56,2 @@ const WORKSPACE_ROUTERS = [
+@@ -62,3 +58,2 @@ const WORKSPACE_ROUTERS = [
    "notes",
 -  "containerRuns",
  ] as const;
-@@ -76,3 +71,2 @@ const WORKSPACE_SCOPED_FEATURES = [
+@@ -78,3 +73,2 @@ const WORKSPACE_SCOPED_FEATURES = [
    "billing",
 -  "container-runs",
    "files",
-@@ -135,16 +129,2 @@ const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
+@@ -137,16 +131,2 @@ const NO_ACTOR_FILES: Readonly<Record<string, string>> = {
    "files/r2-presign.ts": "S3 signing helper, not a use case",
 -  "container-runs/begin-container-run-step.ts":
 -    "a step of the run's Workflow, which runs as the system after startContainerRun authorized the actor",

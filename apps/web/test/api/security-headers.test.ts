@@ -179,10 +179,13 @@ describe("HTML pages", () => {
       analyticsEnv
     );
     expect(directive(response, "script-src")).toContain(
-      "https://static.cloudflareinsights.com"
+      "https://static.cloudflareinsights.com/beacon.min.js"
+    );
+    expect(directive(response, "script-src")).not.toMatch(
+      /https:\/\/static\.cloudflareinsights\.com(\s|$)/
     );
     expect(directive(response, "connect-src")).toBe(
-      "connect-src 'self' https://cloudflareinsights.com"
+      "connect-src 'self' https://cloudflareinsights.com/cdn-cgi/rum"
     );
   });
 

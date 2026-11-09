@@ -4,7 +4,9 @@ import {
   createDownloadUrl,
   createPresignedUpload,
   evaluateClientFlags,
+  FEATURE_TRIAL_CLIENT_EVENTS,
   listWorkspaceFiles,
+  recordFeatureTried,
   resolveEntitlements,
   sendHello,
   testEmail,
@@ -153,12 +155,25 @@ export const appRouter = router({
      */
     track: workspaceProcedure
       .input(clientBatchSchema)
-      .mutation(({ ctx, input }) =>
-        trackClientEvents(ctx, ctx.requestContext, {
+      .mutation(async ({ ctx, input }) => {
+        const result = trackClientEvents(ctx, ctx.requestContext, {
           catalog: analyticsEvents,
           batch: { events: input.events },
-        })
-      ),
+        });
+        // A client event that means a feature was used (the command palette opened).
+        for (const feature of new Set(
+          input.events.flatMap(
+            (event) => FEATURE_TRIAL_CLIENT_EVENTS[event.event] ?? []
+          )
+        )) {
+          await recordFeatureTried(
+            ctx,
+            { ...ctx.requestContext, userId: ctx.user.id },
+            feature
+          );
+        }
+        return result;
+      }),
   }),
 });
 

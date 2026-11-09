@@ -102,6 +102,17 @@ const SECRETS: readonly Secret[] = [
         ? randomBytes(32).toString("base64")
         : undefined,
   },
+  {
+    name: "ANALYTICS_READ_TOKEN",
+    prompt:
+      "Analytics read token for the admin Analytics page (optional): an account API token with Account Analytics Read only",
+    hidden: true,
+  },
+  {
+    name: "ANALYTICS_ACCOUNT_ID",
+    prompt:
+      "Cloudflare account id for the admin Analytics page (optional, 32 hex characters; with ANALYTICS_READ_TOKEN)",
+  },
   { name: "GOOGLE_CLIENT_ID", prompt: "Google OAuth client id (optional)" },
   {
     name: "GOOGLE_CLIENT_SECRET",

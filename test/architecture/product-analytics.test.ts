@@ -7,14 +7,25 @@
  * limits; only the product-analytics feature calls the port; and the Analytics Engine
  * binding exists in every environment of wrangler.jsonc.
  */
+
+import type { AnyProcedure } from "@trpc/server";
 import { parse } from "jsonc-parser";
 import { describe, expect, it } from "vitest";
+
+import { appRouter } from "@/server/trpc/router";
 
 import {
   analyticsEvents,
   eventDefinitionProblems,
+  FEATURE_TRIAL_CLIENT_EVENTS,
+  FEATURE_TRIAL_PROCEDURES,
   IDENTIFY_TRAITS_LAYOUT,
   layoutProblems,
+  PEOPLE_REPORT_EVENTS,
+  SIGN_UP_FAILED_EVENT,
+  SIGN_UP_STARTED_EVENT,
+  SIGNED_UP_EVENT,
+  SITE_REPORT_EVENTS,
 } from "../../packages/features/src";
 import { filesUnder, read } from "./repo";
 
@@ -41,9 +52,12 @@ for (const path of sources.filter((p) => /\/domain\//.test(p))) {
 const TRACK_CALL = /\btrackEvent\(\s*[^,]+,\s*(?:\{[^}]*\}|[^,]+),\s*(\w+)/g;
 /** trackClientEvent("name", …) in the SPA. */
 const CLIENT_CALL = /\btrackClientEvent\(\s*["']([^"']+)["']/g;
+/** trackSiteEvent("name", …) on the public pages. */
+const SITE_CALL = /\btrackSiteEvent\(\s*["']([^"']+)["']/g;
 
 const tracked = new Map<string, string[]>();
 const sentByClient = new Map<string, string[]>();
+const sentBySite = new Map<string, string[]>();
 for (const path of sources) {
   const source = read(path);
   for (const [, identifier] of source.matchAll(TRACK_CALL)) {
@@ -58,9 +72,21 @@ for (const path of sources) {
       path,
     ]);
   }
+  for (const [, name] of source.matchAll(SITE_CALL)) {
+    sentBySite.set(name as string, [
+      ...(sentBySite.get(name as string) ?? []),
+      path,
+    ]);
+  }
 }
 
 const catalog = [...analyticsEvents.values()];
+
+const mutations = Object.entries(
+  appRouter._def.procedures as unknown as Record<string, AnyProcedure>
+)
+  .filter(([, procedure]) => procedure._def.type === "mutation")
+  .map(([path]) => path);
 
 describe("product analytics catalog", () => {
   it("finds declarations and call sites", () => {
@@ -91,6 +117,11 @@ describe("product analytics catalog", () => {
           sentByClient.has(name),
           `client event "${name}": call trackClientEvent("${name}", …) in the SPA, or remove it`
         ).toBe(true);
+      } else if (event.site) {
+        expect(
+          sentBySite.has(name),
+          `site event "${name}": call trackSiteEvent("${name}", …) on a public page, or remove it`
+        ).toBe(true);
       } else {
         expect(
           tracked.has(declared?.[0] ?? ""),
@@ -118,6 +149,41 @@ describe("product analytics catalog", () => {
         analyticsEvents.get(name)?.client,
         `${paths.join(", ")}: add "${name}" with client: true to ${ROOT_CATALOG}`
       ).toBe(true);
+    }
+  );
+
+  it.each([...sentBySite.entries()])(
+    'trackSiteEvent("%s") sends a site event of the catalog',
+    (name, paths) => {
+      expect(
+        analyticsEvents.get(name)?.site,
+        `${paths.join(", ")}: add "${name}" with site: true to ${ROOT_CATALOG}`
+      ).toBe(true);
+    }
+  );
+
+  it("names only catalog events in the admin report", () => {
+    for (const name of [
+      ...SITE_REPORT_EVENTS,
+      ...PEOPLE_REPORT_EVENTS,
+      SIGNED_UP_EVENT,
+      SIGN_UP_STARTED_EVENT,
+      SIGN_UP_FAILED_EVENT,
+    ])
+      expect(analyticsEvents.has(name), name).toBe(true);
+  });
+
+  it.each(Object.keys(FEATURE_TRIAL_PROCEDURES))(
+    "feature trigger %s is a mutation of the router",
+    (path) => {
+      expect(mutations).toContain(path);
+    }
+  );
+
+  it.each(Object.keys(FEATURE_TRIAL_CLIENT_EVENTS))(
+    "feature trigger %s is a client event of the catalog",
+    (name) => {
+      expect(analyticsEvents.get(name)?.client).toBe(true);
     }
   );
 
@@ -167,6 +233,17 @@ describe("Analytics Engine binding in wrangler.jsonc", () => {
         ?.dataset
     ).toMatch(/^[a-z][a-z0-9_]*$/);
   });
+
+  it.each(environments)(
+    "%s names its datasets for the admin Analytics page (the bindings' names)",
+    (_, block) => {
+      const vars = (block.vars ?? {}) as Record<string, string>;
+      const dataset = (binding: string) =>
+        datasetsOf(block).find((entry) => entry.binding === binding)?.dataset;
+      expect(vars.ANALYTICS_EVENTS_DATASET).toBe(dataset("ANALYTICS_EVENTS"));
+      expect(vars.METRICS_DATASET_NAME).toBe(dataset("METRICS_DATASET"));
+    }
+  );
 
   it("gives each environment its own product events dataset", () => {
     const datasets = environments.map(

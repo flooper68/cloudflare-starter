@@ -130,8 +130,8 @@ export function violationFields(violation: CspViolation): LogFields {
   };
 }
 
-/** Reads at most `max` bytes; null when the body is larger. */
-async function readLimited(
+/** Reads at most `max` bytes; null when the body is larger (also /api/site-events). */
+export async function readLimited(
   request: Request,
   max: number
 ): Promise<string | null> {

@@ -54,6 +54,14 @@ export const API_TEST_BINDINGS = {
   ANALYTICS_ID_SECRET: "api-test-analytics-id-secret-0123456789",
   WEB_ANALYTICS: "none",
   WEB_ANALYTICS_TOKEN: "",
+  // Reading analytics back (the admin Analytics page): the dataset names of the develop
+  // vars, no read token (not configured); test/api/admin-analytics.test.ts sets the
+  // fixture's token and account (test/analytics-fixture.ts, answered by outbound.ts).
+  ANALYTICS_READ_TOKEN: "",
+  ANALYTICS_ACCOUNT_ID: "",
+  WEB_ANALYTICS_SITE_TAG: "",
+  ANALYTICS_EVENTS_DATASET: "cloudflare_starter_develop_product_events",
+  METRICS_DATASET_NAME: "cloudflare_starter_develop_metrics",
   ADMIN_PORTAL: "on",
   // Setup-written too: manual billing, so new workspaces start the catalog's trial and
   // limits apply; billing tests of other modes override it (envWith).

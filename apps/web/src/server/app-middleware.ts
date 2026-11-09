@@ -28,6 +28,7 @@ import {
   type SecurityHeaderSettings,
   securityHeadersFor,
 } from "@/server/security-headers";
+import { SITE_EVENTS_PATH } from "@/server/site-events";
 
 const PROTECTED_PREFIX = "/app";
 
@@ -166,15 +167,17 @@ async function routeAppRequest(
       context.locals.requestContext = scope.context;
 
       // The auth handler, OAuth discovery, /mcp (bearer tokens, not cookies), the
-      // anonymous CSP reports and the public walkthrough media never need the cookie
-      // session. /mcp sets the user on its context itself.
+      // anonymous CSP reports, site analytics (which must never read it) and the public
+      // walkthrough media never need the cookie session. /mcp sets the user on its context
+      // itself.
       const { pathname } = context.url;
       if (
         pathname.startsWith(AUTH_BASE_PATH) ||
         pathname.startsWith(MEDIA_PATH) ||
         pathname.startsWith("/.well-known/") ||
         pathname === MCP_PATH ||
-        pathname === CSP_REPORT_PATH
+        pathname === CSP_REPORT_PATH ||
+        pathname === SITE_EVENTS_PATH
       ) {
         return next();
       }

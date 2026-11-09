@@ -78,7 +78,7 @@
           "file": "docs/guides/how-to-qa-a-deployment.md",
           "action": "replace",
           "heading": "The automated suite",
-          "content": "## The checklist\n\nWalk each feature on the deployment as a person would, with an account at a mailbox you can read and a second account (B) in a separate browser profile. For each: do it, check the result and the mail it sends, and record pass, fail (with the screenshot and the reference shown in the error) or N/A. For every mail: it arrived, the sender is the environment's `EMAIL_FROM`, links point at the environment's origin, and notifications carry `List-Unsubscribe`.\n\n| Feature                                         | Guide                                                                                                                              |\n| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |\n| Sign-up, verification, sign-in, password reset  | [how-to-setup-auth.md](how-to-setup-auth.md), [how-to-setup-email.md](how-to-setup-email.md)                                       |\n| Bot check and rate limits                       | [how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md)                                                       |\n| Two-factor and passkeys                         | [how-to-configure-account-security.md](how-to-configure-account-security.md)                                                       |\n| Workspaces, invitations and roles               | [how-to-configure-workspaces.md](how-to-configure-workspaces.md)                                                                   |\n| Settings                                        | [how-to-use-settings.md](how-to-use-settings.md)                                                                                   |\n| Files                                           | [how-to-setup-r2.md](how-to-setup-r2.md)                                                                                           |\n| Billing                                         | [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)                                                     |\n| Notifications                                   | [how-to-send-notifications.md](how-to-send-notifications.md)                                                                       |\n| Trash                                           | [how-to-use-trash.md](how-to-use-trash.md)                                                                                         |\n| Privacy: export and delete                      | [how-to-handle-data-privacy.md](how-to-handle-data-privacy.md)                                                                     |\n| Audit log                                       | [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)                                                                         |\n| Admin portal and feature flags                  | [how-to-use-admin-portal.md](how-to-use-admin-portal.md), [how-to-use-feature-flags.md](how-to-use-feature-flags.md)               |\n| Agents: connect Claude, call a tool, disconnect | [how-to-setup-mcp.md](how-to-setup-mcp.md)                                                                                         |\n| Your features, the command palette              | [how-to-add-a-feature.md](how-to-add-a-feature.md)                                                                                 |\n| Background jobs and email                       | [how-to-add-background-jobs.md](how-to-add-background-jobs.md)                                                                     |\n| Landing, docs and search                        | [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md), [how-to-define-branding.md](how-to-define-branding.md), [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md)   |\n| Health and security headers                     | [how-to-monitor-health.md](how-to-monitor-health.md), [how-to-configure-security-headers.md](how-to-configure-security-headers.md) |\n| Public demo, if you turn it on                  | [how-to-run-a-public-demo.md](how-to-run-a-public-demo.md)                                                                         |\n\nFinish by deleting the accounts you created (Settings › Privacy › **Delete account**), never with SQL.\n\n`test/architecture/qa-checklist.test.ts` fails when a guide in `docs/guides/` is neither linked from this checklist nor exempt with a reason."
+          "content": "## The checklist\n\nWalk each feature on the deployment as a person would, with an account at a mailbox you can read and a second account (B) in a separate browser profile. For each: do it, check the result and the mail it sends, and record pass, fail (with the screenshot and the reference shown in the error) or N/A. For every mail: it arrived, the sender is the environment's `EMAIL_FROM`, links point at the environment's origin, and notifications carry `List-Unsubscribe`.\n\n| Feature                                         | Guide                                                                                                                              |\n| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |\n| Sign-up, verification, sign-in, password reset  | [how-to-setup-auth.md](how-to-setup-auth.md), [how-to-setup-email.md](how-to-setup-email.md)                                       |\n| Bot check and rate limits                       | [how-to-configure-abuse-protection.md](how-to-configure-abuse-protection.md)                                                       |\n| Two-factor and passkeys                         | [how-to-configure-account-security.md](how-to-configure-account-security.md)                                                       |\n| Workspaces, invitations and roles               | [how-to-configure-workspaces.md](how-to-configure-workspaces.md)                                                                   |\n| Settings                                        | [how-to-use-settings.md](how-to-use-settings.md)                                                                                   |\n| Files                                           | [how-to-setup-r2.md](how-to-setup-r2.md)                                                                                           |\n| Billing                                         | [how-to-configure-plans-and-billing.md](how-to-configure-plans-and-billing.md)                                                     |\n| Notifications                                   | [how-to-send-notifications.md](how-to-send-notifications.md)                                                                       |\n| Trash                                           | [how-to-use-trash.md](how-to-use-trash.md)                                                                                         |\n| Privacy: export and delete                      | [how-to-handle-data-privacy.md](how-to-handle-data-privacy.md)                                                                     |\n| Audit log                                       | [how-to-use-the-audit-log.md](how-to-use-the-audit-log.md)                                                                         |\n| Admin portal and feature flags                  | [how-to-use-admin-portal.md](how-to-use-admin-portal.md), [how-to-use-feature-flags.md](how-to-use-feature-flags.md)               |\n| Analytics: the admin funnel, no site events from automated browsers | [how-to-setup-product-analytics.md](how-to-setup-product-analytics.md) |\n| Agents: connect Claude, call a tool, disconnect | [how-to-setup-mcp.md](how-to-setup-mcp.md)                                                                                         |\n| Your features, the command palette              | [how-to-add-a-feature.md](how-to-add-a-feature.md)                                                                                 |\n| Background jobs and email                       | [how-to-add-background-jobs.md](how-to-add-background-jobs.md)                                                                     |\n| Landing, docs and search                        | [how-to-publish-docs-and-landing.md](how-to-publish-docs-and-landing.md), [how-to-define-branding.md](how-to-define-branding.md), [how-to-record-walkthrough-videos.md](how-to-record-walkthrough-videos.md)   |\n| Health and security headers                     | [how-to-monitor-health.md](how-to-monitor-health.md), [how-to-configure-security-headers.md](how-to-configure-security-headers.md) |\n| Public demo, if you turn it on                  | [how-to-run-a-public-demo.md](how-to-run-a-public-demo.md)                                                                         |\n\nFinish by deleting the accounts you created (Settings › Privacy › **Delete account**), never with SQL.\n\n`test/architecture/qa-checklist.test.ts` fails when a guide in `docs/guides/` is neither linked from this checklist nor exempt with a reason."
         },
         {
           "file": "docs/guides/how-to-qa-a-deployment.md",
@@ -195,6 +195,22 @@
           "file": "apps/web/src/server/cron.test.ts",
           "find": "      expect.objectContaining({\n        attributes: {\n          \"app.cron.name\": \"qa-outbox.purge\",\n          \"app.cron.schedule\": \"17 3 * * *\",\n        },\n      }),\n",
           "replace": ""
+        },
+        {
+          "file": "apps/web/src/server/analytics-audience.ts",
+          "find": "if (raw.QA_EMAIL_DOMAIN) domains.push(raw.QA_EMAIL_DOMAIN.toLowerCase());",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "apps/web/test/api/admin-analytics.test.ts",
+          "find": "\n  it(\"leaves the QA suite's accounts out\", async () => {\n    const qa = await signUp(\"QA Run\", \"run-1@qa.flooper.me\");\n    points.length = 0;\n    await callerFor(qa).notes.create({ title: \"QA note\", body: \"\" });\n    expect(points).toEqual([]);\n  });\n",
+          "replace": ""
+        },
+        {
+          "file": "apps/web/src/server/analytics-audience.test.ts",
+          "find": "\n  it(\"leaves out the QA suite's accounts, not a look-alike domain\", () => {\n    expect(excluded(\"qa+run1-a@qa.flooper.me\")).toBe(true);\n    expect(excluded(\"x@notqa.flooper.me\")).toBe(false);\n    expect(excluded(\"x@qa.flooper.me.example.test\")).toBe(false);\n  });\n",
+          "replace": ""
         }
       ],
       "patch": "scripts/starter-only/qa-automation.patch",
@@ -300,6 +316,10 @@
         {
           "env": "production",
           "path": ["vars", "WEB_ANALYTICS_TOKEN"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "WEB_ANALYTICS_SITE_TAG"]
         }
       ],
       "docs": [
@@ -417,7 +437,7 @@
       "status": "active",
       "default": true,
       "manual": [
-        "Replace the home page with the product's: the copy and feature data in apps/web/src/landing/content.ts, the sections of apps/web/src/pages/index.astro and its components (HeroScene.astro, FeatureMap.astro), and apps/web/test/e2e-build/landing.spec.ts with them (docs/reference/docs-site.md#replace-the-landing-page)."
+        "Replace the home page with the product's: the copy and feature data in apps/web/src/landing/content.ts, the sections of apps/web/src/pages/index.astro and its components (HeroScene.astro, FeatureMap.astro), and apps/web/test/e2e-build/landing.spec.ts with them (docs/reference/docs-site.md#replace-the-landing-page). Its analytics hooks go with it: the `data-track-cta` attributes of the calls to action (index.astro, SiteHeader.astro, SiteMenu.astro, CopyPrompt's `track`) and the feature map's `site.feature_map_used`; tag your own calls to action the same way (docs/reference/product-analytics.md#site-events)."
       ],
       "docs": [
         {
@@ -705,6 +725,23 @@
           "find": "[how-to-run-a-public-demo.md](guides/how-to-run-a-public-demo.md)",
           "replace": "",
           "line": true
+        },
+        {
+          "file": "apps/web/src/server/analytics-audience.ts",
+          "find": "for (const protectedEmail of emails(raw.DEMO_PROTECTED_EMAILS))",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "apps/web/src/server/analytics-audience.ts",
+          "find": "excluded.add(protectedEmail);",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "apps/web/src/server/analytics-audience.test.ts",
+          "find": "\n  it(\"leaves out demo mode's protected accounts, from a list with spaces\", () => {\n    expect(excluded(\"keep@example.test\")).toBe(true);\n    expect(excluded(\"second@example.test\")).toBe(true);\n    expect(excluded(\"keeper@example.test\")).toBe(false);\n  });\n",
+          "replace": ""
         }
       ]
     },
@@ -1028,11 +1065,6 @@
           "line": true
         },
         {
-          "file": "docs/reference/abuse-protection.md",
-          "find": "; a new binding takes the next number in each block (`RL_CONTAINER_RUN` is 7014, 8014, 9014)",
-          "replace": ""
-        },
-        {
           "file": "docs/reference/background-jobs.md",
           "find": "A job can start a Workflow instance, and so can a use case. The starter includes one, the container workflow demo: [how-to-run-container-workflows.md](../guides/how-to-run-container-workflows.md) is the worked example (a binding per environment, the class exported from `src/worker.ts`, each step recording its own state, a stable error per step, the Workflows test utilities) and compares the two in detail.",
           "replace": "A job can start a Workflow instance; the starter does not include one. Adding it is a new binding ([overview.md](../architecture/overview.md#extension-checklists)) and an ADR, since it is a second pattern for background work."
@@ -1084,6 +1116,24 @@
           "file": "apps/web/test/qa/README.md",
           "find": ", Email and Containers.",
           "replace": " and Email."
+        },
+        {
+          "file": "packages/features/src/product-analytics/domain/feature-trials.ts",
+          "find": "\"container_run\",",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "packages/features/src/product-analytics/domain/feature-trials.ts",
+          "find": "container_run: \"Container workflow\",",
+          "replace": "",
+          "line": true
+        },
+        {
+          "file": "packages/features/src/product-analytics/domain/feature-trials.ts",
+          "find": "\"containerRuns.start\": \"container_run\",",
+          "replace": "",
+          "line": true
         }
       ],
       "docs": [

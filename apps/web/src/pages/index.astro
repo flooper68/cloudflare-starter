@@ -112,10 +112,10 @@ const inlineLink =
         </h1>
         <p class={lead}>{HERO.description}</p>
         <div class="flex flex-wrap gap-2.5">
-          <a class={primary} href={LINKS.demo}>
+          <a class={primary} href={LINKS.demo} data-track-cta="demo" data-track-placement="hero">
             Try the demo app<ArrowRight aria-hidden="true" />
           </a>
-          <a class={secondary} href={LINKS.github}>
+          <a class={secondary} href={LINKS.github} data-track-cta="github" data-track-placement="hero">
             <GitBranch aria-hidden="true" />View on GitHub
           </a>
         </div>
@@ -270,7 +270,11 @@ const inlineLink =
         <p class="text-sm leading-6 text-fg-muted">{SECTIONS.start.lead}</p>
       </div>
       <div class="min-w-0 flex-[1_1_520px]">
-        <CopyPrompt prompt={START_PROMPT} label="Prompt for your coding agent" />
+        <CopyPrompt
+          prompt={START_PROMPT}
+          label="Prompt for your coding agent"
+          track={{ cta: "copy_prompt", placement: "start" }}
+        />
       </div>
     </section>
 
@@ -367,10 +371,10 @@ const inlineLink =
         <h2 id="closing-title" class={h2}>{SECTIONS.closing.title}</h2>
         <p class={cn(lead, "max-w-lg")}>{SECTIONS.closing.lead}</p>
         <div class="flex flex-wrap justify-center gap-2.5">
-          <a class={primary} href={LINKS.demo}>
+          <a class={primary} href={LINKS.demo} data-track-cta="demo" data-track-placement="closing">
             Try the demo app<ArrowRight aria-hidden="true" />
           </a>
-          <a class={secondary} href={LINKS.github}>
+          <a class={secondary} href={LINKS.github} data-track-cta="github" data-track-placement="closing">
             <GitBranch aria-hidden="true" />View on GitHub
           </a>
         </div>

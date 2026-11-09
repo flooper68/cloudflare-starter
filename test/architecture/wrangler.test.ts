@@ -25,6 +25,8 @@ const SETUP_WRITTEN_VARS: Readonly<Record<string, string>> = {
     "written by setup:analytics; deliberately absent until the owner chooses",
   WEB_ANALYTICS_TOKEN:
     "written by setup:analytics: the Web Analytics site token differs per environment",
+  WEB_ANALYTICS_SITE_TAG:
+    "optional, per environment: the Web Analytics site of that hostname (only where WEB_ANALYTICS=cloudflare and the admin Analytics page should show it)",
   ADMIN_PORTAL:
     "written by setup:auth; deliberately absent until the owner chooses (no default)",
   TWO_FACTOR: "written by setup:auth; explicit enrollment policy",

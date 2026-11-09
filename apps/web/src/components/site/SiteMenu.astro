@@ -70,12 +70,16 @@ const themes = [
       <a
         class={cn(buttonVariants({ variant: "primary", size: "lg" }), "h-11 w-full")}
         href={signedIn ? LINKS.app : LINKS.demo}
+        data-track-cta={signedIn ? undefined : "demo"}
+        data-track-placement="menu"
       >
         {signedIn ? "Open app" : "Try the demo app"}
       </a>
       <a
         class={cn(buttonVariants({ variant: "secondary", size: "lg" }), "h-11 w-full")}
         href={LINKS.github}
+        data-track-cta="github"
+        data-track-placement="menu"
       >
         <GitBranch aria-hidden="true" />View on GitHub
       </a>

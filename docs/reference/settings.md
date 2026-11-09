@@ -59,17 +59,22 @@ This page is generated from `apps/web/src/docs/reference/settings.ts`; a test fa
 
 ### Observability
 
-| Setting               | Kind   | Values                     | What it does                                                                                                          |
-| --------------------- | ------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `LOG_SINK`            | var    | `workers-logs`, `none`     | Where logs go. [Docs](../guides/how-to-setup-logging.md)                                                              |
-| `ERROR_REPORTER`      | var    | `workers-logs`, `none`     | Where error reports go. [Docs](../guides/how-to-setup-error-reporting.md)                                             |
-| `METRICS`             | var    | `analytics-engine`, `none` | Latency and counts of requests, procedures, jobs and schedules. [Docs](../guides/how-to-setup-metrics-and-tracing.md) |
-| `TRACING`             | var    | `workers`, `none`          | Traces across requests and jobs. [Docs](../guides/how-to-setup-metrics-and-tracing.md)                                |
-| `ANALYTICS`           | var    | `analytics-engine`, `none` | Product events under pseudonymous ids. [Docs](../guides/how-to-setup-product-analytics.md)                            |
-| `ANALYTICS_ID_SECRET` | secret | text                       | Key of the pseudonymous user and workspace ids; 32+ characters. [Docs](../guides/how-to-setup-product-analytics.md)   |
-| `WEB_ANALYTICS`       | var    | `cloudflare`, `none`       | Cookieless page views. [Docs](../guides/how-to-setup-product-analytics.md)                                            |
-| `WEB_ANALYTICS_TOKEN` | var    | text                       | The web analytics site token, with WEB_ANALYTICS=cloudflare. [Docs](../guides/how-to-setup-product-analytics.md)      |
-| `FEATURE_FLAGS`       | var    | `d1`, `none`               | Flags stored in the database, or every flag at its catalog default. [Docs](../guides/how-to-use-feature-flags.md)     |
+| Setting                    | Kind   | Values                     | What it does                                                                                                                                                        |
+| -------------------------- | ------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LOG_SINK`                 | var    | `workers-logs`, `none`     | Where logs go. [Docs](../guides/how-to-setup-logging.md)                                                                                                            |
+| `ERROR_REPORTER`           | var    | `workers-logs`, `none`     | Where error reports go. [Docs](../guides/how-to-setup-error-reporting.md)                                                                                           |
+| `METRICS`                  | var    | `analytics-engine`, `none` | Latency and counts of requests, procedures, jobs and schedules. [Docs](../guides/how-to-setup-metrics-and-tracing.md)                                               |
+| `TRACING`                  | var    | `workers`, `none`          | Traces across requests and jobs. [Docs](../guides/how-to-setup-metrics-and-tracing.md)                                                                              |
+| `ANALYTICS`                | var    | `analytics-engine`, `none` | Product events under pseudonymous ids. [Docs](../guides/how-to-setup-product-analytics.md)                                                                          |
+| `ANALYTICS_ID_SECRET`      | secret | text                       | Key of the pseudonymous user and workspace ids; 32+ characters. [Docs](../guides/how-to-setup-product-analytics.md)                                                 |
+| `WEB_ANALYTICS`            | var    | `cloudflare`, `none`       | Cookieless page views. [Docs](../guides/how-to-setup-product-analytics.md)                                                                                          |
+| `WEB_ANALYTICS_TOKEN`      | var    | text                       | The web analytics site token, with WEB_ANALYTICS=cloudflare. [Docs](../guides/how-to-setup-product-analytics.md)                                                    |
+| `ANALYTICS_READ_TOKEN`     | secret | text                       | Optional: an account API token with Account Analytics Read, for the admin Analytics page. [Docs](../guides/how-to-setup-product-analytics.md)                       |
+| `ANALYTICS_ACCOUNT_ID`     | secret | text                       | Optional: the Cloudflare account id the analytics read token reads (32 hex characters). [Docs](../guides/how-to-setup-product-analytics.md)                         |
+| `ANALYTICS_EVENTS_DATASET` | var    | text                       | The product events dataset's name (the ANALYTICS_EVENTS binding's), for the admin Analytics page. [Docs](../guides/how-to-setup-product-analytics.md)               |
+| `METRICS_DATASET_NAME`     | var    | text                       | The metrics dataset's name (the METRICS_DATASET binding's): errors and latency per route on the Analytics page. [Docs](../guides/how-to-setup-product-analytics.md) |
+| `WEB_ANALYTICS_SITE_TAG`   | var    | text                       | Optional: the Web Analytics site tag, to show its visits and referrers on the Analytics page. [Docs](../guides/how-to-setup-product-analytics.md)                   |
+| `FEATURE_FLAGS`            | var    | `d1`, `none`               | Flags stored in the database, or every flag at its catalog default. [Docs](../guides/how-to-use-feature-flags.md)                                                   |
 
 ### Abuse protection and headers
 

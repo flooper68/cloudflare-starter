@@ -11,15 +11,15 @@ import "@cloudflare-starter/ui/globals.css";
 import "@/styles/globals.css";
 
 import { brand } from "@cloudflare-starter/ui";
-
+import SiteEvents from "@/components/SiteEvents.astro";
 import SiteHeader from "@/components/site/SiteHeader.astro";
 import WebAnalytics from "@/components/WebAnalytics.astro";
 
 interface Props {
   title: string;
   /**
-   * False on pages whose URL carries a credential (an invitation or reset token), so the
-   * Web Analytics beacon never reports it.
+   * False on pages whose URL carries a credential (an invitation or reset token), so
+   * neither the Web Analytics beacon nor the site events report it.
    */
   analytics?: boolean;
 }
@@ -36,6 +36,7 @@ const signedIn = Boolean(Astro.locals.user);
     <title>{title}{brand.titleSeparator}{brand.name}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script is:inline src="/site-theme.js"></script>
+    {analytics && <SiteEvents />}
   </head>
   <body class="bg-canvas text-fg">
     <SiteHeader signedIn={signedIn} />

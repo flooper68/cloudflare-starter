@@ -7,7 +7,20 @@
  * - Arrow keys, Home and End move between the visible nodes (one tab stop, roving
  *   tabindex); Escape goes back to "Your app" and clears the filter.
  * - A pillar chip or a pillar's label filters the map to that pillar.
+ * Using it (a node picked, the map filtered) is the site event site.feature_map_used,
+ * once per action and page view, and a sign of interest (site-analytics.ts).
  */
+import { markEngaged, trackSiteEvent } from "@/lib/site-analytics";
+
+function used(action: "select" | "filter"): void {
+  trackSiteEvent(
+    "site.feature_map_used",
+    { action },
+    { once: `feature-map:${action}` }
+  );
+  markEngaged("feature_map");
+}
+
 class FeatureMapElement extends HTMLElement {
   private kept = "app";
   private filter = "";
@@ -22,6 +35,7 @@ class FeatureMapElement extends HTMLElement {
       );
       node.addEventListener("focus", () => this.keep(node));
       node.addEventListener("click", () => {
+        used("select");
         this.keep(node);
         if (node.classList.contains("fm-pillar"))
           this.applyFilter(
@@ -34,9 +48,10 @@ class FeatureMapElement extends HTMLElement {
     canvas?.addEventListener("pointerleave", () => this.show(this.kept));
     canvas?.addEventListener("keydown", (event) => this.onKey(event));
     for (const chip of this.querySelectorAll<HTMLElement>("[data-fm-filter]"))
-      chip.addEventListener("click", () =>
-        this.applyFilter(chip.dataset.fmFilter ?? "")
-      );
+      chip.addEventListener("click", () => {
+        used("filter");
+        this.applyFilter(chip.dataset.fmFilter ?? "");
+      });
     for (const button of this.querySelectorAll<HTMLElement>("[data-fm-view]"))
       button.addEventListener("click", () => {
         this.dataset.view = button.dataset.fmView ?? "map";

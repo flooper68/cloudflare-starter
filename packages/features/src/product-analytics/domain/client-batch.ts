@@ -62,3 +62,49 @@ export function parseClientBatch(
     return { definition, properties: parsed.data };
   });
 }
+
+/** The body of `POST /api/site-events`: up to 10 events a public page saw happen. */
+export const siteBatchSchema = z.object({
+  events: z
+    .array(
+      z.object({
+        event: z.string().min(1).max(ANALYTICS_LIMITS.nameLength),
+        properties: z
+          .record(
+            z.string().max(64),
+            z.union([z.string().max(256), z.number(), z.null()])
+          )
+          .default({}),
+      })
+    )
+    .min(1)
+    .max(ANALYTICS_LIMITS.siteBatch),
+});
+
+export type SiteBatch = z.infer<typeof siteBatchSchema>;
+
+/**
+ * Checks each event of an anonymous site batch against the catalog: it must be a
+ * `site: true` event with valid properties. One bad event refuses the whole batch, so an
+ * anonymous caller cannot slip an app event (`app.page_viewed`, `auth.signed_up`) in.
+ */
+export function parseSiteBatch(
+  catalog: AnalyticsEventCatalog,
+  batch: SiteBatch
+): ClientEvent[] {
+  return batch.events.map((sent, i) => {
+    const definition = catalog.get(sent.event);
+    if (!definition?.site) {
+      throw new InvalidAnalyticsEventError(
+        `events[${i}]: "${sent.event.slice(0, 64)}" is not a site event of the analytics catalog`
+      );
+    }
+    const parsed = definition.properties.safeParse(sent.properties);
+    if (!parsed.success) {
+      throw new InvalidAnalyticsEventError(
+        `events[${i}]: invalid properties for ${definition.name}`
+      );
+    }
+    return { definition, properties: parsed.data };
+  });
+}
