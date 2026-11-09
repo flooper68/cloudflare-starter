@@ -44,7 +44,7 @@ Rotating it starts every pseudonymous id afresh, so old and new data no longer j
 4. **Open Admin › Analytics** (`/admin/analytics`, or `admin_get_analytics` over MCP): the funnel for 24 hours, 7 or 30 days.
    :::
 
-The funnel: **visit → got the pitch → clicked a call to action → started sign-up → signed up → tried a feature → tried 3+ → came back within 7 days**. The public steps count events (there is no visitor id, by design); from sign-up on they count people. Below it: where visits come from, scroll depth, videos, the feature map and docs sections, calls to action, sign-up failures by reason, features ranked by the people who tried them, the first feature and the median time to it, and server errors and latency per route.
+The funnel: **visit → got the pitch → clicked a call to action → started sign-up → signed up → tried a feature → tried 3+ → came back within 7 days**. The public steps count visits (entry page views; there is no visitor id, by design), sign-up counts attempts, and from sign-up on the steps count people; each step shows its share of the one above, at most 100 %. Below it: where visits come from, scroll depth, videos, the feature map and docs sections, calls to action, sign-up failures by reason, features ranked by the people who tried them, the first feature and the median time to it, and server errors and latency per route.
 
 :::decision{title="Read back, only by admins"}
 The read token is a separate, optional secret that only the admin portal uses, behind the admin role and the portal's second-factor rules; the app's write path never holds it. Without it the page says which settings to set.

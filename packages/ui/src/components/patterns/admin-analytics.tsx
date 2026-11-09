@@ -45,8 +45,10 @@ export interface AdminAnalyticsReport {
   readonly funnel: readonly {
     readonly id: string;
     readonly label: string;
-    readonly unit: "events" | "people";
+    readonly unit: "visits" | "attempts" | "people";
     readonly count: number;
+    /** Share of the step above, 0 to 1; null for the first step. */
+    readonly share: number | null;
   }[];
   readonly signUp: {
     readonly started: number;
@@ -234,10 +236,8 @@ function Funnel({ report }: { readonly report: AdminAnalyticsReport }) {
   const max = Math.max(1, ...report.funnel.map((step) => step.count));
   return (
     <ol aria-label="Funnel" className="flex flex-col gap-2">
-      {report.funnel.map((step, index) => {
-        const previous = index > 0 ? report.funnel[index - 1] : undefined;
-        const share =
-          previous && previous.count > 0 ? step.count / previous.count : null;
+      {report.funnel.map((step) => {
+        const { share } = step;
         return (
           <li
             key={step.id}
@@ -245,9 +245,7 @@ function Funnel({ report }: { readonly report: AdminAnalyticsReport }) {
           >
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-fg">{step.label}</span>
-              <span className="text-xs text-fg-muted">
-                {step.unit === "people" ? "people" : "events"}
-              </span>
+              <span className="text-xs text-fg-muted">{step.unit}</span>
             </span>
             <span className="h-6 rounded-sm bg-hover max-sm:hidden" aria-hidden>
               <span
@@ -333,7 +331,7 @@ export function AdminAnalytics({
       <Section
         icon={<BarChart3 />}
         title="Funnel"
-        description="Visit → interest → intent → sign-up → first try → depth → return. Public steps count events (no visitor ids by design); from sign-up on they count people."
+        description="Visit → interest → intent → sign-up → first try → depth → return. The public steps count visits (entry page views; no visitor ids by design), sign-up counts attempts, the rest people. A share compares with the step above, at most 100 %."
       >
         <Funnel report={report} />
       </Section>

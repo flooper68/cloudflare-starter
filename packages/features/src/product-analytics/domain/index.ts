@@ -31,6 +31,7 @@ export {
   SITE_REPORT_EVENTS,
   WEB_ANALYTICS_QUERY,
   type WebAnalyticsSummary,
+  withShares,
 } from "./analytics-report";
 export {
   type ClientBatch,
@@ -74,6 +75,7 @@ export {
 } from "./identify-traits";
 export { utcDaysBetween } from "./return-visit";
 export {
+  CTA_REPEAT_VALUES,
   docsPageViewedEvent,
   ENGAGEMENT_SIGNALS,
   FEATURE_MAP_ACTIONS,

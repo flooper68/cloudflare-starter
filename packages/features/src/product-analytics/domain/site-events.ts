@@ -87,38 +87,58 @@ export const ENGAGEMENT_SIGNALS = [
   "video",
   "feature_map",
   "docs",
+  "cta",
 ] as const;
+
+/** Whether a click is the page view's first call to action (`no`) or a later one. */
+export const CTA_REPEAT_VALUES = ["no", "yes"] as const;
 
 /**
  * A page view showed interest, once per view, at its first signal: scrolled past half of
- * the page, played a video, used the feature map, or opened a docs page. The funnel's
- * interest step counts these.
+ * the page, played a video, used the feature map, opened a docs page or clicked a call to
+ * action. The funnel's interest step counts these on entry views (`entry=yes`), so it is
+ * per visit like the visits step.
  */
 export const sitePageEngagedEvent = defineEvent(
   "site.page_engaged",
-  { strings: ["page", "signal"], numbers: [] },
-  z.object({ page: siteId, signal: z.enum(ENGAGEMENT_SIGNALS) }).strict(),
+  { strings: ["page", "signal", "entry"], numbers: [] },
+  z
+    .object({
+      page: siteId,
+      signal: z.enum(ENGAGEMENT_SIGNALS),
+      entry: z.enum(SITE_ENTRY_VALUES),
+    })
+    .strict(),
   {
     client: false,
     site: true,
     description:
-      "A page view showed interest (scroll past half, video, feature map, docs), once per view",
+      "A page view showed interest (scroll past half, video, feature map, docs, a call to action), once per view; entry as in site.page_viewed",
   }
 );
 
 /**
  * A call to action was clicked: which one (`demo`, `github`, `copy_prompt`) and where on
- * the page (`hero`, `closing`, `header`). The funnel's intent step counts these.
+ * the page (`hero`, `closing`, `header`), whether the view started a visit (`entry`) and
+ * whether the view already had a click (`repeat`). The funnel's intent step counts the
+ * first click of entry views, so it is per visit like the steps above it.
  */
 export const siteCtaClickedEvent = defineEvent(
   "site.cta_clicked",
-  { strings: ["cta", "placement"], numbers: [] },
-  z.object({ cta: siteId, placement: siteId }).strict(),
+  { strings: ["cta", "placement", "entry", "repeat"], numbers: [] },
+  z
+    .object({
+      cta: siteId,
+      placement: siteId,
+      entry: z.enum(SITE_ENTRY_VALUES),
+      repeat: z.enum(CTA_REPEAT_VALUES),
+    })
+    .strict(),
   {
     client: false,
     site: true,
     description:
-      "A call to action was clicked: which one and where on the page",
+      "A call to action was clicked: which one, where on the page, on an entry view or not, the view's first click or a repeat",
   }
 );
 

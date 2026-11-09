@@ -25,7 +25,12 @@ describe("trackSiteEvents", () => {
             events: [
               {
                 event: "site.cta_clicked",
-                properties: { cta: "demo", placement: "hero" },
+                properties: {
+                  cta: "demo",
+                  placement: "hero",
+                  entry: "yes",
+                  repeat: "no",
+                },
               },
             ],
           },
@@ -35,7 +40,12 @@ describe("trackSiteEvents", () => {
     expect(analytics.recorded).toEqual([
       expect.objectContaining({
         event: "site.cta_clicked",
-        properties: { cta: "demo", placement: "hero" },
+        properties: {
+          cta: "demo",
+          placement: "hero",
+          entry: "yes",
+          repeat: "no",
+        },
         context: expect.objectContaining({ userId: null, workspaceId: null }),
       }),
     ]);
@@ -59,7 +69,12 @@ describe("trackSiteEvents", () => {
             events: [
               {
                 event: "site.cta_clicked",
-                properties: { cta: "demo", placement: "hero" },
+                properties: {
+                  cta: "demo",
+                  placement: "hero",
+                  entry: "yes",
+                  repeat: "no",
+                },
               },
               { event: "app.page_viewed", properties: { route: "/app" } },
             ],

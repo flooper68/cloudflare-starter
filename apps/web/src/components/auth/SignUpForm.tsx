@@ -98,7 +98,12 @@ function SignUpFormView({
     }
 
     setLoading(true);
-    trackSiteEvent("auth.sign_up_started", { method: "password" });
+    // Once per page view: a retry after an error is the same attempt.
+    trackSiteEvent(
+      "auth.sign_up_started",
+      { method: "password" },
+      { once: "sign-up:started" }
+    );
 
     // Signs the new user in right away, unless email verification is required:
     // then there is no session token and the verification link signs them in. The link

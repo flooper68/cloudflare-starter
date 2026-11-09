@@ -20,6 +20,10 @@ let queue: { event: string; properties: Properties }[] = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
 let listening = false;
 const sentOnce = new Set<string>();
+/** Whether this page view started a visit (site.page_viewed's `entry`). */
+let entry: "yes" | "no" = "no";
+/** Whether this page view had a call to action clicked already. */
+let clicked = false;
 
 /** The endpoint, or null when this page does not collect (or a robot drives it). */
 function endpoint(): string | null {
@@ -94,11 +98,11 @@ export function sitePageOf(pathname: string): string {
 
 /** The first sign of interest on this page view (site.page_engaged), once. */
 export function markEngaged(
-  signal: "scrolled" | "video" | "feature_map" | "docs"
+  signal: "scrolled" | "video" | "feature_map" | "docs" | "cta"
 ): void {
   trackSiteEvent(
     "site.page_engaged",
-    { page: sitePage(), signal },
+    { page: sitePage(), signal, entry },
     { once: "engaged" }
   );
 }
@@ -148,10 +152,9 @@ export function docsSection(pathname: string): string {
 export function startSiteAnalytics(): void {
   if (!endpoint()) return;
   const page = sitePage();
-  trackSiteEvent("site.page_viewed", {
-    page,
-    ...visitSource(document.referrer, window.location),
-  });
+  const source = visitSource(document.referrer, window.location);
+  entry = source.entry;
+  trackSiteEvent("site.page_viewed", { page, ...source });
   if (page === "docs") {
     trackSiteEvent("docs.page_viewed", {
       section: docsSection(window.location.pathname),
@@ -182,12 +185,20 @@ export function startSiteAnalytics(): void {
     );
     const cta = id(target?.dataset.trackCta);
     if (!target || !cta) return;
+    // A click is a sign of interest too, so intent never outnumbers interest.
+    markEngaged("cta");
     trackSiteEvent(
       "site.cta_clicked",
-      { cta, placement: id(target.dataset.trackPlacement) ?? "page" },
+      {
+        cta,
+        placement: id(target.dataset.trackPlacement) ?? "page",
+        entry,
+        repeat: clicked ? "yes" : "no",
+      },
       // A link leaves the page: send before it does.
       { now: target.tagName === "A" }
     );
+    clicked = true;
   });
 }
 
@@ -195,6 +206,8 @@ export function startSiteAnalytics(): void {
 export function resetSiteAnalytics(): void {
   queue = [];
   sentOnce.clear();
+  entry = "no";
+  clicked = false;
   if (timer) clearTimeout(timer);
   timer = undefined;
 }

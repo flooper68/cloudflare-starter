@@ -175,9 +175,33 @@ export interface FunnelStep {
     | "depth"
     | "returned";
   readonly label: string;
-  /** Events (the public steps) or people (from sign-up on). */
-  readonly unit: "events" | "people";
+  /**
+   * What the step counts: visits (entry page views, and those of them that showed
+   * interest or clicked a call to action: there is no visitor id), sign-up attempts
+   * (once per sign-up page view), or people (from sign-up on).
+   */
+  readonly unit: "visits" | "attempts" | "people";
   readonly count: number;
+  /**
+   * This step's share of the step above, 0 to 1 (null for the first step or when the
+   * step above is 0). At most 1: where the unit changes (visits to attempts to people)
+   * the counts are not nested, so a larger count shows as 100 %.
+   */
+  readonly share: number | null;
+}
+
+/** Shares of the step above, never above 1 (FunnelStep.share). */
+export function withShares(
+  steps: readonly Omit<FunnelStep, "share">[]
+): FunnelStep[] {
+  return steps.map((step, index) => {
+    const above = index > 0 ? steps[index - 1] : undefined;
+    return {
+      ...step,
+      share:
+        above && above.count > 0 ? Math.min(1, step.count / above.count) : null,
+    };
+  });
 }
 
 export interface CountRow {
@@ -325,11 +349,14 @@ function siteSection(rows: readonly AnalyticsRow[]) {
       case sitePageScrolledEvent.name:
         if (s1 === "home") add(scroll, String(num(row, "n1")), total);
         break;
+      // Per visit: only entry views count, each at most once (the page sends one
+      // page_engaged per view, and marks every click after the first as a repeat).
       case sitePageEngagedEvent.name:
-        interest += total;
+        if (text(row, "s3") === "yes") interest += total;
         break;
       case siteCtaClickedEvent.name: {
-        intent += total;
+        if (text(row, "s3") === "yes" && text(row, "s4") === "no")
+          intent += total;
         const key = `${s1}\u0000${s2}`;
         const entry = ctas.get(key) ?? { cta: s1, placement: s2, clicks: 0 };
         ctas.set(key, { ...entry, clicks: entry.clicks + total });
@@ -536,24 +563,24 @@ export function buildAnalyticsReport(input: {
     status: "ok",
     days: input.days,
     generatedAt: input.now.toISOString(),
-    funnel: [
-      { id: "visit", label: "Visits", unit: "events", count: site.visits },
+    funnel: withShares([
+      { id: "visit", label: "Visits", unit: "visits", count: site.visits },
       {
         id: "interest",
         label: "Got the pitch",
-        unit: "events",
+        unit: "visits",
         count: site.interest,
       },
       {
         id: "intent",
         label: "Clicked a call to action",
-        unit: "events",
+        unit: "visits",
         count: site.intent,
       },
       {
         id: "sign_up_started",
         label: "Started sign-up",
-        unit: "events",
+        unit: "attempts",
         count: site.started,
       },
       {
@@ -580,7 +607,7 @@ export function buildAnalyticsReport(input: {
         unit: "people",
         count: people.returned,
       },
-    ],
+    ]),
     signUp: {
       started: site.started,
       completed: people.cohort,

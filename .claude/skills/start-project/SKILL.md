@@ -58,7 +58,7 @@ Each with the recommended answer, so they can reply "yes":
 
 ## 5. Brand it (local files)
 
-Ask for the brand or offer to keep a neutral one for now: name, tagline, mark, accent, fonts, radius in `packages/ui/src/brand/` (`docs/guides/how-to-define-branding.md`). Rename the `cloudflare-starter-*` resources in `apps/web/wrangler.jsonc` (Worker, databases, buckets, queues, datasets) to the app's kebab-case name before step 6 creates them. Verify and commit.
+Ask for the brand or offer to keep a neutral one for now: name, tagline, mark, accent, fonts, radius in `packages/ui/src/brand/` (`docs/guides/how-to-define-branding.md`). Rename the `cloudflare-starter-*` resources in `apps/web/wrangler.jsonc` (Worker, databases, buckets, queues, datasets) to the app's kebab-case name before step 6 creates them; a dataset rename also changes the vars `ANALYTICS_EVENTS_DATASET` and `METRICS_DATASET_NAME` in every environment, which must equal the `ANALYTICS_EVENTS` and `METRICS_DATASET` bindings' dataset names (the admin Analytics page queries them; `test/architecture/product-analytics.test.ts` checks it). Verify and commit.
 
 ## 6. Set up (account changes; one list and one yes per step)
 

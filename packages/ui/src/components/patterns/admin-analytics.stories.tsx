@@ -16,28 +16,55 @@ const report: AdminAnalyticsReport = {
   days: 7,
   generatedAt: "2026-11-09T09:30:00.000Z",
   funnel: [
-    { id: "visit", label: "Visits", unit: "events", count: 1840 },
-    { id: "interest", label: "Got the pitch", unit: "events", count: 912 },
+    { id: "visit", label: "Visits", unit: "visits", count: 1840, share: null },
+    {
+      id: "interest",
+      label: "Got the pitch",
+      unit: "visits",
+      count: 912,
+      share: 912 / 1840,
+    },
     {
       id: "intent",
       label: "Clicked a call to action",
-      unit: "events",
+      unit: "visits",
       count: 377,
+      share: 377 / 912,
     },
     {
       id: "sign_up_started",
       label: "Started sign-up",
-      unit: "events",
+      unit: "attempts",
       count: 141,
+      share: 141 / 377,
     },
-    { id: "signed_up", label: "Signed up", unit: "people", count: 96 },
-    { id: "first_try", label: "Tried a feature", unit: "people", count: 71 },
-    { id: "depth", label: "Tried 3+ features", unit: "people", count: 28 },
+    {
+      id: "signed_up",
+      label: "Signed up",
+      unit: "people",
+      count: 96,
+      share: 96 / 141,
+    },
+    {
+      id: "first_try",
+      label: "Tried a feature",
+      unit: "people",
+      count: 71,
+      share: 71 / 96,
+    },
+    {
+      id: "depth",
+      label: "Tried 3+ features",
+      unit: "people",
+      count: 28,
+      share: 28 / 71,
+    },
     {
       id: "returned",
       label: "Came back within 7 days",
       unit: "people",
       count: 19,
+      share: 19 / 28,
     },
   ],
   signUp: {
@@ -215,7 +242,7 @@ export const WithWebAnalytics: Story = {
 
 const empty: AdminAnalyticsData = {
   ...report,
-  funnel: report.funnel.map((step) => ({ ...step, count: 0 })),
+  funnel: report.funnel.map((step) => ({ ...step, count: 0, share: null })),
   signUp: { started: 0, completed: 0, failures: [] },
   activation: {
     cohort: 0,

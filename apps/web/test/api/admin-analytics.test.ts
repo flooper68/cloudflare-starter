@@ -90,8 +90,8 @@ describe("admin.analytics.get", () => {
       Object.fromEntries(report.funnel.map((step) => [step.id, step.count]))
     ).toEqual({
       visit: 820,
-      interest: 522,
-      intent: 159,
+      interest: 500,
+      intent: 137,
       sign_up_started: 31,
       signed_up: 3,
       first_try: 2,

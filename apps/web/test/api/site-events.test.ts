@@ -64,8 +64,13 @@ function beacon(
   });
 }
 
-/** Runs a request through the middleware and the route, as Astro does. */
-async function serve(request: Request): Promise<Response> {
+/**
+ * Runs a request through the middleware and the route, as Astro does; `locals` is what
+ * the middleware handed the route (`user` is null unless a session lookup found one).
+ */
+async function serveWithLocals(
+  request: Request
+): Promise<{ response: Response; locals: MiddlewareContext["locals"] }> {
   const context: MiddlewareContext = {
     request,
     url: new URL(request.url),
@@ -73,9 +78,9 @@ async function serve(request: Request): Promise<Response> {
     locals: {} as MiddlewareContext["locals"],
     redirect: (path: string, status = 302) =>
       Response.redirect(new URL(path, request.url), status as 302),
-    routePattern: "/api/site-events",
+    routePattern: new URL(request.url).pathname,
   };
-  return handleAppRequest(context, env, async () =>
+  const response = await handleAppRequest(context, env, async () =>
     siteEventsRoute({
       request,
       url: context.url,
@@ -83,6 +88,11 @@ async function serve(request: Request): Promise<Response> {
       locals: context.locals,
     } as unknown as APIContext)
   );
+  return { response, locals: context.locals };
+}
+
+async function serve(request: Request): Promise<Response> {
+  return (await serveWithLocals(request)).response;
 }
 
 const view = {
@@ -96,7 +106,7 @@ const view = {
 };
 const click = {
   event: "site.cta_clicked",
-  properties: { cta: "demo", placement: "hero" },
+  properties: { cta: "demo", placement: "hero", entry: "yes", repeat: "no" },
 };
 
 describe("POST /api/site-events", () => {
@@ -125,15 +135,24 @@ describe("POST /api/site-events", () => {
 
   it("never reads the session: a signed-in visitor's events stay anonymous", async () => {
     const ada = await signUp("Ada Site", "ada-site@example.test");
+    // The same cookie on another path: the middleware looks the session up there.
+    const control = await serveWithLocals(
+      new Request(`${APP_URL}/api/hello`, { headers: { cookie: ada.cookie } })
+    );
+    expect(control.locals.user?.id).toBe(ada.id);
+
     points.length = 0;
-    const response = await serve(
-      beacon("198.51.100.82", { events: [click] }, { cookie: ada.cookie ?? "" })
+    const { response, locals } = await serveWithLocals(
+      beacon("198.51.100.82", { events: [click] }, { cookie: ada.cookie })
     );
     expect(response.status).toBe(204);
+    // No session lookup (the middleware's SITE_EVENTS_PATH skip): with the same valid
+    // cookie, the route gets no user and no session.
+    expect(locals.user).toBeNull();
+    expect(locals.session).toBeNull();
     expect(decoded()).toEqual([
       expect.objectContaining({ event: "site.cta_clicked", user: null }),
     ]);
-    expect(response.headers.get("set-cookie")).toBeNull();
   });
 
   it.each([
@@ -158,7 +177,12 @@ describe("POST /api/site-events", () => {
         events: [
           {
             event: "site.cta_clicked",
-            properties: { cta: "Try it now!", placement: "hero" },
+            properties: {
+              cta: "Try it now!",
+              placement: "hero",
+              entry: "yes",
+              repeat: "no",
+            },
           },
         ],
       },

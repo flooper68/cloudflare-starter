@@ -206,6 +206,11 @@
           "file": "apps/web/test/api/admin-analytics.test.ts",
           "find": "\n  it(\"leaves the QA suite's accounts out\", async () => {\n    const qa = await signUp(\"QA Run\", \"run-1@qa.flooper.me\");\n    points.length = 0;\n    await callerFor(qa).notes.create({ title: \"QA note\", body: \"\" });\n    expect(points).toEqual([]);\n  });\n",
           "replace": ""
+        },
+        {
+          "file": "apps/web/src/server/analytics-audience.test.ts",
+          "find": "\n  it(\"leaves out the QA suite's accounts, not a look-alike domain\", () => {\n    expect(excluded(\"qa+run1-a@qa.flooper.me\")).toBe(true);\n    expect(excluded(\"x@notqa.flooper.me\")).toBe(false);\n    expect(excluded(\"x@qa.flooper.me.example.test\")).toBe(false);\n  });\n",
+          "replace": ""
         }
       ],
       "patch": "scripts/starter-only/qa-automation.patch",
@@ -311,6 +316,10 @@
         {
           "env": "production",
           "path": ["vars", "WEB_ANALYTICS_TOKEN"]
+        },
+        {
+          "env": "production",
+          "path": ["vars", "WEB_ANALYTICS_SITE_TAG"]
         }
       ],
       "docs": [
@@ -728,6 +737,11 @@
           "find": "excluded.add(protectedEmail);",
           "replace": "",
           "line": true
+        },
+        {
+          "file": "apps/web/src/server/analytics-audience.test.ts",
+          "find": "\n  it(\"leaves out demo mode's protected accounts, from a list with spaces\", () => {\n    expect(excluded(\"keep@example.test\")).toBe(true);\n    expect(excluded(\"second@example.test\")).toBe(true);\n    expect(excluded(\"keeper@example.test\")).toBe(false);\n  });\n",
+          "replace": ""
         }
       ]
     },

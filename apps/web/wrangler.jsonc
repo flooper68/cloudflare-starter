@@ -502,8 +502,13 @@
         "ADMIN_PORTAL": "on",
         "BILLING": "manual",
         "ANALYTICS": "analytics-engine",
-        "WEB_ANALYTICS": "none",
-        "WEB_ANALYTICS_TOKEN": "",
+        // Cloudflare Web Analytics, the app's own beacon (the manual-snippet site of
+        // starter.flooper.me; owner decision 9 Nov 2026). Token and site tag are public:
+        // the token is in every page, the site tag only names the site for the admin
+        // Analytics page's GraphQL read.
+        "WEB_ANALYTICS": "cloudflare",
+        "WEB_ANALYTICS_TOKEN": "6a8410f937214193ad3a4e2c94c3b6e0",
+        "WEB_ANALYTICS_SITE_TAG": "6afe1abb37c34a1cbb8bc3ab77f224c8",
         // The container workflow demo (docs/guides/how-to-run-container-workflows.md#settings).
         // Required, no defaults: CONTAINER_DEMO on | off, CONTAINER_DEMO_DAILY_CAP (runs per UTC
         // day for the whole deployment), CONTAINER_DEMO_RUNNER container | fake.

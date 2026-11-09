@@ -114,26 +114,37 @@ const site = [
     event: "site.page_engaged",
     s1: "home",
     s2: "scrolled",
-    s3: "",
+    s3: "yes",
     s4: "",
     n1: 0,
     total: 25,
+  },
+  // Later pages of a visit (a docs reader's next pages): not visits, not interest.
+  {
+    event: "site.page_engaged",
+    s1: "docs",
+    s2: "docs",
+    s3: "no",
+    s4: "",
+    n1: 0,
+    total: 100,
   },
   {
     event: "site.cta_clicked",
     s1: "demo",
     s2: "hero",
-    s3: "",
-    s4: "",
+    s3: "yes",
+    s4: "no",
     n1: 0,
     total: 12,
   },
+  // A second click in the same view: in the breakdown, not in the intent step.
   {
     event: "site.cta_clicked",
     s1: "github",
     s2: "hero",
-    s3: "",
-    s4: "",
+    s3: "yes",
+    s4: "yes",
     n1: 0,
     total: 3,
   },
@@ -308,15 +319,109 @@ describe("buildAnalyticsReport", () => {
     expect(
       report.funnel.map((step) => [step.id, step.unit, step.count])
     ).toEqual([
-      ["visit", "events", 50],
-      ["interest", "events", 25],
-      ["intent", "events", 15],
-      ["sign_up_started", "events", 7],
+      ["visit", "visits", 50],
+      ["interest", "visits", 25],
+      ["intent", "visits", 12],
+      ["sign_up_started", "attempts", 7],
       ["signed_up", "people", 3],
       ["first_try", "people", 2],
       ["depth", "people", 1],
       ["returned", "people", 1],
     ]);
+  });
+
+  it("gives each step its share of the step above, never more than 100 %", () => {
+    expect(report.funnel.map((step) => step.share)).toEqual([
+      null,
+      0.5,
+      0.48,
+      7 / 12,
+      // 3 people from 7 attempts.
+      3 / 7,
+      2 / 3,
+      0.5,
+      1,
+    ]);
+    // One visitor reads four docs pages and signs up from a link elsewhere: the later
+    // pages are no extra visits, and sign-ups above attempts show as 100 %.
+    const reader = buildAnalyticsReport({
+      days: 7,
+      now: new Date("2026-11-09T12:00:00Z"),
+      site: [
+        {
+          event: "site.page_viewed",
+          s1: "docs",
+          s2: "yes",
+          s3: "",
+          s4: "",
+          n1: 0,
+          total: 1,
+        },
+        {
+          event: "site.page_viewed",
+          s1: "docs",
+          s2: "no",
+          s3: "",
+          s4: "",
+          n1: 0,
+          total: 3,
+        },
+        {
+          event: "site.page_engaged",
+          s1: "docs",
+          s2: "docs",
+          s3: "yes",
+          s4: "",
+          n1: 0,
+          total: 1,
+        },
+        {
+          event: "site.page_engaged",
+          s1: "docs",
+          s2: "docs",
+          s3: "no",
+          s4: "",
+          n1: 0,
+          total: 3,
+        },
+        {
+          event: "site.cta_clicked",
+          s1: "demo",
+          s2: "header",
+          s3: "no",
+          s4: "no",
+          n1: 0,
+          total: 4,
+        },
+      ],
+      people: [
+        {
+          person: "p1",
+          event: "auth.signed_up",
+          s1: "social",
+          n1: 0,
+          first_at: "2026-11-08 10:00:00",
+        },
+        {
+          person: "p2",
+          event: "auth.signed_up",
+          s1: "social",
+          n1: 0,
+          first_at: "2026-11-08 11:00:00",
+        },
+      ],
+      routes: null,
+      webAnalytics: null,
+    });
+    expect(reader.funnel.map((step) => step.count).slice(0, 5)).toEqual([
+      1, 1, 0, 0, 2,
+    ]);
+    for (const step of reader.funnel) {
+      expect(step.share ?? 0).toBeGreaterThanOrEqual(0);
+      expect(step.share ?? 0).toBeLessThanOrEqual(1);
+    }
+    for (const step of report.funnel)
+      expect(step.share ?? 0).toBeLessThanOrEqual(1);
   });
 
   it("finds the first feature and the median time to it among the period's sign-ups", () => {

@@ -90,7 +90,7 @@ describe("site batches", () => {
   ]);
   const click = {
     event: "site.cta_clicked",
-    properties: { cta: "demo", placement: "hero" },
+    properties: { cta: "demo", placement: "hero", entry: "yes", repeat: "no" },
   };
 
   it("accepts 1 to 10 events", () => {
@@ -108,7 +108,12 @@ describe("site batches", () => {
         event.definition.name,
         event.properties,
       ])
-    ).toEqual([["site.cta_clicked", { cta: "demo", placement: "hero" }]]);
+    ).toEqual([
+      [
+        "site.cta_clicked",
+        { cta: "demo", placement: "hero", entry: "yes", repeat: "no" },
+      ],
+    ]);
   });
 
   it.each([

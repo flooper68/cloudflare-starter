@@ -327,6 +327,12 @@ async function recordAuthFeatureTrial(
 ): Promise<void> {
   const feature = FEATURE_TRIAL_AUTH_PATHS[ctx.path];
   const user = ctx.context.session?.user;
+  // An admin acting as the person is not the person trying a feature.
+  const impersonatedBy = (
+    ctx.context.session?.session as
+      | { impersonatedBy?: string | null }
+      | undefined
+  )?.impersonatedBy;
   if (!feature || !user || isAPIError(returned)) return;
   if (ctx.path === "/oauth2/consent") {
     const accepted = (ctx.body as { accept?: unknown } | undefined)?.accept;
@@ -338,7 +344,10 @@ async function recordAuthFeatureTrial(
     {
       db: getDb(env),
       clock: systemClock,
-      analytics: productAnalyticsFor(env, { email: user.email }),
+      analytics: productAnalyticsFor(env, {
+        email: user.email,
+        impersonated: Boolean(impersonatedBy),
+      }),
       logger: platform.logger.withContext(context),
     },
     context,

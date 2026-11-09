@@ -12,6 +12,7 @@ export {
   COMMAND_PALETTE_ITEM_KINDS,
   COMMAND_PALETTE_SOURCES,
   type CountRow,
+  CTA_REPEAT_VALUES,
   clientBatchSchema,
   commandPaletteItemSelectedEvent,
   commandPaletteOpenedEvent,
@@ -69,6 +70,7 @@ export {
   type WebAnalyticsSummary,
   WORKSPACE_SIZE_BUCKETS,
   type WorkspaceSizeBucket,
+  withShares,
   workspaceSizeBucket,
 } from "./domain";
 export {

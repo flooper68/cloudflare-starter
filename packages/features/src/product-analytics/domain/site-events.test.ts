@@ -44,12 +44,16 @@ describe("site events", () => {
       siteCtaClickedEvent.properties.safeParse({
         cta: "demo",
         placement: "hero",
+        entry: "yes",
+        repeat: "no",
       }).success
     ).toBe(true);
     expect(
       siteCtaClickedEvent.properties.safeParse({
         cta: "Try the demo app",
         placement: "hero",
+        entry: "yes",
+        repeat: "no",
       }).success
     ).toBe(false);
   });
