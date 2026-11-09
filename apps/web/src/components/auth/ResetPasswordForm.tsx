@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
   FieldError,
+  hydrationGated,
   Input,
   Label,
   Logo,
@@ -19,11 +20,7 @@ interface FieldErrors {
   confirmPassword?: string;
 }
 
-export function ResetPasswordForm({
-  token,
-}: {
-  readonly token: string | null;
-}) {
+function ResetPasswordFormView({ token }: { readonly token: string | null }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [done, setDone] = useState(false);
@@ -143,3 +140,6 @@ export function ResetPasswordForm({
     </Card>
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const ResetPasswordForm = hydrationGated(ResetPasswordFormView);

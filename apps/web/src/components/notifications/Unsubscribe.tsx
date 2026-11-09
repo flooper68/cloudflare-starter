@@ -1,4 +1,8 @@
-import { UnsubscribeCard, type UnsubscribeState } from "@cloudflare-starter/ui";
+import {
+  hydrationGated,
+  UnsubscribeCard,
+  type UnsubscribeState,
+} from "@cloudflare-starter/ui";
 
 export interface UnsubscribeProps {
   readonly token: string;
@@ -10,7 +14,7 @@ export interface UnsubscribeProps {
  * The unsubscribe page's island: the button POSTs the RFC 8058 one-click body to the
  * same endpoint mail clients use.
  */
-export function Unsubscribe({ token, state, topic }: UnsubscribeProps) {
+function UnsubscribeView({ token, state, topic }: UnsubscribeProps) {
   return (
     <UnsubscribeCard
       state={state}
@@ -36,3 +40,6 @@ export function Unsubscribe({ token, state, topic }: UnsubscribeProps) {
     />
   );
 }
+
+/** The `client:load` island: its buttons wait for hydration (HydrationGate). */
+export const Unsubscribe = hydrationGated(UnsubscribeView);
